@@ -1,0 +1,52 @@
+name: Package & Publish
+
+on:
+  workflow_dispatch:
+  pull_request:
+    types:
+      - synchronize
+      - opened
+  push:
+    branches:
+      - main
+env:
+  ARTIFACT_NAME: testlab
+  JFROG_ARTIFACTORY_REPOSITORY: d11-repo/com/dream11
+
+jobs:
+  push-to-jfrog:
+    name: Push to artifactory
+    runs-on: [ self-hosted, linux, X64, k8s, testlab ]
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup
+        uses: ./.github/actions/setup
+        with:
+          install-dependencies: 'true'
+
+      - name: Package
+        uses: ./.github/actions/package
+        with:
+          add-swagger-ui: 'true'
+
+      - name: Get version
+        id: get_version
+        run: |
+          PROJECT_VERSION=$(yq e '.version' .odin/testlab/application-spec.yml)
+          echo "PROJECT_VERSION: ${PROJECT_VERSION}"
+          if [[ ${PROJECT_VERSION} != *-SNAPSHOT ]]; then
+            echo "Error: version must be suffixed with '-SNAPSHOT'. Concrete versions can only be released from main branch"
+            exit 1
+          fi
+          echo "VERSION=$PROJECT_VERSION" >> $GITHUB_OUTPUT
+
+      - name: Publish to jfrog
+        env:
+          JFROG_ARTIFACTORY_SERVER: ${{ secrets.JFROG_ARTIFACTORY_SERVER }}
+          JFROG_USERNAME: ${{ secrets.JFROG_ARTIFACTORY_USERNAME }}
+          JFROG_PASSWORD: ${{ secrets.JFROG_ARTIFACTORY_PASSWORD }}
+        run: .ci/scripts/publish_to_artifactory.sh $ARTIFACT_NAME ${{ steps.get_version.outputs.VERSION }} ${{ github.event.pull_request.head.sha }}

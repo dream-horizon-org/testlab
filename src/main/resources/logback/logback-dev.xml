@@ -1,0 +1,16 @@
+<configuration>
+  <appender name="JsonAppender" class="ch.qos.logback.core.ConsoleAppender">
+    <encoder class="net.logstash.logback.encoder.LogstashEncoder"/>
+  </appender>
+
+  <logger name="com.hulk" level="info" additivity="false">
+    <appender-ref ref="JsonAppender" />
+  </logger>
+
+  <!-- Log request body and response time and status code -->
+  <logger name="com.dream11.rest.filter.LoggerFilter" level="debug"/>
+
+  <root level="info">
+    <appender-ref ref="JsonAppender" />
+  </root>
+</configuration>

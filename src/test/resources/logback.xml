@@ -1,0 +1,18 @@
+<configuration>
+  <appender name="ConsoleAppender" class="ch.qos.logback.core.ConsoleAppender">
+    <encoder>
+      <pattern>%date %highlight(%+5level) [%thread] %magenta([%file:%line]) [%marker] %highlight(%msg%n)</pattern>
+    </encoder>
+  </appender>
+
+  <logger name="com.hulk" level="info" additivity="false">
+    <appender-ref ref="ConsoleAppender"/>
+  </logger>
+
+  <!-- Log request body and response time and status code -->
+  <logger name="com.dream11.rest.filter.LoggerFilter" level="debug"/>
+
+  <root level="info">
+    <appender-ref ref="ConsoleAppender"/>
+  </root>
+</configuration>
