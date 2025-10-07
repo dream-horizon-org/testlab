@@ -12,8 +12,8 @@
   <properties>
     <!-- project settings -->
     <app.release.artifact>target/testlab</app.release.artifact>
-    <main.class>com.hulk.testlab.MainLauncher</main.class>
-    <main.verticle>com.hulk.testlab.verticle.MainVerticle</main.verticle>
+    <main.class>com.ascend.testlab.MainLauncher</main.class>
+    <main.verticle>com.ascend.testlab.verticle.MainVerticle</main.verticle>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <resources.directory>src/main/resources</resources.directory>
 

@@ -35,7 +35,7 @@
 - Pass following system properties (in `VM options`):
   - `-Dapp.environment=<env-type>`
   - `-Dlogback.configurationFile=logback/logback-local.xml`
-- Pass following program arguments: `run com.hulk.testlab.verticle.MainVerticle`
+- Pass following program arguments: `run verticle.com.ascend.testlab.MainVerticle`
 - Pass following environment variables (in `Environment variables`):
   ```shell
   ENV=<env-type>
