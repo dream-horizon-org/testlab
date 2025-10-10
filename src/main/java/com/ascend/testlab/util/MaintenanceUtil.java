@@ -12,17 +12,20 @@ public final class MaintenanceUtil {
 
   public static void setMaintenance(Vertx vertx) {
     log.info("Turning on maintenance mode");
-    AtomicBoolean isUnderMaintenance = VertxUtil.getOrCreateSharedData(vertx, MAINTENANCE_FLAG, MaintenanceUtil::getAtomicBoolean);
+    AtomicBoolean isUnderMaintenance =
+        VertxUtil.getOrCreateSharedData(vertx, MAINTENANCE_FLAG, MaintenanceUtil::getAtomicBoolean);
     isUnderMaintenance.set(true);
   }
 
   public static AtomicBoolean isUnderMaintenance(Vertx vertx) {
-    return VertxUtil.getOrCreateSharedData(vertx, MAINTENANCE_FLAG, MaintenanceUtil::getAtomicBoolean);
+    return VertxUtil.getOrCreateSharedData(
+        vertx, MAINTENANCE_FLAG, MaintenanceUtil::getAtomicBoolean);
   }
 
   public static void clearMaintenance(Vertx vertx) {
     log.info("Turning off maintenance mode");
-    AtomicBoolean isUnderMaintenance = VertxUtil.getOrCreateSharedData(vertx, MAINTENANCE_FLAG, MaintenanceUtil::getAtomicBoolean);
+    AtomicBoolean isUnderMaintenance =
+        VertxUtil.getOrCreateSharedData(vertx, MAINTENANCE_FLAG, MaintenanceUtil::getAtomicBoolean);
     isUnderMaintenance.set(false);
   }
 

@@ -52,20 +52,19 @@ public class MainVerticle extends AbstractVerticle {
       Supplier<Verticle> verticleSupplier, DeploymentOptions deploymentOptions) {}
 
   private Completable stopClients() {
-        AerospikeClient aerospikeClient = GuiceInjector.getInstance(AerospikeClient.class);
-        DDClient ddClient = GuiceInjector.getInstance(DDClient.class);
-        KafkaProducerClient kafkaProducerClient = GuiceInjector.getInstance(KafkaProducerClient.class);
-            MySQLReaderClient mySQLReaderClient = GuiceInjector.getInstance(MySQLReaderClient.class);
+    AerospikeClient aerospikeClient = GuiceInjector.getInstance(AerospikeClient.class);
+    DDClient ddClient = GuiceInjector.getInstance(DDClient.class);
+    KafkaProducerClient kafkaProducerClient = GuiceInjector.getInstance(KafkaProducerClient.class);
+    MySQLReaderClient mySQLReaderClient = GuiceInjector.getInstance(MySQLReaderClient.class);
     MySQLWriterClient mySQLWriterClient = GuiceInjector.getInstance(MySQLWriterClient.class);
-                    WebClient webClient = GuiceInjector.getInstance(WebClient.class);
-    
+    WebClient webClient = GuiceInjector.getInstance(WebClient.class);
+
     return Completable.mergeArray(
-                aerospikeClient.close(),
-                        kafkaProducerClient.close(),
-                        mySQLReaderClient.close(),
+        aerospikeClient.close(),
+        kafkaProducerClient.close(),
+        mySQLReaderClient.close(),
         mySQLWriterClient.close(),
-                                        webClient.close(),
-                ddClient.close()
-    );
+        webClient.close(),
+        ddClient.close());
   }
 }

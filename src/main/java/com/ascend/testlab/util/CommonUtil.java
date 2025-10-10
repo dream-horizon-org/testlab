@@ -12,11 +12,11 @@ public final class CommonUtil {
     return CpuCoreSensor.availableProcessors();
   }
 
-    public static String getCircuitBreakerAspect(String aspect) {
+  public static String getCircuitBreakerAspect(String aspect) {
     return DDConstants.CB_METRIC + Constants.SPACE + aspect;
   }
 
   public static String getCircuitBreakerTag(String circuitBreakerName) {
     return DDConstants.CB_NAME + Constants.COLON + circuitBreakerName;
   }
-  }
+}

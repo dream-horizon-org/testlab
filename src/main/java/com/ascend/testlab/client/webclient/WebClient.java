@@ -7,7 +7,7 @@ import io.vertx.codegen.annotations.Fluent;
 public interface WebClient {
 
   Completable close();
-  
-    @Fluent
+
+  @Fluent
   WebClient setCircuitBreaker(CircuitBreaker circuitBreaker);
-  }
+}

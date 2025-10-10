@@ -8,6 +8,6 @@ public final class DDConstants {
   public static final String DD_PREFIX = "testlab";
   public static final String SERVICE_NAME = "SERVICE_NAME";
 
-    public static final String CB_METRIC = "circuitBreaker";
+  public static final String CB_METRIC = "circuitBreaker";
   public static final String CB_NAME = "cbName";
-  }
+}

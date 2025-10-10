@@ -18,6 +18,5 @@ public interface MySQLWriterClient {
   Single<Boolean> executeMultiple(
       SqlConnection connection, String preparedQuery, List<Tuple> tuples);
 
-  <T> Maybe<T> executeWithTransaction(
-      Function<SqlConnection, Maybe<T>> transactionalFunction);
+  <T> Maybe<T> executeWithTransaction(Function<SqlConnection, Maybe<T>> transactionalFunction);
 }
