@@ -3,7 +3,7 @@
 
   <modelVersion>4.0.0</modelVersion>
 
-  <groupId>com.hulk</groupId>
+  <groupId>com.ascend</groupId>
   <artifactId>testlab</artifactId>
   <version>1.0</version>
   <packaging>jar</packaging>
@@ -21,7 +21,7 @@
     <swagger.configurationFilePath>${project.basedir}/${resources.directory}/config/swagger/swagger-info.json</swagger.configurationFilePath>
     <swagger.outputFileName>swagger</swagger.outputFileName>
     <swagger.outputPath>${resources.directory}/webroot/swagger</swagger.outputPath>
-    <swagger.resourcePackage>com.hulk.testlab.controller</swagger.resourcePackage>
+    <swagger.resourcePackage>com.ascend.testlab.controller</swagger.resourcePackage>
 
     <!-- extension versions -->
     <os-maven-extension.version>1.7.1</os-maven-extension.version>
@@ -498,7 +498,7 @@
         <version>${jacoco-maven-plugin.version}</version>
         <configuration>
           <excludes>
-            <exclude>com/hulk/testlab/MainLauncher.class</exclude>
+            <exclude>com/ascend/testlab/MainLauncher.class</exclude>
           </excludes>
         </configuration>
         <executions>

@@ -3,7 +3,7 @@
     <encoder class="net.logstash.logback.encoder.LogstashEncoder"/>
   </appender>
 
-  <logger name="com.hulk" level="info" additivity="false">
+  <logger name="com.ascend" level="info" additivity="false">
     <appender-ref ref="JsonAppender" />
   </logger>
 
