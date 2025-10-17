@@ -1,0 +1,33 @@
+package com.ascend.testlab.service.impl;
+
+import com.ascend.testlab.dao.TagsDAO;
+import com.ascend.testlab.dto.response.TagsResponse;
+import com.ascend.testlab.exception.ErrorEnum;
+import com.ascend.testlab.service.TagsService;
+import com.dream11.rest.exception.RestException;
+import com.google.inject.Inject;
+import io.reactivex.rxjava3.core.Single;
+import java.util.UUID;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+
+@Slf4j
+@RequiredArgsConstructor(onConstructor = @__({@Inject}))
+public class TagsServiceImpl implements TagsService {
+
+  private final TagsDAO tagsDAO;
+
+  @Override
+  public Single<TagsResponse> getTags(UUID projectId) {
+    return tagsDAO
+        .fetchTags(projectId)
+        .map(TagsResponse::new)
+        .onErrorResumeNext(
+            err -> {
+              log.error("Error in list tags for project {}: {}", projectId, err.getMessage());
+              return Single.error(
+                  ErrorEnum.handleException(
+                      err, new RestException(ErrorEnum.REST_FETCH_TAGS_FAILED, err)));
+            });
+  }
+}

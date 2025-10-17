@@ -20,10 +20,12 @@ public class CreateExperimentRequest {
   @JsonProperty("experiment_id")
   private byte[] experimentId;
 
-  @JsonProperty("name") @NotBlank
+  @JsonProperty("name")
+  @NotBlank
   private String name;
 
-  @JsonProperty("description") @NotBlank
+  @JsonProperty("description")
+  @NotBlank
   private String description;
 
   @JsonProperty("hypothesis")
