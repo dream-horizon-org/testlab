@@ -1,6 +1,5 @@
 package com.ascend.testlab.client.kafka.impl;
 
-import com.ascend.testlab.client.datadog.DDClient;
 import com.ascend.testlab.client.kafka.KafkaProducerClient;
 import com.ascend.testlab.config.KafkaProducerConfig;
 import com.google.inject.Inject;
@@ -15,14 +14,11 @@ import org.apache.kafka.clients.producer.ProducerConfig;
 @Slf4j
 public class KafkaProducerClientImpl implements KafkaProducerClient {
 
-  private final DDClient ddClient;
   private final KafkaProducer<String, String> kafkaProducer;
   private final KafkaProducerConfig producerConfig;
 
   @Inject
-  public KafkaProducerClientImpl(
-      Vertx vertx, KafkaProducerConfig producerConfig, DDClient ddClient) {
-    this.ddClient = ddClient;
+  public KafkaProducerClientImpl(Vertx vertx, KafkaProducerConfig producerConfig) {
     this.producerConfig = producerConfig;
     this.kafkaProducer = KafkaProducer.create(vertx, getConfigMap(producerConfig));
   }

@@ -1,8 +1,8 @@
 package com.ascend.testlab.service.impl;
 
+import com.ascend.testlab.dao.HealthCheckDAO;
 import com.ascend.testlab.dto.response.HealthCheckResponse;
 import com.ascend.testlab.exception.ErrorEnum;
-import com.ascend.testlab.dao.HealthCheckDAO;
 import com.ascend.testlab.service.HealthCheckService;
 import com.dream11.rest.util.ExceptionUtil;
 import com.google.inject.Inject;
@@ -17,24 +17,13 @@ public class HealthCheckServiceImpl implements HealthCheckService {
   @Override
   public Single<HealthCheckResponse> healthCheck() {
     return Single.zip(
-                healthCheckDAO.isMySQLReaderConnected(),
-                                healthCheckDAO.isAerospikeConnected(),
-                        healthCheckDAO.isUnderMaintenance(),
-        (
-                        isMySQLReaderUp,
-                                                isAerospikeUp,
-                                    isUnderMaintenance
-         ) -> {
-          if (true
-                            && !isMySQLReaderUp
-                                                        && !isAerospikeUp
-                                      )
+        healthCheckDAO.isMySQLReaderConnected(),
+        healthCheckDAO.isAerospikeConnected(),
+        healthCheckDAO.isUnderMaintenance(),
+        (isMySQLReaderUp, isAerospikeUp, isUnderMaintenance) -> {
+          if (true && !isMySQLReaderUp && !isAerospikeUp)
             throw ExceptionUtil.getException(ErrorEnum.REST_HEALTH_CHECK_FAILED);
-          else return new HealthCheckResponse(
-                            isMySQLReaderUp,
-                                                        isAerospikeUp,
-                                          isUnderMaintenance
-          );
+          else return new HealthCheckResponse(isMySQLReaderUp, isAerospikeUp, isUnderMaintenance);
         });
   }
 }

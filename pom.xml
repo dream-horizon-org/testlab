@@ -49,7 +49,6 @@
     <commons-io.version>2.17.0</commons-io.version>
     <dropwizard.version>4.2.23</dropwizard.version>
     <guice.version>7.0.0</guice.version>
-    <java-dogstatsd-client.version>4.2.0</java-dogstatsd-client.version>
     <junit.version>4.13.1</junit.version>
     <kafka-client.version>3.6.0</kafka-client.version>
     <logback.version>1.4.14</logback.version>
@@ -100,12 +99,6 @@
       <artifactId>swagger-request-validator-restassured</artifactId>
       <version>${swagger-validator.version}</version>
       <scope>test</scope>
-    </dependency>
-
-    <dependency>
-      <groupId>com.datadoghq</groupId>
-      <artifactId>java-dogstatsd-client</artifactId>
-      <version>${java-dogstatsd-client.version}</version>
     </dependency>
 
     <dependency>
