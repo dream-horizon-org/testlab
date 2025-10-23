@@ -30,10 +30,10 @@ APP_OPTS=(
 LOG_OPTS=("-Dlog.file.name=${SERVICE_NAME}.log")
 
 if [[ "$DEPLOYMENT_TYPE" = "container" ]]; then
-  LOG_OPTS+=("-Dlog.directory.path=/app/logs" "-Dlogback.configurationFile=${APP_DIR}/resources/logback/logback-dev.xml")
+  LOG_OPTS+=("-Dlog.directory.path=/app/logs" "-Dlogback.configurationFile=${APP_DIR}/resources/logback/logback.xml")
   MEM_OPTS=("-Xms512m" "-Xmx512m" "-Xmn256m")
 else
-  LOG_OPTS+=("-Dlog.directory.path=/opt/logs" "-Dlogback.configurationFile=${APP_DIR}/resources/logback/logback.xml")
+  LOG_OPTS+=("-Dlog.directory.path=/opt/logs" "-Dlogback.configurationFile=${APP_DIR}/resources/logback/logback-vm.xml")
 
   totalMem=$(free -m | head -2 | tail -1 | awk '{print $2}')
   heapSize=$((totalMem * 70 / 100))
