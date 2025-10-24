@@ -5,6 +5,7 @@ import com.aerospike.client.Key;
 import com.aerospike.client.Operation;
 import com.aerospike.client.Record;
 import com.aerospike.client.policy.Policy;
+import com.aerospike.client.policy.Replica;
 import com.aerospike.client.policy.WritePolicy;
 import com.ascend.testlab.client.aerospike.AerospikeClient;
 import com.ascend.testlab.config.AerospikeConfig;
@@ -21,15 +22,21 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 public class AerospikeClientImpl implements AerospikeClient {
+
   private final Vertx vertx;
   private final AerospikeConnectOptions aerospikeConnectOptions;
+
+  private final Policy defaultPolicy;
+  private final WritePolicy defaultWritePolicy;
+
   private io.d11.aerospike.client.AerospikeClient aerospikeClient = null;
 
   @Inject
   public AerospikeClientImpl(Vertx vertx, AerospikeConfig aerospikeConfig) {
     this.vertx = vertx;
     this.aerospikeConnectOptions = getAerospikeConnectOptions(aerospikeConfig);
-
+    this.defaultPolicy = defaultPolicy();
+    this.defaultWritePolicy = defaultWritePolicy(aerospikeConfig);
     retryConnection(aerospikeConfig.getConnectRetryIntervalMS());
   }
 
@@ -46,6 +53,16 @@ public class AerospikeClientImpl implements AerospikeClient {
             getClient()
                 .onSuccess(client -> client.isConnected(handler))
                 .onFailure(err -> handler.handle(Future.failedFuture(err))));
+  }
+
+  @Override
+  public Policy getDefaultPolicy() {
+    return new Policy(defaultPolicy);
+  }
+
+  @Override
+  public WritePolicy getDefaultWritePolicy() {
+    return new WritePolicy(defaultWritePolicy);
   }
 
   @Override
@@ -132,5 +149,20 @@ public class AerospikeClientImpl implements AerospikeClient {
         .setMaxConnectRetries(aerospikeConfig.getMaxRetries())
         .setEventLoopSize(aerospikeConfig.getEventLoopSize())
         .updateClientPolicy();
+  }
+
+  private static Policy defaultPolicy() {
+    Policy policy = new Policy();
+    policy.replica = Replica.MASTER_PROLES;
+    policy.sendKey = true;
+    return policy;
+  }
+
+  private static WritePolicy defaultWritePolicy(AerospikeConfig aerospikeConfig) {
+    WritePolicy writePolicy = new WritePolicy();
+    writePolicy.replica = Replica.MASTER_PROLES;
+    writePolicy.sendKey = true;
+    writePolicy.maxRetries = aerospikeConfig.getMaxRetries();
+    return writePolicy;
   }
 }

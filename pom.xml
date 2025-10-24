@@ -21,7 +21,7 @@
     <swagger.configurationFilePath>${project.basedir}/${resources.directory}/config/swagger/swagger-info.json</swagger.configurationFilePath>
     <swagger.outputFileName>swagger</swagger.outputFileName>
     <swagger.outputPath>${resources.directory}/webroot/swagger</swagger.outputPath>
-    <swagger.resourcePackage>com.ascend.testlab.controller</swagger.resourcePackage>
+    <swagger.resourcePackage>com.ascend.testlab.rest</swagger.resourcePackage>
 
     <!-- extension versions -->
     <os-maven-extension.version>1.7.1</os-maven-extension.version>
@@ -36,6 +36,7 @@
     <maven-compiler-plugin.version>3.11.0</maven-compiler-plugin.version>
     <maven-dependency-plugin.version>3.6.0</maven-dependency-plugin.version>
     <maven-failsafe-plugin.version>3.1.2</maven-failsafe-plugin.version>
+    <maven-javadoc-plugin.version>3.5.0</maven-javadoc-plugin.version>
     <maven-resources-plugin.version>3.3.1</maven-resources-plugin.version>
     <maven-shade-plugin.version>3.5.1</maven-shade-plugin.version>
     <maven-surefire-plugin.version>3.1.2</maven-surefire-plugin.version>
@@ -50,8 +51,7 @@
     <dropwizard.version>4.2.23</dropwizard.version>
     <guice.version>7.0.0</guice.version>
     <junit.version>4.13.1</junit.version>
-    <kafka-client.version>3.6.0</kafka-client.version>
-    <logback.version>1.4.14</logback.version>
+    <logback.version>1.5.13</logback.version>
     <logstash-encoder.version>7.4</logstash-encoder.version>
     <lombok.version>1.18.30</lombok.version>
     <mockito.version>5.3.1</mockito.version>
@@ -210,15 +210,8 @@
 
     <dependency>
       <groupId>io.vertx</groupId>
-      <artifactId>vertx-kafka-client</artifactId>
-    </dependency>
-
-    <dependency>
-      <groupId>io.vertx</groupId>
       <artifactId>vertx-mysql-client</artifactId>
     </dependency>
-
-
 
     <dependency>
       <groupId>io.vertx</groupId>
@@ -257,12 +250,6 @@
     </dependency>
 
     <dependency>
-      <groupId>org.apache.kafka</groupId>
-      <artifactId>kafka-clients</artifactId>
-      <version>${kafka-client.version}</version>
-    </dependency>
-
-    <dependency>
       <groupId>org.jboss.resteasy</groupId>
       <artifactId>resteasy-core</artifactId>
       <version>${resteasy.version}</version>
@@ -287,13 +274,6 @@
       <artifactId>slf4j-api</artifactId>
       <version>${slf4j.version}</version>
       <scope>compile</scope>
-    </dependency>
-
-    <dependency>
-      <groupId>org.testcontainers</groupId>
-      <artifactId>kafka</artifactId>
-      <version>${testcontainers.version}</version>
-      <scope>test</scope>
     </dependency>
 
     <dependency>
@@ -421,6 +401,20 @@
           </execution>
         </executions>
       </plugin>
+
+<!--      <plugin>-->
+<!--        <groupId>org.apache.maven.plugins</groupId>-->
+<!--        <artifactId>maven-javadoc-plugin</artifactId>-->
+<!--        <version>${maven-javadoc-plugin.version}</version>-->
+<!--        <executions>-->
+<!--          <execution>-->
+<!--            <id>attach-javadocs</id>-->
+<!--            <goals>-->
+<!--              <goal>jar</goal>-->
+<!--            </goals>-->
+<!--          </execution>-->
+<!--        </executions>-->
+<!--      </plugin>-->
 
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>

@@ -14,6 +14,11 @@ public interface AerospikeClient {
 
   Single<Boolean> isConnected();
 
+  Policy getDefaultPolicy();
+
+  WritePolicy getDefaultWritePolicy();
+
+  // TODO: add support for get method without policy and key specification
   Single<Record> get(Policy policy, Key key, String... binNames);
 
   Single<Key> put(WritePolicy writePolicy, Key key, Bin... bins);

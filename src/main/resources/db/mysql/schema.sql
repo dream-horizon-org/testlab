@@ -1,18 +1,17 @@
 CREATE DATABASE IF NOT EXISTS experiment;
-CREATE TABLE IF NOT EXISTS experiment.experiments
 
-(
+CREATE TABLE IF NOT EXISTS experiment.experiments (
     project_id          BINARY(16) NOT NULL,
     experiment_id       BINARY(16) NOT NULL,
-    name                varchar(64) NOT NULL,
-    description         varchar(255),
+    name                VARCHAR(64) NOT NULL,
+    description         VARCHAR(255),
     hypothesis          text,
     status              ENUM('LIVE','PAUSED','DRAFT','CONCLUDED','TERMINATED') NOT NULL,
     type                ENUM('A/B'),
-    guardrail_health_status ENUM('WARNING','PASSING','NO_CHECKS_AVAILABLE','FAILED'"),
+    guardrail_health_status ENUM('WARNING','PASSING','NO_CHECKS_AVAILABLE','FAILED'),
     cohorts             varchar(255),
     variant_weights     JSON,
-    assignment_strategy ENUM('RANDOM,ROUND_ROBIN'),
+    assignment_strategy ENUM('RANDOM', 'ROUND_ROBIN'),
     overrides           JSON,
     rule_attributes     JSON,
     winning_variant     JSON,
@@ -23,12 +22,11 @@ CREATE TABLE IF NOT EXISTS experiment.experiments
     created_by          varchar(255),
     created_at  TIMESTAMP   NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at  TIMESTAMP   NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    name_tokens varchar(255)
+    name_tokens varchar(255),
 
-    FULL_TEXT(name_tokens)
     PRIMARY KEY (project_id,experiment_id),
     UNIQUE KEY (project_id, name)
-)ENGINE=InnoDB;
+) ENGINE=InnoDB
 PARTITION BY LIST COLUMNS(project_id)
 (
   PARTITION dummyPartition VALUES IN('p_id')
@@ -42,11 +40,8 @@ CREATE TABLE IF NOT EXISTS experiment.owners (
     owner VARCHAR(255) NOT NULL,
     created_at                               TIMESTAMP   NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at                               TIMESTAMP   NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    PRIMARY KEY (project_id, experiment_id, owner),
-    FOREIGN KEY (project_id, experiment_id) REFERENCES experiment.experiments(project_id, experiment_id)
-        ON UPDATE CASCADE
-        ON DELETE CASCADE
-) ENGINE=InnoDB;
+    PRIMARY KEY (project_id, experiment_id, owner)
+) ENGINE=InnoDB
 PARTITION BY LIST COLUMNS(project_id)
 (
   PARTITION dummyPartition VALUES IN('p_id')
@@ -59,11 +54,8 @@ CREATE TABLE IF NOT EXISTS experiment.tags (
     tag VARCHAR(255) NOT NULL,
     created_at                               TIMESTAMP   NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at                               TIMESTAMP   NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    PRIMARY KEY (project_id, experiment_id, tag),
-    FOREIGN KEY (project_id, experiment_id) REFERENCES experiment.experiments(project_id, experiment_id)
-        ON UPDATE CASCADE
-        ON DELETE CASCADE
-) ENGINE=InnoDB;
+    PRIMARY KEY (project_id, experiment_id, tag)
+) ENGINE=InnoDB
 PARTITION BY LIST COLUMNS(project_id)
 (
   PARTITION dummyPartition VALUES IN('p_id')
@@ -78,7 +70,7 @@ CREATE TABLE IF NOT EXISTS experiment.experiment_update_log (
     created_at  TIMESTAMP   NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at  TIMESTAMP   NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     PRIMARY KEY (project_id, experiment_id)
-) ENGINE=InnoDB;
+) ENGINE=InnoDB
 PARTITION BY LIST COLUMNS(project_id)
 (
   PARTITION dummyPartition VALUES IN('p_id')
@@ -93,12 +85,8 @@ CREATE TABLE IF NOT EXISTS experiment.experiment_analysis (
     metric_tokens VARCHAR(255),
     created_at                               TIMESTAMP   NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at                               TIMESTAMP   NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    PRIMARY KEY (project_id, experiment_id),
-    FULL_TEXT(metric_tokens)
-     FOREIGN KEY (project_id, experiment_id) REFERENCES experiment.experiments(project_id, experiment_id)
-        ON UPDATE CASCADE
-        ON DELETE CASCADE
-) ENGINE=InnoDB;
+    PRIMARY KEY (project_id, experiment_id)
+) ENGINE=InnoDB
 PARTITION BY LIST COLUMNS(project_id)
 (
   PARTITION dummyPartition VALUES IN('p_id')
@@ -112,4 +100,4 @@ CREATE TABLE IF NOT EXISTS experiment.cron_process
     next_execution_time TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     cron_expression     VARCHAR(255),
     PRIMARY KEY (process_key)
-);
+) ENGINE=InnoDB;
