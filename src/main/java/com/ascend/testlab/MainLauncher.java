@@ -17,7 +17,7 @@ public class MainLauncher extends Launcher {
 
   public static void main(String[] args) {
     log.info("Starting Application..........");
-    new MainLauncher().dispatch(args);
+    new MainLauncher().dispatch(new String[] {"run", "com.ascend.testlab.verticle.MainVerticle"});
   }
 
   @Override

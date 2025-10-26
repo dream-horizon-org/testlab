@@ -20,7 +20,15 @@ public enum ErrorEnum implements RestError {
   INVALID_PROJECT_ID(
       "testlab_INVALID_PROJECT_ID",
       "tenant-id header is missing/invalid",
-      HttpStatus.SC_BAD_REQUEST);
+      HttpStatus.SC_BAD_REQUEST),
+  INVALID_EXPERIMENT_ID(
+      "testlab_INVALID_EXPERIMENT_ID",
+      "experiment-id is missing/invalid",
+      HttpStatus.SC_BAD_REQUEST),
+  REST_GET_EXPERIMENT_HISTORY_FAILED(
+      "testlab_REST_GET_EXPERIMENT_HISTORY_FAILED",
+      "Failed to fetch experiment history due to: %s",
+      HttpStatus.SC_INTERNAL_SERVER_ERROR);
 
   private final String errorCode;
   private final String errorMessage;
