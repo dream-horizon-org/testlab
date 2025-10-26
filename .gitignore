@@ -192,8 +192,8 @@ __pycache__/
 .vscode/
 
 ### Swagger ###
-!swagger.yaml
 webroot/
+!webroot/swagger/swagger.yaml
 
 ### logs ###
 *.log
@@ -203,3 +203,10 @@ input.*
 
 ### output ###
 output.*
+
+### config-store ###
+.config
+.secrets
+
+META-INF/
+src/main/resources/META-INF/

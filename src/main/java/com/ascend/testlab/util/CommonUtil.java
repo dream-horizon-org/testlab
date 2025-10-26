@@ -1,8 +1,8 @@
 package com.ascend.testlab.util;
 
 import com.ascend.testlab.constants.Constants;
-import com.ascend.testlab.constants.datadog.DDConstants;
 import com.ascend.testlab.exception.ErrorEnum;
+import com.dream11.rest.util.ExceptionUtil;
 import io.vertx.core.impl.cpu.CpuCoreSensor;
 import lombok.experimental.UtilityClass;
 import org.apache.commons.lang3.StringUtils;
@@ -14,18 +14,19 @@ public final class CommonUtil {
     return CpuCoreSensor.availableProcessors();
   }
 
-  public static String getCircuitBreakerAspect(String aspect) {
-    return DDConstants.CB_METRIC + Constants.SPACE + aspect;
-  }
-
-  public static String getCircuitBreakerTag(String circuitBreakerName) {
-    return DDConstants.CB_NAME + Constants.COLON + circuitBreakerName;
-  }
-
   public static void validateProjectId(String projectId) {
     Boolean isValidProjectId = StringUtils.isNotBlank(projectId) && isValidUUID(projectId);
     if (Boolean.FALSE.equals(isValidProjectId))
       throw ExceptionUtil.getException(ErrorEnum.INVALID_PROJECT_ID);
+  }
+
+  public static void validateExperimentId(String experimentId) {
+    if (experimentId == null || experimentId.trim().isEmpty()) {
+      throw ExceptionUtil.getException(ErrorEnum.INVALID_EXPERIMENT_ID);
+    }
+    if (!isValidUUID(experimentId)) {
+      throw ExceptionUtil.getException(ErrorEnum.INVALID_EXPERIMENT_ID);
+    }
   }
 
   public static Boolean isValidUUID(String uuidString) {

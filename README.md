@@ -26,7 +26,7 @@
   PRIVATE_HOSTED_ZONE=<private-hosted-zone> \
       MYSQL_USER=<mysql-username> \
   MYSQL_PASSWORD=<mysql-password> \
-    java -Dapp.environment=<env-type> -Dlogback.configurationFile=./resources/logback/logback-local.xml -jar testlab-<artifact-version>-fat.jar
+    java -Dapp.environment=<env-type> -Dlogback.configurationFile=./resources/logback/logback.xml -jar testlab-<artifact-version>-fat.jar
   ```
 
 #### IntelliJ Run Configuration

@@ -16,7 +16,6 @@ JAVA_OPTS=(
   "-XX:+HeapDumpOnOutOfMemoryError"
   "-XX:InitiatingHeapOccupancyPercent=50"
 )
-DATADOG_OPTS=("-javaagent:/opt/datadog/dd-java-agent.jar")
 JMX_OPTS=(
   "-Dcom.sun.management.jmxremote=true"
   "-Dcom.sun.management.jmxremote.port=1099"
@@ -31,10 +30,10 @@ APP_OPTS=(
 LOG_OPTS=("-Dlog.file.name=${SERVICE_NAME}.log")
 
 if [[ "$DEPLOYMENT_TYPE" = "container" ]]; then
-  LOG_OPTS+=("-Dlog.directory.path=/app/logs" "-Dlogback.configurationFile=${APP_DIR}/resources/logback/logback-dev.xml")
+  LOG_OPTS+=("-Dlog.directory.path=/app/logs" "-Dlogback.configurationFile=${APP_DIR}/resources/logback/logback.xml")
   MEM_OPTS=("-Xms512m" "-Xmx512m" "-Xmn256m")
 else
-  LOG_OPTS+=("-Dlog.directory.path=/opt/logs" "-Dlogback.configurationFile=${APP_DIR}/resources/logback/logback.xml")
+  LOG_OPTS+=("-Dlog.directory.path=/opt/logs" "-Dlogback.configurationFile=${APP_DIR}/resources/logback/logback-vm.xml")
 
   totalMem=$(free -m | head -2 | tail -1 | awk '{print $2}')
   heapSize=$((totalMem * 70 / 100))
@@ -42,9 +41,6 @@ else
   MEM_OPTS=("-Xms${heapSize}m" "-Xmx${heapSize}m" "-Xmn${halfHeapSize}m")
 fi
 
-if [[ "$ENV" = "load" ]]; then
-  DATADOG_OPTS+=("-Ddd.logs.injection=true")
-fi
 
 PATH_TO_APP_JAR="${APP_DIR}/${SERVICE_NAME}-1.0-fat.jar"
 
@@ -56,11 +52,9 @@ source .config
 
 # execute jar
 if [[ "$DEPLOYMENT_TYPE" = "container" ]]; then
-  java -jar "${JAVA_OPTS[@]}" "${MEM_OPTS[@]}" "${DATADOG_OPTS[@]}" "${JMX_OPTS[@]}" "${APP_OPTS[@]}" "${LOG_OPTS[@]}" "${PATH_TO_APP_JAR}"
+  java -jar "${JAVA_OPTS[@]}" "${MEM_OPTS[@]}" "${JMX_OPTS[@]}" "${APP_OPTS[@]}" "${LOG_OPTS[@]}" "${PATH_TO_APP_JAR}"
 else
-  sed -i 's/apm_config:/apm_config:\n  probabilistic_sampler:\n    enabled: true\n    sampling_percentage: 1/1' /etc/datadog-agent/datadog.yaml
-  sudo systemctl restart datadog-agent
-  nohup java -jar "${JAVA_OPTS[@]}" "${MEM_OPTS[@]}" "${DATADOG_OPTS[@]}" "${JMX_OPTS[@]}" "${APP_OPTS[@]}" "${LOG_OPTS[@]}" "${PATH_TO_APP_JAR}" </dev/null >/dev/null 2>&1 &
+  nohup java -jar "${JAVA_OPTS[@]}" "${MEM_OPTS[@]}" "${JMX_OPTS[@]}" "${APP_OPTS[@]}" "${LOG_OPTS[@]}" "${PATH_TO_APP_JAR}" </dev/null >/dev/null 2>&1 &
   pid=$!
   [ -n "$PID_PATH" ] && echo $pid >"${PID_PATH}"
 fi

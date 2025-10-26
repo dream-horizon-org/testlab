@@ -1,0 +1,54 @@
+name: testlab
+
+x-mysql-config: &mysql-env
+  MYSQL_USER: test_user
+  MYSQL_PASSWORD: test_password
+  MYSQL_DATABASE: experiment
+
+x-aerospike-config: &aerospike-env
+  NAMESPACE: experiment
+
+services:
+  mysql:
+    container_name: mysql
+    environment:
+      <<: *mysql-env
+      MYSQL_RANDOM_ROOT_PASSWORD: yes
+    image: mysql:8.0.43
+    ports:
+      - '3306:3306'
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./src/main/resources/db/mysql:/docker-entrypoint-initdb.d:ro
+
+  aerospike:
+    container_name: aerospike
+    environment:
+      <<: *aerospike-env
+    image: aerospike/aerospike-server:8.1.0.1
+    ports:
+      - '3000-3002:3000-3002'
+    volumes:
+      - aerospike_data:/opt/aerospike/data
+
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: backend
+    environment:
+      <<: [*mysql-env, *aerospike-env]
+      MYSQL_READER_HOST: mysql
+      MYSQL_WRITER_HOST: mysql
+      AEROSPIKE_HOST: aerospike
+    depends_on:
+      mysql:
+        condition: service_started
+      aerospike:
+        condition: service_started
+    ports:
+      - '8080:8080'
+
+volumes:
+  mysql_data: {}
+  aerospike_data: {}
