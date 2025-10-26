@@ -28,7 +28,15 @@ public enum ErrorEnum implements RestError {
   REST_GET_EXPERIMENT_HISTORY_FAILED(
       "testlab_REST_GET_EXPERIMENT_HISTORY_FAILED",
       "Failed to fetch experiment history due to: %s",
-      HttpStatus.SC_INTERNAL_SERVER_ERROR);
+      HttpStatus.SC_INTERNAL_SERVER_ERROR),
+  INVALID_EXPERIMENT_NAME(
+      "testlab_INVALID_EXPERIMENT_NAME",
+      "experiment name is missing/invalid",
+      HttpStatus.SC_BAD_REQUEST),
+  EXPERIMENT_NAME_TOO_LONG(
+      "testlab_EXPERIMENT_NAME_TOO_LONG",
+      "experiment name is too long (max 64 characters)",
+      HttpStatus.SC_BAD_REQUEST);
 
   private final String errorCode;
   private final String errorMessage;

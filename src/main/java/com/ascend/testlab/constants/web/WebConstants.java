@@ -15,4 +15,7 @@ public final class WebConstants {
   public static final String SLOW_CALL_RATE = "slowCallRate";
   public static final String STATE = "state";
   public static final String SUCCESSFUL_CALLS_COUNT = "successfulCallsCount";
+
+  /* Header Constants */
+  public static final String PROJECT_ID_HEADER = "x-project-id";
 }

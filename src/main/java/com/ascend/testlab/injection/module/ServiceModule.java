@@ -9,12 +9,20 @@ import com.ascend.testlab.client.mysql.impl.MySQLWriterClientImpl;
 import com.ascend.testlab.client.webclient.WebClient;
 import com.ascend.testlab.client.webclient.impl.WebClientImpl;
 import com.ascend.testlab.config.*;
+import com.ascend.testlab.dao.ExperimentHistoryDAO;
+import com.ascend.testlab.dao.ExperimentNameValidationDAO;
 import com.ascend.testlab.dao.HealthCheckDAO;
 import com.ascend.testlab.dao.TagsDAO;
+import com.ascend.testlab.dao.impl.ExperimentHistoryDAOImpl;
+import com.ascend.testlab.dao.impl.ExperimentNameValidationDAOImpl;
 import com.ascend.testlab.dao.impl.HealthCheckDAOImpl;
 import com.ascend.testlab.dao.impl.TagsDAOImpl;
+import com.ascend.testlab.service.ExperimentHistoryService;
+import com.ascend.testlab.service.ExperimentNameValidationService;
 import com.ascend.testlab.service.HealthCheckService;
 import com.ascend.testlab.service.TagsService;
+import com.ascend.testlab.service.impl.ExperimentHistoryServiceImpl;
+import com.ascend.testlab.service.impl.ExperimentNameValidationServiceImpl;
 import com.ascend.testlab.service.impl.HealthCheckServiceImpl;
 import com.ascend.testlab.service.impl.TagsServiceImpl;
 import com.ascend.testlab.util.CircuitBreakerFactory;
@@ -64,10 +72,14 @@ public class ServiceModule extends DefaultModule {
   private void bindDAOs() {
     bind(HealthCheckDAO.class).to(HealthCheckDAOImpl.class);
     bind(TagsDAO.class).to(TagsDAOImpl.class);
+    bind(ExperimentNameValidationDAO.class).to(ExperimentNameValidationDAOImpl.class);
+    bind(ExperimentHistoryDAO.class).to(ExperimentHistoryDAOImpl.class);
   }
 
   private void bindServices() {
     bind(HealthCheckService.class).to(HealthCheckServiceImpl.class);
     bind(TagsService.class).to(TagsServiceImpl.class);
+    bind(ExperimentNameValidationService.class).to(ExperimentNameValidationServiceImpl.class);
+    bind(ExperimentHistoryService.class).to(ExperimentHistoryServiceImpl.class);
   }
 }
