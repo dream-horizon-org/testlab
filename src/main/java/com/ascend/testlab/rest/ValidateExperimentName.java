@@ -46,7 +46,7 @@ public class ValidateExperimentName {
       content = @Content(schema = @Schema(implementation = ResponseEntity.Failure.class)))
   public CompletionStage<ResponseEntity.Success<ValidateExperimentNameResponse>> handle(
       @HeaderParam(WebConstants.PROJECT_ID_HEADER) String projectId,
-      @QueryParam("name") @NotBlank(message = "name query parameter is required") String name) {
+      @QueryParam(WebConstants.EXPERIMENT_NAME) @NotBlank(message = "name query parameter is required") String name) {
 
     CommonUtil.validateProjectId(projectId);
     validate(name);

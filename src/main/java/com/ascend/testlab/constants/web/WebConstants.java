@@ -18,4 +18,7 @@ public final class WebConstants {
 
   /* Header Constants */
   public static final String PROJECT_ID_HEADER = "x-project-id";
+
+  /* Query Parameters*/
+  public static final String EXPERIMENT_NAME = "name";
 }

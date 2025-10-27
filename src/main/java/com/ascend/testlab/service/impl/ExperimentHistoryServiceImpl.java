@@ -30,16 +30,19 @@ public class ExperimentHistoryServiceImpl implements ExperimentHistoryService {
                   .totalCount(historyEntries.size())
                   .build();
             })
-        .onErrorResumeNext(
-            err -> {
-              log.error(
-                  "Error getting experiment history for project {} and experiment {}: {}",
+        .doOnSuccess(
+            response -> {
+              log.info(
+                  "Received experiment history from database for project-id: {} and experiment-id: {}",
                   projectId,
-                  experimentId,
-                  err.getMessage());
-              return Single.error(
-                  ErrorEnum.handleException(
-                      err, new RestException(ErrorEnum.REST_GET_EXPERIMENT_HISTORY_FAILED, err)));
-            });
+                  experimentId);
+            })
+        .doOnError(
+            error ->
+                log.error(
+                    "Error in getting experiment history for project-id={} and experiment-id={} due to : ",
+                    projectId,
+                    experimentId,
+                    error));
   }
 }
