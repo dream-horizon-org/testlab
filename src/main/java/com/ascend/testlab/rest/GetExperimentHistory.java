@@ -20,7 +20,7 @@ import java.util.UUID;
 import java.util.concurrent.CompletionStage;
 import lombok.RequiredArgsConstructor;
 
-@Path("/v1/experiment/{experimentId}/history")
+@Path("/v1/experiments/{experimentId}/history")
 @RequiredArgsConstructor(onConstructor = @__({@Inject}))
 public class GetExperimentHistory {
 

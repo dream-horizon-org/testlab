@@ -19,7 +19,7 @@ import java.util.UUID;
 import java.util.concurrent.CompletionStage;
 import lombok.RequiredArgsConstructor;
 
-@Path("/v1/tags")
+@Path("/v1/experiments/tags")
 @RequiredArgsConstructor(onConstructor = @__({@Inject}))
 public class GetTags {
 

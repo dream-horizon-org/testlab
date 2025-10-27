@@ -41,9 +41,17 @@ public class ExperimentHistoryDAOImpl implements ExperimentHistoryDAO {
   private ExperimentHistoryEntry mapRowToHistoryEntry(Row row) {
     return new ExperimentHistoryEntry(
         row.getString("updated_by"),
-        row.getString("previous_data"),
-        row.getString("current_data"),
-        row.getLocalDateTime("created_at"),
-        row.getLocalDateTime("updated_at"));
+        row.getJsonObject("previous_data") != null
+            ? row.getJsonObject("previous_data").encode()
+            : null,
+        row.getJsonObject("current_data") != null
+            ? row.getJsonObject("current_data").encode()
+            : null,
+        row.getLocalDateTime("created_at") != null
+            ? row.getLocalDateTime("created_at").toString()
+            : null,
+        row.getLocalDateTime("updated_at") != null
+            ? row.getLocalDateTime("updated_at").toString()
+            : null);
   }
 }

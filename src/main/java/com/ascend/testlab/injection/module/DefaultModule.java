@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.json.JsonMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.google.inject.AbstractModule;
 import io.vertx.rxjava3.core.Vertx;
 
@@ -17,8 +18,9 @@ public class DefaultModule extends AbstractModule {
           .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
           .configure(DeserializationFeature.FAIL_ON_IGNORED_PROPERTIES, false)
           .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS)
-          .configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, true)
+          .configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false)
           .serializationInclusion(JsonInclude.Include.NON_NULL)
+          .addModule(new JavaTimeModule())
           .build();
 
   public DefaultModule(Vertx vertx) {

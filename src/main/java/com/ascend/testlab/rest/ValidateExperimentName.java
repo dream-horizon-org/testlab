@@ -23,7 +23,7 @@ import java.util.UUID;
 import java.util.concurrent.CompletionStage;
 import lombok.RequiredArgsConstructor;
 
-@Path("/v1/experiment/validate-name")
+@Path("/v1/experiments/validation/name")
 @RequiredArgsConstructor(onConstructor = @__({@Inject}))
 public class ValidateExperimentName {
 
