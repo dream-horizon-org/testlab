@@ -33,41 +33,45 @@ public class FilterExperimentsRequest {
   private static final int DEFAULT_LIMIT = 20;
 
   public boolean hasStatusFilter() {
-      return this.getStatus()!=null && !this.getStatus().isEmpty();
+    return this.getStatus() != null && !this.getStatus().isEmpty();
   }
 
   public boolean hasOwnerFilter() {
-      return this.getOwner()!=null && !this.getOwner().isEmpty();
+    return this.getOwner() != null && !this.getOwner().isEmpty();
   }
 
   public boolean hasNameFilter() {
-      return this.getName()!=null && !this.getName().trim().isEmpty();
+    return this.getName() != null && !this.getName().trim().isEmpty();
   }
 
   public boolean hasTypeFilter() {
-      return this.getType()!=null && !this.getType().isEmpty();
+    return this.getType() != null && !this.getType().isEmpty();
   }
 
   public boolean hasTagFilter() {
-      return this.getTag()!=null && !this.getTag().isEmpty();
+    return this.getTag() != null && !this.getTag().isEmpty();
   }
 
   public void buildRequest(
-      String status, String tag, String owner, String name, String type, Integer limit, Integer page) {
+      String status,
+      String tag,
+      String owner,
+      String name,
+      String type,
+      Integer limit,
+      Integer page) {
 
     // Convert status string to ExperimentStatus enum list
     validateAndSetStatus(status);
-    
+
     // Convert type string to ExperimentType enum list
     validateAndSetType(type);
-    
+
     // Handle string parameters
     validateAndSetTag(tag);
 
     if (owner != null && !owner.isEmpty()) {
-      this.setOwner(Arrays.stream(owner.split(","))
-          .map(String::trim)
-          .toList());
+      this.setOwner(Arrays.stream(owner.split(",")).map(String::trim).toList());
     }
     if (name != null && !name.isEmpty()) {
       this.setName(name.trim());
@@ -82,7 +86,7 @@ public class FilterExperimentsRequest {
     } else {
       this.setLimit(DEFAULT_LIMIT);
     }
-    
+
     if (page != null && page <= 0) {
       throw new RestException(ErrorEnum.INVALID_PAGE_NUMBER);
     }
@@ -90,42 +94,48 @@ public class FilterExperimentsRequest {
   }
 
   private void validateAndSetStatus(String status) {
-      if (status != null && !status.isEmpty()) {
-          try {
-              List<ExperimentStatus> statusList = Arrays.stream(status.split(","))
-                      .map(String::trim)
-                      .map(String::toUpperCase)
-                      .map(ExperimentStatus::valueOf)
-                      .toList();
-              this.setStatus(statusList);
-          } catch (Exception e) {
-              log.warn("Invalid status value provided: {}. Valid values are: {}", status, Arrays.toString(ExperimentStatus.values()));
-              throw new RestException(ErrorEnum.VALID_EXPERIMENT_STATUS_FAILED);
-          }
+    if (status != null && !status.isEmpty()) {
+      try {
+        List<ExperimentStatus> statusList =
+            Arrays.stream(status.split(","))
+                .map(String::trim)
+                .map(String::toUpperCase)
+                .map(ExperimentStatus::valueOf)
+                .toList();
+        this.setStatus(statusList);
+      } catch (Exception e) {
+        log.warn(
+            "Invalid status value provided: {}. Valid values are: {}",
+            status,
+            Arrays.toString(ExperimentStatus.values()));
+        throw new RestException(ErrorEnum.VALID_EXPERIMENT_STATUS_FAILED);
       }
+    }
   }
 
   private void validateAndSetType(String type) {
-      if (type != null && !type.isEmpty()) {
-          try {
-              List<ExperimentType> typeList = Arrays.stream(type.split(","))
-                      .map(String::trim)
-                      .map(String::toUpperCase)
-                      .map(s -> ExperimentType.valueOf(s.replace("/", "_")))
-                      .toList();
-              this.setType(typeList);
-          } catch (Exception e) {
-              log.warn("Invalid type value provided: {}. Valid values are: {}", type, Arrays.toString(ExperimentType.values()));
-              throw new RestException(ErrorEnum.VALID_EXPERIMENT_TYPE_FAILED);
-          }
+    if (type != null && !type.isEmpty()) {
+      try {
+        List<ExperimentType> typeList =
+            Arrays.stream(type.split(","))
+                .map(String::trim)
+                .map(String::toUpperCase)
+                .map(s -> ExperimentType.valueOf(s.replace("/", "_")))
+                .toList();
+        this.setType(typeList);
+      } catch (Exception e) {
+        log.warn(
+            "Invalid type value provided: {}. Valid values are: {}",
+            type,
+            Arrays.toString(ExperimentType.values()));
+        throw new RestException(ErrorEnum.VALID_EXPERIMENT_TYPE_FAILED);
       }
+    }
   }
 
   private void validateAndSetTag(String tag) {
-      if (tag != null && !tag.isEmpty()) {
-          this.setTag(Arrays.stream(tag.split(","))
-                  .map(String::trim)
-                  .toList());
-      }
+    if (tag != null && !tag.isEmpty()) {
+      this.setTag(Arrays.stream(tag.split(",")).map(String::trim).toList());
+    }
   }
 }

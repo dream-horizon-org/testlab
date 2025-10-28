@@ -1,19 +1,18 @@
 package com.ascend.testlab.dto.response;
 
 import com.ascend.testlab.dto.entity.Experiment;
+import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-
-import java.util.List;
 
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
 public class FilterExperimentsResponse {
-  
+
   private List<Experiment> experimentList;
   private PaginationMeta pagination;
 
@@ -27,4 +26,3 @@ public class FilterExperimentsResponse {
     private int totalCount;
   }
 }
-

@@ -22,7 +22,8 @@ public class FilterExperiments {
   @Produces(MediaType.APPLICATION_JSON)
   @Consumes(MediaType.APPLICATION_JSON)
   public CompletionStage<ResponseEntity.Success<FilterExperimentsResponse>> handle(
-      @HeaderParam(Constants.PROJECT_ID) @NotBlank(message = "Project id is mandatory") String projectId,
+      @HeaderParam(Constants.PROJECT_ID) @NotBlank(message = "Project id is mandatory")
+          String projectId,
       @QueryParam(Constants.EXPERIMENT_STATUS) String status,
       @QueryParam(Constants.TAG) String tag,
       @QueryParam(Constants.OWNER) String owner,
@@ -33,16 +34,18 @@ public class FilterExperiments {
 
     FilterExperimentsRequest request = new FilterExperimentsRequest();
     request.buildRequest(status, tag, owner, name, type, limit, page);
-    
+
     return experimentService
         .filterExperiments(projectId, request)
-        .map(paginatedResponse -> {
-          log.info("Successfully fetched {} experiments (page {}) for projectId: {}",
-              paginatedResponse.getExperimentList().size(),
-              paginatedResponse.getPagination().getCurrentPage(),
-              projectId);
-          return new ResponseEntity.Success<>(paginatedResponse);
-        })
+        .map(
+            paginatedResponse -> {
+              log.info(
+                  "Successfully fetched {} experiments (page {}) for projectId: {}",
+                  paginatedResponse.getExperimentList().size(),
+                  paginatedResponse.getPagination().getCurrentPage(),
+                  projectId);
+              return new ResponseEntity.Success<>(paginatedResponse);
+            })
         .toCompletionStage();
   }
 }

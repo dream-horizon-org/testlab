@@ -8,5 +8,6 @@ import io.reactivex.rxjava3.core.Single;
 public interface ExperimentService {
   Single<Experiment> getExperiment(String projectId, String experimentId);
 
-  Single<FilterExperimentsResponse> filterExperiments(String projectId, FilterExperimentsRequest request);
+  Single<FilterExperimentsResponse> filterExperiments(
+      String projectId, FilterExperimentsRequest request);
 }

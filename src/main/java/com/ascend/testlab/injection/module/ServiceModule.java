@@ -9,9 +9,13 @@ import com.ascend.testlab.client.mysql.impl.MySQLWriterClientImpl;
 import com.ascend.testlab.client.webclient.WebClient;
 import com.ascend.testlab.client.webclient.impl.WebClientImpl;
 import com.ascend.testlab.config.*;
+import com.ascend.testlab.dao.ExperimentDAO;
 import com.ascend.testlab.dao.HealthCheckDAO;
+import com.ascend.testlab.dao.impl.ExperimentDAOImpl;
 import com.ascend.testlab.dao.impl.HealthCheckDAOImpl;
+import com.ascend.testlab.service.ExperimentService;
 import com.ascend.testlab.service.HealthCheckService;
+import com.ascend.testlab.service.impl.ExperimentServiceImpl;
 import com.ascend.testlab.service.impl.HealthCheckServiceImpl;
 import com.ascend.testlab.util.CircuitBreakerFactory;
 import com.google.inject.Singleton;
@@ -59,9 +63,11 @@ public class ServiceModule extends DefaultModule {
 
   private void bindDAOs() {
     bind(HealthCheckDAO.class).to(HealthCheckDAOImpl.class);
+    bind(ExperimentDAO.class).to(ExperimentDAOImpl.class);
   }
 
   private void bindServices() {
     bind(HealthCheckService.class).to(HealthCheckServiceImpl.class);
+    bind(ExperimentService.class).to(ExperimentServiceImpl.class);
   }
 }
