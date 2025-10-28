@@ -28,11 +28,29 @@ public class FilterExperimentsRequest {
   private List<String> tag;
   private Integer limit;
   private Integer page;
-  
+
   // Constants for validation
-  private static final int MAX_LIMIT = 100;
   private static final int DEFAULT_LIMIT = 20;
-  private static final int MAX_PAGE = 1000;
+
+  public boolean hasStatusFilter() {
+      return this.getStatus()!=null && !this.getStatus().isEmpty();
+  }
+
+  public boolean hasOwnerFilter() {
+      return this.getOwner()!=null && !this.getOwner().isEmpty();
+  }
+
+  public boolean hasNameFilter() {
+      return this.getName()!=null && !this.getName().trim().isEmpty();
+  }
+
+  public boolean hasTypeFilter() {
+      return this.getType()!=null && !this.getType().isEmpty();
+  }
+
+  public boolean hasTagFilter() {
+      return this.getTag()!=null && !this.getTag().isEmpty();
+  }
 
   public void buildRequest(
       String status, String tag, String owner, String name, String type, Integer limit, Integer page) {
@@ -54,18 +72,13 @@ public class FilterExperimentsRequest {
     if (name != null && !name.isEmpty()) {
       this.setName(name.trim());
     }
-    
+
     // Handle pagination parameters with validation
     if (limit != null) {
       if (limit <= 0) {
         throw new RestException(ErrorEnum.INVALID_PAGE_LIMIT);
       }
-      if (limit > MAX_LIMIT) {
-        log.warn("Limit {} exceeds maximum {}, using default limit", limit, MAX_LIMIT);
-        this.setLimit(MAX_LIMIT);
-      } else {
-        this.setLimit(limit);
-      }
+      this.setLimit(limit);
     } else {
       this.setLimit(DEFAULT_LIMIT);
     }
@@ -73,16 +86,7 @@ public class FilterExperimentsRequest {
     if (page != null && page <= 0) {
       throw new RestException(ErrorEnum.INVALID_PAGE_NUMBER);
     }
-    if (page != null && page > MAX_PAGE) {
-      log.warn("Page {} exceeds maximum {}, using maximum page", page, MAX_PAGE);
-      this.setPage(MAX_PAGE);
-    } else {
-      this.setPage(page);
-    }
-  }
-
-  public Integer getSlimit() {
-    return this.getLimit();
+    this.setPage(page);
   }
 
   private void validateAndSetStatus(String status) {
@@ -107,7 +111,7 @@ public class FilterExperimentsRequest {
               List<ExperimentType> typeList = Arrays.stream(type.split(","))
                       .map(String::trim)
                       .map(String::toUpperCase)
-                      .map(ExperimentType::valueOf)
+                      .map(s -> ExperimentType.valueOf(s.replace("/", "_")))
                       .toList();
               this.setType(typeList);
           } catch (Exception e) {

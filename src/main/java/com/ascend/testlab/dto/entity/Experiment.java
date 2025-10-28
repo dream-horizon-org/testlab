@@ -1,8 +1,9 @@
 package com.ascend.testlab.dto.entity;
 
+import com.ascend.testlab.constants.enums.AssignmentStrategy;
 import com.ascend.testlab.constants.enums.ExperimentStatus;
 import com.ascend.testlab.constants.enums.ExperimentType;
-import java.time.LocalDateTime;
+import com.ascend.testlab.constants.enums.HealthStatus;
 import lombok.*;
 
 @Data
@@ -10,19 +11,28 @@ import lombok.*;
 @NoArgsConstructor
 @AllArgsConstructor
 public class Experiment {
-  private Long experiment_id;
-  private String tenantId;
+  private String experimentId;
+  private String projectId;
   private String name;
   private String description;
-  private String metrics;
-  private String assignmentDomain;
-  private Integer exposure;
-  private Integer threshold;
-  private ExperimentType type;
-  private LocalDateTime endDate;
-  private String tags;
-  private String owner;
-  private LocalDateTime createdAt;
-  private LocalDateTime updatedAt;
+  private String hypothesis;
   private ExperimentStatus status;
+  private ExperimentType type;
+  private HealthStatus guardrailHealthStatus;
+  private String cohorts;
+  private String variantWeights;
+  private AssignmentStrategy assignmentStrategy;
+  private String overrides;
+  private String ruleAttributes;
+  private String winningVariant;
+  private Integer exposure;
+  private Long threshold;
+  private Long startTime;
+  private Long endTime;
+  private String createdBy;
+  private String createdAt;
+  private String updatedAt;
+  private String nameTokens;
+  private String tags;
+  private String owners;
 }

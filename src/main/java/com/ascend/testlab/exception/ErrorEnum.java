@@ -36,6 +36,18 @@ public enum ErrorEnum implements RestError {
           "INVALID_PAGE_NUMBER",
           "Page number must be greater than 0",
           HttpStatus.SC_BAD_REQUEST
+  ),
+
+  EXPERIMENT_NOT_FOUND(
+          "EXPERIMENT_NOT_FOUND",
+          "Experiment not found for the given experimentId",
+          HttpStatus.SC_NOT_FOUND
+  ),
+
+  DATABASE_ERROR(
+          "DATABASE_ERROR",
+          "Database error occurred while processing the request",
+          HttpStatus.SC_INTERNAL_SERVER_ERROR
   );
 
   private final String errorCode;

@@ -1,6 +1,8 @@
 package com.ascend.testlab.dao.impl;
 
 import com.ascend.testlab.client.mysql.MySQLReaderClient;
+import com.ascend.testlab.constants.enums.ExperimentStatus;
+import com.ascend.testlab.constants.enums.ExperimentType;
 import com.ascend.testlab.constants.mysql.ReadQuery;
 import com.ascend.testlab.dao.ExperimentDAO;
 import com.ascend.testlab.dto.entity.Experiment;
@@ -9,7 +11,13 @@ import com.ascend.testlab.mapper.ExperimentMapper;
 import com.google.inject.Inject;
 import io.reactivex.rxjava3.core.Single;
 import io.vertx.rxjava3.sqlclient.Tuple;
+
+import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -25,78 +33,111 @@ public class ExperimentDAOImpl implements ExperimentDAO {
   public Single<Experiment> getExperiment(String projectId, String experimentId) {
     return mySQLReaderClient.fetchOne(
         ReadQuery.GET_EXPERIMENT,
-        Tuple.of(projectId, Long.parseLong(experimentId)),
+        Tuple.of(projectId, experimentId),
         ExperimentMapper::mapRowToExperiment);
   }
 
   @Override
-  public Single<List<Experiment>> filterExperiments(String projectId, FilterExperimentsRequest req) {
-
-    // Build dynamic query based on filters
+  public Single<List<Experiment>> fetchExperiments(String projectId, FilterExperimentsRequest req) {
+    
+    // Build dynamic query for status, type, and name filters
     StringBuilder query = new StringBuilder(ReadQuery.FILTER_EXPERIMENT);
     List<Object> parameters = new java.util.ArrayList<>();
-
     parameters.add(projectId);
 
-    if (req.getName() != null && !req.getName().trim().isEmpty()) {
+    if (req.hasNameFilter()) {
       query.append(ReadQuery.NAME_FILTER);
       parameters.add("%" + req.getName() + "%");
     }
 
-    // Handle status filtering
-    if (req.getStatus() != null && !req.getStatus().isEmpty()) {
-      appendStatusQuery(query, parameters, req);
+    if (req.hasStatusFilter()) {
+      query.append(ReadQuery.STATUS_FILTER.replace("<<STATUS>>", join(req.getStatus(), ',')));
     }
 
-    if (req.getType() != null && !req.getType().isEmpty()) {
-      appendTypeQuery(query, parameters, req);
+    if (req.hasTypeFilter()) {
+      query.append(ReadQuery.TYPE_FILTER.replace("<<TYPE>>", join(req.getType(), ',')));
     }
 
-    // Handle tag filtering with separate tags table
-    if (req.getTag() != null && !req.getTag().isEmpty()) {
-      appendTagQuery(query, parameters, req, projectId);
-    }
-
-    // Handle owner filtering with separate owners table
-    if (req.getOwner() != null && !req.getOwner().isEmpty()) {
-      appendOwnerQuery(query, parameters, req, projectId);
-    }
-
+    query.append(ReadQuery.GROUP_BY);
     query.append(ReadQuery.ORDER_BY_CREATED_AT);
-
-    // Handle pagination with validation
-    if (req.getLimit() != null && req.getLimit() > 0) {
-      query.append(" LIMIT ? ");
-      parameters.add(req.getLimit());
-
-      if (req.getPage() != null && req.getPage() > 0) {
-        query.append(" OFFSET ? ");
-        parameters.add((req.getPage() - 1) * req.getLimit());
-      }
-    }
 
     log.debug("Executing query: {} with parameters: {}", query, parameters);
     return mySQLReaderClient.fetchAll(
         query.toString(), Tuple.tuple(parameters), ExperimentMapper::mapRowToExperiment);
   }
 
-  private void appendStatusQuery(
-      StringBuilder query, List<Object> parameters, FilterExperimentsRequest req) {
-        query.append(ReadQuery.STATUS_FILTER.replace("<<STATUS>>", join(req.getStatus(), ',')));
+  @Override
+  public Single<Set<String>> getExperimentIdsByTags(String projectId, List<String> tags) {
+    String query = ReadQuery.GET_EXPERIMENT_BY_TAGS_FILTER.replace("<<TAG>>", join(tags, ','));
+    
+    return mySQLReaderClient.fetchAll(
+        query,
+        Tuple.of(projectId),
+        row -> row.getString("experiment_id")
+    ).map(HashSet::new)
+     .map(set -> (Set<String>) set)
+     .doOnError(error -> log.error("Error fetching tag IDs for projectId: {}", projectId, error))
+     .onErrorReturnItem(new HashSet<>());
   }
 
-  private void appendTypeQuery(
-      StringBuilder query, List<Object> parameters, FilterExperimentsRequest req) {
-        query.append(ReadQuery.TYPE_FILTER.replace("<<TYPE>>", join(req.getType(), ',')));
+  @Override
+  public Single<Set<String>> getExperimentIdsByOwners(String projectId, List<String> owners) {
+    String query = ReadQuery.GET_EXPERIMENT_BY_OWNER_FILTER.replace("<<OWNER>>", join(owners, ','));
+    
+    return mySQLReaderClient.fetchAll(
+        query,
+        Tuple.of(projectId),
+        row -> row.getString("experiment_id")
+    ).map(HashSet::new)
+     .map(set -> (Set<String>) set)
+     .doOnError(error -> log.error("Error fetching owner IDs for projectId: {}", projectId, error))
+     .onErrorReturnItem(new HashSet<>());
   }
 
-  private void appendTagQuery(
-      StringBuilder query, List<Object> parameters, FilterExperimentsRequest req, String projectId) {
+  @Override
+  public Single<List<Experiment>> fetchExperimentsByIds(String projectId, Set<String> experimentIds,
+     FilterExperimentsRequest req) {
+    
+    // MySQL has a limit on IN clause size (typically 1000), handle large sets by chunking
+    if (experimentIds.size() > 1000) {
+      log.warn("Large experiment ID set (size: {}) for projectId: {}, using first 1000 IDs", 
+          experimentIds.size(), projectId);
+      experimentIds = experimentIds.stream().limit(1000).collect(Collectors.toSet());
+    }
+    
+    // Build dynamic query for experiments filtered by IDs, status, type, and name
+    StringBuilder query = new StringBuilder(ReadQuery.FILTER_EXPERIMENT);
+    List<Object> parameters = new java.util.ArrayList<>();
+    parameters.add(projectId);
+    
+    // Add experiment ID filter
+    String idPlaceholders = experimentIds.stream().map(id -> "?").collect(Collectors.joining(","));
+    query.append(" AND e.experiment_id IN (").append(idPlaceholders).append(")");
+    parameters.addAll(experimentIds);
 
+    // Add name filter
+    if (req.hasNameFilter()) {
+      query.append(ReadQuery.NAME_FILTER);
+      parameters.add("%" + req.getName() + "%");
+    }
+
+    // Add status filter
+    if (req.hasStatusFilter()) {
+      query.append(ReadQuery.STATUS_FILTER.replace("<<STATUS>>", join(req.getStatus(), ',')));
+    }
+
+    // Add type filter
+    if (req.hasTypeFilter()) {
+      query.append(ReadQuery.TYPE_FILTER.replace("<<TYPE>>", join(req.getType(), ',')));
+    }
+
+    query.append(ReadQuery.GROUP_BY);
+    query.append(ReadQuery.ORDER_BY_CREATED_AT);
+
+    return mySQLReaderClient.fetchAll(
+        query.toString(), Tuple.tuple(parameters), ExperimentMapper::mapRowToExperiment)
+        .doOnSuccess(experiments -> log.debug("Retrieved {} experiments for projectId: {}", experiments.size(), projectId))
+        .doOnError(error -> log.error("Error fetching filtered experiments for projectId: {}", projectId, error));
   }
 
-  private void appendOwnerQuery(
-      StringBuilder query, List<Object> parameters, FilterExperimentsRequest req, String projectId) {
-
-  }
 }
