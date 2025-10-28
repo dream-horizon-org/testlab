@@ -15,34 +15,55 @@ import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.function.Function;
 
+/**
+ * Implementation of the MySQLReaderClient interface. Uses the AbstractMySQLClient to interact with
+ * the MySQL database.
+ *
+ * @author Nikhil Tummidi
+ * @version 1.0
+ * @since 1.0
+ * @see AbstractMySQLClient
+ * @see MySQLReaderClient
+ */
 public class MySQLReaderClientImpl extends AbstractMySQLClient implements MySQLReaderClient {
 
+  /**
+   * Constructor for the MySQLReaderClientImpl.
+   *
+   * @param vertx the Vertx instance
+   * @param mySQLConfig the MySQL configuration
+   */
   @Inject
   public MySQLReaderClientImpl(Vertx vertx, MySQLConfig mySQLConfig) {
     super(vertx, mySQLConfig.getReaderConfig());
   }
 
+  /** {@inheritDoc} */
   @Override
   public Completable close() {
     return super.rxClose();
   }
 
+  /** {@inheritDoc} */
   @Override
   public Single<Boolean> isConnected() {
     return rxExecute(ReadQuery.HEALTH_CHECK).map(rows -> 1 == rows.size());
   }
 
+  /** {@inheritDoc} */
   @Override
   public <T> Single<List<T>> fetchAll(String query, Function<Row, T> rowMapper) {
     return rxExecute(query).map(rows -> toList(rows, rowMapper));
   }
 
+  /** {@inheritDoc} */
   @Override
   public <T> Single<List<T>> fetchAll(
       String preparedQuery, Tuple tuple, Function<Row, T> rowMapper) {
     return rxExecute(preparedQuery, tuple).map(rows -> toList(rows, rowMapper));
   }
 
+  /** {@inheritDoc} */
   @Override
   public <T> Single<T> fetchOne(String preparedQuery, Tuple tuple, Function<Row, T> rowMapper) {
     return rxExecute(preparedQuery, tuple)
@@ -55,12 +76,14 @@ public class MySQLReaderClientImpl extends AbstractMySQLClient implements MySQLR
             });
   }
 
+  /** {@inheritDoc} */
   @Override
   public <K, V> Single<Map<K, V>> fetchMap(
       String query, Function<Row, K> keyMapper, Function<Row, V> valueMapper) {
     return rxExecute(query).map(rows -> toMap(rows, keyMapper, valueMapper));
   }
 
+  /** {@inheritDoc} */
   @Override
   public <K, V> Single<Map<K, V>> fetchMap(
       String preparedQuery, Tuple tuple, Function<Row, K> keyMapper, Function<Row, V> valueMapper) {

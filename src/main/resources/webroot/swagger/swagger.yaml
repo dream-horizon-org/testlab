@@ -1,0 +1,5 @@
+openapi: 3.0.1
+info:
+  title: testlab
+  description: testlab Service
+  version: "1.0"

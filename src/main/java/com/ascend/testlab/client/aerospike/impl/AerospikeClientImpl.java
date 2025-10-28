@@ -20,17 +20,38 @@ import io.vertx.rxjava3.core.Vertx;
 import io.vertx.rxjava3.impl.AsyncResultSingle;
 import lombok.extern.slf4j.Slf4j;
 
+/**
+ * Implementation of the AerospikeClient interface.
+ *
+ * @author Nikhil Tummidi
+ * @version 1.0
+ * @since 1.0
+ * @see AerospikeClient
+ */
 @Slf4j
 public class AerospikeClientImpl implements AerospikeClient {
 
+  /** The Vertx instance. */
   private final Vertx vertx;
+
+  /** The Aerospike connect options. */
   private final AerospikeConnectOptions aerospikeConnectOptions;
 
+  /** The default read policy. */
   private final Policy defaultPolicy;
+
+  /** The default write policy. */
   private final WritePolicy defaultWritePolicy;
 
+  /** The Aerospike client. */
   private io.d11.aerospike.client.AerospikeClient aerospikeClient = null;
 
+  /**
+   * Constructor for the AerospikeClientImpl.
+   *
+   * @param vertx the Vertx instance
+   * @param aerospikeConfig the Aerospike config
+   */
   @Inject
   public AerospikeClientImpl(Vertx vertx, AerospikeConfig aerospikeConfig) {
     this.vertx = vertx;
@@ -40,12 +61,14 @@ public class AerospikeClientImpl implements AerospikeClient {
     retryConnection(aerospikeConfig.getConnectRetryIntervalMS());
   }
 
+  /** {@inheritDoc} */
   @Override
   public Completable close() {
     if (aerospikeClient != null) return Completable.fromAction(() -> aerospikeClient.close());
     else return Completable.complete();
   }
 
+  /** {@inheritDoc} */
   @Override
   public Single<Boolean> isConnected() {
     return AsyncResultSingle.toSingle(
@@ -55,16 +78,19 @@ public class AerospikeClientImpl implements AerospikeClient {
                 .onFailure(err -> handler.handle(Future.failedFuture(err))));
   }
 
+  /** {@inheritDoc} */
   @Override
   public Policy getDefaultPolicy() {
     return new Policy(defaultPolicy);
   }
 
+  /** {@inheritDoc} */
   @Override
   public WritePolicy getDefaultWritePolicy() {
     return new WritePolicy(defaultWritePolicy);
   }
 
+  /** {@inheritDoc} */
   @Override
   public Single<Record> get(Policy policy, Key key, String... binNames) {
     return AsyncResultSingle.toSingle(
@@ -74,6 +100,7 @@ public class AerospikeClientImpl implements AerospikeClient {
                 .onFailure(err -> handler.handle(Future.failedFuture(err))));
   }
 
+  /** {@inheritDoc} */
   @Override
   public Single<Key> put(WritePolicy writePolicy, Key key, Bin... bins) {
     return AsyncResultSingle.toSingle(
@@ -83,6 +110,7 @@ public class AerospikeClientImpl implements AerospikeClient {
                 .onFailure(err -> handler.handle(Future.failedFuture(err))));
   }
 
+  /** {@inheritDoc} */
   @Override
   public Single<Record> operate(WritePolicy writePolicy, Key key, Operation... operations) {
     return AsyncResultSingle.toSingle(
@@ -92,6 +120,7 @@ public class AerospikeClientImpl implements AerospikeClient {
                 .onFailure(err -> handler.handle(Future.failedFuture(err))));
   }
 
+  /** {@inheritDoc} */
   @Override
   public Single<Boolean> delete(WritePolicy writePolicy, Key key) {
     return AsyncResultSingle.toSingle(
