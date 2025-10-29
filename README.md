@@ -22,8 +22,6 @@
 - navigate to the jar directory by `cd target/testlab`
 - Run the jar using command
   ```shell
-  TEAM_SUFFIX=-<env-name> \
-  PRIVATE_HOSTED_ZONE=<private-hosted-zone> \
       PG_USER=<pg-username> \
   PG_PASSWORD=<pg-password> \
     java -Dapp.environment=<env-type> -Dlogback.configurationFile=./resources/logback/logback.xml -jar testlab-<artifact-version>-fat.jar
@@ -39,8 +37,6 @@
 - Pass following environment variables (in `Environment variables`):
   ```shell
   ENV=<env-type>
-  TEAM_SUFFIX=-<env-name>
-  PRIVATE_HOSTED_ZONE=<private-hosted-zone>
       PG_USER=<pg-username> \
   PG_PASSWORD=<pg-password> \
     ```

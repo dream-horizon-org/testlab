@@ -4,8 +4,6 @@ set -e
 
 echo "APP_DIR: ${APP_DIR}"
 echo "ENV: ${ENV}"
-echo "TEAM_SUFFIX: ${TEAM_SUFFIX}"
-echo "PRIVATE_HOSTED_ZONE: ${PRIVATE_HOSTED_ZONE}"
 echo "SERVICE_NAME: ${SERVICE_NAME}"
 
 install_deps () {

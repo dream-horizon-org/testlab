@@ -17,11 +17,27 @@ import com.ascend.testlab.util.CircuitBreakerFactory;
 import com.google.inject.Singleton;
 import io.vertx.rxjava3.core.Vertx;
 
+/**
+ * Service module for the testlab application. Contains methods to bind the configs, clients, DAOs
+ * and services.
+ *
+ * @author Nikhil Tummidi
+ * @version 1.0
+ * @since 1.0
+ * @see DefaultModule
+ */
 public class ServiceModule extends DefaultModule {
+
+  /**
+   * Constructor for the ServiceModule.
+   *
+   * @param vertx the Vertx instance
+   */
   public ServiceModule(Vertx vertx) {
     super(vertx);
   }
 
+  /** {@inheritDoc} */
   @Override
   protected void configure() {
     super.configure();
@@ -37,6 +53,7 @@ public class ServiceModule extends DefaultModule {
     requestStaticInjection(CircuitBreakerFactory.class);
   }
 
+  /** Bind the config classes as eager singletons. */
   private void bindConfigs() {
     bind(AerospikeConfig.class).toProvider(AerospikeConfig.provider()).asEagerSingleton();
     bind(ApplicationConfig.class).toProvider(ApplicationConfig.provider()).asEagerSingleton();
@@ -46,6 +63,7 @@ public class ServiceModule extends DefaultModule {
     bind(WebClientConfig.class).toProvider(WebClientConfig.provider()).asEagerSingleton();
   }
 
+  /** Bind the client interfaces to their implementations. */
   private void bindClients() {
     bind(AerospikeClientImpl.class).in(Singleton.class);
     bind(AerospikeClient.class).to(AerospikeClientImpl.class);
@@ -57,10 +75,12 @@ public class ServiceModule extends DefaultModule {
     bind(WebClient.class).to(WebClientImpl.class);
   }
 
+  /** Bind the DAO interfaces to their implementations. */
   private void bindDAOs() {
     bind(HealthCheckDAO.class).to(HealthCheckDAOImpl.class);
   }
 
+  /** Bind the service interfaces to their implementations. */
   private void bindServices() {
     bind(HealthCheckService.class).to(HealthCheckServiceImpl.class);
   }
