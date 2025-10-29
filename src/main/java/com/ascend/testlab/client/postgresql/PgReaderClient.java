@@ -1,4 +1,4 @@
-package com.ascend.testlab.client.mysql;
+package com.ascend.testlab.client.postgresql;
 
 import io.reactivex.rxjava3.core.Completable;
 import io.reactivex.rxjava3.core.Single;
@@ -8,10 +8,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 
-public interface MySQLReaderClient {
-  Completable close();
-
+public interface PgReaderClient {
   Single<Boolean> isConnected();
+
+  Completable close();
 
   <T> Single<List<T>> fetchAll(String query, Function<Row, T> rowMapper);
 

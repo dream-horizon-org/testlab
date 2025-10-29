@@ -1,0 +1,98 @@
+DROP DATABASE IF EXISTS experiment;
+DROP SCHEMA IF EXISTS experiment CASCADE;
+
+CREATE DATABASE experiment;
+\c experiment;
+CREATE SCHEMA IF NOT EXISTS experiment;
+
+CREATE TYPE experiment_status AS ENUM ('LIVE','PAUSED','DRAFT','CONCLUDED','TERMINATED');
+CREATE TYPE experiment_type AS ENUM ('A/B');
+CREATE TYPE experiment_health AS ENUM ('WARNING','PASSING','NO_CHECKS_AVAILABLE','FAILED');
+CREATE TYPE experiment_strategy AS ENUM ('RANDOM', 'ROUND_ROBIN');
+
+CREATE TABLE IF NOT EXISTS experiments (
+    tenant_id           VARCHAR(36) NOT NULL,
+    project_key          VARCHAR(36) NOT NULL,
+    experiment_id       VARCHAR(36) NOT NULL,
+    name                VARCHAR(64) NOT NULL,
+    description         VARCHAR(255),
+    hypothesis          TEXT,
+    status              experiment_status NOT NULL,
+    type                experiment_type,
+    guardrail_health_status experiment_health,
+    cohorts             VARCHAR(255) ARRAY,
+    variant_weights     JSONB,
+    assignment_strategy experiment_strategy,
+    overrides           JSONB,
+    rule_attributes     JSONB,
+    winning_variant     JSONB,
+    exposure            INTEGER,
+    threshold           bigint,
+    start_time          bigint,
+    end_time            bigint,
+    created_by          VARCHAR(255),
+    created_at  TIMESTAMPTZ   NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at  TIMESTAMPTZ   NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    name_tsvector       TSVECTOR,
+    PRIMARY KEY (tenant_id, project_key, experiment_id),
+    CONSTRAINT name_unique_check UNIQUE (tenant_id,project_key, name)
+) PARTITION BY LIST (project_key);
+
+CREATE INDEX idx_name_tsvector ON experiments USING GIN (name_tsvector);
+
+
+
+CREATE TABLE IF NOT EXISTS experiment.owners (
+    tenant_id      VARCHAR(36) NOT NULL,
+    experiment_id  VARCHAR(36) NOT NULL,
+    project_key     VARCHAR(36) NOT NULL,
+    owner          VARCHAR(255) NOT NULL,
+    created_at     TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at     TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (project_key, experiment_id, owner)
+) PARTITION BY LIST (project_key);
+
+
+CREATE TABLE IF NOT EXISTS experiment.tags (
+    tenant_id      VARCHAR(36) NOT NULL,
+    experiment_id  VARCHAR(36) NOT NULL,
+    project_key     VARCHAR(36) NOT NULL,
+    tag            VARCHAR(255) NOT NULL,
+    created_at     TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at     TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (tenant_id, project_key, experiment_id, tag)
+) PARTITION BY LIST (project_key);
+
+CREATE TABLE IF NOT EXISTS experiment.experiment_update_log (
+    tenant_id      VARCHAR(36) NOT NULL,
+    project_key     VARCHAR(36) NOT NULL,
+    experiment_id  VARCHAR(36) NOT NULL,
+    previous_data  JSONB,
+    current_data   JSONB,
+    updated_by     VARCHAR(255),
+    created_at     TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at     TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (tenant_id, project_key, experiment_id)
+) PARTITION BY LIST (project_key);
+
+CREATE TABLE IF NOT EXISTS experiment.experiment_analysis (
+    tenant_id         VARCHAR(36) NOT NULL,
+    project_key        VARCHAR(36) NOT NULL,
+    experiment_id     VARCHAR(36) NOT NULL,
+    config            VARCHAR(255),
+    primary_metrics   VARCHAR(255),
+    secondary_metrics VARCHAR(255),
+    metric_tokens     VARCHAR(255),
+    created_at        TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at        TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (tenant_id, project_key, experiment_id)
+) PARTITION BY LIST (project_key);
+
+CREATE TABLE IF NOT EXISTS experiment.cron_process (
+    process_key         VARCHAR(255) NOT NULL,
+    execution_timestamp TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    executor_ip         VARCHAR(50),
+    next_execution_time TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    cron_expression     VARCHAR(255),
+    PRIMARY KEY (process_key)
+);

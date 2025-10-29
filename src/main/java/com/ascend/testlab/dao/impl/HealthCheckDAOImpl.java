@@ -1,7 +1,7 @@
 package com.ascend.testlab.dao.impl;
 
 import com.ascend.testlab.client.aerospike.AerospikeClient;
-import com.ascend.testlab.client.mysql.MySQLReaderClient;
+import com.ascend.testlab.client.postgresql.PgReaderClient;
 import com.ascend.testlab.dao.HealthCheckDAO;
 import com.ascend.testlab.util.MaintenanceUtil;
 import com.google.inject.Inject;
@@ -15,15 +15,15 @@ import lombok.extern.slf4j.Slf4j;
 public class HealthCheckDAOImpl implements HealthCheckDAO {
 
   private final AerospikeClient aerospikeClient;
-  private final MySQLReaderClient mySQLReaderClient;
+  private final PgReaderClient pgReaderClient;
 
   @Override
-  public Single<Boolean> isMySQLReaderConnected() {
-    return mySQLReaderClient
+  public Single<Boolean> isPgReaderConnected() {
+    return pgReaderClient
         .isConnected()
         .onErrorReturn(
             err -> {
-              log.warn("Error in connecting to MySQL-Reader: {}", err.getMessage());
+              log.warn("Error in connecting to Pg-Reader: {}", err.getMessage());
               return false;
             });
   }

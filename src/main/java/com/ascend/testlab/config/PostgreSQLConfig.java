@@ -6,7 +6,7 @@ import lombok.NoArgsConstructor;
 
 @Data
 @NoArgsConstructor
-public class MySQLConfig {
+public class PostgreSQLConfig {
 
   private BaseConfig readerConfig;
   private BaseConfig writerConfig;
@@ -24,11 +24,10 @@ public class MySQLConfig {
   public static class ConnectOptions {
     private String host;
     private Integer port;
+    private String database;
     private String user;
     private String password;
-    private String database;
     private Integer connectTimeout;
-    private Boolean useAffectedRows;
     private Boolean cachePreparedStatements;
   }
 
@@ -39,7 +38,7 @@ public class MySQLConfig {
     private Integer maxWaitQueueSize;
   }
 
-  public static ConfigProvider<MySQLConfig> provider() {
-    return new ConfigProvider<>("mysql", MySQLConfig.class);
+  public static ConfigProvider<PostgreSQLConfig> provider() {
+    return new ConfigProvider<>("postgresql", PostgreSQLConfig.class);
   }
 }

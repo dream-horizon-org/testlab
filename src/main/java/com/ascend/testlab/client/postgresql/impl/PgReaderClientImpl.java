@@ -1,9 +1,9 @@
-package com.ascend.testlab.client.mysql.impl;
+package com.ascend.testlab.client.postgresql.impl;
 
-import com.ascend.testlab.client.mysql.AbstractMySQLClient;
-import com.ascend.testlab.client.mysql.MySQLReaderClient;
-import com.ascend.testlab.config.MySQLConfig;
-import com.ascend.testlab.constants.mysql.ReadQuery;
+import com.ascend.testlab.client.postgresql.AbstractPostgreSQLClient;
+import com.ascend.testlab.client.postgresql.PgReaderClient;
+import com.ascend.testlab.config.PostgreSQLConfig;
+import com.ascend.testlab.constants.postgresql.ReadQuery;
 import com.google.inject.Inject;
 import io.reactivex.rxjava3.core.Completable;
 import io.reactivex.rxjava3.core.Single;
@@ -15,21 +15,21 @@ import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.function.Function;
 
-public class MySQLReaderClientImpl extends AbstractMySQLClient implements MySQLReaderClient {
+public class PgReaderClientImpl extends AbstractPostgreSQLClient implements PgReaderClient {
 
   @Inject
-  public MySQLReaderClientImpl(Vertx vertx, MySQLConfig mySQLConfig) {
-    super(vertx, mySQLConfig.getReaderConfig());
-  }
-
-  @Override
-  public Completable close() {
-    return super.rxClose();
+  public PgReaderClientImpl(Vertx vertx, PostgreSQLConfig postgreSQLConfig) {
+    super(vertx, postgreSQLConfig.getReaderConfig());
   }
 
   @Override
   public Single<Boolean> isConnected() {
     return rxExecute(ReadQuery.HEALTH_CHECK).map(rows -> 1 == rows.size());
+  }
+
+  @Override
+  public Completable close() {
+    return super.rxClose();
   }
 
   @Override

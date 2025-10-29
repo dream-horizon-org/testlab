@@ -1,12 +1,12 @@
-package com.ascend.testlab.client.mysql;
+package com.ascend.testlab.client.postgresql;
 
-import com.ascend.testlab.config.MySQLConfig;
+import com.ascend.testlab.config.PostgreSQLConfig;
 import io.reactivex.rxjava3.core.Completable;
 import io.reactivex.rxjava3.core.Maybe;
 import io.reactivex.rxjava3.core.Single;
-import io.vertx.mysqlclient.MySQLConnectOptions;
+import io.vertx.pgclient.PgConnectOptions;
 import io.vertx.rxjava3.core.Vertx;
-import io.vertx.rxjava3.mysqlclient.MySQLPool;
+import io.vertx.rxjava3.pgclient.PgPool;
 import io.vertx.rxjava3.sqlclient.Row;
 import io.vertx.rxjava3.sqlclient.RowSet;
 import io.vertx.rxjava3.sqlclient.SqlConnection;
@@ -18,45 +18,50 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 
-public abstract class AbstractMySQLClient {
+public abstract class AbstractPostgreSQLClient {
 
-  private final MySQLPool mySQLPool;
+  private final PgPool pgPool;
   private final Integer retryCount;
 
-  protected AbstractMySQLClient(Vertx vertx, MySQLConfig.BaseConfig mySQLBaseConfig) {
-    this.mySQLPool =
-        MySQLPool.pool(
+  protected AbstractPostgreSQLClient(
+      Vertx vertx, PostgreSQLConfig.BaseConfig postgreSQLBaseConfig) {
+    this.pgPool =
+        PgPool.pool(
             vertx,
-            getConnectOptions(mySQLBaseConfig.getConnectOptions()),
-            getPoolOptions(mySQLBaseConfig.getPoolOptions()));
-    this.retryCount = mySQLBaseConfig.getRetryCount();
+            getConnectOptions(postgreSQLBaseConfig.getConnectOptions()),
+            getPoolOptions(postgreSQLBaseConfig.getPoolOptions()));
+    this.retryCount = postgreSQLBaseConfig.getRetryCount();
   }
 
-  public Completable rxClose() {
-    return this.mySQLPool.rxClose();
+  protected Completable rxClose() {
+    return pgPool.rxClose();
   }
 
   protected Single<RowSet<Row>> rxExecute(String query) {
-    return this.mySQLPool.query(query).rxExecute().retry(this.retryCount);
+    return pgPool.query(query).rxExecute().retry(retryCount);
+  }
+
+  protected Single<RowSet<Row>> rxExecute(SqlConnection connection, String query) {
+    return connection.preparedQuery(query).rxExecute().retry(retryCount);
   }
 
   protected Single<RowSet<Row>> rxExecute(String preparedQuery, Tuple tuple) {
-    return this.mySQLPool.preparedQuery(preparedQuery).rxExecute(tuple).retry(this.retryCount);
+    return pgPool.preparedQuery(preparedQuery).rxExecute(tuple).retry(retryCount);
   }
 
   protected Single<RowSet<Row>> rxExecute(
       SqlConnection connection, String preparedQuery, Tuple tuple) {
-    return connection.preparedQuery(preparedQuery).rxExecute(tuple).retry(this.retryCount);
+    return connection.preparedQuery(preparedQuery).rxExecute(tuple).retry(retryCount);
   }
 
   protected Single<RowSet<Row>> rxExecute(
       SqlConnection connection, String preparedQuery, List<Tuple> tuples) {
-    return connection.preparedQuery(preparedQuery).rxExecuteBatch(tuples).retry(this.retryCount);
+    return connection.preparedQuery(preparedQuery).rxExecuteBatch(tuples).retry(retryCount);
   }
 
   protected <T> Maybe<T> rxWithTransaction(
       Function<SqlConnection, Maybe<T>> transactionalFunction) {
-    return this.mySQLPool.rxWithTransaction(transactionalFunction).retry(this.retryCount);
+    return pgPool.rxWithTransaction(transactionalFunction).retry(retryCount);
   }
 
   protected static <T> List<T> toList(RowSet<Row> rows, Function<Row, T> rowMapper) {
@@ -76,20 +81,19 @@ public abstract class AbstractMySQLClient {
     return resultMap;
   }
 
-  protected static MySQLConnectOptions getConnectOptions(
-      MySQLConfig.ConnectOptions connectOptions) {
-    return new MySQLConnectOptions()
+  protected static PgConnectOptions getConnectOptions(
+      PostgreSQLConfig.ConnectOptions connectOptions) {
+    return new PgConnectOptions()
         .setHost(connectOptions.getHost())
         .setPort(connectOptions.getPort())
+        .setDatabase(connectOptions.getDatabase())
         .setUser(connectOptions.getUser())
         .setPassword(connectOptions.getPassword())
-        .setDatabase(connectOptions.getDatabase())
         .setConnectTimeout(connectOptions.getConnectTimeout())
-        .setUseAffectedRows(connectOptions.getUseAffectedRows())
         .setCachePreparedStatements(connectOptions.getCachePreparedStatements());
   }
 
-  protected static PoolOptions getPoolOptions(MySQLConfig.PoolOptions poolOptions) {
+  protected static PoolOptions getPoolOptions(PostgreSQLConfig.PoolOptions poolOptions) {
     return new PoolOptions()
         .setMaxSize(poolOptions.getMaxSize())
         .setMaxWaitQueueSize(poolOptions.getMaxWaitQueueSize());

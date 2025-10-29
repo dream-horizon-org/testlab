@@ -7,7 +7,7 @@
 
 ## Database Schema
 
-- [DB Schema](./src/main/resources/db/mysql/schema.sql)
+- [DB Schema](./src/main/resources/db/postgres/schema.sql)
 
 ## Running Application
 
@@ -24,8 +24,8 @@
   ```shell
   TEAM_SUFFIX=-<env-name> \
   PRIVATE_HOSTED_ZONE=<private-hosted-zone> \
-      MYSQL_USER=<mysql-username> \
-  MYSQL_PASSWORD=<mysql-password> \
+      PG_USER=<pg-username> \
+  PG_PASSWORD=<pg-password> \
     java -Dapp.environment=<env-type> -Dlogback.configurationFile=./resources/logback/logback.xml -jar testlab-<artifact-version>-fat.jar
   ```
 
@@ -41,8 +41,8 @@
   ENV=<env-type>
   TEAM_SUFFIX=-<env-name>
   PRIVATE_HOSTED_ZONE=<private-hosted-zone>
-      MYSQL_USER=<mysql-username> \
-  MYSQL_PASSWORD=<mysql-password> \
+      PG_USER=<pg-username> \
+  PG_PASSWORD=<pg-password> \
     ```
 
 ## Code Formatting

@@ -1,4 +1,4 @@
 package com.ascend.testlab.dto.response;
 
 public record HealthCheckResponse(
-    Boolean isMySQLReaderUp, Boolean isAerospikeup, Boolean isUnderMaintenance) {}
+    Boolean isPgReaderUp, Boolean isAerospikeup, Boolean isUnderMaintenance) {}

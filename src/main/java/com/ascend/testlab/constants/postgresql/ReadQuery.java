@@ -1,4 +1,4 @@
-package com.ascend.testlab.constants.mysql;
+package com.ascend.testlab.constants.postgresql;
 
 import lombok.experimental.UtilityClass;
 
