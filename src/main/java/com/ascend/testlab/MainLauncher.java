@@ -85,6 +85,6 @@ public class MainLauncher extends Launcher {
    * @return the Guice modules
    */
   private static List<Module> getGuiceModules(Vertx vertx) {
-    return List.of(new ServiceModule(io.vertx.rxjava3.core.Vertx.newInstance(vertx)));
+    return List.<Module>of(new ServiceModule(io.vertx.rxjava3.core.Vertx.newInstance(vertx)));
   }
 }
