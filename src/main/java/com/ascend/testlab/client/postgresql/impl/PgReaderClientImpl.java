@@ -1,9 +1,9 @@
-package com.ascend.testlab.client.mysql.impl;
+package com.ascend.testlab.client.postgresql.impl;
 
-import com.ascend.testlab.client.mysql.AbstractMySQLClient;
-import com.ascend.testlab.client.mysql.MySQLReaderClient;
-import com.ascend.testlab.config.MySQLConfig;
-import com.ascend.testlab.constants.mysql.ReadQuery;
+import com.ascend.testlab.client.postgresql.AbstractPostgreSQLClient;
+import com.ascend.testlab.client.postgresql.PgReaderClient;
+import com.ascend.testlab.config.PostgreSQLConfig;
+import com.ascend.testlab.constants.postgresql.ReadQuery;
 import com.google.inject.Inject;
 import io.reactivex.rxjava3.core.Completable;
 import io.reactivex.rxjava3.core.Single;
@@ -15,55 +15,34 @@ import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.function.Function;
 
-/**
- * Implementation of the MySQLReaderClient interface. Uses the AbstractMySQLClient to interact with
- * the MySQL database.
- *
- * @author Nikhil Tummidi
- * @version 1.0
- * @since 1.0
- * @see AbstractMySQLClient
- * @see MySQLReaderClient
- */
-public class MySQLReaderClientImpl extends AbstractMySQLClient implements MySQLReaderClient {
+public class PgReaderClientImpl extends AbstractPostgreSQLClient implements PgReaderClient {
 
-  /**
-   * Constructor for the MySQLReaderClientImpl.
-   *
-   * @param vertx the Vertx instance
-   * @param mySQLConfig the MySQL configuration
-   */
   @Inject
-  public MySQLReaderClientImpl(Vertx vertx, MySQLConfig mySQLConfig) {
-    super(vertx, mySQLConfig.getReaderConfig());
+  public PgReaderClientImpl(Vertx vertx, PostgreSQLConfig postgreSQLConfig) {
+    super(vertx, postgreSQLConfig.getReaderConfig());
   }
 
-  /** {@inheritDoc} */
-  @Override
-  public Completable close() {
-    return super.rxClose();
-  }
-
-  /** {@inheritDoc} */
   @Override
   public Single<Boolean> isConnected() {
     return rxExecute(ReadQuery.HEALTH_CHECK).map(rows -> 1 == rows.size());
   }
 
-  /** {@inheritDoc} */
+  @Override
+  public Completable close() {
+    return super.rxClose();
+  }
+
   @Override
   public <T> Single<List<T>> fetchAll(String query, Function<Row, T> rowMapper) {
     return rxExecute(query).map(rows -> toList(rows, rowMapper));
   }
 
-  /** {@inheritDoc} */
   @Override
   public <T> Single<List<T>> fetchAll(
       String preparedQuery, Tuple tuple, Function<Row, T> rowMapper) {
     return rxExecute(preparedQuery, tuple).map(rows -> toList(rows, rowMapper));
   }
 
-  /** {@inheritDoc} */
   @Override
   public <T> Single<T> fetchOne(String preparedQuery, Tuple tuple, Function<Row, T> rowMapper) {
     return rxExecute(preparedQuery, tuple)
@@ -76,14 +55,12 @@ public class MySQLReaderClientImpl extends AbstractMySQLClient implements MySQLR
             });
   }
 
-  /** {@inheritDoc} */
   @Override
   public <K, V> Single<Map<K, V>> fetchMap(
       String query, Function<Row, K> keyMapper, Function<Row, V> valueMapper) {
     return rxExecute(query).map(rows -> toMap(rows, keyMapper, valueMapper));
   }
 
-  /** {@inheritDoc} */
   @Override
   public <K, V> Single<Map<K, V>> fetchMap(
       String preparedQuery, Tuple tuple, Function<Row, K> keyMapper, Function<Row, V> valueMapper) {

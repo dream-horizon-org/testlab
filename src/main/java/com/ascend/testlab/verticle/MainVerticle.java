@@ -1,8 +1,8 @@
 package com.ascend.testlab.verticle;
 
 import com.ascend.testlab.client.aerospike.AerospikeClient;
-import com.ascend.testlab.client.mysql.MySQLReaderClient;
-import com.ascend.testlab.client.mysql.MySQLWriterClient;
+import com.ascend.testlab.client.postgresql.PgReaderClient;
+import com.ascend.testlab.client.postgresql.PgWriterClient;
 import com.ascend.testlab.client.webclient.WebClient;
 import com.ascend.testlab.constants.Constants;
 import com.ascend.testlab.injection.GuiceInjector;
@@ -78,14 +78,11 @@ public class MainVerticle extends AbstractVerticle {
    */
   private Completable stopClients() {
     AerospikeClient aerospikeClient = GuiceInjector.getInstance(AerospikeClient.class);
-    MySQLReaderClient mySQLReaderClient = GuiceInjector.getInstance(MySQLReaderClient.class);
-    MySQLWriterClient mySQLWriterClient = GuiceInjector.getInstance(MySQLWriterClient.class);
+    PgReaderClient pgReaderClient = GuiceInjector.getInstance(PgReaderClient.class);
+    PgWriterClient pgWriterClient = GuiceInjector.getInstance(PgWriterClient.class);
     WebClient webClient = GuiceInjector.getInstance(WebClient.class);
 
     return Completable.mergeArray(
-        aerospikeClient.close(),
-        mySQLReaderClient.close(),
-        mySQLWriterClient.close(),
-        webClient.close());
+        aerospikeClient.close(), pgReaderClient.close(), pgWriterClient.close(), webClient.close());
   }
 }

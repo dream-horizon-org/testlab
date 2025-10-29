@@ -6,23 +6,42 @@ echo "APP_DIR: ${APP_DIR}"
 echo "ENV: ${ENV}"
 echo "SERVICE_NAME: ${SERVICE_NAME}"
 
-install_mysql_client () {
-  DEBIAN_FRONTEND=noninteractive apt-get update
-  DEBIAN_FRONTEND=noninteractive apt-get install -y default-mysql-client --fix-missing
+install_deps () {
+  apt --allow-releaseinfo-change update
+  apt install jq
+  apt install unzip
+  curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+  unzip -q awscliv2.zip
+  ./aws/install
 }
 
-initialize_mysql_db () {
-  local resources_dir="./resources/db/mysql/"
-  local config_file="./resources/config/mysql/default.conf"
+install_client () {
+  apt install -f
+  echo "install -f done"
+  apt install -y postgresql-client
+  echo "install postgresql-client done"
+}
+
+initialize_db () {
+  local resources_dir="./resources/db/postgresql/"
+  local config_file="./resources/config/postgresql/default.conf"
   local host=$(grep 'writerConfig.connectOptions.host' $config_file | awk -F '=' '{print $2}')
+  local db_name=$(grep 'writerConfig.connectOptions.database' $config_file | awk -F '= ' '{print $2}' | tr -d '"')
 
-  echo "Creating Schema..."
-  mysql -h $host -u "${MYSQL_USER}" -p"${MYSQL_PASSWORD}" < $resources_dir/schema.sql
-  echo "Schema Created"
+  pg_check_cmd=$(PGUSER=${PG_USER} PGPASSWORD=${PG_PASSWORD} psql -h "$(eval echo "$host")" -d postgres -tc "SELECT 1 FROM pg_database WHERE datname = '${db_name}'" | wc -l)
 
-  echo "Inserting Seed data..."
-  mysql -h $host -u "${MYSQL_USER}" -p"${MYSQL_PASSWORD}" < $resources_dir/seed.sql
-  echo "Seed data inserted"
+  echo "pg_check command ran"
+  if [ "$pg_check_cmd" -gt 1 ]; then
+    echo "Schema already exists. Hence skipping..."
+  else
+    echo "Creating Schema..."
+    PGUSER=${PG_USER} PGPASSWORD=${PG_PASSWORD} psql -h "$(eval echo "$host")" -d postgres -f $resources_dir/schema.sql
+    echo "Schema Created"
+
+    echo "Inserting Seed data..."
+    PGUSER=${PG_USER} PGPASSWORD=${PG_PASSWORD} psql -h "$(eval echo "$host")" -d postgres -f $resources_dir/seed.sql
+    echo "Seed data inserted"
+  fi
 }
 
 main () {
@@ -31,14 +50,16 @@ main () {
     echo "Migrations are not run for prod and uat environments"
     exit 0
   else
-    echo "Installing dependent clients..."
-    install_mysql_client
+    echo "Installing dependents..."
+    install_deps
+    echo "Installing client..."
+    install_client
 
     echo "loading config-store values..."
     bash ./.odin/fetch-config.sh
     source .config
 
-    initialize_mysql_db
+    initialize_db
   fi
 }
 
