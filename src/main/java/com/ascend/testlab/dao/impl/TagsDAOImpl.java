@@ -1,7 +1,7 @@
 package com.ascend.testlab.dao.impl;
 
-import com.ascend.testlab.client.mysql.MySQLReaderClient;
-import com.ascend.testlab.constants.mysql.ReadQuery;
+import com.ascend.testlab.client.postgresql.PgReaderClient;
+import com.ascend.testlab.constants.postgresql.ReadQuery;
 import com.ascend.testlab.dao.TagsDAO;
 import com.google.inject.Inject;
 import io.reactivex.rxjava3.core.Single;
@@ -17,12 +17,12 @@ import lombok.RequiredArgsConstructor;
  * @version 1.0
  * @since 1.0
  * @see TagsDAO
- * @see MySQLReaderClient
+ * @see PgReaderClient
  */
 @RequiredArgsConstructor(onConstructor_ = @Inject)
 public class TagsDAOImpl implements TagsDAO {
 
-  private final MySQLReaderClient mySQLReaderClient;
+  private final PgReaderClient pgReaderClient;
 
   /**
    * {@inheritDoc}
@@ -33,7 +33,7 @@ public class TagsDAOImpl implements TagsDAO {
    */
   @Override
   public Single<List<String>> fetchTags(UUID projectId) {
-    return mySQLReaderClient.fetchAll(
+    return pgReaderClient.fetchAll(
         ReadQuery.FETCH_TAGS,
         Tuple.tuple().addString(projectId.toString()),
         (row -> row.getString("tag")));
