@@ -20,7 +20,8 @@ public final class CircuitBreakerFactory {
     return circuitBreakerRegistry.circuitBreaker(name, getCircuitBreakerConfig());
   }
 
-  private static io.github.resilience4j.circuitbreaker.CircuitBreakerConfig getCircuitBreakerConfig() {
+  private static io.github.resilience4j.circuitbreaker.CircuitBreakerConfig
+      getCircuitBreakerConfig() {
     return io.github.resilience4j.circuitbreaker.CircuitBreakerConfig.custom()
         .failureRateThreshold(circuitBreakerConfig.getFailureRateThreshold())
         .slowCallRateThreshold(circuitBreakerConfig.getSlowCallRateThreshold())

@@ -24,4 +24,3 @@ public class UserExperimentMap {
   private String apiPath;
   private Long assignedAt;
 }
-

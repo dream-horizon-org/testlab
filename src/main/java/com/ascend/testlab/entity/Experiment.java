@@ -28,4 +28,3 @@ public class Experiment {
   private DistributionStrategy distributionStrategy;
   private AssignmentDomain assignmentDomain;
 }
-

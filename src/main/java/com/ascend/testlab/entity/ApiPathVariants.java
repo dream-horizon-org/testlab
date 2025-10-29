@@ -14,4 +14,3 @@ public class ApiPathVariants {
   private String apiPath;
   private List<Variant> variants;
 }
-

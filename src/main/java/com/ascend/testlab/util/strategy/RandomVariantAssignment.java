@@ -6,8 +6,8 @@ import java.util.Random;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * Random variant assignment strategy
- * Assigns variants based on their percentage distribution randomly
+ * Random variant assignment strategy Assigns variants based on their percentage distribution
+ * randomly
  */
 @Slf4j
 public class RandomVariantAssignment implements VariantAssignmentStrategy {
@@ -21,9 +21,7 @@ public class RandomVariantAssignment implements VariantAssignmentStrategy {
       return null;
     }
 
-    int totalPercentage = variants.stream()
-        .mapToInt(Variant::getPercentage)
-        .sum();
+    int totalPercentage = variants.stream().mapToInt(Variant::getPercentage).sum();
 
     int randomValue = random.nextInt(totalPercentage);
     int cumulativePercentage = 0;
@@ -31,7 +29,10 @@ public class RandomVariantAssignment implements VariantAssignmentStrategy {
     for (Variant variant : variants) {
       cumulativePercentage += variant.getPercentage();
       if (randomValue < cumulativePercentage) {
-        log.debug("Selected variant {} for user {} using random strategy", variant.getVariantName(), userId);
+        log.debug(
+            "Selected variant {} for user {} using random strategy",
+            variant.getVariantName(),
+            userId);
         return variant;
       }
     }
@@ -41,4 +42,3 @@ public class RandomVariantAssignment implements VariantAssignmentStrategy {
     return variants.get(0);
   }
 }
-

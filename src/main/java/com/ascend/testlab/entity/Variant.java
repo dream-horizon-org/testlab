@@ -16,4 +16,3 @@ public class Variant {
   private Map<String, Object> variables;
   private Long currentCount;
 }
-

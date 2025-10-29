@@ -17,8 +17,8 @@ import lombok.extern.slf4j.Slf4j;
 public class WebClientImpl implements WebClient {
 
   private final io.vertx.rxjava3.ext.web.client.WebClient webClient;
-    private CircuitBreaker circuitBreaker;
-    private final DDClient ddClient;
+  private CircuitBreaker circuitBreaker;
+  private final DDClient ddClient;
 
   @Inject
   public WebClientImpl(Vertx vertx, WebClientConfig webClientConfig, DDClient ddClient) {
@@ -33,12 +33,12 @@ public class WebClientImpl implements WebClient {
     return Completable.fromAction(webClient::close);
   }
 
-    @Override
+  @Override
   public WebClient setCircuitBreaker(CircuitBreaker circuitBreaker) {
     this.circuitBreaker = circuitBreaker;
     return this;
   }
-  
+
   private static WebClientOptions getWebClientOptions(WebClientConfig webClientConfig) {
     return new WebClientOptions()
         .setPipeliningLimit(webClientConfig.getPipeliningLimit())
@@ -50,7 +50,7 @@ public class WebClientImpl implements WebClient {
         .setPipelining(webClientConfig.isPipelining());
   }
 
-    private void printCircuitBreakerState() {
+  private void printCircuitBreakerState() {
 
     if (Objects.isNull(circuitBreaker)) return;
     log.info(
@@ -88,4 +88,4 @@ public class WebClientImpl implements WebClient {
       String aspectName, T metricValue, String... tags) {
     this.ddClient.gauge(CommonUtil.getCircuitBreakerAspect(aspectName), metricValue, tags);
   }
-  }
+}

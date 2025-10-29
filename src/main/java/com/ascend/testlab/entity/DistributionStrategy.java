@@ -13,4 +13,3 @@ public class DistributionStrategy {
   private String strategyType; // RANDOM, ROUND_ROBIN
   private AssignmentDomain assignmentDomain;
 }
-

@@ -17,4 +17,3 @@ public class AssignmentDomain {
   private List<Long> bulkUserIds;
   private Boolean isExclusivePilot;
 }
-

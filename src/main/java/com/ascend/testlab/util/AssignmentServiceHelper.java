@@ -11,18 +11,14 @@ import java.util.*;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 
-/**
- * Helper class for assignment service with utility methods for filtering and variant assignment
- */
+/** Helper class for assignment service with utility methods for filtering and variant assignment */
 @Slf4j
 public class AssignmentServiceHelper {
 
   private static final String STRATEGY_ROUND_ROBIN = "ROUND_ROBIN";
   private static final String STATUS_ASSIGNED = "ASSIGNED";
 
-  /**
-   * Filters experiments that are not yet assigned to the user
-   */
+  /** Filters experiments that are not yet assigned to the user */
   public static List<Experiment> getUnassignedExperiments(
       List<Experiment> activeExperiments, List<UserExperimentMap> userAssignments) {
 
@@ -37,15 +33,13 @@ public class AssignmentServiceHelper {
   }
 
   /**
-   * Filters experiments based on exclusive flag
-   * If user has exclusive experiment, no new assignments
-   * If unassigned has exclusive, user should have no other assignments
+   * Filters experiments based on exclusive flag If user has exclusive experiment, no new
+   * assignments If unassigned has exclusive, user should have no other assignments
    */
   public static List<Experiment> applyExclusiveFilter(
       List<Experiment> experiments, List<UserExperimentMap> userAssignments) {
 
-    boolean userHasExclusive =
-        userAssignments.stream().anyMatch(UserExperimentMap::getIsExclusive);
+    boolean userHasExclusive = userAssignments.stream().anyMatch(UserExperimentMap::getIsExclusive);
 
     if (userHasExclusive) {
       log.debug("User has exclusive experiment, filtering all new assignments");
@@ -54,17 +48,13 @@ public class AssignmentServiceHelper {
 
     // If user has non-exclusive assignments, filter out exclusive experiments
     if (!userAssignments.isEmpty()) {
-      return experiments.stream()
-          .filter(exp -> !exp.getIsExclusive())
-          .collect(Collectors.toList());
+      return experiments.stream().filter(exp -> !exp.getIsExclusive()).collect(Collectors.toList());
     }
 
     return experiments;
   }
 
-  /**
-   * Filters experiments based on API path
-   */
+  /** Filters experiments based on API path */
   public static List<Experiment> applyApiPathFilter(
       List<Experiment> experiments, AssignmentRequest request) {
 
@@ -76,15 +66,11 @@ public class AssignmentServiceHelper {
     return experiments.stream()
         .filter(exp -> exp.getApiPaths() != null && exp.getApiPaths().containsKey(apiPath))
         .filter(
-            exp ->
-                request.getIsStatic() == null
-                    || exp.getIsStatic().equals(request.getIsStatic()))
+            exp -> request.getIsStatic() == null || exp.getIsStatic().equals(request.getIsStatic()))
         .collect(Collectors.toList());
   }
 
-  /**
-   * Filters experiments based on entities
-   */
+  /** Filters experiments based on entities */
   public static List<Experiment> applyEntityFilter(
       List<Experiment> experiments, List<String> requestEntities) {
 
@@ -103,9 +89,7 @@ public class AssignmentServiceHelper {
         .collect(Collectors.toList());
   }
 
-  /**
-   * Filters experiments based on cohort assignment domain
-   */
+  /** Filters experiments based on cohort assignment domain */
   public static List<Experiment> applyCohortFilter(
       List<Experiment> experiments, List<String> userCohorts) {
 
@@ -129,19 +113,15 @@ public class AssignmentServiceHelper {
               }
               if ("COHORT".equals(exp.getAssignmentDomain().getDomainType())) {
                 List<String> expCohorts = exp.getAssignmentDomain().getCohortIds();
-                return expCohorts != null
-                    && expCohorts.stream().anyMatch(cohortSet::contains);
+                return expCohorts != null && expCohorts.stream().anyMatch(cohortSet::contains);
               }
               return true;
             })
         .collect(Collectors.toList());
   }
 
-  /**
-   * Filters experiments based on trait assignment domain
-   */
-  public static List<Experiment> applyTraitFilter(
-      List<Experiment> experiments, String userTrait) {
+  /** Filters experiments based on trait assignment domain */
+  public static List<Experiment> applyTraitFilter(List<Experiment> experiments, String userTrait) {
 
     if (userTrait == null) {
       // Return only non-trait experiments
@@ -167,9 +147,7 @@ public class AssignmentServiceHelper {
         .collect(Collectors.toList());
   }
 
-  /**
-   * Selects variant based on distribution strategy
-   */
+  /** Selects variant based on distribution strategy */
   public static Variant selectVariant(Experiment experiment, String userId) {
     if (experiment.getDistributionStrategy() == null) {
       log.warn("No distribution strategy defined for experiment {}", experiment.getExperimentId());
@@ -184,9 +162,7 @@ public class AssignmentServiceHelper {
     return strategy.selectVariant(variants, userId);
   }
 
-  /**
-   * Creates UserExperimentMap from experiment and variant
-   */
+  /** Creates UserExperimentMap from experiment and variant */
   public static UserExperimentMap createUserExperimentMap(
       Experiment experiment, Variant variant, String apiPath) {
 
@@ -204,9 +180,7 @@ public class AssignmentServiceHelper {
         .build();
   }
 
-  /**
-   * Applies guest user carryover - transfers guest assignments to logged-in user
-   */
+  /** Applies guest user carryover - transfers guest assignments to logged-in user */
   public static List<UserExperimentMap> applyGuestCarryover(
       List<UserExperimentMap> guestAssignments,
       List<Experiment> activeExperiments,
@@ -217,9 +191,7 @@ public class AssignmentServiceHelper {
     }
 
     Set<UUID> activeExpIds =
-        activeExperiments.stream()
-            .map(Experiment::getExperimentId)
-            .collect(Collectors.toSet());
+        activeExperiments.stream().map(Experiment::getExperimentId).collect(Collectors.toSet());
 
     Set<UUID> userAssignedIds =
         currentUserAssignments.stream()
@@ -232,9 +204,7 @@ public class AssignmentServiceHelper {
         .collect(Collectors.toList());
   }
 
-  /**
-   * Filters experiments for specific API path from user assignments
-   */
+  /** Filters experiments for specific API path from user assignments */
   public static List<UserExperimentMap> filterByApiPath(
       List<UserExperimentMap> assignments, String apiPath, List<String> entities) {
 
@@ -253,14 +223,11 @@ public class AssignmentServiceHelper {
         .collect(Collectors.toList());
   }
 
-  /**
-   * Groups assignments by API path for complete assignment map
-   */
+  /** Groups assignments by API path for complete assignment map */
   public static Map<String, List<UserExperimentMap>> groupByApiPath(
       List<UserExperimentMap> assignments) {
 
-    return assignments.stream()
-        .collect(Collectors.groupingBy(UserExperimentMap::getApiPath));
+    return assignments.stream().collect(Collectors.groupingBy(UserExperimentMap::getApiPath));
   }
 
   private static VariantAssignmentStrategy getStrategy(String strategyType) {
@@ -270,4 +237,3 @@ public class AssignmentServiceHelper {
     return new RandomVariantAssignment();
   }
 }
-

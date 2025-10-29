@@ -3,9 +3,7 @@ package com.ascend.testlab.util.strategy;
 import com.ascend.testlab.entity.Variant;
 import java.util.List;
 
-/**
- * Strategy interface for variant assignment
- */
+/** Strategy interface for variant assignment */
 public interface VariantAssignmentStrategy {
 
   /**
@@ -17,4 +15,3 @@ public interface VariantAssignmentStrategy {
    */
   Variant selectVariant(List<Variant> variants, String userId);
 }
-

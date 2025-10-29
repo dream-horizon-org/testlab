@@ -6,8 +6,8 @@ import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * Round-robin variant assignment strategy
- * Assigns variants based on their current count to maintain balance according to percentage distribution
+ * Round-robin variant assignment strategy Assigns variants based on their current count to maintain
+ * balance according to percentage distribution
  */
 @Slf4j
 public class RoundRobinVariantAssignment implements VariantAssignmentStrategy {
@@ -20,15 +20,20 @@ public class RoundRobinVariantAssignment implements VariantAssignmentStrategy {
     }
 
     // Calculate target ratio for each variant
-    long totalCount = variants.stream()
-        .mapToLong(v -> v.getCurrentCount() != null ? v.getCurrentCount() : 0L)
-        .sum();
+    long totalCount =
+        variants.stream()
+            .mapToLong(v -> v.getCurrentCount() != null ? v.getCurrentCount() : 0L)
+            .sum();
 
-    Variant selected = variants.stream()
-        .min(Comparator.comparingDouble(v -> calculateVariantRatio(v, totalCount)))
-        .orElse(variants.get(0));
+    Variant selected =
+        variants.stream()
+            .min(Comparator.comparingDouble(v -> calculateVariantRatio(v, totalCount)))
+            .orElse(variants.get(0));
 
-    log.debug("Selected variant {} for user {} using round-robin strategy", selected.getVariantName(), userId);
+    log.debug(
+        "Selected variant {} for user {} using round-robin strategy",
+        selected.getVariantName(),
+        userId);
     return selected;
   }
 
@@ -44,4 +49,3 @@ public class RoundRobinVariantAssignment implements VariantAssignmentStrategy {
     return actualPercentage / targetPercentage;
   }
 }
-
