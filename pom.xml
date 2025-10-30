@@ -428,11 +428,33 @@
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-javadoc-plugin</artifactId>
         <version>${maven-javadoc-plugin.version}</version>
+        <configuration>
+          <!-- Output directory for JavaDoc -->
+          <reportOutputDirectory>${project.basedir}</reportOutputDirectory>
+          <destDir>docs/api-v${project.version}</destDir>
+          <!-- Additional JavaDoc options -->
+          <show>public</show>
+          <quiet>true</quiet>
+          <encoding>UTF-8</encoding>
+          <docencoding>UTF-8</docencoding>
+          <charset>UTF-8</charset>
+          <windowtitle>TestLab API Documentation</windowtitle>
+          <doctitle>TestLab ${project.version} API</doctitle>
+          <header><![CDATA[<b>TestLab ${project.version}</b>]]></header>
+          <footer><![CDATA[<i>Copyright © 2025</i>]]></footer>
+        </configuration>
         <executions>
           <execution>
             <id>attach-javadocs</id>
             <goals>
               <goal>jar</goal>
+            </goals>
+          </execution>
+          <execution>
+            <id>generate-javadoc</id>
+            <phase>prepare-package</phase>
+            <goals>
+              <goal>javadoc</goal>
             </goals>
           </execution>
         </executions>
