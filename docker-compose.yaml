@@ -1,25 +1,25 @@
 name: testlab
 
-x-mysql-config: &mysql-env
-  MYSQL_USER: test_user
-  MYSQL_PASSWORD: test_password
-  MYSQL_DATABASE: experiment
+x-pg-config: &pg-env
+  POSTGRES_USER: test_user
+  POSTGRES_PASSWORD: test_password
+  POSTGRES_DATABASE: experiment
 
 x-aerospike-config: &aerospike-env
   NAMESPACE: experiment
 
 services:
-  mysql:
-    container_name: mysql
+  postgresql:
+    container_name: postgresql
     environment:
-      <<: *mysql-env
-      MYSQL_RANDOM_ROOT_PASSWORD: yes
-    image: mysql:8.0.43
+      <<: *pg-env
+      PG_RANDOM_ROOT_PASSWORD: yes
+    image: postgres:16
     ports:
-      - '3306:3306'
+      - '5432:5432'
     volumes:
-      - mysql_data:/var/lib/mysql
-      - ./src/main/resources/db/mysql:/docker-entrypoint-initdb.d:ro
+      - pg_data:/var/lib/pgsql
+      - ./src/main/resources/db/postgresql:/docker-entrypoint-initdb.d:ro
 
   aerospike:
     container_name: aerospike
@@ -37,12 +37,12 @@ services:
       dockerfile: Dockerfile
     container_name: backend
     environment:
-      <<: [*mysql-env, *aerospike-env]
-      MYSQL_READER_HOST: mysql
-      MYSQL_WRITER_HOST: mysql
+      <<: [*pg-env, *aerospike-env]
+      PG_READER_HOST: postgresql
+      PG_WRITER_HOST: postgresql
       AEROSPIKE_HOST: aerospike
     depends_on:
-      mysql:
+      postgresql:
         condition: service_started
       aerospike:
         condition: service_started
@@ -50,5 +50,5 @@ services:
       - '8080:8080'
 
 volumes:
-  mysql_data: {}
+  pg_data: {}
   aerospike_data: {}
