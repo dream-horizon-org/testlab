@@ -89,17 +89,6 @@ public class ConfigUtilTest {
     }
 
     @Test
-    @DisplayName("Should load config for MySQL")
-    void testGetConfigForMySQL() {
-      // Act - Skip this test as MySQL config requires environment variables
-      Config config = ConfigUtil.getConfigFromConfigFile("config/application/%s");
-
-      // Assert
-      assertNotNull(config);
-      assertFalse(config.isEmpty());
-    }
-
-    @Test
     @DisplayName("Should load config for application")
     void testGetConfigForApplication() {
       // Act

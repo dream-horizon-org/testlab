@@ -189,4 +189,89 @@ public class CircuitBreakerConfigTest {
       assertNotEquals(config1, config2);
     }
   }
+
+  @Nested
+  @DisplayName("Edge Case Tests")
+  class EdgeCaseTests {
+
+    @Test
+    @DisplayName("Should handle zero values")
+    void testZeroValues() {
+      // Arrange & Act
+      config.setFailureRateThreshold(0);
+      config.setSlowCallRateThreshold(0);
+      config.setWaitDurationInOpenState(0);
+      config.setSlowCallDurationThreshold(0);
+      config.setPermittedNumberOfCallsInHalfOpenState(0);
+      config.setMinimumNumberOfCalls(0);
+      config.setSlidingWindowSize(0);
+
+      // Assert
+      assertEquals(0, config.getFailureRateThreshold());
+      assertEquals(0, config.getSlowCallRateThreshold());
+      assertEquals(0, config.getWaitDurationInOpenState());
+      assertEquals(0, config.getSlowCallDurationThreshold());
+      assertEquals(0, config.getPermittedNumberOfCallsInHalfOpenState());
+      assertEquals(0, config.getMinimumNumberOfCalls());
+      assertEquals(0, config.getSlidingWindowSize());
+    }
+
+    @Test
+    @DisplayName("Should handle negative values")
+    void testNegativeValues() {
+      // Arrange & Act
+      config.setFailureRateThreshold(-1);
+      config.setSlowCallRateThreshold(-1);
+      config.setWaitDurationInOpenState(-1000);
+      config.setSlowCallDurationThreshold(-100);
+
+      // Assert
+      assertEquals(-1, config.getFailureRateThreshold());
+      assertEquals(-1, config.getSlowCallRateThreshold());
+      assertEquals(-1000, config.getWaitDurationInOpenState());
+      assertEquals(-100, config.getSlowCallDurationThreshold());
+    }
+
+    @Test
+    @DisplayName("Should handle typical production values")
+    void testProductionValues() {
+      // Arrange & Act
+      config.setFailureRateThreshold(50);
+      config.setSlowCallRateThreshold(80);
+      config.setWaitDurationInOpenState(60000);
+      config.setSlowCallDurationThreshold(5000);
+      config.setPermittedNumberOfCallsInHalfOpenState(10);
+      config.setMinimumNumberOfCalls(10);
+      config.setSlidingWindowSize(100);
+
+      // Assert
+      assertEquals(50, config.getFailureRateThreshold());
+      assertEquals(80, config.getSlowCallRateThreshold());
+      assertEquals(60000, config.getWaitDurationInOpenState());
+      assertEquals(5000, config.getSlowCallDurationThreshold());
+      assertEquals(10, config.getPermittedNumberOfCallsInHalfOpenState());
+      assertEquals(10, config.getMinimumNumberOfCalls());
+      assertEquals(100, config.getSlidingWindowSize());
+    }
+  }
+
+  @Nested
+  @DisplayName("ToString Tests")
+  class ToStringTests {
+
+    @Test
+    @DisplayName("Should generate toString output")
+    void testToString() {
+      // Arrange
+      config.setFailureRateThreshold(50);
+      config.setSlidingWindowSize(100);
+
+      // Act
+      String result = config.toString();
+
+      // Assert
+      assertNotNull(result);
+      assertTrue(result.contains("CircuitBreakerConfig"));
+    }
+  }
 }

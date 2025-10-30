@@ -1,9 +1,9 @@
-package com.ascend.testlab.constants.mysql;
+package com.ascend.testlab.constants.postgresql;
 
 import lombok.experimental.UtilityClass;
 
 /**
- * Utility class for MySQL reader queries.
+ * Utility class for PostgreSQL reader queries.
  *
  * @author Nikhil Tummidi
  * @version 1.0
@@ -11,6 +11,7 @@ import lombok.experimental.UtilityClass;
  */
 @UtilityClass
 public final class ReadQuery {
-  /** The health check query to check if the MySQL reader database is connected. */
+
+  /** The health check query to check if the PostgreSQL reader database is connected. */
   public static final String HEALTH_CHECK = "SELECT 1;";
 }

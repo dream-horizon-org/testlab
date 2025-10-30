@@ -3,7 +3,6 @@ package com.ascend.testlab.config;
 import static org.junit.jupiter.api.Assertions.*;
 
 import com.ascend.testlab.config.provider.ConfigProvider;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -17,9 +16,6 @@ import org.junit.jupiter.api.Test;
  */
 @DisplayName("ApplicationConfig Tests")
 public class ApplicationConfigTest {
-
-  @BeforeEach
-  void setUp() {}
 
   @Nested
   @DisplayName("Constructor Tests")
@@ -63,6 +59,62 @@ public class ApplicationConfigTest {
       assertNotNull(provider1);
       assertNotNull(provider2);
       assertNotSame(provider1, provider2);
+    }
+  }
+
+  @Nested
+  @DisplayName("Equals and HashCode Tests")
+  class EqualsHashCodeTests {
+
+    @Test
+    @DisplayName("Should be equal when both are empty")
+    void testEqualsEmpty() {
+      // Arrange
+      ApplicationConfig config1 = new ApplicationConfig();
+      ApplicationConfig config2 = new ApplicationConfig();
+
+      // Assert
+      assertEquals(config1, config2);
+    }
+
+    @Test
+    @DisplayName("Should have same hashCode when equal")
+    void testHashCode() {
+      // Arrange
+      ApplicationConfig config1 = new ApplicationConfig();
+      ApplicationConfig config2 = new ApplicationConfig();
+
+      // Assert
+      assertEquals(config1.hashCode(), config2.hashCode());
+    }
+
+    @Test
+    @DisplayName("Should not be equal to null")
+    void testNotEqualsNull() {
+      // Arrange
+      ApplicationConfig config = new ApplicationConfig();
+
+      // Assert
+      assertNotEquals(null, config);
+    }
+  }
+
+  @Nested
+  @DisplayName("ToString Tests")
+  class ToStringTests {
+
+    @Test
+    @DisplayName("Should generate toString output")
+    void testToString() {
+      // Arrange
+      ApplicationConfig config = new ApplicationConfig();
+
+      // Act
+      String result = config.toString();
+
+      // Assert
+      assertNotNull(result);
+      assertTrue(result.contains("ApplicationConfig"));
     }
   }
 }

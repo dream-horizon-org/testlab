@@ -262,4 +262,93 @@ public class WebClientConfigTest {
       assertNotEquals(config1, config2);
     }
   }
+
+  @Nested
+  @DisplayName("Edge Case Tests")
+  class EdgeCaseTests {
+
+    @Test
+    @DisplayName("Should handle zero timeout values")
+    void testZeroTimeouts() {
+      // Arrange & Act
+      config.setConnectTimeout(0);
+      config.setKeepAliveTimeout(0);
+
+      // Assert
+      assertEquals(0, config.getConnectTimeout());
+      assertEquals(0, config.getKeepAliveTimeout());
+    }
+
+    @Test
+    @DisplayName("Should handle negative values")
+    void testNegativeValues() {
+      // Arrange & Act
+      config.setConnectTimeout(-1);
+      config.setMaxPoolSize(-1);
+      config.setKeepAliveTimeout(-1);
+
+      // Assert
+      assertEquals(-1, config.getConnectTimeout());
+      assertEquals(-1, config.getMaxPoolSize());
+      assertEquals(-1, config.getKeepAliveTimeout());
+    }
+
+    @Test
+    @DisplayName("Should handle zero pool sizes")
+    void testZeroPoolSize() {
+      // Arrange & Act
+      config.setMaxPoolSize(0);
+      config.setMaxWaitQueueSize(0);
+
+      // Assert
+      assertEquals(0, config.getMaxPoolSize());
+      assertEquals(0, config.getMaxWaitQueueSize());
+    }
+
+    @Test
+    @DisplayName("Should toggle boolean flags independently")
+    void testBooleanFlags() {
+      // Arrange & Act
+      config.setLogActivity(true);
+      config.setKeepAlive(false);
+      config.setPipelining(true);
+
+      // Assert
+      assertTrue(config.isLogActivity());
+      assertFalse(config.isKeepAlive());
+      assertTrue(config.isPipelining());
+    }
+
+    @Test
+    @DisplayName("Should handle pipelining without keep alive")
+    void testPipeliningWithoutKeepAlive() {
+      // Arrange & Act
+      config.setPipelining(true);
+      config.setKeepAlive(false);
+
+      // Assert
+      assertTrue(config.isPipelining());
+      assertFalse(config.isKeepAlive());
+    }
+  }
+
+  @Nested
+  @DisplayName("ToString Tests")
+  class ToStringTests {
+
+    @Test
+    @DisplayName("Should generate toString output")
+    void testToString() {
+      // Arrange
+      config.setConnectTimeout(5000);
+      config.setMaxPoolSize(64);
+
+      // Act
+      String result = config.toString();
+
+      // Assert
+      assertNotNull(result);
+      assertTrue(result.contains("WebClientConfig"));
+    }
+  }
 }

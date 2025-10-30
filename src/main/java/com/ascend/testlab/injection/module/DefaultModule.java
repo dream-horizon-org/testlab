@@ -27,7 +27,6 @@ public class DefaultModule extends AbstractModule {
       JsonMapper.builder()
           .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
           .configure(DeserializationFeature.FAIL_ON_IGNORED_PROPERTIES, false)
-          .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS)
           .configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, true)
           .serializationInclusion(JsonInclude.Include.NON_NULL)
           .build();

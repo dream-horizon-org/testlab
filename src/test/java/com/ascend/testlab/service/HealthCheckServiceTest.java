@@ -72,7 +72,7 @@ public class HealthCheckServiceTest {
     @DisplayName("Should return healthy response when all services are up")
     void testHealthCheckAllServicesUp() {
       // Arrange
-      when(healthCheckDAO.isMySQLReaderConnected()).thenReturn(Single.just(true));
+      when(healthCheckDAO.isPgReaderConnected()).thenReturn(Single.just(true));
       when(healthCheckDAO.isAerospikeConnected()).thenReturn(Single.just(true));
       when(healthCheckDAO.isUnderMaintenance()).thenReturn(Single.just(false));
 
@@ -85,16 +85,16 @@ public class HealthCheckServiceTest {
       testObserver.assertValueCount(1);
 
       HealthCheckResponse response = testObserver.values().get(0);
-      assertTrue(response.isMySQLReaderUp());
+      assertTrue(response.isPgReaderUp());
       assertTrue(response.isAerospikeUp());
       assertFalse(response.isUnderMaintenance());
     }
 
     @Test
-    @DisplayName("Should return response when only MySQL is up")
-    void testHealthCheckOnlyMySQLUp() {
+    @DisplayName("Should return response when only PostgreSQL is up")
+    void testHealthCheckOnlyPostgreSQLUp() {
       // Arrange
-      when(healthCheckDAO.isMySQLReaderConnected()).thenReturn(Single.just(true));
+      when(healthCheckDAO.isPgReaderConnected()).thenReturn(Single.just(true));
       when(healthCheckDAO.isAerospikeConnected()).thenReturn(Single.just(false));
       when(healthCheckDAO.isUnderMaintenance()).thenReturn(Single.just(false));
 
@@ -107,7 +107,7 @@ public class HealthCheckServiceTest {
       testObserver.assertValueCount(1);
 
       HealthCheckResponse response = testObserver.values().get(0);
-      assertTrue(response.isMySQLReaderUp());
+      assertTrue(response.isPgReaderUp());
       assertFalse(response.isAerospikeUp());
       assertFalse(response.isUnderMaintenance());
     }
@@ -116,7 +116,7 @@ public class HealthCheckServiceTest {
     @DisplayName("Should return response when only Aerospike is up")
     void testHealthCheckOnlyAerospikeUp() {
       // Arrange
-      when(healthCheckDAO.isMySQLReaderConnected()).thenReturn(Single.just(false));
+      when(healthCheckDAO.isPgReaderConnected()).thenReturn(Single.just(false));
       when(healthCheckDAO.isAerospikeConnected()).thenReturn(Single.just(true));
       when(healthCheckDAO.isUnderMaintenance()).thenReturn(Single.just(false));
 
@@ -129,7 +129,7 @@ public class HealthCheckServiceTest {
       testObserver.assertValueCount(1);
 
       HealthCheckResponse response = testObserver.values().get(0);
-      assertFalse(response.isMySQLReaderUp());
+      assertFalse(response.isPgReaderUp());
       assertTrue(response.isAerospikeUp());
       assertFalse(response.isUnderMaintenance());
     }
@@ -138,7 +138,7 @@ public class HealthCheckServiceTest {
     @DisplayName("Should return response with maintenance mode true")
     void testHealthCheckUnderMaintenance() {
       // Arrange
-      when(healthCheckDAO.isMySQLReaderConnected()).thenReturn(Single.just(true));
+      when(healthCheckDAO.isPgReaderConnected()).thenReturn(Single.just(true));
       when(healthCheckDAO.isAerospikeConnected()).thenReturn(Single.just(true));
       when(healthCheckDAO.isUnderMaintenance()).thenReturn(Single.just(true));
 
@@ -151,7 +151,7 @@ public class HealthCheckServiceTest {
       testObserver.assertValueCount(1);
 
       HealthCheckResponse response = testObserver.values().get(0);
-      assertTrue(response.isMySQLReaderUp());
+      assertTrue(response.isPgReaderUp());
       assertTrue(response.isAerospikeUp());
       assertTrue(response.isUnderMaintenance());
     }
@@ -165,7 +165,7 @@ public class HealthCheckServiceTest {
     @DisplayName("Should throw exception when both services are down")
     void testHealthCheckBothServicesDown() {
       // Arrange
-      when(healthCheckDAO.isMySQLReaderConnected()).thenReturn(Single.just(false));
+      when(healthCheckDAO.isPgReaderConnected()).thenReturn(Single.just(false));
       when(healthCheckDAO.isAerospikeConnected()).thenReturn(Single.just(false));
       when(healthCheckDAO.isUnderMaintenance()).thenReturn(Single.just(false));
 
@@ -182,7 +182,7 @@ public class HealthCheckServiceTest {
     @DisplayName("Should throw exception when both services down and under maintenance")
     void testHealthCheckBothServicesDownUnderMaintenance() {
       // Arrange
-      when(healthCheckDAO.isMySQLReaderConnected()).thenReturn(Single.just(false));
+      when(healthCheckDAO.isPgReaderConnected()).thenReturn(Single.just(false));
       when(healthCheckDAO.isAerospikeConnected()).thenReturn(Single.just(false));
       when(healthCheckDAO.isUnderMaintenance()).thenReturn(Single.just(true));
 
@@ -200,11 +200,11 @@ public class HealthCheckServiceTest {
   class DAOErrorHandlingTests {
 
     @Test
-    @DisplayName("Should propagate error when MySQL check fails")
-    void testMySQLCheckError() {
+    @DisplayName("Should propagate error when PostgreSQL check fails")
+    void testPostgreSQLCheckError() {
       // Arrange
-      RuntimeException exception = new RuntimeException("MySQL connection failed");
-      when(healthCheckDAO.isMySQLReaderConnected()).thenReturn(Single.error(exception));
+      RuntimeException exception = new RuntimeException("PostgreSQL connection failed");
+      when(healthCheckDAO.isPgReaderConnected()).thenReturn(Single.error(exception));
       when(healthCheckDAO.isAerospikeConnected()).thenReturn(Single.just(true));
       when(healthCheckDAO.isUnderMaintenance()).thenReturn(Single.just(false));
 
@@ -222,7 +222,7 @@ public class HealthCheckServiceTest {
     void testAerospikeCheckError() {
       // Arrange
       RuntimeException exception = new RuntimeException("Aerospike connection failed");
-      when(healthCheckDAO.isMySQLReaderConnected()).thenReturn(Single.just(true));
+      when(healthCheckDAO.isPgReaderConnected()).thenReturn(Single.just(true));
       when(healthCheckDAO.isAerospikeConnected()).thenReturn(Single.error(exception));
       when(healthCheckDAO.isUnderMaintenance()).thenReturn(Single.just(false));
 
@@ -240,7 +240,7 @@ public class HealthCheckServiceTest {
     void testMaintenanceCheckError() {
       // Arrange
       RuntimeException exception = new RuntimeException("Maintenance check failed");
-      when(healthCheckDAO.isMySQLReaderConnected()).thenReturn(Single.just(true));
+      when(healthCheckDAO.isPgReaderConnected()).thenReturn(Single.just(true));
       when(healthCheckDAO.isAerospikeConnected()).thenReturn(Single.just(true));
       when(healthCheckDAO.isUnderMaintenance()).thenReturn(Single.error(exception));
 
@@ -262,7 +262,7 @@ public class HealthCheckServiceTest {
     @DisplayName("Should call all DAO methods exactly once")
     void testDAOMethodsCalledOnce() {
       // Arrange
-      when(healthCheckDAO.isMySQLReaderConnected()).thenReturn(Single.just(true));
+      when(healthCheckDAO.isPgReaderConnected()).thenReturn(Single.just(true));
       when(healthCheckDAO.isAerospikeConnected()).thenReturn(Single.just(true));
       when(healthCheckDAO.isUnderMaintenance()).thenReturn(Single.just(false));
 
@@ -271,7 +271,7 @@ public class HealthCheckServiceTest {
 
       // Assert
       testObserver.assertComplete();
-      verify(healthCheckDAO, times(1)).isMySQLReaderConnected();
+      verify(healthCheckDAO, times(1)).isPgReaderConnected();
       verify(healthCheckDAO, times(1)).isAerospikeConnected();
       verify(healthCheckDAO, times(1)).isUnderMaintenance();
     }
@@ -280,7 +280,7 @@ public class HealthCheckServiceTest {
     @DisplayName("Should handle multiple subscriptions correctly")
     void testMultipleSubscriptions() {
       // Arrange
-      when(healthCheckDAO.isMySQLReaderConnected()).thenReturn(Single.just(true));
+      when(healthCheckDAO.isPgReaderConnected()).thenReturn(Single.just(true));
       when(healthCheckDAO.isAerospikeConnected()).thenReturn(Single.just(true));
       when(healthCheckDAO.isUnderMaintenance()).thenReturn(Single.just(false));
 
@@ -293,7 +293,7 @@ public class HealthCheckServiceTest {
       testObserver2.assertComplete();
 
       // Verify called exactly twice (once per subscription)
-      verify(healthCheckDAO, times(2)).isMySQLReaderConnected();
+      verify(healthCheckDAO, times(2)).isPgReaderConnected();
       verify(healthCheckDAO, times(2)).isAerospikeConnected();
       verify(healthCheckDAO, times(2)).isUnderMaintenance();
     }
@@ -307,7 +307,7 @@ public class HealthCheckServiceTest {
     @DisplayName("Should handle concurrent health check calls")
     void testConcurrentHealthChecks() {
       // Arrange
-      when(healthCheckDAO.isMySQLReaderConnected()).thenReturn(Single.just(true));
+      when(healthCheckDAO.isPgReaderConnected()).thenReturn(Single.just(true));
       when(healthCheckDAO.isAerospikeConnected()).thenReturn(Single.just(true));
       when(healthCheckDAO.isUnderMaintenance()).thenReturn(Single.just(false));
 
@@ -331,7 +331,7 @@ public class HealthCheckServiceTest {
     @DisplayName("Should handle delayed DAO responses")
     void testDelayedDAOResponses() {
       // Arrange
-      when(healthCheckDAO.isMySQLReaderConnected())
+      when(healthCheckDAO.isPgReaderConnected())
           .thenReturn(Single.just(true).delay(100, TimeUnit.MILLISECONDS));
       when(healthCheckDAO.isAerospikeConnected())
           .thenReturn(Single.just(true).delay(100, TimeUnit.MILLISECONDS));

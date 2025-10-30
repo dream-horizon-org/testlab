@@ -35,13 +35,13 @@ public class HealthCheckServiceImpl implements HealthCheckService {
   @Override
   public Single<HealthCheckResponse> healthCheck() {
     return Single.zip(
-        healthCheckDAO.isMySQLReaderConnected(),
+        healthCheckDAO.isPgReaderConnected(),
         healthCheckDAO.isAerospikeConnected(),
         healthCheckDAO.isUnderMaintenance(),
-        (isMySQLReaderUp, isAerospikeUp, isUnderMaintenance) -> {
-          if (!isMySQLReaderUp && !isAerospikeUp)
+        (isPgReaderUp, isAerospikeUp, isUnderMaintenance) -> {
+          if (!isPgReaderUp && !isAerospikeUp)
             throw ExceptionUtil.getException(ErrorEnum.REST_HEALTH_CHECK_FAILED);
-          else return new HealthCheckResponse(isMySQLReaderUp, isAerospikeUp, isUnderMaintenance);
+          else return new HealthCheckResponse(isPgReaderUp, isAerospikeUp, isUnderMaintenance);
         });
   }
 }

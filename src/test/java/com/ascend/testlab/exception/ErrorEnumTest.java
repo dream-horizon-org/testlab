@@ -237,18 +237,7 @@ public class ErrorEnumTest {
     @DisplayName("Should handle nested RestException")
     void testHandleNestedRestException() {
       // Arrange
-      RestException innerException =
-          new RestException(
-              ErrorEnum.REST_HEALTH_CHECK_FAILED.getErrorCode(),
-              ErrorEnum.REST_HEALTH_CHECK_FAILED.getErrorMessage(),
-              ErrorEnum.REST_HEALTH_CHECK_FAILED.getHttpStatusCode(),
-              new RuntimeException("Inner error"));
-      RestException outerException =
-          new RestException(
-              ErrorEnum.REST_HEALTH_CHECK_FAILED.getErrorCode(),
-              ErrorEnum.REST_HEALTH_CHECK_FAILED.getErrorMessage(),
-              ErrorEnum.REST_HEALTH_CHECK_FAILED.getHttpStatusCode(),
-              innerException);
+      RestException outerException = getOuterRestException();
       RestException defaultException =
           new RestException(
               ErrorEnum.REST_HEALTH_CHECK_FAILED.getErrorCode(),
@@ -262,6 +251,20 @@ public class ErrorEnumTest {
       // Assert
       assertSame(outerException, result);
       assertNotSame(defaultException, result);
+    }
+
+    private static RestException getOuterRestException() {
+      RestException innerException =
+          new RestException(
+              ErrorEnum.REST_HEALTH_CHECK_FAILED.getErrorCode(),
+              ErrorEnum.REST_HEALTH_CHECK_FAILED.getErrorMessage(),
+              ErrorEnum.REST_HEALTH_CHECK_FAILED.getHttpStatusCode(),
+              new RuntimeException("Inner error"));
+      return new RestException(
+          ErrorEnum.REST_HEALTH_CHECK_FAILED.getErrorCode(),
+          ErrorEnum.REST_HEALTH_CHECK_FAILED.getErrorMessage(),
+          ErrorEnum.REST_HEALTH_CHECK_FAILED.getHttpStatusCode(),
+          innerException);
     }
   }
 

@@ -161,18 +161,19 @@ public class ConfigProviderTest {
       // Arrange
       ConfigProvider<TestConfig> aerospikeProvider =
           new ConfigProvider<>("aerospike", TestConfig.class);
-      ConfigProvider<TestConfig> mysqlProvider = new ConfigProvider<>("mysql", TestConfig.class);
+      ConfigProvider<TestConfig> postgresqlProvider =
+          new ConfigProvider<>("postgresql", TestConfig.class);
       ConfigProvider<TestConfig> webClientProvider =
           new ConfigProvider<>("webclient", TestConfig.class);
 
       // Act
       String aerospikePath = aerospikeProvider.getConfigPath();
-      String mysqlPath = mysqlProvider.getConfigPath();
+      String postgresqlPath = postgresqlProvider.getConfigPath();
       String webClientPath = webClientProvider.getConfigPath();
 
       // Assert
       assertEquals("config/aerospike/%s.conf", aerospikePath);
-      assertEquals("config/mysql/%s.conf", mysqlPath);
+      assertEquals("config/postgresql/%s.conf", postgresqlPath);
       assertEquals("config/webclient/%s.conf", webClientPath);
     }
 

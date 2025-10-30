@@ -204,4 +204,96 @@ public class AerospikeConfigTest {
       assertNotEquals(config1, config2);
     }
   }
+
+  @Nested
+  @DisplayName("Edge Case Tests")
+  class EdgeCaseTests {
+
+    @Test
+    @DisplayName("Should handle null host")
+    void testNullHost() {
+      // Arrange & Act
+      config.setHost(null);
+
+      // Assert
+      assertNull(config.getHost());
+    }
+
+    @Test
+    @DisplayName("Should handle empty host")
+    void testEmptyHost() {
+      // Arrange & Act
+      config.setHost("");
+
+      // Assert
+      assertEquals("", config.getHost());
+    }
+
+    @Test
+    @DisplayName("Should handle null namespace")
+    void testNullNamespace() {
+      // Arrange & Act
+      config.setNamespace(null);
+
+      // Assert
+      assertNull(config.getNamespace());
+    }
+
+    @Test
+    @DisplayName("Should handle empty namespace")
+    void testEmptyNamespace() {
+      // Arrange & Act
+      config.setNamespace("");
+
+      // Assert
+      assertEquals("", config.getNamespace());
+    }
+
+    @Test
+    @DisplayName("Should handle negative maxRetries")
+    void testNegativeMaxRetries() {
+      // Arrange & Act
+      config.setMaxRetries(-1);
+
+      // Assert
+      assertEquals(-1, config.getMaxRetries());
+    }
+
+    @Test
+    @DisplayName("Should handle zero values for connection settings")
+    void testZeroConnectionSettings() {
+      // Arrange & Act
+      config.setMaxConnsPerNode(0);
+      config.setEventLoopSize(0);
+      config.setMaxCommandsInProcess(0);
+      config.setMaxCommandsInQueue(0);
+
+      // Assert
+      assertEquals(0, config.getMaxConnsPerNode());
+      assertEquals(0, config.getEventLoopSize());
+      assertEquals(0, config.getMaxCommandsInProcess());
+      assertEquals(0, config.getMaxCommandsInQueue());
+    }
+  }
+
+  @Nested
+  @DisplayName("ToString Tests")
+  class ToStringTests {
+
+    @Test
+    @DisplayName("Should generate toString output")
+    void testToString() {
+      // Arrange
+      config.setHost("localhost");
+      config.setPort(3000);
+      config.setNamespace("test");
+
+      // Act
+      String result = config.toString();
+
+      // Assert
+      assertNotNull(result);
+      assertTrue(result.contains("AerospikeConfig"));
+    }
+  }
 }

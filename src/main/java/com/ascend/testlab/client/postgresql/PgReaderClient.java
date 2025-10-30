@@ -1,4 +1,4 @@
-package com.ascend.testlab.client.mysql;
+package com.ascend.testlab.client.postgresql;
 
 import io.reactivex.rxjava3.core.Completable;
 import io.reactivex.rxjava3.core.Single;
@@ -9,14 +9,14 @@ import java.util.Map;
 import java.util.function.Function;
 
 /**
- * Interface for the client to interact with MySQL reader database. Contains methods to fetch data
- * from the database.
+ * Interface for the client to interact with PostgreSQL reader database. Contains methods to fetch
+ * data from the database.
  *
  * @author Nikhil Tummidi
  * @version 1.0
  * @since 1.0
  */
-public interface MySQLReaderClient {
+public interface PgReaderClient {
 
   /**
    * Close the client and release resources.
@@ -26,7 +26,7 @@ public interface MySQLReaderClient {
   Completable close();
 
   /**
-   * Check if the client is connected to MySQL reader database.
+   * Check if the client is connected to PostgreSQL reader database.
    *
    * @return a Single that emits true if the client is connected, false otherwise
    */

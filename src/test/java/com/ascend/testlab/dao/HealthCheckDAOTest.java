@@ -4,7 +4,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 import com.ascend.testlab.client.aerospike.AerospikeClient;
-import com.ascend.testlab.client.mysql.MySQLReaderClient;
+import com.ascend.testlab.client.postgresql.PgReaderClient;
 import com.ascend.testlab.dao.impl.HealthCheckDAOImpl;
 import com.ascend.testlab.util.MaintenanceUtil;
 import io.reactivex.rxjava3.core.Single;
@@ -34,7 +34,7 @@ public class HealthCheckDAOTest {
 
   @Mock private AerospikeClient aerospikeClient;
 
-  @Mock private MySQLReaderClient mySQLReaderClient;
+  @Mock private PgReaderClient pgReaderClient;
 
   private HealthCheckDAO healthCheckDAO;
   private Vertx vertx;
@@ -42,7 +42,7 @@ public class HealthCheckDAOTest {
   @BeforeEach
   void setUp(Vertx vertx) {
     this.vertx = vertx;
-    this.healthCheckDAO = new HealthCheckDAOImpl(aerospikeClient, mySQLReaderClient);
+    this.healthCheckDAO = new HealthCheckDAOImpl(aerospikeClient, pgReaderClient);
   }
 
   @AfterEach
@@ -59,7 +59,7 @@ public class HealthCheckDAOTest {
     @DisplayName("Should create DAO with valid dependencies")
     void testConstructorWithValidDependencies(VertxTestContext testContext) {
       // Act
-      HealthCheckDAO dao = new HealthCheckDAOImpl(aerospikeClient, mySQLReaderClient);
+      HealthCheckDAO dao = new HealthCheckDAOImpl(aerospikeClient, pgReaderClient);
 
       // Assert
       assertNotNull(dao);
@@ -68,94 +68,94 @@ public class HealthCheckDAOTest {
   }
 
   @Nested
-  @DisplayName("MySQL Reader Connection Tests")
-  class MySQLReaderConnectionTests {
+  @DisplayName("PostgreSQL Reader Connection Tests")
+  class PgReaderConnectionTests {
 
     @Test
-    @DisplayName("Should return true when MySQL reader is connected")
-    void testMySQLReaderConnected(VertxTestContext testContext) {
+    @DisplayName("Should return true when PostgreSQL reader is connected")
+    void testPgReaderConnected(VertxTestContext testContext) {
       // Arrange
-      when(mySQLReaderClient.isConnected()).thenReturn(Single.just(true));
+      when(pgReaderClient.isConnected()).thenReturn(Single.just(true));
 
       // Act
-      TestObserver<Boolean> testObserver = healthCheckDAO.isMySQLReaderConnected().test();
+      TestObserver<Boolean> testObserver = healthCheckDAO.isPgReaderConnected().test();
 
       // Assert
       testObserver.assertComplete();
       testObserver.assertNoErrors();
       testObserver.assertValue(true);
-      verify(mySQLReaderClient, times(1)).isConnected();
+      verify(pgReaderClient, times(1)).isConnected();
       testContext.completeNow();
     }
 
     @Test
-    @DisplayName("Should return false when MySQL reader is not connected")
-    void testMySQLReaderNotConnected(VertxTestContext testContext) {
+    @DisplayName("Should return false when PostgreSQL reader is not connected")
+    void testPgReaderNotConnected(VertxTestContext testContext) {
       // Arrange
-      when(mySQLReaderClient.isConnected()).thenReturn(Single.just(false));
+      when(pgReaderClient.isConnected()).thenReturn(Single.just(false));
 
       // Act
-      TestObserver<Boolean> testObserver = healthCheckDAO.isMySQLReaderConnected().test();
+      TestObserver<Boolean> testObserver = healthCheckDAO.isPgReaderConnected().test();
 
       // Assert
       testObserver.assertComplete();
       testObserver.assertNoErrors();
       testObserver.assertValue(false);
-      verify(mySQLReaderClient, times(1)).isConnected();
+      verify(pgReaderClient, times(1)).isConnected();
       testContext.completeNow();
     }
 
     @Test
-    @DisplayName("Should return false when MySQL reader connection check throws error")
-    void testMySQLReaderConnectionError(VertxTestContext testContext) {
+    @DisplayName("Should return false when PostgreSQL reader connection check throws error")
+    void testPgReaderConnectionError(VertxTestContext testContext) {
       // Arrange
-      RuntimeException expectedException = new RuntimeException("MySQL connection failed");
-      when(mySQLReaderClient.isConnected()).thenReturn(Single.error(expectedException));
+      RuntimeException expectedException = new RuntimeException("PostgreSQL connection failed");
+      when(pgReaderClient.isConnected()).thenReturn(Single.error(expectedException));
 
       // Act
-      TestObserver<Boolean> testObserver = healthCheckDAO.isMySQLReaderConnected().test();
+      TestObserver<Boolean> testObserver = healthCheckDAO.isPgReaderConnected().test();
 
       // Assert
       testObserver.assertComplete();
       testObserver.assertNoErrors();
       testObserver.assertValue(false);
-      verify(mySQLReaderClient, times(1)).isConnected();
+      verify(pgReaderClient, times(1)).isConnected();
       testContext.completeNow();
     }
 
     @Test
-    @DisplayName("Should handle timeout error from MySQL reader")
-    void testMySQLReaderTimeout(VertxTestContext testContext) {
+    @DisplayName("Should handle timeout error from PostgreSQL reader")
+    void testPgReaderTimeout(VertxTestContext testContext) {
       // Arrange
-      when(mySQLReaderClient.isConnected())
+      when(pgReaderClient.isConnected())
           .thenReturn(Single.error(new RuntimeException("Connection timeout")));
 
       // Act
-      TestObserver<Boolean> testObserver = healthCheckDAO.isMySQLReaderConnected().test();
+      TestObserver<Boolean> testObserver = healthCheckDAO.isPgReaderConnected().test();
 
       // Assert
       testObserver.assertComplete();
       testObserver.assertNoErrors();
       testObserver.assertValue(false);
-      verify(mySQLReaderClient, times(1)).isConnected();
+      verify(pgReaderClient, times(1)).isConnected();
       testContext.completeNow();
     }
 
     @Test
-    @DisplayName("Should handle null pointer exception from MySQL reader")
-    void testMySQLReaderNullPointerException(VertxTestContext testContext) {
+    @DisplayName("Should handle null pointer exception from PostgreSQL reader")
+    void testPgReaderNullPointerException(VertxTestContext testContext) {
       // Arrange
-      when(mySQLReaderClient.isConnected())
+      when(pgReaderClient.isConnected())
           .thenReturn(Single.error(new NullPointerException("Null client")));
 
       // Act
-      TestObserver<Boolean> testObserver = healthCheckDAO.isMySQLReaderConnected().test();
+      TestObserver<Boolean> testObserver = healthCheckDAO.isPgReaderConnected().test();
 
       // Assert
       testObserver.assertComplete();
       testObserver.assertNoErrors();
       testObserver.assertValue(false);
-      verify(mySQLReaderClient, times(1)).isConnected();
+      verify(pgReaderClient, times(1)).isConnected();
       testContext.completeNow();
     }
   }
@@ -326,23 +326,23 @@ public class HealthCheckDAOTest {
     @DisplayName("Should check all health indicators successfully")
     void testAllHealthChecksSuccess(Vertx vertx, VertxTestContext testContext) {
       // Arrange
-      when(mySQLReaderClient.isConnected()).thenReturn(Single.just(true));
+      when(pgReaderClient.isConnected()).thenReturn(Single.just(true));
       when(aerospikeClient.isConnected()).thenReturn(Single.just(true));
       MaintenanceUtil.clearMaintenance(vertx);
 
       // Act
       vertx.runOnContext(
           v -> {
-            TestObserver<Boolean> mysqlObserver = healthCheckDAO.isMySQLReaderConnected().test();
+            TestObserver<Boolean> postgresqlObserver = healthCheckDAO.isPgReaderConnected().test();
             TestObserver<Boolean> aerospikeObserver = healthCheckDAO.isAerospikeConnected().test();
             TestObserver<Boolean> maintenanceObserver = healthCheckDAO.isUnderMaintenance().test();
 
             // Assert
-            mysqlObserver.assertComplete().assertNoErrors().assertValue(true);
+            postgresqlObserver.assertComplete().assertNoErrors().assertValue(true);
             aerospikeObserver.assertComplete().assertNoErrors().assertValue(true);
             maintenanceObserver.assertComplete().assertNoErrors().assertValue(false);
 
-            verify(mySQLReaderClient, times(1)).isConnected();
+            verify(pgReaderClient, times(1)).isConnected();
             verify(aerospikeClient, times(1)).isConnected();
             testContext.completeNow();
           });
@@ -352,18 +352,18 @@ public class HealthCheckDAOTest {
     @DisplayName("Should handle all connections down")
     void testAllConnectionsDown(VertxTestContext testContext) {
       // Arrange
-      when(mySQLReaderClient.isConnected()).thenReturn(Single.just(false));
+      when(pgReaderClient.isConnected()).thenReturn(Single.just(false));
       when(aerospikeClient.isConnected()).thenReturn(Single.just(false));
 
       // Act
-      TestObserver<Boolean> mysqlObserver = healthCheckDAO.isMySQLReaderConnected().test();
+      TestObserver<Boolean> postgresqlObserver = healthCheckDAO.isPgReaderConnected().test();
       TestObserver<Boolean> aerospikeObserver = healthCheckDAO.isAerospikeConnected().test();
 
       // Assert
-      mysqlObserver.assertComplete().assertNoErrors().assertValue(false);
+      postgresqlObserver.assertComplete().assertNoErrors().assertValue(false);
       aerospikeObserver.assertComplete().assertNoErrors().assertValue(false);
 
-      verify(mySQLReaderClient, times(1)).isConnected();
+      verify(pgReaderClient, times(1)).isConnected();
       verify(aerospikeClient, times(1)).isConnected();
       testContext.completeNow();
     }
@@ -372,18 +372,18 @@ public class HealthCheckDAOTest {
     @DisplayName("Should handle partial connectivity")
     void testPartialConnectivity(VertxTestContext testContext) {
       // Arrange
-      when(mySQLReaderClient.isConnected()).thenReturn(Single.just(true));
+      when(pgReaderClient.isConnected()).thenReturn(Single.just(true));
       when(aerospikeClient.isConnected()).thenReturn(Single.just(false));
 
       // Act
-      TestObserver<Boolean> mysqlObserver = healthCheckDAO.isMySQLReaderConnected().test();
+      TestObserver<Boolean> postgresqlObserver = healthCheckDAO.isPgReaderConnected().test();
       TestObserver<Boolean> aerospikeObserver = healthCheckDAO.isAerospikeConnected().test();
 
       // Assert
-      mysqlObserver.assertComplete().assertNoErrors().assertValue(true);
+      postgresqlObserver.assertComplete().assertNoErrors().assertValue(true);
       aerospikeObserver.assertComplete().assertNoErrors().assertValue(false);
 
-      verify(mySQLReaderClient, times(1)).isConnected();
+      verify(pgReaderClient, times(1)).isConnected();
       verify(aerospikeClient, times(1)).isConnected();
       testContext.completeNow();
     }
@@ -392,19 +392,19 @@ public class HealthCheckDAOTest {
     @DisplayName("Should handle mixed errors and successes")
     void testMixedErrorsAndSuccesses(VertxTestContext testContext) {
       // Arrange
-      when(mySQLReaderClient.isConnected())
-          .thenReturn(Single.error(new RuntimeException("MySQL error")));
+      when(pgReaderClient.isConnected())
+          .thenReturn(Single.error(new RuntimeException("PostgreSQL error")));
       when(aerospikeClient.isConnected()).thenReturn(Single.just(true));
 
       // Act
-      TestObserver<Boolean> mysqlObserver = healthCheckDAO.isMySQLReaderConnected().test();
+      TestObserver<Boolean> postgresqlObserver = healthCheckDAO.isPgReaderConnected().test();
       TestObserver<Boolean> aerospikeObserver = healthCheckDAO.isAerospikeConnected().test();
 
       // Assert
-      mysqlObserver.assertComplete().assertNoErrors().assertValue(false);
+      postgresqlObserver.assertComplete().assertNoErrors().assertValue(false);
       aerospikeObserver.assertComplete().assertNoErrors().assertValue(true);
 
-      verify(mySQLReaderClient, times(1)).isConnected();
+      verify(pgReaderClient, times(1)).isConnected();
       verify(aerospikeClient, times(1)).isConnected();
       testContext.completeNow();
     }
@@ -413,19 +413,19 @@ public class HealthCheckDAOTest {
     @DisplayName("Should handle health check during maintenance")
     void testHealthCheckDuringMaintenance(Vertx vertx, VertxTestContext testContext) {
       // Arrange
-      when(mySQLReaderClient.isConnected()).thenReturn(Single.just(true));
+      when(pgReaderClient.isConnected()).thenReturn(Single.just(true));
       when(aerospikeClient.isConnected()).thenReturn(Single.just(true));
       MaintenanceUtil.setMaintenance(vertx);
 
       // Act
       vertx.runOnContext(
           v -> {
-            TestObserver<Boolean> mysqlObserver = healthCheckDAO.isMySQLReaderConnected().test();
+            TestObserver<Boolean> postgresqlObserver = healthCheckDAO.isPgReaderConnected().test();
             TestObserver<Boolean> aerospikeObserver = healthCheckDAO.isAerospikeConnected().test();
             TestObserver<Boolean> maintenanceObserver = healthCheckDAO.isUnderMaintenance().test();
 
             // Assert
-            mysqlObserver.assertComplete().assertNoErrors().assertValue(true);
+            postgresqlObserver.assertComplete().assertNoErrors().assertValue(true);
             aerospikeObserver.assertComplete().assertNoErrors().assertValue(true);
             maintenanceObserver.assertComplete().assertNoErrors().assertValue(true);
             testContext.completeNow();
@@ -438,21 +438,21 @@ public class HealthCheckDAOTest {
   class MultipleInvocationTests {
 
     @Test
-    @DisplayName("Should handle multiple MySQL connection checks")
-    void testMultipleMySQLChecks(VertxTestContext testContext) {
+    @DisplayName("Should handle multiple PostgreSQL connection checks")
+    void testMultiplePostgreSQLChecks(VertxTestContext testContext) {
       // Arrange
-      when(mySQLReaderClient.isConnected()).thenReturn(Single.just(true));
+      when(pgReaderClient.isConnected()).thenReturn(Single.just(true));
 
       // Act
-      TestObserver<Boolean> observer1 = healthCheckDAO.isMySQLReaderConnected().test();
-      TestObserver<Boolean> observer2 = healthCheckDAO.isMySQLReaderConnected().test();
-      TestObserver<Boolean> observer3 = healthCheckDAO.isMySQLReaderConnected().test();
+      TestObserver<Boolean> observer1 = healthCheckDAO.isPgReaderConnected().test();
+      TestObserver<Boolean> observer2 = healthCheckDAO.isPgReaderConnected().test();
+      TestObserver<Boolean> observer3 = healthCheckDAO.isPgReaderConnected().test();
 
       // Assert
       observer1.assertComplete().assertNoErrors().assertValue(true);
       observer2.assertComplete().assertNoErrors().assertValue(true);
       observer3.assertComplete().assertNoErrors().assertValue(true);
-      verify(mySQLReaderClient, times(3)).isConnected();
+      verify(pgReaderClient, times(3)).isConnected();
       testContext.completeNow();
     }
 
@@ -479,21 +479,21 @@ public class HealthCheckDAOTest {
     @DisplayName("Should handle connection state changes")
     void testConnectionStateChanges(VertxTestContext testContext) {
       // Arrange
-      when(mySQLReaderClient.isConnected())
+      when(pgReaderClient.isConnected())
           .thenReturn(Single.just(true))
           .thenReturn(Single.just(false))
           .thenReturn(Single.just(true));
 
       // Act
-      TestObserver<Boolean> observer1 = healthCheckDAO.isMySQLReaderConnected().test();
-      TestObserver<Boolean> observer2 = healthCheckDAO.isMySQLReaderConnected().test();
-      TestObserver<Boolean> observer3 = healthCheckDAO.isMySQLReaderConnected().test();
+      TestObserver<Boolean> observer1 = healthCheckDAO.isPgReaderConnected().test();
+      TestObserver<Boolean> observer2 = healthCheckDAO.isPgReaderConnected().test();
+      TestObserver<Boolean> observer3 = healthCheckDAO.isPgReaderConnected().test();
 
       // Assert
       observer1.assertComplete().assertNoErrors().assertValue(true);
       observer2.assertComplete().assertNoErrors().assertValue(false);
       observer3.assertComplete().assertNoErrors().assertValue(true);
-      verify(mySQLReaderClient, times(3)).isConnected();
+      verify(pgReaderClient, times(3)).isConnected();
       testContext.completeNow();
     }
   }
@@ -503,21 +503,21 @@ public class HealthCheckDAOTest {
   class ErrorRecoveryTests {
 
     @Test
-    @DisplayName("Should recover from transient MySQL error")
-    void testRecoverFromMySQLError(VertxTestContext testContext) {
+    @DisplayName("Should recover from transient PostgreSQL error")
+    void testRecoverFromPostgreSQLError(VertxTestContext testContext) {
       // Arrange
-      when(mySQLReaderClient.isConnected())
+      when(pgReaderClient.isConnected())
           .thenReturn(Single.error(new RuntimeException("Transient error")))
           .thenReturn(Single.just(true));
 
       // Act
-      TestObserver<Boolean> observer1 = healthCheckDAO.isMySQLReaderConnected().test();
-      TestObserver<Boolean> observer2 = healthCheckDAO.isMySQLReaderConnected().test();
+      TestObserver<Boolean> observer1 = healthCheckDAO.isPgReaderConnected().test();
+      TestObserver<Boolean> observer2 = healthCheckDAO.isPgReaderConnected().test();
 
       // Assert
       observer1.assertComplete().assertNoErrors().assertValue(false);
       observer2.assertComplete().assertNoErrors().assertValue(true);
-      verify(mySQLReaderClient, times(2)).isConnected();
+      verify(pgReaderClient, times(2)).isConnected();
       testContext.completeNow();
     }
 
@@ -544,24 +544,24 @@ public class HealthCheckDAOTest {
     @DisplayName("Should handle persistent errors gracefully")
     void testPersistentErrors(VertxTestContext testContext) {
       // Arrange
-      when(mySQLReaderClient.isConnected())
+      when(pgReaderClient.isConnected())
           .thenReturn(Single.error(new RuntimeException("Persistent error")));
       when(aerospikeClient.isConnected())
           .thenReturn(Single.error(new RuntimeException("Persistent error")));
 
       // Act
-      TestObserver<Boolean> mysqlObserver1 = healthCheckDAO.isMySQLReaderConnected().test();
-      TestObserver<Boolean> mysqlObserver2 = healthCheckDAO.isMySQLReaderConnected().test();
+      TestObserver<Boolean> postgresqlObserver1 = healthCheckDAO.isPgReaderConnected().test();
+      TestObserver<Boolean> postgresqlObserver2 = healthCheckDAO.isPgReaderConnected().test();
       TestObserver<Boolean> aerospikeObserver1 = healthCheckDAO.isAerospikeConnected().test();
       TestObserver<Boolean> aerospikeObserver2 = healthCheckDAO.isAerospikeConnected().test();
 
       // Assert - Should always return false on error, not propagate the error
-      mysqlObserver1.assertComplete().assertNoErrors().assertValue(false);
-      mysqlObserver2.assertComplete().assertNoErrors().assertValue(false);
+      postgresqlObserver1.assertComplete().assertNoErrors().assertValue(false);
+      postgresqlObserver2.assertComplete().assertNoErrors().assertValue(false);
       aerospikeObserver1.assertComplete().assertNoErrors().assertValue(false);
       aerospikeObserver2.assertComplete().assertNoErrors().assertValue(false);
 
-      verify(mySQLReaderClient, times(2)).isConnected();
+      verify(pgReaderClient, times(2)).isConnected();
       verify(aerospikeClient, times(2)).isConnected();
       testContext.completeNow();
     }
@@ -575,22 +575,22 @@ public class HealthCheckDAOTest {
     @DisplayName("Should handle concurrent health checks")
     void testConcurrentHealthChecks(VertxTestContext testContext) {
       // Arrange
-      when(mySQLReaderClient.isConnected()).thenReturn(Single.just(true));
+      when(pgReaderClient.isConnected()).thenReturn(Single.just(true));
       when(aerospikeClient.isConnected()).thenReturn(Single.just(true));
 
       // Act - Simulate concurrent calls
-      TestObserver<Boolean> mysql1 = healthCheckDAO.isMySQLReaderConnected().test();
+      TestObserver<Boolean> postgresql1 = healthCheckDAO.isPgReaderConnected().test();
       TestObserver<Boolean> aerospike1 = healthCheckDAO.isAerospikeConnected().test();
-      TestObserver<Boolean> mysql2 = healthCheckDAO.isMySQLReaderConnected().test();
+      TestObserver<Boolean> postgresql2 = healthCheckDAO.isPgReaderConnected().test();
       TestObserver<Boolean> aerospike2 = healthCheckDAO.isAerospikeConnected().test();
 
       // Assert
-      mysql1.assertComplete().assertNoErrors().assertValue(true);
+      postgresql1.assertComplete().assertNoErrors().assertValue(true);
       aerospike1.assertComplete().assertNoErrors().assertValue(true);
-      mysql2.assertComplete().assertNoErrors().assertValue(true);
+      postgresql2.assertComplete().assertNoErrors().assertValue(true);
       aerospike2.assertComplete().assertNoErrors().assertValue(true);
 
-      verify(mySQLReaderClient, times(2)).isConnected();
+      verify(pgReaderClient, times(2)).isConnected();
       verify(aerospikeClient, times(2)).isConnected();
       testContext.completeNow();
     }

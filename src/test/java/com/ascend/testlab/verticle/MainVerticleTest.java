@@ -4,8 +4,8 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 import com.ascend.testlab.client.aerospike.AerospikeClient;
-import com.ascend.testlab.client.mysql.MySQLReaderClient;
-import com.ascend.testlab.client.mysql.MySQLWriterClient;
+import com.ascend.testlab.client.postgresql.PgReaderClient;
+import com.ascend.testlab.client.postgresql.PgWriterClient;
 import com.ascend.testlab.client.webclient.WebClient;
 import com.ascend.testlab.config.HttpServerConfig;
 import com.ascend.testlab.dao.HealthCheckDAO;
@@ -47,8 +47,8 @@ public class MainVerticleTest {
   private String deploymentId;
 
   @Mock private AerospikeClient aerospikeClient;
-  @Mock private MySQLReaderClient mySQLReaderClient;
-  @Mock private MySQLWriterClient mySQLWriterClient;
+  @Mock private PgReaderClient pgReaderClient;
+  @Mock private PgWriterClient pgWriterClient;
   @Mock private WebClient webClient;
   @Mock private HealthCheckDAO healthCheckDAO;
   @Mock private HealthCheckService healthCheckService;
@@ -75,8 +75,8 @@ public class MainVerticleTest {
                 bind(ObjectMapper.class).toInstance(new ObjectMapper());
                 bind(HttpServerConfig.class).toInstance(httpServerConfig);
                 bind(AerospikeClient.class).toInstance(aerospikeClient);
-                bind(MySQLReaderClient.class).toInstance(mySQLReaderClient);
-                bind(MySQLWriterClient.class).toInstance(mySQLWriterClient);
+                bind(PgReaderClient.class).toInstance(pgReaderClient);
+                bind(PgWriterClient.class).toInstance(pgWriterClient);
                 bind(WebClient.class).toInstance(webClient);
                 bind(HealthCheckDAO.class).toInstance(healthCheckDAO);
                 bind(HealthCheckService.class).toInstance(healthCheckService);
@@ -187,8 +187,8 @@ public class MainVerticleTest {
     void testRxStop(Vertx vertx, VertxTestContext testContext) {
       // Arrange
       when(aerospikeClient.close()).thenReturn(Completable.complete());
-      when(mySQLReaderClient.close()).thenReturn(Completable.complete());
-      when(mySQLWriterClient.close()).thenReturn(Completable.complete());
+      when(pgReaderClient.close()).thenReturn(Completable.complete());
+      when(pgWriterClient.close()).thenReturn(Completable.complete());
       when(webClient.close()).thenReturn(Completable.complete());
 
       mainVerticle.init(vertx, vertx.getOrCreateContext());
@@ -202,8 +202,8 @@ public class MainVerticleTest {
       testObserver.assertNoErrors();
 
       verify(aerospikeClient, times(1)).close();
-      verify(mySQLReaderClient, times(1)).close();
-      verify(mySQLWriterClient, times(1)).close();
+      verify(pgReaderClient, times(1)).close();
+      verify(pgWriterClient, times(1)).close();
       verify(webClient, times(1)).close();
 
       testContext.completeNow();
@@ -214,8 +214,8 @@ public class MainVerticleTest {
     void testRxStopReturnsCompletable(Vertx vertx) {
       // Arrange
       when(aerospikeClient.close()).thenReturn(Completable.complete());
-      when(mySQLReaderClient.close()).thenReturn(Completable.complete());
-      when(mySQLWriterClient.close()).thenReturn(Completable.complete());
+      when(pgReaderClient.close()).thenReturn(Completable.complete());
+      when(pgWriterClient.close()).thenReturn(Completable.complete());
       when(webClient.close()).thenReturn(Completable.complete());
 
       mainVerticle.init(vertx, vertx.getOrCreateContext());
@@ -232,8 +232,8 @@ public class MainVerticleTest {
     void testStopClosesClientsInParallel(Vertx vertx, VertxTestContext testContext) {
       // Arrange
       when(aerospikeClient.close()).thenReturn(Completable.complete());
-      when(mySQLReaderClient.close()).thenReturn(Completable.complete());
-      when(mySQLWriterClient.close()).thenReturn(Completable.complete());
+      when(pgReaderClient.close()).thenReturn(Completable.complete());
+      when(pgWriterClient.close()).thenReturn(Completable.complete());
       when(webClient.close()).thenReturn(Completable.complete());
 
       mainVerticle.init(vertx, vertx.getOrCreateContext());
@@ -247,8 +247,8 @@ public class MainVerticleTest {
 
       // Verify all clients were closed
       verify(aerospikeClient).close();
-      verify(mySQLReaderClient).close();
-      verify(mySQLWriterClient).close();
+      verify(pgReaderClient).close();
+      verify(pgWriterClient).close();
       verify(webClient).close();
 
       testContext.completeNow();
@@ -265,8 +265,8 @@ public class MainVerticleTest {
       // Arrange
       RuntimeException error = new RuntimeException("Failed to close client");
       when(aerospikeClient.close()).thenReturn(Completable.error(error));
-      when(mySQLReaderClient.close()).thenReturn(Completable.complete());
-      when(mySQLWriterClient.close()).thenReturn(Completable.complete());
+      when(pgReaderClient.close()).thenReturn(Completable.complete());
+      when(pgWriterClient.close()).thenReturn(Completable.complete());
       when(webClient.close()).thenReturn(Completable.complete());
 
       mainVerticle.init(vertx, vertx.getOrCreateContext());
@@ -286,10 +286,10 @@ public class MainVerticleTest {
     void testMultipleClientCloseErrors(Vertx vertx, VertxTestContext testContext) {
       // Arrange
       RuntimeException error1 = new RuntimeException("Aerospike close failed");
-      RuntimeException error2 = new RuntimeException("MySQL close failed");
+      RuntimeException error2 = new RuntimeException("PostgreSQL close failed");
       when(aerospikeClient.close()).thenReturn(Completable.error(error1));
-      when(mySQLReaderClient.close()).thenReturn(Completable.error(error2));
-      when(mySQLWriterClient.close()).thenReturn(Completable.complete());
+      when(pgReaderClient.close()).thenReturn(Completable.error(error2));
+      when(pgWriterClient.close()).thenReturn(Completable.complete());
       when(webClient.close()).thenReturn(Completable.complete());
 
       mainVerticle.init(vertx, vertx.getOrCreateContext());
@@ -314,8 +314,8 @@ public class MainVerticleTest {
     void testDeployAndUndeploy(Vertx vertx, VertxTestContext testContext) {
       // Arrange
       when(aerospikeClient.close()).thenReturn(Completable.complete());
-      when(mySQLReaderClient.close()).thenReturn(Completable.complete());
-      when(mySQLWriterClient.close()).thenReturn(Completable.complete());
+      when(pgReaderClient.close()).thenReturn(Completable.complete());
+      when(pgWriterClient.close()).thenReturn(Completable.complete());
       when(webClient.close()).thenReturn(Completable.complete());
 
       rxVertx = io.vertx.rxjava3.core.Vertx.newInstance(vertx);
@@ -334,8 +334,8 @@ public class MainVerticleTest {
     void testFullLifecycle(Vertx vertx, VertxTestContext testContext) {
       // Arrange
       when(aerospikeClient.close()).thenReturn(Completable.complete());
-      when(mySQLReaderClient.close()).thenReturn(Completable.complete());
-      when(mySQLWriterClient.close()).thenReturn(Completable.complete());
+      when(pgReaderClient.close()).thenReturn(Completable.complete());
+      when(pgWriterClient.close()).thenReturn(Completable.complete());
       when(webClient.close()).thenReturn(Completable.complete());
 
       rxVertx = io.vertx.rxjava3.core.Vertx.newInstance(vertx);
@@ -358,8 +358,8 @@ public class MainVerticleTest {
     void testGuiceIntegration() {
       // Act
       AerospikeClient client = GuiceInjector.getInstance(AerospikeClient.class);
-      MySQLReaderClient readerClient = GuiceInjector.getInstance(MySQLReaderClient.class);
-      MySQLWriterClient writerClient = GuiceInjector.getInstance(MySQLWriterClient.class);
+      PgReaderClient readerClient = GuiceInjector.getInstance(PgReaderClient.class);
+      PgWriterClient writerClient = GuiceInjector.getInstance(PgWriterClient.class);
       WebClient wClient = GuiceInjector.getInstance(WebClient.class);
 
       // Assert
@@ -368,8 +368,8 @@ public class MainVerticleTest {
       assertNotNull(writerClient);
       assertNotNull(wClient);
       assertSame(aerospikeClient, client);
-      assertSame(mySQLReaderClient, readerClient);
-      assertSame(mySQLWriterClient, writerClient);
+      assertSame(pgReaderClient, readerClient);
+      assertSame(pgWriterClient, writerClient);
       assertSame(webClient, wClient);
     }
   }
@@ -431,9 +431,9 @@ public class MainVerticleTest {
       // Arrange
       when(aerospikeClient.close())
           .thenReturn(Completable.complete().delay(100, TimeUnit.MILLISECONDS));
-      when(mySQLReaderClient.close())
+      when(pgReaderClient.close())
           .thenReturn(Completable.complete().delay(100, TimeUnit.MILLISECONDS));
-      when(mySQLWriterClient.close())
+      when(pgWriterClient.close())
           .thenReturn(Completable.complete().delay(100, TimeUnit.MILLISECONDS));
       when(webClient.close()).thenReturn(Completable.complete().delay(100, TimeUnit.MILLISECONDS));
 

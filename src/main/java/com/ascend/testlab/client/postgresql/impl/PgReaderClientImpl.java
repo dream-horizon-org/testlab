@@ -1,9 +1,9 @@
-package com.ascend.testlab.client.mysql.impl;
+package com.ascend.testlab.client.postgresql.impl;
 
-import com.ascend.testlab.client.mysql.AbstractMySQLClient;
-import com.ascend.testlab.client.mysql.MySQLReaderClient;
-import com.ascend.testlab.config.MySQLConfig;
-import com.ascend.testlab.constants.mysql.ReadQuery;
+import com.ascend.testlab.client.postgresql.AbstractPostgreSQLClient;
+import com.ascend.testlab.client.postgresql.PgReaderClient;
+import com.ascend.testlab.config.PostgreSQLConfig;
+import com.ascend.testlab.constants.postgresql.ReadQuery;
 import com.google.inject.Inject;
 import io.reactivex.rxjava3.core.Completable;
 import io.reactivex.rxjava3.core.Single;
@@ -16,26 +16,26 @@ import java.util.NoSuchElementException;
 import java.util.function.Function;
 
 /**
- * Implementation of the MySQLReaderClient interface. Uses the AbstractMySQLClient to interact with
- * the MySQL database.
+ * Implementation of the PgReaderClient interface. Uses the AbstractPostgreSQLClient to interact
+ * with the PostgreSQL database.
  *
  * @author Nikhil Tummidi
  * @version 1.0
  * @since 1.0
- * @see AbstractMySQLClient
- * @see MySQLReaderClient
+ * @see AbstractPostgreSQLClient
+ * @see PgReaderClient
  */
-public class MySQLReaderClientImpl extends AbstractMySQLClient implements MySQLReaderClient {
+public class PgReaderClientImpl extends AbstractPostgreSQLClient implements PgReaderClient {
 
   /**
-   * Constructor for the MySQLReaderClientImpl.
+   * Constructor for the PgReaderClientImpl.
    *
    * @param vertx the Vertx instance
-   * @param mySQLConfig the MySQL configuration
+   * @param postgreSQLConfig the PostgreSQL configuration
    */
   @Inject
-  public MySQLReaderClientImpl(Vertx vertx, MySQLConfig mySQLConfig) {
-    super(vertx, mySQLConfig.getReaderConfig());
+  public PgReaderClientImpl(Vertx vertx, PostgreSQLConfig postgreSQLConfig) {
+    super(vertx, postgreSQLConfig.getReaderConfig());
   }
 
   /** {@inheritDoc} */

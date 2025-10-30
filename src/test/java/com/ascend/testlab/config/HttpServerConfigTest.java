@@ -84,6 +84,19 @@ public class HttpServerConfigTest {
     }
 
     @Test
+    @DisplayName("Should return default port when port is negative")
+    void testGetPortWithNegativeValue() {
+      // Arrange
+      config.setPort(-1);
+
+      // Act
+      Integer port = config.getPort();
+
+      // Assert
+      assertEquals(8080, port);
+    }
+
+    @Test
     @DisplayName("Should return default port when port is null")
     void testGetPortWithNullValue() {
       // Arrange
@@ -273,6 +286,81 @@ public class HttpServerConfigTest {
 
       // Assert
       assertNotEquals(config1, config2);
+    }
+  }
+
+  @Nested
+  @DisplayName("Edge Case Tests")
+  class EdgeCaseTests {
+
+    @Test
+    @DisplayName("Should handle extreme compression level values")
+    void testExtremeCompressionLevel() {
+      // Arrange & Act
+      config.setCompressionLevel(0);
+
+      // Assert
+      assertEquals(0, config.getCompressionLevel());
+    }
+
+    @Test
+    @DisplayName("Should handle extreme idle timeout values")
+    void testExtremeIdleTimeout() {
+      // Arrange & Act
+      config.setIdleTimeout(Integer.MAX_VALUE);
+
+      // Assert
+      assertEquals(Integer.MAX_VALUE, config.getIdleTimeout());
+    }
+
+    @Test
+    @DisplayName("Should handle zero idle timeout")
+    void testZeroIdleTimeout() {
+      // Arrange & Act
+      config.setIdleTimeout(0);
+
+      // Assert
+      assertEquals(0, config.getIdleTimeout());
+    }
+
+    @Test
+    @DisplayName("Should handle null host value")
+    void testNullHost() {
+      // Arrange & Act
+      config.setHost(null);
+
+      // Assert
+      assertNull(config.getHost());
+    }
+
+    @Test
+    @DisplayName("Should handle empty host value")
+    void testEmptyHost() {
+      // Arrange & Act
+      config.setHost("");
+
+      // Assert
+      assertEquals("", config.getHost());
+    }
+  }
+
+  @Nested
+  @DisplayName("ToString Tests")
+  class ToStringTests {
+
+    @Test
+    @DisplayName("Should generate toString output")
+    void testToString() {
+      // Arrange
+      config.setHost("localhost");
+      config.setPort(8080);
+
+      // Act
+      String result = config.toString();
+
+      // Assert
+      assertNotNull(result);
+      assertTrue(result.contains("HttpServerConfig"));
     }
   }
 }

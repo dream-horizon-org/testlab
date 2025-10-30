@@ -193,20 +193,7 @@ public class RestVerticleTest {
     @DisplayName("Should configure all HTTP server options")
     void testAllHttpServerOptions() {
       // Arrange
-      HttpServerConfig config = new HttpServerConfig();
-      config.setHost("localhost");
-      config.setPort(8080);
-      config.setCompressionLevel(6);
-      config.setCompressionSupported(true);
-      config.setIdleTimeout(120);
-      config.setLogActivity(true);
-      config.setReusePort(true);
-      config.setReuseAddress(true);
-      config.setTcpFastOpen(true);
-      config.setTcpNoDelay(true);
-      config.setTcpQuickAck(true);
-      config.setTcpKeepAlive(true);
-      config.setUseAlpn(true);
+      HttpServerConfig config = getHttpServerConfig();
 
       // Act
       HttpServerOptions options = RestVerticle.getHttpServerOptions(config);
@@ -224,6 +211,24 @@ public class RestVerticleTest {
       assertTrue(options.isTcpQuickAck());
       assertTrue(options.isTcpKeepAlive());
       assertTrue(options.isUseAlpn());
+    }
+
+    private static HttpServerConfig getHttpServerConfig() {
+      HttpServerConfig config = new HttpServerConfig();
+      config.setHost("localhost");
+      config.setPort(8080);
+      config.setCompressionLevel(6);
+      config.setCompressionSupported(true);
+      config.setIdleTimeout(120);
+      config.setLogActivity(true);
+      config.setReusePort(true);
+      config.setReuseAddress(true);
+      config.setTcpFastOpen(true);
+      config.setTcpNoDelay(true);
+      config.setTcpQuickAck(true);
+      config.setTcpKeepAlive(true);
+      config.setUseAlpn(true);
+      return config;
     }
 
     @Test

@@ -9,4 +9,4 @@ package com.ascend.testlab.dto.response;
  * @see com.ascend.testlab.rest.HealthCheck
  */
 public record HealthCheckResponse(
-    Boolean isMySQLReaderUp, Boolean isAerospikeUp, Boolean isUnderMaintenance) {}
+    Boolean isPgReaderUp, Boolean isAerospikeUp, Boolean isUnderMaintenance) {}

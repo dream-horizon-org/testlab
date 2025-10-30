@@ -1,7 +1,7 @@
 package com.ascend.testlab.dao.impl;
 
 import com.ascend.testlab.client.aerospike.AerospikeClient;
-import com.ascend.testlab.client.mysql.MySQLReaderClient;
+import com.ascend.testlab.client.postgresql.PgReaderClient;
 import com.ascend.testlab.dao.HealthCheckDAO;
 import com.ascend.testlab.util.MaintenanceUtil;
 import com.google.inject.Inject;
@@ -23,29 +23,29 @@ public class HealthCheckDAOImpl implements HealthCheckDAO {
   /** The Aerospike client. */
   private final AerospikeClient aerospikeClient;
 
-  /** The MySQL reader client. */
-  private final MySQLReaderClient mySQLReaderClient;
+  /** The PostgreSQL reader client. */
+  private final PgReaderClient pgReaderClient;
 
   /**
    * Constructor for the HealthCheckDAOImpl.
    *
    * @param aerospikeClient the Aerospike client
-   * @param mySQLReaderClient the MySQL reader client
+   * @param pgReaderClient the PostgreSQL reader client
    */
   @Inject
-  public HealthCheckDAOImpl(AerospikeClient aerospikeClient, MySQLReaderClient mySQLReaderClient) {
+  public HealthCheckDAOImpl(AerospikeClient aerospikeClient, PgReaderClient pgReaderClient) {
     this.aerospikeClient = aerospikeClient;
-    this.mySQLReaderClient = mySQLReaderClient;
+    this.pgReaderClient = pgReaderClient;
   }
 
   /** {@inheritDoc} */
   @Override
-  public Single<Boolean> isMySQLReaderConnected() {
-    return mySQLReaderClient
+  public Single<Boolean> isPgReaderConnected() {
+    return pgReaderClient
         .isConnected()
         .onErrorReturn(
             err -> {
-              log.warn("Error in connecting to MySQL-Reader: {}", err.getMessage());
+              log.warn("Error in connecting to Postgres-Reader: {}", err.getMessage());
               return false;
             });
   }

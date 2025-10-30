@@ -3,8 +3,8 @@ package com.ascend.testlab.dao;
 import io.reactivex.rxjava3.core.Single;
 
 /**
- * Interface for the health check DAO. Contains methods to check the health of the MySQL reader,
- * Aerospike and maintenance status.
+ * Interface for the health check DAO. Contains methods to check the health of the PostgreSQL
+ * reader, Aerospike and maintenance status.
  *
  * @author Nikhil Tummidi
  * @version 1.0
@@ -13,11 +13,11 @@ import io.reactivex.rxjava3.core.Single;
 public interface HealthCheckDAO {
 
   /**
-   * Check if the MySQL reader is connected.
+   * Check if the PostgreSQL reader is connected.
    *
-   * @return a Single that emits true if the MySQL reader is connected, false otherwise
+   * @return a Single that emits true if the PostgreSQL reader is connected, false otherwise
    */
-  Single<Boolean> isMySQLReaderConnected();
+  Single<Boolean> isPgReaderConnected();
 
   /**
    * Check if the Aerospike is connected.

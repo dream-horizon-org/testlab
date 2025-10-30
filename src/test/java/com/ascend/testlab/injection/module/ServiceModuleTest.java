@@ -3,8 +3,8 @@ package com.ascend.testlab.injection.module;
 import static org.junit.jupiter.api.Assertions.*;
 
 import com.ascend.testlab.client.aerospike.AerospikeClient;
-import com.ascend.testlab.client.mysql.MySQLReaderClient;
-import com.ascend.testlab.client.mysql.MySQLWriterClient;
+import com.ascend.testlab.client.postgresql.PgReaderClient;
+import com.ascend.testlab.client.postgresql.PgWriterClient;
 import com.ascend.testlab.client.webclient.WebClient;
 import com.ascend.testlab.config.*;
 import com.ascend.testlab.dao.HealthCheckDAO;
@@ -35,8 +35,8 @@ public class ServiceModuleTest {
   @BeforeEach
   void setUp() {
     // Set required environment variables for config loading
-    System.setProperty("MYSQL_USER", "test_user");
-    System.setProperty("MYSQL_PASSWORD", "test_password");
+    System.setProperty("POSTGRES_USER", "test_user");
+    System.setProperty("POSTGRES_PASSWORD", "test_password");
 
     vertx = Vertx.vertx();
     module = new ServiceModule(vertx);
@@ -49,8 +49,8 @@ public class ServiceModuleTest {
     }
 
     // Clean up system properties
-    System.clearProperty("MYSQL_USER");
-    System.clearProperty("MYSQL_PASSWORD");
+    System.clearProperty("POSTGRES_USER");
+    System.clearProperty("POSTGRES_PASSWORD");
   }
 
   @Nested
@@ -124,11 +124,11 @@ public class ServiceModuleTest {
     }
 
     @Test
-    @DisplayName("Should bind MySQLConfig")
-    void testMySQLConfigBinding() {
+    @DisplayName("Should bind PostgreSQLConfig")
+    void testPostgreSQLConfigBinding() {
       // Act
       Injector injector = Guice.createInjector(module);
-      MySQLConfig config = injector.getInstance(MySQLConfig.class);
+      PostgreSQLConfig config = injector.getInstance(PostgreSQLConfig.class);
 
       // Assert
       assertNotNull(config);
@@ -174,22 +174,22 @@ public class ServiceModuleTest {
     }
 
     @Test
-    @DisplayName("Should bind MySQLReaderClient")
-    void testMySQLReaderClientBinding() {
+    @DisplayName("Should bind PgReaderClient")
+    void testPgReaderClientBinding() {
       // Act
       Injector injector = Guice.createInjector(module);
-      MySQLReaderClient client = injector.getInstance(MySQLReaderClient.class);
+      PgReaderClient client = injector.getInstance(PgReaderClient.class);
 
       // Assert
       assertNotNull(client);
     }
 
     @Test
-    @DisplayName("Should bind MySQLWriterClient")
-    void testMySQLWriterClientBinding() {
+    @DisplayName("Should bind PgWriterClient")
+    void testPgWriterClientBinding() {
       // Act
       Injector injector = Guice.createInjector(module);
-      MySQLWriterClient client = injector.getInstance(MySQLWriterClient.class);
+      PgWriterClient client = injector.getInstance(PgWriterClient.class);
 
       // Assert
       assertNotNull(client);
@@ -346,8 +346,8 @@ public class ServiceModuleTest {
 
       // Assert - All clients should be creatable
       assertDoesNotThrow(() -> injector.getInstance(AerospikeClient.class));
-      assertDoesNotThrow(() -> injector.getInstance(MySQLReaderClient.class));
-      assertDoesNotThrow(() -> injector.getInstance(MySQLWriterClient.class));
+      assertDoesNotThrow(() -> injector.getInstance(PgReaderClient.class));
+      assertDoesNotThrow(() -> injector.getInstance(PgWriterClient.class));
       assertDoesNotThrow(() -> injector.getInstance(WebClient.class));
     }
 
@@ -439,8 +439,8 @@ public class ServiceModuleTest {
       // Assert - All core components should be available
       assertNotNull(injector.getInstance(Vertx.class));
       assertNotNull(injector.getInstance(AerospikeClient.class));
-      assertNotNull(injector.getInstance(MySQLReaderClient.class));
-      assertNotNull(injector.getInstance(MySQLWriterClient.class));
+      assertNotNull(injector.getInstance(PgReaderClient.class));
+      assertNotNull(injector.getInstance(PgWriterClient.class));
       assertNotNull(injector.getInstance(WebClient.class));
       assertNotNull(injector.getInstance(HealthCheckService.class));
     }
