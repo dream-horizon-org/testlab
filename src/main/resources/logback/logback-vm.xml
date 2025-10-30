@@ -1,0 +1,52 @@
+<configuration>
+  <property scope="context" name="HOSTNAME" value="${HOSTNAME}"/>
+  <statusListener class="ch.qos.logback.core.status.OnConsoleStatusListener"/>
+
+  <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+    <file>${log.directory.path:-/opt/logs}/testlab.log</file>
+    <encoder class="net.logstash.logback.encoder.LogstashEncoder"/>
+    <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+      <fileNamePattern>${log.directory.path:-/opt/logs}/archived/testlab.%d{yyyy-MM-dd}.%i.log.gz</fileNamePattern>
+      <maxFileSize>512MB</maxFileSize>
+      <maxHistory>10</maxHistory>
+      <totalSizeCap>10GB</totalSizeCap>
+    </rollingPolicy>
+  </appender>
+
+  <appender name="ASYNC_FILE" class="ch.qos.logback.classic.AsyncAppender">
+    <neverBlock>true</neverBlock>
+    <queueSize>512</queueSize>
+    <appender-ref ref="FILE"/>
+  </appender>
+
+  <appender name="PUSH_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+    <file>${log.directory.path:-/opt/logs}/testlab-push.log</file>
+    <encoder class="net.logstash.logback.encoder.LogstashEncoder"/>
+    <filter class="ch.qos.logback.classic.filter.LevelFilter">
+      <level>ERROR</level>
+      <onMatch>ACCEPT</onMatch>
+      <onMismatch>DENY</onMismatch>
+    </filter>
+    <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+      <fileNamePattern>${log.directory.path:-/opt/logs}/archived/testlab-push.%d{yyyy-MM-dd}.%i.log.gz</fileNamePattern>
+      <maxFileSize>512MB</maxFileSize>
+      <maxHistory>1</maxHistory>
+      <totalSizeCap>1GB</totalSizeCap>
+    </rollingPolicy>
+  </appender>
+
+  <appender name="ASYNC_PUSH_FILE" class="ch.qos.logback.classic.AsyncAppender">
+    <neverBlock>true</neverBlock>
+    <queueSize>512</queueSize>
+    <appender-ref ref="PUSH_FILE"/>
+  </appender>
+
+  <!-- Log request body and response time and status code -->
+  <logger name="com.dream11.rest.filter.LoggerFilter" level="debug"/>
+
+  <root level="info">
+    <appender-ref ref="ASYNC_FILE"/>
+    <appender-ref ref="ASYNC_PUSH_FILE"/>
+  </root>
+
+</configuration>

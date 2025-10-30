@@ -1,0 +1,63 @@
+name: Publish Release
+
+on:
+  release:
+    types: [released]
+
+env:
+  ARTIFACT_NAME: ${application-name}
+  JFROG_ARTIFACTORY_REPOSITORY: d11-repo/com/dream11
+
+jobs:
+  publish-concrete-version:
+    name: Release concrete version
+    runs-on: [ self-hosted, linux, X64, k8s, ${application-name} ]
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.COMMIT_ACCESS_TOKEN }}
+          fetch-depth: 0
+
+      - name: Setup
+        uses: ./.github/actions/setup
+        with:
+          install-dependencies: 'true'
+
+      - name: Setup git config
+        run: |
+          git config user.name "release-bot"
+          git config user.email "<>"
+
+      - name: Get version from tag
+        id: get_version
+        run: |
+          echo "${GITHUB_REF}"
+          releaseVersion="${GITHUB_REF/refs\/tags\//}"
+          releaseVersion="${releaseVersion//v/}"
+          echo "${releaseVersion}"
+          echo "VERSION=$releaseVersion" >> $GITHUB_OUTPUT
+
+      - name: Update version
+        run: |
+          newVersion=${{ steps.get_version.outputs.VERSION }}
+          yq e ".version = \"${newVersion}\"" -i .odin/${application-name}/application-spec.yml
+
+      - name: Package
+        uses: ./.github/actions/package
+
+      - name: Publish to jfrog
+        env:
+          JFROG_ARTIFACTORY_SERVER: ${{ secrets.JFROG_ARTIFACTORY_SERVER }}
+          JFROG_USERNAME: ${{ secrets.JFROG_ARTIFACTORY_USERNAME }}
+          JFROG_PASSWORD: ${{ secrets.JFROG_ARTIFACTORY_PASSWORD }}
+        run: .ci/scripts/publish_to_artifactory.sh $ARTIFACT_NAME ${{ steps.get_version.outputs.VERSION }} ${{ github.event.pull_request.head.sha }}
+
+      - name: Bump version
+        run: |
+          oldVersion=${{ steps.get_version.outputs.VERSION }}
+          newVersion=${oldVersion}-SNAPSHOT
+          yq e ".version = \"${newVersion}\"" -i .odin/${application-name}/application-spec.yml
+          git add .odin/${application-name}/application-spec.yml
+          git commit -m "chore: release version ${oldVersion} and bump version to ${newVersion}"
+          git push origin HEAD:main

@@ -1,0 +1,10 @@
+{
+  "prettyPrint": true,
+  "openAPI": {
+    "info": {
+      "version": 1.0,
+      "title": "testlab",
+      "description": "testlab Service"
+    }
+  }
+}

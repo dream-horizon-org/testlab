@@ -1,0 +1,26 @@
+name: Format Check
+
+on:
+  pull_request:
+    types:
+      - synchronize
+      - opened
+  push:
+    branches:
+      - main
+
+jobs:
+  format-check:
+    name: Format Checker
+    runs-on: [ self-hosted, linux, X64, k8s, testlab ]
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup
+        uses: ./.github/actions/setup
+
+      - name: Check Format
+        run: mvn com.spotify.fmt:fmt-maven-plugin:check

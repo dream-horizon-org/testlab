@@ -1,0 +1,28 @@
+name: Package
+
+description: Compile & Package the code
+
+inputs:
+  add-swagger-ui:
+    description: >
+      Whether to add swagger UI to render the swagger file.
+      Defaults to 'false'. Provide 'true' if swagger UI is required
+    required: false
+    default: 'false'
+
+  swagger-ui-version:
+    description: version of the swagger-ui to download
+    required: false
+    default: '5.12.2'
+
+runs:
+  using: composite
+  steps:
+    - name: Add Swagger UI
+      if: ${{ inputs.add-swagger-ui == 'true' }}
+      shell: bash
+      run: .ci/scripts/add_swagger_ui.sh ${{ inputs.swagger-ui-version }}
+
+    - name: Package
+      shell: bash
+      run: mvn clean package
