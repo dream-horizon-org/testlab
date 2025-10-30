@@ -26,7 +26,7 @@ public final class CircuitBreakerFactory {
       CircuitBreakerRegistry.ofDefaults();
 
   /** The circuit breaker configuration. */
-  @Inject private static CircuitBreakerConfig circuitBreakerConfig;
+  @Inject static CircuitBreakerConfig circuitBreakerConfig;
 
   /**
    * Get a circuit breaker by name using the circuit breaker registry. If not found, create a new

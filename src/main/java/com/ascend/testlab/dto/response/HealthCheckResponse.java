@@ -9,9 +9,4 @@ package com.ascend.testlab.dto.response;
  * @see com.ascend.testlab.rest.HealthCheck
  */
 public record HealthCheckResponse(
-    /** Whether the MySQL reader is up. */
-    Boolean isMySQLReaderUp,
-    /** Whether the Aerospike is up. */
-    Boolean isAerospikeUp,
-    /** Whether the service is under maintenance. */
-    Boolean isUnderMaintenance) {}
+    Boolean isMySQLReaderUp, Boolean isAerospikeUp, Boolean isUnderMaintenance) {}
