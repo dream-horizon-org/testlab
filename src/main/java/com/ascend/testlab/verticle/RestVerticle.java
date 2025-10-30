@@ -50,7 +50,7 @@ public class RestVerticle extends AbstractRestVerticle {
    * @param httpServerConfig the HTTP server configuration
    * @return the HTTP server options
    */
-  private static HttpServerOptions getHttpServerOptions(HttpServerConfig httpServerConfig) {
+  static HttpServerOptions getHttpServerOptions(HttpServerConfig httpServerConfig) {
     return new HttpServerOptions()
         .setHost(httpServerConfig.getHost())
         .setPort(httpServerConfig.getPort())

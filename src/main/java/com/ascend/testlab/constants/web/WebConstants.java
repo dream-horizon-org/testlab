@@ -11,6 +11,13 @@ import lombok.experimental.UtilityClass;
  */
 @UtilityClass
 public final class WebConstants {
+
+  /** The key for the content type header. */
+  public static final String CONTENT_TYPE = "Content-Type";
+
+  /** The value for the application/json content type. */
+  public static final String APPLICATION_JSON = "application/json";
+
   /* Circuit Breaker Constants */
 
   /** The name of the buffered calls count. */

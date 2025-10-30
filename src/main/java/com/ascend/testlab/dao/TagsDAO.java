@@ -10,7 +10,6 @@ import java.util.UUID;
  * @author Nithya sree
  * @version 1.0
  * @since 1.0
- * @see TagsDAOImpl
  */
 public interface TagsDAO {
 

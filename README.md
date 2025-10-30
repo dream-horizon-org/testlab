@@ -7,7 +7,7 @@
 
 ## Database Schema
 
-- [DB Schema](./src/main/resources/db/postgres/schema.sql)
+- [DB Schema](./src/main/resources/db/postgresql/schema.sql)
 
 ## Running Application
 
@@ -22,9 +22,9 @@
 - navigate to the jar directory by `cd target/testlab`
 - Run the jar using command
   ```shell
-      PG_USER=<pg-username> \
+  PG_USER=<pg-username> \
   PG_PASSWORD=<pg-password> \
-    java -Dapp.environment=<env-type> -Dlogback.configurationFile=./resources/logback/logback.xml -jar testlab-<artifact-version>-fat.jar
+  java -Dapp.environment=<env-type> -Dlogback.configurationFile=./resources/logback/logback.xml -jar testlab-<artifact-version>-fat.jar
   ```
 
 #### IntelliJ Run Configuration
@@ -37,9 +37,9 @@
 - Pass following environment variables (in `Environment variables`):
   ```shell
   ENV=<env-type>
-      PG_USER=<pg-username> \
+  PG_USER=<pg-username> \
   PG_PASSWORD=<pg-password> \
-    ```
+  ```
 
 ## Code Formatting
 

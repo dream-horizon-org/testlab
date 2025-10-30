@@ -34,6 +34,14 @@ public class GetTags {
 
   private final TagsService tagsService;
 
+  /**
+   * Handles the GET request to retrieve all distinct tags for a specific project.
+   *
+   * @param projectId the project ID provided in the x-project-id header
+   * @return a CompletionStage containing a ResponseEntity with the list of tags
+   * @throws jakarta.validation.ConstraintViolationException if projectId is blank
+   * @throws com.dream11.rest.exception.RestException if projectId is invalid or other errors occur
+   */
   @GET
   @Consumes(MediaType.APPLICATION_JSON)
   @Produces(MediaType.APPLICATION_JSON)
@@ -49,14 +57,6 @@ public class GetTags {
       responseCode = "500",
       description = "Internal server error",
       content = @Content(schema = @Schema(implementation = ResponseEntity.Failure.class)))
-  /**
-   * Handles the GET request to retrieve all distinct tags for a specific project.
-   *
-   * @param projectId the project ID provided in the x-project-id header
-   * @return a CompletionStage containing a ResponseEntity with the list of tags
-   * @throws jakarta.validation.ConstraintViolationException if projectId is blank
-   * @throws com.dream11.rest.exception.RestException if projectId is invalid or other errors occur
-   */
   public CompletionStage<ResponseEntity.Success<TagsResponse>> handle(
       @HeaderParam("x-project-id") @NotBlank(message = "x-project-id header is required")
           String projectId) {

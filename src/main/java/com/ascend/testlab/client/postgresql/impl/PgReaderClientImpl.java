@@ -15,34 +15,55 @@ import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.function.Function;
 
+/**
+ * Implementation of the PgReaderClient interface. Uses the AbstractPostgreSQLClient to interact
+ * with the PostgreSQL database.
+ *
+ * @author Nikhil Tummidi
+ * @version 1.0
+ * @since 1.0
+ * @see AbstractPostgreSQLClient
+ * @see PgReaderClient
+ */
 public class PgReaderClientImpl extends AbstractPostgreSQLClient implements PgReaderClient {
 
+  /**
+   * Constructor for the PgReaderClientImpl.
+   *
+   * @param vertx the Vertx instance
+   * @param postgreSQLConfig the PostgreSQL configuration
+   */
   @Inject
   public PgReaderClientImpl(Vertx vertx, PostgreSQLConfig postgreSQLConfig) {
     super(vertx, postgreSQLConfig.getReaderConfig());
   }
 
-  @Override
-  public Single<Boolean> isConnected() {
-    return rxExecute(ReadQuery.HEALTH_CHECK).map(rows -> 1 == rows.size());
-  }
-
+  /** {@inheritDoc} */
   @Override
   public Completable close() {
     return super.rxClose();
   }
 
+  /** {@inheritDoc} */
+  @Override
+  public Single<Boolean> isConnected() {
+    return rxExecute(ReadQuery.HEALTH_CHECK).map(rows -> 1 == rows.size());
+  }
+
+  /** {@inheritDoc} */
   @Override
   public <T> Single<List<T>> fetchAll(String query, Function<Row, T> rowMapper) {
     return rxExecute(query).map(rows -> toList(rows, rowMapper));
   }
 
+  /** {@inheritDoc} */
   @Override
   public <T> Single<List<T>> fetchAll(
       String preparedQuery, Tuple tuple, Function<Row, T> rowMapper) {
     return rxExecute(preparedQuery, tuple).map(rows -> toList(rows, rowMapper));
   }
 
+  /** {@inheritDoc} */
   @Override
   public <T> Single<T> fetchOne(String preparedQuery, Tuple tuple, Function<Row, T> rowMapper) {
     return rxExecute(preparedQuery, tuple)
@@ -55,12 +76,14 @@ public class PgReaderClientImpl extends AbstractPostgreSQLClient implements PgRe
             });
   }
 
+  /** {@inheritDoc} */
   @Override
   public <K, V> Single<Map<K, V>> fetchMap(
       String query, Function<Row, K> keyMapper, Function<Row, V> valueMapper) {
     return rxExecute(query).map(rows -> toMap(rows, keyMapper, valueMapper));
   }
 
+  /** {@inheritDoc} */
   @Override
   public <K, V> Single<Map<K, V>> fetchMap(
       String preparedQuery, Tuple tuple, Function<Row, K> keyMapper, Function<Row, V> valueMapper) {

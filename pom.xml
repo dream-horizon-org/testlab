@@ -44,6 +44,7 @@
 
     <!-- dependency versions -->
     <aerospike-client.version>6.2.0</aerospike-client.version>
+    <awaitility.version>4.2.0</awaitility.version>
     <caffeine.version>3.1.8</caffeine.version>
     <commons-collections.version>4.5.0-M1</commons-collections.version>
     <commons-compress.version>1.26.1</commons-compress.version>
@@ -56,9 +57,11 @@
     <lombok.version>1.18.30</lombok.version>
     <mockito.version>5.3.1</mockito.version>
     <netty.version>4.1.112.Final</netty.version>
+    <postgres-driver.version>42.7.2</postgres-driver.version>
     <resilience4j.version>2.2.0</resilience4j.version>
     <rest-assured.version>5.3.2</rest-assured.version>
     <resteasy.version>6.2.8.Final</resteasy.version>
+    <scram-client.version>2.1</scram-client.version>
     <slf4j.version>2.0.9</slf4j.version>
     <swagger-validator.version>2.40.0</swagger-validator.version>
     <testcontainers.version>1.19.8</testcontainers.version>
@@ -67,7 +70,6 @@
     <vertx-aerospike-client.version>2.0.1</vertx-aerospike-client.version>
     <vertx-rest.version>1.1.0</vertx-rest.version>
     <wiremock.version>3.6.0</wiremock.version>
-    <scram-client.version>2.1</scram-client.version>
   </properties>
 
   <dependencyManagement>
@@ -124,6 +126,12 @@
       <groupId>com.google.inject</groupId>
       <artifactId>guice</artifactId>
       <version>${guice.version}</version>
+    </dependency>
+
+    <dependency>
+      <groupId>com.ongres.scram</groupId>
+      <artifactId>client</artifactId>
+      <version>${scram-client.version}</version>
     </dependency>
 
     <dependency>
@@ -209,24 +217,10 @@
       <scope>test</scope>
     </dependency>
 
-      <dependency>
-          <groupId>io.vertx</groupId>
-          <artifactId>vertx-pg-client</artifactId>
-      </dependency>
-
-      <dependency>
-          <groupId>com.ongres.scram</groupId>
-          <artifactId>client</artifactId>
-          <version>${scram-client.version}</version>
-      </dependency>
-
-
-      <dependency>
-          <groupId>org.testcontainers</groupId>
-          <artifactId>postgresql</artifactId>
-          <version>${testcontainers.version}</version>
-          <scope>test</scope>
-      </dependency>
+    <dependency>
+      <groupId>io.vertx</groupId>
+      <artifactId>vertx-pg-client</artifactId>
+    </dependency>
 
     <dependency>
       <groupId>io.vertx</groupId>
@@ -265,6 +259,13 @@
     </dependency>
 
     <dependency>
+      <groupId>org.awaitility</groupId>
+      <artifactId>awaitility</artifactId>
+      <version>${awaitility.version}</version>
+      <scope>test</scope>
+    </dependency>
+
+    <dependency>
       <groupId>org.jboss.resteasy</groupId>
       <artifactId>resteasy-core</artifactId>
       <version>${resteasy.version}</version>
@@ -274,6 +275,13 @@
       <groupId>org.mockito</groupId>
       <artifactId>mockito-junit-jupiter</artifactId>
       <version>${mockito.version}</version>
+      <scope>test</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>org.postgresql</groupId>
+      <artifactId>postgresql</artifactId>
+      <version>${postgres-driver.version}</version>
       <scope>test</scope>
     </dependency>
 
@@ -291,6 +299,12 @@
       <scope>compile</scope>
     </dependency>
 
+    <dependency>
+      <groupId>org.testcontainers</groupId>
+      <artifactId>postgresql</artifactId>
+      <version>${testcontainers.version}</version>
+      <scope>test</scope>
+    </dependency>
 
     <dependency>
       <groupId>org.testcontainers</groupId>
@@ -414,11 +428,33 @@
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-javadoc-plugin</artifactId>
         <version>${maven-javadoc-plugin.version}</version>
+        <configuration>
+          <!-- Output directory for JavaDoc -->
+          <reportOutputDirectory>${project.basedir}</reportOutputDirectory>
+          <destDir>docs/api-v${project.version}</destDir>
+          <!-- Additional JavaDoc options -->
+          <show>public</show>
+          <quiet>true</quiet>
+          <encoding>UTF-8</encoding>
+          <docencoding>UTF-8</docencoding>
+          <charset>UTF-8</charset>
+          <windowtitle>TestLab API Documentation</windowtitle>
+          <doctitle>TestLab ${project.version} API</doctitle>
+          <header><![CDATA[<b>TestLab ${project.version}</b>]]></header>
+          <footer><![CDATA[<i>Copyright © 2025</i>]]></footer>
+        </configuration>
         <executions>
           <execution>
             <id>attach-javadocs</id>
             <goals>
               <goal>jar</goal>
+            </goals>
+          </execution>
+          <execution>
+            <id>generate-javadoc</id>
+            <phase>prepare-package</phase>
+            <goals>
+              <goal>javadoc</goal>
             </goals>
           </execution>
         </executions>
@@ -524,26 +560,26 @@
               <goal>report</goal>
             </goals>
           </execution>
-<!--          <execution>-->
-<!--            <id>jacoco-check</id>-->
-<!--            <goals>-->
-<!--              <goal>check</goal>-->
-<!--            </goals>-->
-<!--            <configuration>-->
-<!--              <rules>-->
-<!--                <rule>-->
-<!--                  <element>BUNDLE</element>-->
-<!--                  <limits>-->
-<!--                    <limit>-->
-<!--                      <counter>LINE</counter>-->
-<!--                      <value>COVEREDRATIO</value>-->
-<!--                      <minimum>0.80</minimum>-->
-<!--                    </limit>-->
-<!--                  </limits>-->
-<!--                </rule>-->
-<!--              </rules>-->
-<!--            </configuration>-->
-<!--          </execution>-->
+          <execution>
+            <id>jacoco-check</id>
+            <goals>
+              <goal>check</goal>
+            </goals>
+            <configuration>
+              <rules>
+                <rule>
+                  <element>BUNDLE</element>
+                  <limits>
+                    <limit>
+                      <counter>LINE</counter>
+                      <value>COVEREDRATIO</value>
+                      <minimum>0.80</minimum>
+                    </limit>
+                  </limits>
+                </rule>
+              </rules>
+            </configuration>
+          </execution>
         </executions>
       </plugin>
     </plugins>

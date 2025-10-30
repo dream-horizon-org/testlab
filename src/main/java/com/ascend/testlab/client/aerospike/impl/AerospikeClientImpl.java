@@ -4,6 +4,7 @@ import com.aerospike.client.Bin;
 import com.aerospike.client.Key;
 import com.aerospike.client.Operation;
 import com.aerospike.client.Record;
+import com.aerospike.client.policy.CommitLevel;
 import com.aerospike.client.policy.Policy;
 import com.aerospike.client.policy.Replica;
 import com.aerospike.client.policy.WritePolicy;
@@ -57,8 +58,23 @@ public class AerospikeClientImpl implements AerospikeClient {
     this.vertx = vertx;
     this.aerospikeConnectOptions = getAerospikeConnectOptions(aerospikeConfig);
     this.defaultPolicy = defaultPolicy();
-    this.defaultWritePolicy = defaultWritePolicy(aerospikeConfig);
+    this.defaultWritePolicy = defaultWritePolicy();
     retryConnection(aerospikeConfig.getConnectRetryIntervalMS());
+  }
+
+  /**
+   * Constructor for the AerospikeClientImpl.
+   *
+   * @param vertx the Vertx instance
+   * @param aerospikeClient the already initialized {@link io.d11.aerospike.client.AerospikeClient}
+   *     instance
+   */
+  public AerospikeClientImpl(Vertx vertx, io.d11.aerospike.client.AerospikeClient aerospikeClient) {
+    this.vertx = vertx;
+    this.aerospikeConnectOptions = new AerospikeConnectOptions();
+    this.defaultPolicy = defaultPolicy();
+    this.defaultWritePolicy = defaultWritePolicy();
+    this.aerospikeClient = aerospikeClient;
   }
 
   /** {@inheritDoc} */
@@ -187,11 +203,11 @@ public class AerospikeClientImpl implements AerospikeClient {
     return policy;
   }
 
-  private static WritePolicy defaultWritePolicy(AerospikeConfig aerospikeConfig) {
+  private static WritePolicy defaultWritePolicy() {
     WritePolicy writePolicy = new WritePolicy();
     writePolicy.replica = Replica.MASTER_PROLES;
     writePolicy.sendKey = true;
-    writePolicy.maxRetries = aerospikeConfig.getMaxRetries();
+    writePolicy.commitLevel = CommitLevel.COMMIT_ALL;
     return writePolicy;
   }
 }

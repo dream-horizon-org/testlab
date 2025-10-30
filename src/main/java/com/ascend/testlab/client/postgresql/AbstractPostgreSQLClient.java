@@ -18,11 +18,28 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 
+/**
+ * Abstract class for the PostgreSQL client. Contains the common methods to interact with the
+ * PostgreSQL database.
+ *
+ * @author Nikhil Tummidi
+ * @version 1.0
+ * @since 1.0
+ */
 public abstract class AbstractPostgreSQLClient {
 
+  /** The PostgreSQL pool. */
   private final PgPool pgPool;
+
+  /** The retry count. */
   private final Integer retryCount;
 
+  /**
+   * Constructor for the AbstractPostgreSQLClient.
+   *
+   * @param vertx the Vertx instance
+   * @param postgreSQLBaseConfig the PostgreSQL configuration
+   */
   protected AbstractPostgreSQLClient(
       Vertx vertx, PostgreSQLConfig.BaseConfig postgreSQLBaseConfig) {
     this.pgPool =
@@ -33,37 +50,93 @@ public abstract class AbstractPostgreSQLClient {
     this.retryCount = postgreSQLBaseConfig.getRetryCount();
   }
 
+  /**
+   * Close the PostgreSQL pool.
+   *
+   * @return a Completable that completes when the pool is closed
+   */
   protected Completable rxClose() {
     return pgPool.rxClose();
   }
 
+  /**
+   * Execute a query.
+   *
+   * @param query the query to execute
+   * @return a Single that emits the result of the query
+   */
   protected Single<RowSet<Row>> rxExecute(String query) {
     return pgPool.query(query).rxExecute().retry(retryCount);
   }
 
+  /**
+   * Execute a query.
+   *
+   * @param connection the connection to the database
+   * @param query the query to execute
+   * @return a Single that emits the result of the query
+   */
   protected Single<RowSet<Row>> rxExecute(SqlConnection connection, String query) {
     return connection.preparedQuery(query).rxExecute().retry(retryCount);
   }
 
+  /**
+   * Execute a prepared query with a tuple.
+   *
+   * @param preparedQuery the prepared query to execute
+   * @param tuple the tuple to execute the query with
+   * @return a Single that emits the result of the query
+   */
   protected Single<RowSet<Row>> rxExecute(String preparedQuery, Tuple tuple) {
     return pgPool.preparedQuery(preparedQuery).rxExecute(tuple).retry(retryCount);
   }
 
+  /**
+   * Execute a prepared query with a tuple.
+   *
+   * @param connection the connection to the database
+   * @param preparedQuery the prepared query to execute
+   * @param tuple the tuple to execute the query with
+   * @return a Single that emits the result of the query
+   */
   protected Single<RowSet<Row>> rxExecute(
       SqlConnection connection, String preparedQuery, Tuple tuple) {
-    return connection.preparedQuery(preparedQuery).rxExecute(tuple).retry(retryCount);
+    return connection.preparedQuery(preparedQuery).rxExecute(tuple).retry(this.retryCount);
   }
 
+  /**
+   * Execute a prepared query with multiple tuples.
+   *
+   * @param connection the connection to the database
+   * @param preparedQuery the prepared query to execute
+   * @param tuples the tuples to execute the query with
+   * @return a Single that emits the result of the query
+   */
   protected Single<RowSet<Row>> rxExecute(
       SqlConnection connection, String preparedQuery, List<Tuple> tuples) {
-    return connection.preparedQuery(preparedQuery).rxExecuteBatch(tuples).retry(retryCount);
+    return connection.preparedQuery(preparedQuery).rxExecuteBatch(tuples).retry(this.retryCount);
   }
 
+  /**
+   * Execute a transactional function with a connection.
+   *
+   * @param transactionalFunction the function to execute with the connection
+   * @param <T> the type of the result
+   * @return a Maybe that emits the result of the transactional function
+   */
   protected <T> Maybe<T> rxWithTransaction(
       Function<SqlConnection, Maybe<T>> transactionalFunction) {
     return pgPool.rxWithTransaction(transactionalFunction).retry(retryCount);
   }
 
+  /**
+   * Convert a RowSet to a List.
+   *
+   * @param rows the RowSet to convert
+   * @param rowMapper the function to map the rows to the result type
+   * @param <T> the type of the result
+   * @return a List that emits the result of the conversion
+   */
   protected static <T> List<T> toList(RowSet<Row> rows, Function<Row, T> rowMapper) {
     List<T> resultList = new ArrayList<>();
     for (Row row : rows) {
@@ -72,6 +145,16 @@ public abstract class AbstractPostgreSQLClient {
     return resultList;
   }
 
+  /**
+   * Convert a RowSet to a Map.
+   *
+   * @param rows the RowSet to convert
+   * @param keyMapper the function to map the rows to the key type
+   * @param valueMapper the function to map the rows to the value type
+   * @param <K> the type of the key
+   * @param <V> the type of the value
+   * @return a Map that emits the result of the conversion
+   */
   protected static <K, V> Map<K, V> toMap(
       RowSet<Row> rows, Function<Row, K> keyMapper, Function<Row, V> valueMapper) {
     Map<K, V> resultMap = new HashMap<>();
@@ -81,18 +164,30 @@ public abstract class AbstractPostgreSQLClient {
     return resultMap;
   }
 
+  /**
+   * Get the PostgreSQL connect options.
+   *
+   * @param connectOptions the connect options
+   * @return a PgConnectOptions
+   */
   protected static PgConnectOptions getConnectOptions(
       PostgreSQLConfig.ConnectOptions connectOptions) {
     return new PgConnectOptions()
         .setHost(connectOptions.getHost())
         .setPort(connectOptions.getPort())
-        .setDatabase(connectOptions.getDatabase())
         .setUser(connectOptions.getUser())
         .setPassword(connectOptions.getPassword())
+        .setDatabase(connectOptions.getDatabase())
         .setConnectTimeout(connectOptions.getConnectTimeout())
         .setCachePreparedStatements(connectOptions.getCachePreparedStatements());
   }
 
+  /**
+   * Get the PostgreSQL pool options.
+   *
+   * @param poolOptions the pool options
+   * @return a PoolOptions
+   */
   protected static PoolOptions getPoolOptions(PostgreSQLConfig.PoolOptions poolOptions) {
     return new PoolOptions()
         .setMaxSize(poolOptions.getMaxSize())
