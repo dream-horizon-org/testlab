@@ -1,9 +1,9 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
 
   <modelVersion>4.0.0</modelVersion>
 
-  <groupId>com.hulk</groupId>
+  <groupId>com.ascend</groupId>
   <artifactId>testlab</artifactId>
   <version>1.0</version>
   <packaging>jar</packaging>
@@ -21,7 +21,7 @@
     <swagger.configurationFilePath>${project.basedir}/${resources.directory}/config/swagger/swagger-info.json</swagger.configurationFilePath>
     <swagger.outputFileName>swagger</swagger.outputFileName>
     <swagger.outputPath>${resources.directory}/webroot/swagger</swagger.outputPath>
-    <swagger.resourcePackage>com.ascend.testlab</swagger.resourcePackage>
+    <swagger.resourcePackage>com.ascend.testlab.rest</swagger.resourcePackage>
 
     <!-- extension versions -->
     <os-maven-extension.version>1.7.1</os-maven-extension.version>
@@ -36,6 +36,7 @@
     <maven-compiler-plugin.version>3.11.0</maven-compiler-plugin.version>
     <maven-dependency-plugin.version>3.6.0</maven-dependency-plugin.version>
     <maven-failsafe-plugin.version>3.1.2</maven-failsafe-plugin.version>
+    <maven-javadoc-plugin.version>3.5.0</maven-javadoc-plugin.version>
     <maven-resources-plugin.version>3.3.1</maven-resources-plugin.version>
     <maven-shade-plugin.version>3.5.1</maven-shade-plugin.version>
     <maven-surefire-plugin.version>3.1.2</maven-surefire-plugin.version>
@@ -43,23 +44,24 @@
 
     <!-- dependency versions -->
     <aerospike-client.version>6.2.0</aerospike-client.version>
+    <awaitility.version>4.2.0</awaitility.version>
     <caffeine.version>3.1.8</caffeine.version>
     <commons-collections.version>4.5.0-M1</commons-collections.version>
     <commons-compress.version>1.26.1</commons-compress.version>
     <commons-io.version>2.17.0</commons-io.version>
     <dropwizard.version>4.2.23</dropwizard.version>
     <guice.version>7.0.0</guice.version>
-    <java-dogstatsd-client.version>4.2.0</java-dogstatsd-client.version>
     <junit.version>4.13.1</junit.version>
-    <kafka-client.version>3.6.0</kafka-client.version>
-    <logback.version>1.4.14</logback.version>
+    <logback.version>1.5.13</logback.version>
     <logstash-encoder.version>7.4</logstash-encoder.version>
     <lombok.version>1.18.30</lombok.version>
     <mockito.version>5.3.1</mockito.version>
     <netty.version>4.1.112.Final</netty.version>
+    <postgres-driver.version>42.7.2</postgres-driver.version>
     <resilience4j.version>2.2.0</resilience4j.version>
     <rest-assured.version>5.3.2</rest-assured.version>
     <resteasy.version>6.2.8.Final</resteasy.version>
+    <scram-client.version>2.1</scram-client.version>
     <slf4j.version>2.0.9</slf4j.version>
     <swagger-validator.version>2.40.0</swagger-validator.version>
     <testcontainers.version>1.19.8</testcontainers.version>
@@ -103,12 +105,6 @@
     </dependency>
 
     <dependency>
-      <groupId>com.datadoghq</groupId>
-      <artifactId>java-dogstatsd-client</artifactId>
-      <version>${java-dogstatsd-client.version}</version>
-    </dependency>
-
-    <dependency>
       <groupId>com.dream11</groupId>
       <artifactId>vertx-rest</artifactId>
       <version>${vertx-rest.version}</version>
@@ -130,6 +126,12 @@
       <groupId>com.google.inject</groupId>
       <artifactId>guice</artifactId>
       <version>${guice.version}</version>
+    </dependency>
+
+    <dependency>
+      <groupId>com.ongres.scram</groupId>
+      <artifactId>client</artifactId>
+      <version>${scram-client.version}</version>
     </dependency>
 
     <dependency>
@@ -217,15 +219,8 @@
 
     <dependency>
       <groupId>io.vertx</groupId>
-      <artifactId>vertx-kafka-client</artifactId>
+      <artifactId>vertx-pg-client</artifactId>
     </dependency>
-
-    <dependency>
-      <groupId>io.vertx</groupId>
-      <artifactId>vertx-mysql-client</artifactId>
-    </dependency>
-
-
 
     <dependency>
       <groupId>io.vertx</groupId>
@@ -264,9 +259,10 @@
     </dependency>
 
     <dependency>
-      <groupId>org.apache.kafka</groupId>
-      <artifactId>kafka-clients</artifactId>
-      <version>${kafka-client.version}</version>
+      <groupId>org.awaitility</groupId>
+      <artifactId>awaitility</artifactId>
+      <version>${awaitility.version}</version>
+      <scope>test</scope>
     </dependency>
 
     <dependency>
@@ -279,6 +275,13 @@
       <groupId>org.mockito</groupId>
       <artifactId>mockito-junit-jupiter</artifactId>
       <version>${mockito.version}</version>
+      <scope>test</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>org.postgresql</groupId>
+      <artifactId>postgresql</artifactId>
+      <version>${postgres-driver.version}</version>
       <scope>test</scope>
     </dependency>
 
@@ -298,18 +301,10 @@
 
     <dependency>
       <groupId>org.testcontainers</groupId>
-      <artifactId>kafka</artifactId>
+      <artifactId>postgresql</artifactId>
       <version>${testcontainers.version}</version>
       <scope>test</scope>
     </dependency>
-
-    <dependency>
-      <groupId>org.testcontainers</groupId>
-      <artifactId>mysql</artifactId>
-      <version>${testcontainers.version}</version>
-      <scope>test</scope>
-    </dependency>
-
 
     <dependency>
       <groupId>org.testcontainers</groupId>
@@ -431,6 +426,42 @@
 
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-javadoc-plugin</artifactId>
+        <version>${maven-javadoc-plugin.version}</version>
+        <configuration>
+          <!-- Output directory for JavaDoc -->
+          <reportOutputDirectory>${project.basedir}</reportOutputDirectory>
+          <destDir>docs/api-v${project.version}</destDir>
+          <!-- Additional JavaDoc options -->
+          <show>public</show>
+          <quiet>true</quiet>
+          <encoding>UTF-8</encoding>
+          <docencoding>UTF-8</docencoding>
+          <charset>UTF-8</charset>
+          <windowtitle>TestLab API Documentation</windowtitle>
+          <doctitle>TestLab ${project.version} API</doctitle>
+          <header><![CDATA[<b>TestLab ${project.version}</b>]]></header>
+          <footer><![CDATA[<i>Copyright © 2025</i>]]></footer>
+        </configuration>
+        <executions>
+          <execution>
+            <id>attach-javadocs</id>
+            <goals>
+              <goal>jar</goal>
+            </goals>
+          </execution>
+          <execution>
+            <id>generate-javadoc</id>
+            <phase>prepare-package</phase>
+            <goals>
+              <goal>javadoc</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-resources-plugin</artifactId>
         <version>${maven-resources-plugin.version}</version>
         <executions>
@@ -465,7 +496,7 @@
             <configuration>
               <transformers>
                 <transformer
-                    implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+                        implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
                   <manifestEntries>
                     <Main-Class>${main.class}</Main-Class>
                     <Main-Verticle>${main.verticle}</Main-Verticle>
@@ -498,7 +529,7 @@
         <version>${jacoco-maven-plugin.version}</version>
         <configuration>
           <excludes>
-            <exclude>com/hulk/testlab/MainLauncher.class</exclude>
+            <exclude>com/ascend/testlab/MainLauncher.class</exclude>
           </excludes>
         </configuration>
         <executions>
@@ -529,26 +560,26 @@
               <goal>report</goal>
             </goals>
           </execution>
-<!--          <execution>-->
-<!--            <id>jacoco-check</id>-->
-<!--            <goals>-->
-<!--              <goal>check</goal>-->
-<!--            </goals>-->
-<!--            <configuration>-->
-<!--              <rules>-->
-<!--                <rule>-->
-<!--                  <element>BUNDLE</element>-->
-<!--                  <limits>-->
-<!--                    <limit>-->
-<!--                      <counter>LINE</counter>-->
-<!--                      <value>COVEREDRATIO</value>-->
-<!--                      <minimum>0.80</minimum>-->
-<!--                    </limit>-->
-<!--                  </limits>-->
-<!--                </rule>-->
-<!--              </rules>-->
-<!--            </configuration>-->
-<!--          </execution>-->
+          <execution>
+            <id>jacoco-check</id>
+            <goals>
+              <goal>check</goal>
+            </goals>
+            <configuration>
+              <rules>
+                <rule>
+                  <element>BUNDLE</element>
+                  <limits>
+                    <limit>
+                      <counter>LINE</counter>
+                      <value>COVEREDRATIO</value>
+                      <minimum>0.80</minimum>
+                    </limit>
+                  </limits>
+                </rule>
+              </rules>
+            </configuration>
+          </execution>
         </executions>
       </plugin>
     </plugins>

@@ -1,7 +1,7 @@
 package com.ascend.testlab.dao.impl;
 
-import com.ascend.testlab.client.mysql.MySQLWriterClient;
-import com.ascend.testlab.constants.mysql.WriteQuery;
+import com.ascend.testlab.client.postgresql.PgWriterClient;
+import com.ascend.testlab.constants.postgresql.WriteQuery;
 import com.ascend.testlab.dao.ExperimentDAO;
 import com.ascend.testlab.dto.request.CreateExperimentRequest;
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -15,48 +15,53 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
-import lombok.RequiredArgsConstructor;
 
-@RequiredArgsConstructor(onConstructor_ = @Inject)
 public class ExperimentDAOImpl implements ExperimentDAO {
-  private final MySQLWriterClient mySQLWriterClient;
+
+  @Inject private PgWriterClient pgWriterClient;
+
   private static final ObjectMapper MAPPER = new ObjectMapper();
 
   @Override
   public Single<Long> create(UUID tenantId, CreateExperimentRequest request) {
-    return mySQLWriterClient
-        .executeWithTransaction(
-            (SqlConnection conn) ->
-                mySQLWriterClient
-                    .executeAndGenerateId(
-                        conn,
-                        WriteQuery.INSERT_EXPERIMENT,
-                        Tuple.tuple()
-                            .addString(request.getTenantId().toString())
-                            .addString(request.getExperimentId().toString())
-                            .addString(request.getName())
-                            .addString(request.getDescription())
-                            .addString(null)
-                            .addValue(request.getRulesJson())
-                            .addString(request.getActuals())
-                            .addString(
-                                request.getStatus() == null ? null : request.getStatus().name())
-                            .addLong(request.getStartTime())
-                            .addLong(request.getEndTime())
-                            .addString(request.getCohortId())
-                            .addString(request.getDistributionStrategy())
-                            .addString(request.getAssignmentDomain())
-                            .addString(request.getPercentageDistribution())
-                            .addInteger(request.getExposure())
-                            .addLong(request.getCreatedBy())
-                            .addLong(request.getThreshold())
-                            .addBoolean(request.getIsExclusive())
-                            .addString(
-                                request.getHealth() == null ? null : request.getHealth().name())
-                            .addString(request.getType() == null ? null : request.getType().name())
-                            .addString(request.getNameTokens()))
-                    .toMaybe())
-        .toSingle();
+    // Convert cohorts list to PostgreSQL array format
+    String cohortsArray = null;
+    if (request.getCohorts() != null && !request.getCohorts().isEmpty()) {
+      cohortsArray = "{" + String.join(",", request.getCohorts()) + "}";
+    }
+
+    return pgWriterClient
+        .execute(
+            WriteQuery.INSERT_EXPERIMENT,
+            Tuple.tuple()
+                .addString(request.getProjectKey().toString()) // project_key
+                .addString(request.getExperimentId().toString()) // experiment_id
+                .addString(request.getName()) // name
+                .addString(request.getDescription()) // description
+                .addString(request.getHypothesis()) // hypothesis
+                .addString(
+                    request.getStatus() == null ? null : request.getStatus().name()) // status
+                .addString(request.getType() == null ? null : request.getType().name()) // type
+                .addString(
+                    request.getGuardrailHealthStatus() == null
+                        ? null
+                        : request.getGuardrailHealthStatus().name()) // guardrail_health_status
+                .addValue(cohortsArray) // cohorts as varchar array
+                .addValue(request.getVariantWeights()) // variant_weights as jsonb
+                .addString(
+                    request.getAssignmentStrategy() == null
+                        ? null
+                        : request.getAssignmentStrategy().name()) // assignment_strategy
+                .addValue(request.getOverrides()) // overrides as jsonb
+                .addValue(request.getRuleAttributes()) // rule_attributes as jsonb
+                .addValue(request.getWinningVariant()) // winning_variant as jsonb
+                .addInteger(request.getExposure()) // exposure
+                .addLong(request.getThreshold()) // threshold
+                .addLong(request.getStartTime()) // start_time
+                .addLong(request.getEndTime()) // end_time
+                .addString(request.getCreatedBy()) // created_by
+                .addString(request.getName())) // name_tsvector (using name for tsvector generation)
+        .map(success -> success ? 1L : 0L); // Return 1L on success, 0L on failure
   }
 
   @Override
@@ -109,7 +114,9 @@ public class ExperimentDAOImpl implements ExperimentDAO {
     }
     sb.setLength(sb.length() - 2);
     sb.append(WriteQuery.UPDATE_EXPERIMENT_SUFFIX);
-    params.addString(tenantId.toString()).addString(experimentId.toString());
-    return mySQLWriterClient.execute(connection, sb.toString(), params);
+    params
+        .addString(tenantId.toString())
+        .addString(experimentId.toString()); // project_key, experiment_id
+    return pgWriterClient.execute(connection, sb.toString(), params);
   }
 }

@@ -1,6 +1,6 @@
 package com.ascend.testlab.service.impl;
 
-import com.ascend.testlab.client.mysql.MySQLWriterClient;
+import com.ascend.testlab.client.postgresql.PgWriterClient;
 import com.ascend.testlab.dao.ExperimentDAO;
 import com.ascend.testlab.dto.request.CreateExperimentRequest;
 import com.ascend.testlab.dto.response.CreateExperimentResponse;
@@ -11,36 +11,30 @@ import io.reactivex.rxjava3.core.Single;
 import io.vertx.rxjava3.sqlclient.SqlConnection;
 import java.util.Map;
 import java.util.UUID;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
-@RequiredArgsConstructor(onConstructor_ = @Inject)
 public class ExperimentServiceImpl implements ExperimentService {
-  private final ExperimentDAO experimentDAO;
-  private final TagService tagService;
-  private final MySQLWriterClient mySQLWriterClient;
+
+  @Inject private ExperimentDAO experimentDAO;
+
+  @Inject private TagService tagService;
+
+  @Inject private PgWriterClient pgWriterClient;
 
   @Override
   public Single<CreateExperimentResponse> create(UUID tenantId, CreateExperimentRequest request) {
     log.info("Creating experiment request {} ", request);
-    String tenant = request.getTenantId().toString();
-    UUID experimentId = UUID.randomUUID();
-    request.setExperimentId(experimentId);
 
-    return mySQLWriterClient
-        .executeWithTransaction(
-            (SqlConnection conn) ->
-                experimentDAO
-                    .create(tenantId, request)
-                    .flatMap(
-                        id ->
-                            tagService
-                                .insertTags(
-                                    conn, tenant, experimentId.toString(), request.getTags())
-                                .map(__ -> id))
-                    .toMaybe())
-        .toSingle()
+    // Set project_key and experiment_id - project_key comes from header (tenant_id)
+    request.setProjectKey(tenantId);
+    UUID experimentId = UUID.randomUUID();
+    UUID projectKey = UUID.randomUUID();
+    request.setExperimentId(experimentId);
+    request.setProjectKey(projectKey);
+
+    return experimentDAO
+        .create(tenantId, request)
         .map(id -> new CreateExperimentResponse(id, true, "created"));
   }
 
@@ -48,7 +42,7 @@ public class ExperimentServiceImpl implements ExperimentService {
   public Single<Boolean> update(UUID tenantId, UUID experimentId, Map<String, Object> request) {
     String tenant = tenantId.toString();
     String exp = experimentId.toString();
-    return mySQLWriterClient
+    return pgWriterClient
         .executeWithTransaction(
             (SqlConnection conn) ->
                 experimentDAO

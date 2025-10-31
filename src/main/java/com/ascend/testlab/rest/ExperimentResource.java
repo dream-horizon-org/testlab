@@ -20,13 +20,11 @@ import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
 import java.util.UUID;
 import java.util.concurrent.CompletionStage;
-import lombok.RequiredArgsConstructor;
 
 @Path("/v1/experiment")
-@RequiredArgsConstructor(onConstructor_ = @Inject)
 public class ExperimentResource {
 
-  private final ExperimentService experimentService;
+  @Inject private ExperimentService experimentService;
 
   @POST
   @Consumes(MediaType.APPLICATION_JSON)

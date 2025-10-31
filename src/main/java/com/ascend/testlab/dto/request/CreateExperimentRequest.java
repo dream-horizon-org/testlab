@@ -1,8 +1,9 @@
 package com.ascend.testlab.dto.request;
 
+import com.ascend.testlab.constants.ExperimentHealth;
 import com.ascend.testlab.constants.ExperimentStatus;
+import com.ascend.testlab.constants.ExperimentStrategy;
 import com.ascend.testlab.constants.ExperimentType;
-import com.ascend.testlab.constants.HealthStatus;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.validation.constraints.*;
@@ -15,6 +16,9 @@ import lombok.Data;
 @Data
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class CreateExperimentRequest {
+
+  @JsonProperty("project_key")
+  private UUID projectKey;
 
   @JsonProperty("tenant_id")
   private UUID tenantId;
@@ -30,23 +34,45 @@ public class CreateExperimentRequest {
   @NotBlank
   private String description;
 
-  @JsonProperty("metrics")
-  private List<String> metrics;
-
-  @JsonProperty("tags")
-  private List<String> tags;
-
-  @JsonProperty("assignment_domain")
-  private String assignmentDomain;
-
-  @JsonProperty("rules_json")
-  private Map<String, Object> rulesJson;
+  @JsonProperty("hypothesis")
+  @NotBlank
+  private String hypothesis;
 
   @JsonProperty("status")
   private ExperimentStatus status;
 
-  @JsonProperty("actuals")
-  private String actuals;
+  @JsonProperty("type")
+  private ExperimentType type;
+
+  @JsonProperty("guardrail_health_status")
+  private ExperimentHealth guardrailHealthStatus;
+
+  @JsonProperty("metrics")
+  private List<String> metrics;
+
+  @JsonProperty("cohorts")
+  private List<String> cohorts;
+
+  @JsonProperty("variant_weights")
+  private Map<String, Object> variantWeights;
+
+  @JsonProperty("assignment_strategy")
+  private ExperimentStrategy assignmentStrategy;
+
+  @JsonProperty("overrides")
+  private Map<String, Object> overrides;
+
+  @JsonProperty("rule_attributes")
+  private Map<String, Object> ruleAttributes;
+
+  @JsonProperty("winning_variant")
+  private Map<String, Object> winningVariant;
+
+  @JsonProperty("exposure")
+  private int exposure;
+
+  @JsonProperty("threshold")
+  private long threshold;
 
   @JsonProperty("start_time")
   private long startTime;
@@ -54,39 +80,15 @@ public class CreateExperimentRequest {
   @JsonProperty("end_time")
   private long endTime;
 
-  @JsonProperty("cohort_id")
-  private String cohortId;
-
-  @JsonProperty("distribution_strategy")
-  private String distributionStrategy;
-
-  @JsonProperty("percentage_distribution")
-  private String percentageDistribution;
-
-  @JsonProperty("exposure")
-  private int exposure;
-
   @JsonProperty("created_by")
-  private long createdBy;
+  private String createdBy;
 
-  @JsonProperty("threshold")
-  private long threshold;
-
-  @JsonProperty("is_exclusive")
-  private Boolean isExclusive;
-
-  @JsonProperty("health")
-  private HealthStatus health;
-
-  @JsonProperty("type")
-  private ExperimentType type;
+  @JsonProperty("name_tsvector")
+  private String nameTsvector;
 
   @JsonProperty("created_at")
   private Timestamp createdAt;
 
   @JsonProperty("updated_at")
   private Timestamp updatedAt;
-
-  @JsonProperty("name_tokens")
-  private String nameTokens;
 }

@@ -6,12 +6,10 @@ import com.google.inject.Inject;
 import io.reactivex.rxjava3.core.Single;
 import io.vertx.rxjava3.sqlclient.SqlConnection;
 import java.util.List;
-import lombok.RequiredArgsConstructor;
 
-@RequiredArgsConstructor(onConstructor_ = @Inject)
 public class TagServiceImpl implements TagService {
 
-  private final TagDAO tagDAO;
+  @Inject private TagDAO tagDAO;
 
   @Override
   public Single<Boolean> insertTags(

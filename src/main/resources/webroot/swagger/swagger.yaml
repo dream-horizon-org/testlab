@@ -1,0 +1,167 @@
+openapi: 3.0.1
+info:
+  title: testlab
+  description: testlab Service
+  version: "1.0"
+paths:
+  /v1/experiment:
+    post:
+      summary: Create a new experiment
+      operationId: create
+      parameters:
+      - name: x-tenant-id
+        in: header
+        schema:
+          type: string
+          format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateExperimentRequest'
+      responses:
+        "200":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreateExperimentResponse'
+  /v1/experiment/{experiment_id}:
+    patch:
+      summary: Update experiment partially with optional tag replace
+      operationId: update
+      parameters:
+      - name: x-tenant-id
+        in: header
+        schema:
+          type: string
+          format: uuid
+      - name: experiment_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties:
+                type: object
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                type: object
+components:
+  schemas:
+    CreateExperimentResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        status:
+          type: boolean
+        message:
+          type: string
+    SuccessCreateExperimentResponse:
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/CreateExperimentResponse'
+    CreateExperimentRequest:
+      required:
+      - description
+      - hypothesis
+      - name
+      type: object
+      properties:
+        project_key:
+          type: string
+          format: uuid
+        tenant_id:
+          type: string
+          format: uuid
+        experiment_id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        description:
+          type: string
+        hypothesis:
+          type: string
+        status:
+          type: string
+          enum:
+          - LIVE
+          - PAUSED
+          - DRAFT
+          - CONCLUDED
+          - TERMINATED
+        type:
+          type: string
+          enum:
+          - A_B
+        guardrail_health_status:
+          type: string
+          enum:
+          - WARNING
+          - PASSING
+          - NO_CHECKS_AVAILABLE
+          - FAILED
+        metrics:
+          type: array
+          items:
+            type: string
+        cohorts:
+          type: array
+          items:
+            type: string
+        variant_weights:
+          type: object
+          additionalProperties:
+            type: object
+        assignment_strategy:
+          type: string
+          enum:
+          - RANDOM
+          - ROUND_ROBIN
+        overrides:
+          type: object
+          additionalProperties:
+            type: object
+        rule_attributes:
+          type: object
+          additionalProperties:
+            type: object
+        winning_variant:
+          type: object
+          additionalProperties:
+            type: object
+        exposure:
+          type: integer
+          format: int32
+        threshold:
+          type: integer
+          format: int64
+        start_time:
+          type: integer
+          format: int64
+        end_time:
+          type: integer
+          format: int64
+        created_by:
+          type: string
+        name_tsvector:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
