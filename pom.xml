@@ -21,7 +21,7 @@
     <swagger.configurationFilePath>${project.basedir}/${resources.directory}/config/swagger/swagger-info.json</swagger.configurationFilePath>
     <swagger.outputFileName>swagger</swagger.outputFileName>
     <swagger.outputPath>${resources.directory}/webroot/swagger</swagger.outputPath>
-    <swagger.resourcePackage>com.hulk.testlab.controller</swagger.resourcePackage>
+    <swagger.resourcePackage>com.ascend.testlab</swagger.resourcePackage>
 
     <!-- extension versions -->
     <os-maven-extension.version>1.7.1</os-maven-extension.version>

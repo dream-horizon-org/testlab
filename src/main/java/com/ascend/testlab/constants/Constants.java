@@ -4,7 +4,7 @@ import lombok.experimental.UtilityClass;
 
 @UtilityClass
 public final class Constants {
-  public static final String PACKAGE_NAME = "com.hulk.testlab";
+  public static final String PACKAGE_NAME = "com.ascend.testlab.rest";
   public static final String APP_ENV_KEY = "app.environment";
   public static final String DEFAULT_APP_ENV = "dev";
   public static final Integer MAX_NUM_REST_VERTICLES = 16;
@@ -13,4 +13,6 @@ public final class Constants {
   public static final String COMMA = ",";
   public static final String COLON = ":";
   public static final String SPACE = " ";
+
+  public static final String TENANT_ID = "tenant_id";
 }

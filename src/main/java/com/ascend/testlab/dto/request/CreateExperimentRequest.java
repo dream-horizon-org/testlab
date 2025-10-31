@@ -7,7 +7,9 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.validation.constraints.*;
 import java.sql.Timestamp;
+import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import lombok.Data;
 
 @Data
@@ -15,19 +17,27 @@ import lombok.Data;
 public class CreateExperimentRequest {
 
   @JsonProperty("tenant_id")
-  private byte[] tenantId;
+  private UUID tenantId;
 
   @JsonProperty("experiment_id")
-  private byte[] experimentId;
+  private UUID experimentId;
 
-  @JsonProperty("name") @NotBlank
+  @JsonProperty("name")
+  @NotBlank
   private String name;
 
-  @JsonProperty("description") @NotBlank
+  @JsonProperty("description")
+  @NotBlank
   private String description;
 
-  @JsonProperty("hypothesis")
-  private String hypothesis;
+  @JsonProperty("metrics")
+  private List<String> metrics;
+
+  @JsonProperty("tags")
+  private List<String> tags;
+
+  @JsonProperty("assignment_domain")
+  private String assignmentDomain;
 
   @JsonProperty("rules_json")
   private Map<String, Object> rulesJson;
@@ -49,9 +59,6 @@ public class CreateExperimentRequest {
 
   @JsonProperty("distribution_strategy")
   private String distributionStrategy;
-
-  @JsonProperty("assignment_domain")
-  private String assignmentDomain;
 
   @JsonProperty("percentage_distribution")
   private String percentageDistribution;

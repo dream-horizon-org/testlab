@@ -1,3 +1,14 @@
 package com.ascend.testlab.dto.response;
 
-public record CreateExperimentResponse(Long id) {}
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+public class CreateExperimentResponse {
+  private Long id;
+  private boolean status;
+  private String message;
+}
