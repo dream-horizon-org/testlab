@@ -6,12 +6,9 @@ import com.ascend.testlab.constants.enums.ExperimentType;
 import com.ascend.testlab.constants.enums.HealthStatus;
 import com.ascend.testlab.dto.entity.Experiment;
 import io.vertx.core.json.JsonObject;
-import io.vertx.rxjava3.core.buffer.Buffer;
 import io.vertx.rxjava3.sqlclient.Row;
 
 import java.sql.Timestamp;
-import java.util.Collections;
-import java.util.UUID;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -20,8 +17,8 @@ public class ExperimentMapper {
   public static Experiment mapRowToExperiment(Row row) {
     Experiment.ExperimentBuilder builder =
         Experiment.builder()
-            .projectId(bufferToUUID(row.getBuffer("project_id")))
-            .experimentId(bufferToUUID(row.getBuffer("experiment_id")))
+            .projectId(row.getUUID("project_key"))
+            .experimentId(row.getUUID("experiment_id"))
             .name(row.getString("name"))
             .description(row.getString("description"))
             .hypothesis(row.getString("hypothesis"))
@@ -57,13 +54,6 @@ public class ExperimentMapper {
     return builder.build();
   }
 
-  public static String mapRowToTags(Row row) {
-    return row.getString("tag");
-  }
-
-  public static String mapRowToOwner(Row row) {
-    return row.getString("owner");
-  }
 
   /** Map MySQL ENUM value 'A/B' to Java enum A_B */
   private static ExperimentType mapExperimentType(String dbValue) {
@@ -75,10 +65,4 @@ public class ExperimentMapper {
     return ExperimentType.valueOf(normalizedValue);
   }
 
-  private static UUID bufferToUUID(Buffer buffer) {
-    if (buffer == null || buffer.length() != 16) {
-      return null;
-    }
-    return new UUID(buffer.getLong(0), buffer.getLong(8));
-  }
 }

@@ -59,7 +59,7 @@ public class AerospikeClientImpl implements AerospikeClient {
     this.aerospikeConnectOptions = getAerospikeConnectOptions(aerospikeConfig);
     this.defaultPolicy = defaultPolicy();
     this.defaultWritePolicy = defaultWritePolicy();
-    retryConnection(aerospikeConfig.getConnectRetryIntervalMS());
+//    retryConnection(aerospikeConfig.getConnectRetryIntervalMS());
   }
 
   /**

@@ -2,8 +2,8 @@ package com.ascend.testlab.dao.impl;
 
 import static org.apache.commons.lang3.StringUtils.join;
 
-import com.ascend.testlab.client.mysql.MySQLReaderClient;
-import com.ascend.testlab.constants.mysql.ReadQuery;
+import com.ascend.testlab.client.postgresql.PgReaderClient;
+import com.ascend.testlab.constants.postgresql.ReadQuery;
 import com.ascend.testlab.dao.ExperimentDAO;
 import com.ascend.testlab.dto.entity.Experiment;
 import com.ascend.testlab.dto.request.FilterExperimentsRequest;
@@ -11,6 +11,8 @@ import com.ascend.testlab.mapper.ExperimentMapper;
 import com.google.inject.Inject;
 import io.reactivex.rxjava3.core.Single;
 import io.vertx.rxjava3.sqlclient.Tuple;
+
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -22,11 +24,11 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor(onConstructor_ = @Inject)
 public class ExperimentDAOImpl implements ExperimentDAO {
 
-  private final MySQLReaderClient mySQLReaderClient;
+  private final PgReaderClient pgReaderClient;
 
   @Override
   public Single<Experiment> getExperiment(String projectId, String experimentId) {
-    return mySQLReaderClient.fetchOne(
+    return pgReaderClient.fetchOne(
         ReadQuery.GET_EXPERIMENT,
         Tuple.of(projectId, experimentId),
         ExperimentMapper::mapRowToExperiment);
@@ -37,11 +39,12 @@ public class ExperimentDAOImpl implements ExperimentDAO {
 
     // Build dynamic query for status, type, and name filters
     StringBuilder query = new StringBuilder(ReadQuery.FILTER_EXPERIMENT);
-    List<Object> parameters = new java.util.ArrayList<>();
+    List<Object> parameters = new ArrayList<>();
     parameters.add(projectId);
+    int paramIndex = 2; // $1 is projectId
 
     if (req.hasNameFilter()) {
-      query.append(ReadQuery.NAME_FILTER);
+      query.append(String.format(ReadQuery.NAME_FILTER, "$" + paramIndex));
       parameters.add("%" + req.getName() + "%");
     }
 
@@ -63,7 +66,7 @@ public class ExperimentDAOImpl implements ExperimentDAO {
     query.append(ReadQuery.ORDER_BY_CREATED_AT);
 
     log.debug("Executing query: {} with parameters: {}", query, parameters);
-    return mySQLReaderClient.fetchAll(
+    return pgReaderClient.fetchAll(
         query.toString(), Tuple.tuple(parameters), ExperimentMapper::mapRowToExperiment);
   }
 
@@ -71,7 +74,7 @@ public class ExperimentDAOImpl implements ExperimentDAO {
   public Single<Set<String>> getExperimentIdsByTags(String projectId, List<String> tags) {
     String query = ReadQuery.GET_EXPERIMENT_BY_TAGS_FILTER.replace("<<TAG>>", join(tags, ','));
 
-    return mySQLReaderClient
+    return pgReaderClient
         .fetchAll(query, Tuple.of(projectId), row -> row.getString("experiment_id"))
         .map(HashSet::new)
         .map(set -> (Set<String>) set)
@@ -83,7 +86,7 @@ public class ExperimentDAOImpl implements ExperimentDAO {
   public Single<Set<String>> getExperimentIdsByOwners(String projectId, List<String> owners) {
     String query = ReadQuery.GET_EXPERIMENT_BY_OWNER_FILTER.replace("<<OWNER>>", join(owners, ','));
 
-    return mySQLReaderClient
+    return pgReaderClient
         .fetchAll(query, Tuple.of(projectId), row -> row.getString("experiment_id"))
         .map(HashSet::new)
         .map(set -> (Set<String>) set)
@@ -109,16 +112,30 @@ public class ExperimentDAOImpl implements ExperimentDAO {
     StringBuilder query = new StringBuilder(ReadQuery.FILTER_EXPERIMENT);
     List<Object> parameters = new java.util.ArrayList<>();
     parameters.add(projectId);
+    int paramIndex = 2; // $1 is projectId
 
     // Add experiment ID filter
-    String idPlaceholders = experimentIds.stream().map(id -> "?").collect(Collectors.joining(","));
-    query.append(" AND e.experiment_id IN (").append(idPlaceholders).append(")");
-    parameters.addAll(experimentIds);
+    StringBuilder idPlaceholderBuilder = new StringBuilder();
+    boolean first = true;
+    for (String id : experimentIds) {
+      if (!first) {
+        idPlaceholderBuilder.append(",");
+      }
+      String placeholder = "$" + paramIndex;
+      idPlaceholderBuilder.append(placeholder);
+      parameters.add(id);
+      paramIndex++;
+      first = false;
+    }
+    query.append(" AND e.experiment_id IN (")
+         .append(idPlaceholderBuilder)
+         .append(")");
 
     // Add name filter
     if (req.hasNameFilter()) {
-      query.append(ReadQuery.NAME_FILTER);
+      query.append(String.format(ReadQuery.NAME_FILTER, "$" + paramIndex));
       parameters.add("%" + req.getName() + "%");
+      paramIndex++;
     }
 
     // Add status filter
@@ -140,7 +157,7 @@ public class ExperimentDAOImpl implements ExperimentDAO {
     query.append(ReadQuery.GROUP_BY);
     query.append(ReadQuery.ORDER_BY_CREATED_AT);
 
-    return mySQLReaderClient
+    return pgReaderClient
         .fetchAll(query.toString(), Tuple.tuple(parameters), ExperimentMapper::mapRowToExperiment)
         .doOnSuccess(
             experiments ->
