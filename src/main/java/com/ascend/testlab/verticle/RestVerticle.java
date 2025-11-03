@@ -11,24 +11,46 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.inject.Inject;
 import io.vertx.core.http.HttpServerOptions;
 
+/**
+ * REST verticle for the testlab application. Contains methods to configure the HTTP server and
+ * inject the dependencies.
+ *
+ * @author Nikhil Tummidi
+ * @version 1.0
+ * @since 1.0
+ * @see AbstractRestVerticle
+ */
 public class RestVerticle extends AbstractRestVerticle {
 
+  /**
+   * Constructor for the RestVerticle.
+   *
+   * @param httpServerConfig the HTTP server configuration
+   */
   @Inject
   public RestVerticle(HttpServerConfig httpServerConfig) {
     super(Constants.PACKAGE_NAME, getHttpServerOptions(httpServerConfig));
   }
 
+  /** {@inheritDoc} */
   @Override
   protected ClassInjector getInjector() {
     return GuiceInjector::getInstance;
   }
 
+  /** {@inheritDoc} */
   @Override
   protected JsonProvider getJsonProvider() {
     return new JacksonProvider(this.getInjector().getInstance(ObjectMapper.class));
   }
 
-  private static HttpServerOptions getHttpServerOptions(HttpServerConfig httpServerConfig) {
+  /**
+   * Get the HTTP server options.
+   *
+   * @param httpServerConfig the HTTP server configuration
+   * @return the HTTP server options
+   */
+  static HttpServerOptions getHttpServerOptions(HttpServerConfig httpServerConfig) {
     return new HttpServerOptions()
         .setHost(httpServerConfig.getHost())
         .setPort(httpServerConfig.getPort())

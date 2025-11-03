@@ -4,7 +4,6 @@ import com.ascend.testlab.constants.web.WebConstants;
 import com.ascend.testlab.dto.ResponseEntity;
 import com.ascend.testlab.dto.request.AssignmentRequest;
 import com.ascend.testlab.service.AssignmentService;
-import com.ascend.testlab.util.CommonUtil;
 import com.google.inject.Inject;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -48,8 +47,6 @@ public class Assignment {
       @HeaderParam(WebConstants.GUEST_ID_HEADER) String guestId,
       @HeaderParam(WebConstants.TENANT_ID_HEADER) String tenantId,
       @Valid AssignmentRequest assignRequest) {
-
-//    CommonUtil.validateUser(userId);
 
     if (guestId != null && !guestId.isEmpty()) {
       assignRequest.setGuestId(guestId);

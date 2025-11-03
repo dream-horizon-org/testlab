@@ -1,0 +1,54 @@
+name: testlab
+
+x-pg-config: &pg-env
+  POSTGRES_USER: test_user
+  POSTGRES_PASSWORD: test_password
+  POSTGRES_DATABASE: experiment
+
+x-aerospike-config: &aerospike-env
+  NAMESPACE: experiment
+
+services:
+  postgresql:
+    container_name: postgresql
+    environment:
+      <<: *pg-env
+      PG_RANDOM_ROOT_PASSWORD: yes
+    image: postgres:16
+    ports:
+      - '5432:5432'
+    volumes:
+      - pg_data:/var/lib/pgsql
+      - ./src/main/resources/db/postgresql:/docker-entrypoint-initdb.d:ro
+
+  aerospike:
+    container_name: aerospike
+    environment:
+      <<: *aerospike-env
+    image: aerospike/aerospike-server:8.1.0.1
+    ports:
+      - '3000-3002:3000-3002'
+    volumes:
+      - aerospike_data:/opt/aerospike/data
+
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: backend
+    environment:
+      <<: [*pg-env, *aerospike-env]
+      PG_READER_HOST: postgresql
+      PG_WRITER_HOST: postgresql
+      AEROSPIKE_HOST: aerospike
+    depends_on:
+      postgresql:
+        condition: service_started
+      aerospike:
+        condition: service_started
+    ports:
+      - '8080:8080'
+
+volumes:
+  pg_data: {}
+  aerospike_data: {}

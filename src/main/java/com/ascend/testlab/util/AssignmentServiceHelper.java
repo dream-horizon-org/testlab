@@ -1,7 +1,6 @@
 package com.ascend.testlab.util;
 
 import com.ascend.testlab.constants.enums.DistributionStrategy;
-import com.ascend.testlab.dto.request.AssignmentRequest;
 import com.ascend.testlab.dto.response.UserExperimentMap;
 import com.ascend.testlab.entity.Experiment;
 import com.ascend.testlab.entity.Variant;
@@ -11,7 +10,6 @@ import com.ascend.testlab.util.strategy.VariantAssignmentStrategy;
 import java.util.*;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
-import org.checkerframework.checker.units.qual.A;
 
 @Slf4j
 public class AssignmentServiceHelper {
@@ -32,8 +30,6 @@ public class AssignmentServiceHelper {
         .filter(exp -> !assignedExperimentIds.contains(exp.getExperimentId()))
         .collect(Collectors.toList());
   }
-
-
 
   /** Filters experiments based on entities */
   public static List<Experiment> applyEntityFilter(
@@ -63,8 +59,7 @@ public class AssignmentServiceHelper {
       return experiments.stream()
           .filter(
               exp ->
-                  exp.getAssignmentDomain() == null
-                      || !"COHORT".equals(exp.getAssignmentDomain()))
+                  exp.getAssignmentDomain() == null || !"COHORT".equals(exp.getAssignmentDomain()))
           .collect(Collectors.toList());
     }
 
@@ -93,7 +88,7 @@ public class AssignmentServiceHelper {
     }
 
     DistributionStrategy strategyType = experiment.getDistributionStrategy();
-    //todo
+    // todo
     List<Variant> variants = new ArrayList<>();
 
     VariantAssignmentStrategy strategy = getStrategy(strategyType);
@@ -138,7 +133,6 @@ public class AssignmentServiceHelper {
         .filter(ga -> !userAssignedIds.contains(ga.getExperimentId()))
         .collect(Collectors.toList());
   }
-
 
   private static VariantAssignmentStrategy getStrategy(DistributionStrategy strategyType) {
     if (STRATEGY_ROUND_ROBIN.equals(strategyType)) {

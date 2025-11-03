@@ -5,9 +5,9 @@ import com.aerospike.client.Key;
 import com.aerospike.client.Operation;
 import com.aerospike.client.policy.WritePolicy;
 import com.ascend.testlab.client.aerospike.AerospikeClient;
-import com.ascend.testlab.client.mysql.MySQLReaderClient;
+import com.ascend.testlab.client.postgresql.PgReaderClient;
 import com.ascend.testlab.constants.enums.DistributionStrategy;
-import com.ascend.testlab.constants.mysql.ReadQuery;
+import com.ascend.testlab.constants.postgresql.ReadQuery;
 import com.ascend.testlab.dao.AssignmentDAO;
 import com.ascend.testlab.dto.response.UserExperimentMap;
 import com.ascend.testlab.entity.Experiment;
@@ -28,7 +28,7 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor(onConstructor_ = @Inject)
 public class AssignmentDAOImpl implements AssignmentDAO {
 
-  private final MySQLReaderClient mySQLReaderClient;
+  private final PgReaderClient pgReaderClient;
   private final AerospikeClient aerospikeClient;
   private final ObjectMapper objectMapper;
 
@@ -44,7 +44,7 @@ public class AssignmentDAOImpl implements AssignmentDAO {
     long currentTime = System.currentTimeMillis();
     Tuple params = Tuple.of(tenantId.toString(), currentTime, currentTime);
 
-    return mySQLReaderClient
+    return pgReaderClient
         .fetchAll(ReadQuery.GET_EXPERIMENTS, params, this::mapRowToExperiment)
         .doOnSuccess(
             experiments ->

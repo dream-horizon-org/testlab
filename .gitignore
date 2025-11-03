@@ -192,14 +192,30 @@ __pycache__/
 .vscode/
 
 ### Swagger ###
-!swagger.yaml
+!webroot/swagger/swagger.yaml
 webroot/
 
 ### logs ###
 *.log
+logs/
 
 ### input ###
 input.*
 
 ### output ###
 output.*
+
+### configs and secrets ###
+.config
+.secrets
+*.pem
+*.key
+*.crt
+
+# Backups
+backups/
+*.sql.gz
+*.backup
+
+META-INF/
+src/main/resources/META-INF/
