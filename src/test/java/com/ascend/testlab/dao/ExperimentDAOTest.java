@@ -77,6 +77,8 @@ public class ExperimentDAOTest {
     void testCreateExperimentMinimalFields() {
       // Arrange
       CreateExperimentRequest request = new CreateExperimentRequest();
+      request.setProjectKey(testProjectKey);
+      request.setExperimentId(testExperimentId);
       request.setName("minimal_experiment");
       request.setDescription("Minimal description");
       request.setHypothesis("Minimal hypothesis");
@@ -183,6 +185,8 @@ public class ExperimentDAOTest {
     void testCreateExperimentWithNullFields() {
       // Arrange
       CreateExperimentRequest request = new CreateExperimentRequest();
+      request.setProjectKey(testProjectKey);
+      request.setExperimentId(testExperimentId);
       request.setName("test_experiment");
       request.setDescription("Test description");
       request.setHypothesis("Test hypothesis");
@@ -444,16 +448,14 @@ public class ExperimentDAOTest {
     void testJsonbSerializationError() {
       // Arrange
       Map<String, Object> updates = new HashMap<>();
-      // Create a circular reference that will cause serialization to fail
-      Map<String, Object> circular = new HashMap<>();
-      circular.put("self", circular);
-      updates.put("variant_weights", circular);
+      // Create an object that can't be serialized to JSON (e.g., a Thread object)
+      updates.put("variant_weights", new Thread());
 
       // Act
       TestObserver<Boolean> testObserver =
           experimentDAO.updatePartial(testProjectKey, testExperimentId, updates).test();
 
-      // Assert
+      // Assert - Should handle serialization error gracefully
       testObserver.assertComplete();
       testObserver.assertNoErrors();
       testObserver.assertValue(false);
