@@ -7,7 +7,9 @@ import java.util.Map;
 import java.util.UUID;
 
 public interface ExperimentService {
-  Single<CreateExperimentResponse> create(UUID tenantId, CreateExperimentRequest request);
+  Single<CreateExperimentResponse> create(
+      UUID tenantId, UUID projectKey, CreateExperimentRequest request);
 
-  Single<Boolean> update(UUID tenantId, UUID experimentId, Map<String, Object> request);
+  Single<Boolean> update(
+      UUID tenantId, UUID projectKey, UUID experimentId, Map<String, Object> request);
 }

@@ -40,9 +40,11 @@ public class ExperimentResource {
                       mediaType = MediaType.APPLICATION_JSON,
                       schema = @Schema(implementation = CreateExperimentResponse.class))))
   public CompletionStage<ResponseEntity.Success<CreateExperimentResponse>> create(
-      @HeaderParam("x-tenant-id") UUID tenantId, @Valid CreateExperimentRequest request) {
+      @HeaderParam("x-tenant-id") UUID tenantId,
+      @HeaderParam("x-project-key") UUID projectKey,
+      @Valid CreateExperimentRequest request) {
     return experimentService
-        .create(tenantId, request)
+        .create(tenantId, projectKey, request)
         .map(ResponseEntity.Success::new)
         .toCompletionStage();
   }
@@ -54,10 +56,11 @@ public class ExperimentResource {
   @Operation(summary = "Update experiment partially with optional tag replace")
   public CompletionStage<ResponseEntity.Success<Boolean>> update(
       @HeaderParam("x-tenant-id") UUID tenantId,
+      @HeaderParam("x-project-key") UUID projectKey,
       @PathParam("experiment_id") UUID experimentId,
       java.util.Map<String, Object> request) {
     return experimentService
-        .update(tenantId, experimentId, request)
+        .update(tenantId, projectKey, experimentId, request)
         .map(ResponseEntity.Success::new)
         .toCompletionStage();
   }
