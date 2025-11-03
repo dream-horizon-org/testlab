@@ -13,7 +13,12 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class ExperimentServiceImpl implements ExperimentService {
 
-  @Inject private ExperimentDAO experimentDAO;
+  private final ExperimentDAO experimentDAO;
+
+  @Inject
+  public ExperimentServiceImpl(ExperimentDAO experimentDAO) {
+    this.experimentDAO = experimentDAO;
+  }
 
   @Override
   public Single<CreateExperimentResponse> create(

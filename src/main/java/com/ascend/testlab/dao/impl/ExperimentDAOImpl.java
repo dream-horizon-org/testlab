@@ -19,9 +19,14 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class ExperimentDAOImpl implements ExperimentDAO {
 
-  @Inject private PgWriterClient pgWriterClient;
+  private final PgWriterClient pgWriterClient;
 
   private static final ObjectMapper MAPPER = new ObjectMapper();
+
+  @Inject
+  public ExperimentDAOImpl(PgWriterClient pgWriterClient) {
+    this.pgWriterClient = pgWriterClient;
+  }
 
   @Override
   public Single<Long> create(UUID tenantId, UUID projectKey, CreateExperimentRequest request) {
