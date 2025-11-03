@@ -1,6 +1,5 @@
 package com.ascend.testlab.dao.impl;
 
-
 import com.ascend.testlab.client.postgresql.PgReaderClient;
 import com.ascend.testlab.constants.postgresql.ReadQuery;
 import com.ascend.testlab.dao.ExperimentDAO;

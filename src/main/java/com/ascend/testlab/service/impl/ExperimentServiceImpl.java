@@ -14,12 +14,34 @@ import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
+/**
+ * Implementation of ExperimentService. Handles business logic for experiment retrieval and
+ * filtering operations, including error handling, pagination, and combining filters for tags and
+ * owners.
+ *
+ * @author Yashita Bansal
+ * @version 1.0
+ * @since 1.0
+ * @see ExperimentService
+ * @see ExperimentDAO
+ */
 @Slf4j
 @RequiredArgsConstructor(onConstructor_ = @Inject)
 public class ExperimentServiceImpl implements ExperimentService {
 
   private final ExperimentDAO experimentDAO;
 
+  /**
+   * {@inheritDoc}
+   *
+   * <p>Delegates to the DAO layer to fetch the experiment. Handles error translation:
+   *
+   * <ul>
+   *   <li>NoSuchElementException -> EXPERIMENT_NOT_FOUND
+   *   <li>RestException -> rethrown as-is
+   *   <li>Other exceptions -> DATABASE_ERROR
+   * </ul>
+   */
   @Override
   public Single<Experiment> getExperiment(String projectId, String experimentId) {
     return experimentDAO
@@ -48,6 +70,22 @@ public class ExperimentServiceImpl implements ExperimentService {
             });
   }
 
+  /**
+   * {@inheritDoc}
+   *
+   * <p>Implements complex filtering logic:
+   *
+   * <ol>
+   *   <li>Fetches experiment IDs by tags and owners in parallel (if filters are present)
+   *   <li>Fetches all experiments filtered by status, type, and name
+   *   <li>Combines results using intersection logic (experiments must match both tag AND owner
+   *       filters if both are present)
+   *   <li>Applies pagination to the filtered results
+   *   <li>Returns paginated response with metadata
+   * </ol>
+   *
+   * <p>On error, returns an empty paginated response to avoid exposing internal errors.
+   */
   @Override
   public Single<FilterExperimentsResponse> filterExperiments(
       String projectId, FilterExperimentsRequest request) {
