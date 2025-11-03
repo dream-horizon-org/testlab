@@ -4,6 +4,10 @@ import lombok.experimental.UtilityClass;
 
 @UtilityClass
 public final class WebConstants {
+
+  public static final String USER_ID_HEADER = "x-user-id";
+  public static final String TENANT_ID_HEADER = "X-tenant-id";
+  public static final String GUEST_ID_HEADER = "X-guest-id";
   /* Circuit Breaker Constants */
   public static final String BUFFERED_CALLS_COUNT = "bufferedCallsCount";
   public static final String FAILED_CALLS_COUNT = "failedCallsCount";

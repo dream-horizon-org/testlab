@@ -1,7 +1,6 @@
 package com.ascend.testlab.verticle;
 
 import com.ascend.testlab.client.aerospike.AerospikeClient;
-import com.ascend.testlab.client.datadog.DDClient;
 import com.ascend.testlab.client.kafka.KafkaProducerClient;
 import com.ascend.testlab.client.mysql.MySQLReaderClient;
 import com.ascend.testlab.client.mysql.MySQLWriterClient;
@@ -53,7 +52,6 @@ public class MainVerticle extends AbstractVerticle {
 
   private Completable stopClients() {
     AerospikeClient aerospikeClient = GuiceInjector.getInstance(AerospikeClient.class);
-    DDClient ddClient = GuiceInjector.getInstance(DDClient.class);
     KafkaProducerClient kafkaProducerClient = GuiceInjector.getInstance(KafkaProducerClient.class);
     MySQLReaderClient mySQLReaderClient = GuiceInjector.getInstance(MySQLReaderClient.class);
     MySQLWriterClient mySQLWriterClient = GuiceInjector.getInstance(MySQLWriterClient.class);
@@ -64,7 +62,6 @@ public class MainVerticle extends AbstractVerticle {
         kafkaProducerClient.close(),
         mySQLReaderClient.close(),
         mySQLWriterClient.close(),
-        webClient.close(),
-        ddClient.close());
+        webClient.close());
   }
 }

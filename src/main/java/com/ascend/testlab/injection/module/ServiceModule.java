@@ -2,8 +2,6 @@ package com.ascend.testlab.injection.module;
 
 import com.ascend.testlab.client.aerospike.AerospikeClient;
 import com.ascend.testlab.client.aerospike.impl.AerospikeClientImpl;
-import com.ascend.testlab.client.datadog.DDClient;
-import com.ascend.testlab.client.datadog.impl.DDClientImpl;
 import com.ascend.testlab.client.kafka.KafkaProducerClient;
 import com.ascend.testlab.client.kafka.impl.KafkaProducerClientImpl;
 import com.ascend.testlab.client.mysql.MySQLReaderClient;
@@ -19,11 +17,11 @@ import com.ascend.testlab.service.HealthCheckService;
 import com.ascend.testlab.service.impl.HealthCheckServiceImpl;
 import com.ascend.testlab.util.CircuitBreakerFactory;
 import com.google.inject.Singleton;
-import com.hulk.testlab.config.*;
-import com.hulk.testlab.dao.*;
-import com.hulk.testlab.dao.impl.*;
-import com.hulk.testlab.service.*;
-import com.hulk.testlab.service.impl.*;
+import com.ascend.testlab.config.*;
+import com.ascend.testlab.dao.*;
+import com.ascend.testlab.dao.impl.*;
+import com.ascend.testlab.service.*;
+import com.ascend.testlab.service.impl.*;
 import io.vertx.rxjava3.core.Vertx;
 
 public class ServiceModule extends DefaultModule {
@@ -59,8 +57,6 @@ public class ServiceModule extends DefaultModule {
   private void bindClients() {
     bind(AerospikeClientImpl.class).in(Singleton.class);
     bind(AerospikeClient.class).to(AerospikeClientImpl.class);
-    bind(DDClientImpl.class).in(Singleton.class);
-    bind(DDClient.class).to(DDClientImpl.class);
     bind(KafkaProducerClientImpl.class).in(Singleton.class);
     bind(KafkaProducerClient.class).to(KafkaProducerClientImpl.class);
     bind(MySQLReaderClientImpl.class).in(Singleton.class);

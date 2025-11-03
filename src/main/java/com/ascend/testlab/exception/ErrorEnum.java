@@ -12,7 +12,12 @@ public enum ErrorEnum implements RestError {
   REST_HEALTH_CHECK_FAILED(
       "testlab_REST_HEALTH_CHECK_FAILED",
       "HealthCheck Failed for testlab service",
-      HttpStatus.SC_INTERNAL_SERVER_ERROR);
+      HttpStatus.SC_INTERNAL_SERVER_ERROR),
+
+  MISSING_USER_IDENTIFIER(
+      "EXPERIMENT_SERVICE_MISSING_USER_IDENTIFIER",
+      "Missing User Identifier, pass user-id/guest-id",
+      HttpStatus.SC_BAD_REQUEST);
 
   private final String errorCode;
   private final String errorMessage;

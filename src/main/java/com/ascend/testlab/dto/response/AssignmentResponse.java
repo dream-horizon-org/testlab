@@ -1,4 +1,4 @@
-package com.ascend.testlab.entity;
+package com.ascend.testlab.dto.response;
 
 import java.util.List;
 import lombok.AllArgsConstructor;
@@ -10,7 +10,6 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class ApiPathVariants {
-  private String apiPath;
-  private List<Variant> variants;
+public class AssignmentResponse {
+  private List<UserExperimentMap> apiAssignmentMap;
 }

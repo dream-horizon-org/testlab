@@ -8,6 +8,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+// todo
 @Data
 @Builder
 @NoArgsConstructor
@@ -18,9 +19,6 @@ public class UserExperimentMap {
   private String variant;
   private String status;
   private Map<String, Object> variables;
-  private Boolean isStatic;
-  private Boolean isExclusive;
   private List<String> entities;
-  private String apiPath;
   private Long assignedAt;
 }
