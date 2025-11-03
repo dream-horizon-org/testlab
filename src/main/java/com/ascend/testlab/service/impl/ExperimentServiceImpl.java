@@ -9,10 +9,7 @@ import com.ascend.testlab.service.ExperimentService;
 import com.dream11.rest.exception.RestException;
 import com.google.inject.Inject;
 import io.reactivex.rxjava3.core.Single;
-import java.util.HashSet;
-import java.util.List;
-import java.util.NoSuchElementException;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -60,12 +57,12 @@ public class ExperimentServiceImpl implements ExperimentService {
     boolean hasOwnerFilter = request.hasOwnerFilter();
 
     // Fetch tag IDs, owner IDs, and all experiments in parallel
-    Single<Set<String>> tagIdsSingle =
+    Single<Set<UUID>> tagIdsSingle =
         hasTagFilter
             ? experimentDAO.getExperimentIdsByTags(projectId, request.getTag())
             : Single.just(new HashSet<>());
 
-    Single<Set<String>> ownerIdsSingle =
+    Single<Set<UUID>> ownerIdsSingle =
         hasOwnerFilter
             ? experimentDAO.getExperimentIdsByOwners(projectId, request.getOwner())
             : Single.just(new HashSet<>());
@@ -110,17 +107,17 @@ public class ExperimentServiceImpl implements ExperimentService {
    */
   private List<Experiment> filterExperimentsByTagAndOwner(
       List<Experiment> experiments,
-      Set<String> tagIds,
-      Set<String> ownerIds,
+      Set<UUID> tagIds,
+      Set<UUID> ownerIds,
       boolean hasTagFilter,
       boolean hasOwnerFilter) {
     if (!hasTagFilter && !hasOwnerFilter) return experiments;
 
-    Set<String> validExperimentIds;
+    Set<UUID> validExperimentIds;
 
     if (hasTagFilter && hasOwnerFilter) {
       // Experiments must be in BOTH sets (AND logic)
-      Set<String> intersection = new HashSet<>(tagIds);
+      Set<UUID> intersection = new HashSet<>(tagIds);
       intersection.retainAll(ownerIds);
       validExperimentIds = intersection;
     } else if (hasTagFilter) {

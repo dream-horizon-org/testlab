@@ -5,9 +5,7 @@ import com.ascend.testlab.constants.enums.ExperimentStatus;
 import com.ascend.testlab.constants.enums.ExperimentType;
 import com.ascend.testlab.constants.enums.HealthStatus;
 import io.vertx.core.json.JsonObject;
-
 import java.sql.Timestamp;
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 import lombok.*;
@@ -25,7 +23,7 @@ public class Experiment {
   private ExperimentStatus status;
   private ExperimentType type;
   private HealthStatus guardrailHealthStatus;
-  private String cohorts;
+  private List<String> cohorts;
   private JsonObject variantWeights;
   private AssignmentStrategy assignmentStrategy;
   private JsonObject overrides;
@@ -38,7 +36,6 @@ public class Experiment {
   private String createdBy;
   private Timestamp createdAt;
   private Timestamp updatedAt;
-  private String nameTokens;
   private String tags;
   private String owner;
 }

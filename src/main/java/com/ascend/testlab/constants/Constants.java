@@ -34,22 +34,24 @@ public final class Constants {
   /** The delimiter for space. */
   public static final String SPACE = " ";
 
-  /* API Path */
+  /** API Path */
   public static final String FILTER_EXPERIMENTS_PATH = "/v1/experiment";
+
   public static final String GET_EXPERIMENT_PATH = "/v1/experiment/{experimentId}";
 
   public static final String PROJECT_ID = "x-project-id";
   public static final String EXPERIMENT_ID = "experimentId";
 
-  /* Filter Query Params */
+  /** Filter Query Parameters */
   public static final String EXPERIMENT_STATUS = "status";
+
   public static final String EXPERIMENT_TYPE = "type";
   public static final String TAG = "tag";
   public static final String OWNER = "owner";
   public static final String NAME = "name";
 
-  /* Pagination */
+  /** Pagination */
   public static final String OFFSET = "page";
-  public static final String LIMIT = "limit";
 
+  public static final String LIMIT = "limit";
 }

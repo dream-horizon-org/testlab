@@ -12,12 +12,38 @@ import jakarta.ws.rs.core.MediaType;
 import java.util.concurrent.CompletionStage;
 import lombok.extern.slf4j.Slf4j;
 
+/**
+ * REST endpoint for filtering and retrieving experiments with pagination support. Handles GET
+ * requests to fetch a list of experiments based on various filter criteria such as status, tag,
+ * owner, name, and type.
+ *
+ * @author Yashita Bansal
+ * @version 1.0
+ * @since 1.0
+ * @see ExperimentService
+ */
 @Path(Constants.FILTER_EXPERIMENTS_PATH)
 @Slf4j
 public class FilterExperiments {
 
   @Inject private ExperimentService experimentService;
 
+  /**
+   * Supports filtering by multiple criteria including status, tag, owner, name, and type. Also
+   * supports pagination through limit and page parameters. All filters are optional, allowing for
+   * flexible querying of experiments.
+   *
+   * @param projectId the project ID (required, passed as header parameter "x-project-id")
+   * @param status optional filter for experiment status (e.g., LIVE, PAUSED, DRAFT, CONCLUDED,
+   *     TERMINATED)
+   * @param tag optional filter for experiment tags
+   * @param owner optional filter for experiment owner
+   * @param name optional filter for experiment name (supports text search)
+   * @param type optional filter for experiment type (e.g., A/B)
+   * @param limit optional parameter to limit the number of results per page
+   * @param page optional parameter to specify the page number for pagination
+   * @return a CompletionStage containing a successful response with paginated experiment data
+   */
   @GET
   @Produces(MediaType.APPLICATION_JSON)
   @Consumes(MediaType.APPLICATION_JSON)

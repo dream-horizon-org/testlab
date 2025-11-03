@@ -1,6 +1,5 @@
 package com.ascend.testlab.dao.impl;
 
-import static org.apache.commons.lang3.StringUtils.join;
 
 import com.ascend.testlab.client.postgresql.PgReaderClient;
 import com.ascend.testlab.constants.postgresql.ReadQuery;
@@ -11,11 +10,7 @@ import com.ascend.testlab.mapper.ExperimentMapper;
 import com.google.inject.Inject;
 import io.reactivex.rxjava3.core.Single;
 import io.vertx.rxjava3.sqlclient.Tuple;
-
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -45,20 +40,20 @@ public class ExperimentDAOImpl implements ExperimentDAO {
 
     if (req.hasNameFilter()) {
       query.append(String.format(ReadQuery.NAME_FILTER, "$" + paramIndex));
-      parameters.add("%" + req.getName() + "%");
+      parameters.add(req.getName());
     }
 
     if (req.hasStatusFilter()) {
-      String statusStr = req.getStatus().stream()
+      String statusStr =
+          req.getStatus().stream()
               .map(status -> "'" + status.name() + "'")
               .collect(Collectors.joining(","));
       query.append(ReadQuery.STATUS_FILTER.replace("<<STATUS>>", statusStr));
     }
 
     if (req.hasTypeFilter()) {
-      String typeStr = req.getType().stream()
-              .map(type -> "'" + type.name() + "'")
-              .collect(Collectors.joining(","));
+      String typeStr =
+          req.getType().stream().map(type -> "'" + type + "'").collect(Collectors.joining(","));
       query.append(ReadQuery.TYPE_FILTER.replace("<<TYPE>>", typeStr));
     }
 
@@ -71,25 +66,28 @@ public class ExperimentDAOImpl implements ExperimentDAO {
   }
 
   @Override
-  public Single<Set<String>> getExperimentIdsByTags(String projectId, List<String> tags) {
-    String query = ReadQuery.GET_EXPERIMENT_BY_TAGS_FILTER.replace("<<TAG>>", join(tags, ','));
+  public Single<Set<UUID>> getExperimentIdsByTags(String projectId, List<String> tags) {
+    String tagStr = tags.stream().map(tag -> "'" + tag + "'").collect(Collectors.joining(","));
+    String query = ReadQuery.GET_EXPERIMENT_BY_TAGS_FILTER.replace("<<TAG>>", tagStr);
 
     return pgReaderClient
-        .fetchAll(query, Tuple.of(projectId), row -> row.getString("experiment_id"))
+        .fetchAll(query, Tuple.of(projectId), row -> row.getUUID("experiment_id"))
         .map(HashSet::new)
-        .map(set -> (Set<String>) set)
+        .map(set -> (Set<UUID>) set)
         .doOnError(error -> log.error("Error fetching tag IDs for projectId: {}", projectId, error))
         .onErrorReturnItem(new HashSet<>());
   }
 
   @Override
-  public Single<Set<String>> getExperimentIdsByOwners(String projectId, List<String> owners) {
-    String query = ReadQuery.GET_EXPERIMENT_BY_OWNER_FILTER.replace("<<OWNER>>", join(owners, ','));
+  public Single<Set<UUID>> getExperimentIdsByOwners(String projectId, List<String> owners) {
+    String ownerStr =
+        owners.stream().map(owner -> "'" + owner + "'").collect(Collectors.joining(","));
+    String query = ReadQuery.GET_EXPERIMENT_BY_OWNER_FILTER.replace("<<OWNER>>", ownerStr);
 
     return pgReaderClient
-        .fetchAll(query, Tuple.of(projectId), row -> row.getString("experiment_id"))
+        .fetchAll(query, Tuple.of(projectId), row -> row.getUUID("experiment_id"))
         .map(HashSet::new)
-        .map(set -> (Set<String>) set)
+        .map(set -> (Set<UUID>) set)
         .doOnError(
             error -> log.error("Error fetching owner IDs for projectId: {}", projectId, error))
         .onErrorReturnItem(new HashSet<>());
@@ -98,15 +96,6 @@ public class ExperimentDAOImpl implements ExperimentDAO {
   @Override
   public Single<List<Experiment>> fetchExperimentsByIds(
       String projectId, Set<String> experimentIds, FilterExperimentsRequest req) {
-
-    // MySQL has a limit on IN clause size (typically 1000), handle large sets by chunking
-    if (experimentIds.size() > 1000) {
-      log.warn(
-          "Large experiment ID set (size: {}) for projectId: {}, using first 1000 IDs",
-          experimentIds.size(),
-          projectId);
-      experimentIds = experimentIds.stream().limit(1000).collect(Collectors.toSet());
-    }
 
     // Build dynamic query for experiments filtered by IDs, status, type, and name
     StringBuilder query = new StringBuilder(ReadQuery.FILTER_EXPERIMENT);
@@ -127,9 +116,7 @@ public class ExperimentDAOImpl implements ExperimentDAO {
       paramIndex++;
       first = false;
     }
-    query.append(" AND e.experiment_id IN (")
-         .append(idPlaceholderBuilder)
-         .append(")");
+    query.append(" AND e.experiment_id IN (").append(idPlaceholderBuilder).append(")");
 
     // Add name filter
     if (req.hasNameFilter()) {
@@ -140,7 +127,8 @@ public class ExperimentDAOImpl implements ExperimentDAO {
 
     // Add status filter
     if (req.hasStatusFilter()) {
-      String statusStr = req.getStatus().stream()
+      String statusStr =
+          req.getStatus().stream()
               .map(status -> "'" + status.name() + "'")
               .collect(Collectors.joining(","));
       query.append(ReadQuery.STATUS_FILTER.replace("<<STATUS>>", statusStr));
@@ -148,9 +136,8 @@ public class ExperimentDAOImpl implements ExperimentDAO {
 
     // Add type filter
     if (req.hasTypeFilter()) {
-        String typeStr = req.getType().stream()
-                .map(type -> "'" + type.name() + "'")
-                .collect(Collectors.joining(","));
+      String typeStr =
+          req.getType().stream().map(type -> "'" + type + "'").collect(Collectors.joining(","));
       query.append(ReadQuery.TYPE_FILTER.replace("<<TYPE>>", typeStr));
     }
 

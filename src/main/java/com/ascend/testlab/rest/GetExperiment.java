@@ -15,13 +15,34 @@ import java.util.concurrent.CompletionStage;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
+/**
+ * REST endpoint for retrieving experiment details by experiment ID. Handles GET requests to fetch a
+ * specific experiment within a project.
+ *
+ * @author Yashita Bansal
+ * @version 1.0
+ * @since 1.0
+ * @see ExperimentService
+ */
 @Path(Constants.GET_EXPERIMENT_PATH)
 @Slf4j
 @RequiredArgsConstructor(onConstructor_ = @Inject)
 public class GetExperiment {
 
+  /** The experiment service for retrieving experiment data. */
   private final ExperimentService experimentService;
 
+  /**
+   * Handles GET request to retrieve experiment details by experiment ID.
+   *
+   * <p>Fetches a single experiment based on the provided project ID and experiment ID. The project
+   * ID is passed as a header parameter, while the experiment ID is passed as a path parameter.
+   *
+   * @param projectId the project ID (required, passed as header parameter "x-project-id")
+   * @param experimentId the experiment ID (required, passed as path parameter)
+   * @return a CompletionStage containing a successful response with the experiment data, or a
+   *     failure response if the experiment ID is invalid or the experiment is not found
+   */
   @GET
   @Produces(MediaType.APPLICATION_JSON)
   @Consumes(MediaType.APPLICATION_JSON)

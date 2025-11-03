@@ -1,5 +1,7 @@
 package com.ascend.testlab.constants;
 
+import java.util.UUID;
+
 public final class TestConstants {
 
   /** The {@code app.environment} value for the test environment. */
@@ -71,6 +73,12 @@ public final class TestConstants {
 
   /** The {@code http.server.port} system property key. */
   public static final String APPLICATION_PORT_KEY = "http.server.port";
+
+  /** To test Rest APIs. */
+  public static final String TEST_PROJECT_ID = "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa";
+
+  public static final String TEST_EXPERIMENT_ID = "11111111-1111-1111-1111-111111111111";
+  public static final String INVALID_EXPERIMENT_ID = UUID.randomUUID().toString();
 
   private TestConstants() {}
 }

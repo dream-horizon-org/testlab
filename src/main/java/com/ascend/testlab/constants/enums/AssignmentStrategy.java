@@ -4,4 +4,3 @@ public enum AssignmentStrategy {
   RANDOM,
   ROUND_ROBIN
 }
-

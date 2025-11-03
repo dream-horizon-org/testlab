@@ -1,5 +1,6 @@
 package com.ascend.testlab.rest;
 
+import static com.ascend.testlab.constants.TestConstants.TEST_PROJECT_ID;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.hamcrest.Matchers.lessThanOrEqualTo;
@@ -24,103 +25,17 @@ import org.junit.jupiter.api.extension.ExtendWith;
 @Slf4j
 @ExtendWith(Setup.class)
 class FilterExperimentsIT {
-
-  private static final String TEST_PROJECT_ID = UUID.randomUUID().toString();
-  private static final String EXP1_ID = UUID.randomUUID().toString();
-  private static final String EXP2_ID = UUID.randomUUID().toString();
-  private static final String EXP3_ID = UUID.randomUUID().toString();
-  private static final String EXP4_ID = UUID.randomUUID().toString();
   private Connection connection;
 
   @BeforeEach
   void setUp() throws SQLException {
     connection = TestUtil.getDatabaseConnection();
-    insertTestData();
   }
 
   @AfterEach
   void tearDown() throws SQLException {
     if (connection != null && !connection.isClosed()) {
-      cleanupTestData();
       connection.close();
-    }
-  }
-
-  private void insertTestData() throws SQLException {
-    // Insert multiple experiments with different statuses, types, names, tags, and owners
-    String insertExperiments =
-        String.format(
-            "INSERT INTO experiments (project_id, experiment_id, name, description, hypothesis, "
-                + "status, type, guardrail_health_status, assignment_strategy, created_by, "
-                + "created_at, updated_at) VALUES "
-                + "('%s'::uuid, '%s'::uuid, 'Frontend Experiment', 'Frontend test', 'Test Hypothesis 1', "
-                + "'LIVE', 'A/B', 'PASSING', 'RANDOM', 'user1', NOW(), NOW()), "
-                + "('%s'::uuid, '%s'::uuid, 'Backend Experiment', 'Backend test', 'Test Hypothesis 2', "
-                + "'DRAFT', 'A/B', 'WARNING', 'ROUND_ROBIN', 'user2', NOW() - INTERVAL '1 hour', NOW() - INTERVAL '1 hour'), "
-                + "('%s'::uuid, '%s'::uuid, 'Mobile App Test', 'Mobile test', 'Test Hypothesis 3', "
-                + "'PAUSED', 'A/B', 'NO_CHECKS_AVAILABLE', 'RANDOM', 'user1', NOW() - INTERVAL '2 hours', NOW() - INTERVAL '2 hours'), "
-                + "('%s'::uuid, '%s'::uuid, 'API Performance Test', 'API test', 'Test Hypothesis 4', "
-                + "'CONCLUDED', 'A/B', 'FAILED', 'ROUND_ROBIN', 'user3', NOW() - INTERVAL '3 hours', NOW() - INTERVAL '3 hours')",
-            TEST_PROJECT_ID, EXP1_ID,
-            TEST_PROJECT_ID, EXP2_ID,
-            TEST_PROJECT_ID, EXP3_ID,
-            TEST_PROJECT_ID, EXP4_ID);
-
-    // Insert tags
-    String insertTags =
-        String.format(
-            "INSERT INTO experiment.tags (project_id, experiment_id, tag, created_at, updated_at) VALUES "
-                + "('%s', '%s', 'frontend', NOW(), NOW()), "
-                + "('%s', '%s', 'backend', NOW(), NOW()), "
-                + "('%s', '%s', 'mobile', NOW(), NOW()), "
-                + "('%s', '%s', 'api', NOW(), NOW()), "
-                + "('%s', '%s', 'performance', NOW(), NOW())",
-            TEST_PROJECT_ID, EXP1_ID,  // frontend
-            TEST_PROJECT_ID, EXP2_ID,  // backend
-            TEST_PROJECT_ID, EXP3_ID,  // mobile
-            TEST_PROJECT_ID, EXP4_ID,  // api
-            TEST_PROJECT_ID, EXP4_ID); // performance (for EXP4)
-
-    // Insert owners
-    String insertOwners =
-        String.format(
-            "INSERT INTO experiment.owners (project_id, experiment_id, owner, created_at, updated_at) VALUES "
-                + "('%s', '%s', 'owner1', NOW(), NOW()), "
-                + "('%s', '%s', 'owner2', NOW(), NOW()), "
-                + "('%s', '%s', 'owner1', NOW(), NOW()), "
-                + "('%s', '%s', 'owner3', NOW(), NOW())",
-            TEST_PROJECT_ID, EXP1_ID,  // owner1
-            TEST_PROJECT_ID, EXP2_ID,  // owner2
-            TEST_PROJECT_ID, EXP3_ID,  // owner1
-            TEST_PROJECT_ID, EXP4_ID); // owner3
-
-    TestUtil.executeSQLStatement(connection, insertExperiments);
-    TestUtil.executeSQLStatement(connection, insertTags);
-    TestUtil.executeSQLStatement(connection, insertOwners);
-    log.info("Test data inserted successfully for FilterExperimentsIT");
-  }
-
-  private void cleanupTestData() throws SQLException {
-    try {
-      String deleteTags =
-          String.format(
-              "DELETE FROM experiment.tags WHERE project_id = '%s'::uuid AND experiment_id IN ('%s'::uuid, '%s'::uuid, '%s'::uuid, '%s'::uuid)",
-              TEST_PROJECT_ID, EXP1_ID, EXP2_ID, EXP3_ID, EXP4_ID);
-      String deleteOwners =
-          String.format(
-              "DELETE FROM experiment.owners WHERE project_id = '%s'::uuid AND experiment_id IN ('%s'::uuid, '%s'::uuid, '%s'::uuid, '%s'::uuid)",
-              TEST_PROJECT_ID, EXP1_ID, EXP2_ID, EXP3_ID, EXP4_ID);
-      String deleteExperiments =
-          String.format(
-              "DELETE FROM experiments WHERE project_id = '%s'::uuid AND experiment_id IN ('%s'::uuid, '%s'::uuid, '%s'::uuid, '%s'::uuid)",
-              TEST_PROJECT_ID, EXP1_ID, EXP2_ID, EXP3_ID, EXP4_ID);
-
-      TestUtil.executeSQLStatement(connection, deleteTags);
-      TestUtil.executeSQLStatement(connection, deleteOwners);
-      TestUtil.executeSQLStatement(connection, deleteExperiments);
-      log.info("Test data cleaned up successfully for FilterExperimentsIT");
-    } catch (SQLException e) {
-      log.warn("Error cleaning up test data: {}", e.getMessage());
     }
   }
 
@@ -137,11 +52,11 @@ class FilterExperimentsIT {
         .statusCode(HttpStatus.SC_OK)
         .body("data", notNullValue())
         .body("data.experimentList", notNullValue())
-        .body("data.experimentList.size()", greaterThanOrEqualTo(4))
+        .body("data.experimentList.size()", greaterThanOrEqualTo(1))
         .body("data.pagination", notNullValue())
         .body("data.pagination.currentPage", notNullValue())
         .body("data.pagination.pageSize", notNullValue())
-        .body("data.pagination.totalCount", greaterThanOrEqualTo(4));
+        .body("data.pagination.totalCount", greaterThanOrEqualTo(1));
   }
 
   @Test
@@ -185,7 +100,7 @@ class FilterExperimentsIT {
     Map<String, String> headers = new HashMap<>();
     headers.put(Constants.PROJECT_ID, TEST_PROJECT_ID);
     Map<String, String> queryParams = new HashMap<>();
-    queryParams.put(Constants.NAME, "Frontend");
+    queryParams.put(Constants.NAME, "Checkout");
 
     ValidatableResponse response =
         TestUtil.executeRequest(null, headers, queryParams, spec -> spec.get(route));
@@ -194,7 +109,7 @@ class FilterExperimentsIT {
         .statusCode(HttpStatus.SC_OK)
         .body("data.experimentList", notNullValue())
         .body("data.experimentList.size()", greaterThanOrEqualTo(1))
-        .body("data.experimentList[0].name", equalTo("Frontend Experiment"));
+        .body("data.experimentList[0].name", equalTo("Checkout Button Color Test"));
   }
 
   @Test
@@ -203,7 +118,7 @@ class FilterExperimentsIT {
     Map<String, String> headers = new HashMap<>();
     headers.put(Constants.PROJECT_ID, TEST_PROJECT_ID);
     Map<String, String> queryParams = new HashMap<>();
-    queryParams.put(Constants.TAG, "frontend");
+    queryParams.put(Constants.TAG, "conversion");
 
     ValidatableResponse response =
         TestUtil.executeRequest(null, headers, queryParams, spec -> spec.get(route));
@@ -221,7 +136,7 @@ class FilterExperimentsIT {
     Map<String, String> headers = new HashMap<>();
     headers.put(Constants.PROJECT_ID, TEST_PROJECT_ID);
     Map<String, String> queryParams = new HashMap<>();
-    queryParams.put(Constants.OWNER, "owner1");
+    queryParams.put(Constants.OWNER, "alice@example.com");
 
     ValidatableResponse response =
         TestUtil.executeRequest(null, headers, queryParams, spec -> spec.get(route));
@@ -229,7 +144,7 @@ class FilterExperimentsIT {
     response
         .statusCode(HttpStatus.SC_OK)
         .body("data.experimentList", notNullValue())
-        .body("data.experimentList.size()", greaterThanOrEqualTo(2));
+        .body("data.experimentList.size()", greaterThanOrEqualTo(1));
   }
 
   @Test
@@ -246,7 +161,7 @@ class FilterExperimentsIT {
     response
         .statusCode(HttpStatus.SC_OK)
         .body("data.experimentList", notNullValue())
-        .body("data.experimentList.size()", greaterThanOrEqualTo(4));
+        .body("data.experimentList.size()", greaterThanOrEqualTo(1));
   }
 
   @Test
@@ -276,8 +191,8 @@ class FilterExperimentsIT {
     headers.put(Constants.PROJECT_ID, TEST_PROJECT_ID);
     Map<String, String> queryParams = new HashMap<>();
     queryParams.put(Constants.EXPERIMENT_STATUS, "LIVE");
-    queryParams.put(Constants.NAME, "Frontend");
-    queryParams.put(Constants.TAG, "frontend");
+    queryParams.put(Constants.NAME, "checkout");
+    queryParams.put(Constants.TAG, "conversion");
 
     ValidatableResponse response =
         TestUtil.executeRequest(null, headers, queryParams, spec -> spec.get(route));
@@ -287,7 +202,7 @@ class FilterExperimentsIT {
         .body("data.experimentList", notNullValue())
         .body("data.experimentList.size()", greaterThanOrEqualTo(1))
         .body("data.experimentList[0].status", equalTo("LIVE"))
-        .body("data.experimentList[0].name", equalTo("Frontend Experiment"));
+        .body("data.experimentList[0].name", equalTo("Checkout Button Color Test"));
   }
 
   @Test
@@ -344,4 +259,3 @@ class FilterExperimentsIT {
         .body("data.pagination.totalCount", equalTo(0));
   }
 }
-

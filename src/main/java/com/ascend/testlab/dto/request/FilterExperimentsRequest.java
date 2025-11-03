@@ -13,6 +13,14 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
+/**
+ * Request DTO for filtering experiments with various criteria. Supports filtering by status, owner,
+ * name, type, and tags, along with pagination.
+ *
+ * @author Yashita Bansal
+ * @version 1.0
+ * @since 1.0
+ */
 @Data
 @Builder
 @NoArgsConstructor
@@ -20,11 +28,10 @@ import lombok.extern.slf4j.Slf4j;
 @JsonIgnoreProperties(ignoreUnknown = true)
 @Slf4j
 public class FilterExperimentsRequest {
-
   private List<ExperimentStatus> status;
   private List<String> owner;
   private String name;
-  private List<ExperimentType> type;
+  private List<String> type;
   private List<String> tag;
   private Integer limit;
   private Integer page;
@@ -32,26 +39,58 @@ public class FilterExperimentsRequest {
   // Constants for validation
   private static final int DEFAULT_LIMIT = 20;
 
+  /**
+   * Checks if status filter is present in the request.
+   *
+   * @return true if status filter is present and not empty, false otherwise
+   */
   public boolean hasStatusFilter() {
     return this.getStatus() != null && !this.getStatus().isEmpty();
   }
 
+  /**
+   * Checks if owner filter is present in the request.
+   *
+   * @return true if owner filter is present and not empty, false otherwise
+   */
   public boolean hasOwnerFilter() {
     return this.getOwner() != null && !this.getOwner().isEmpty();
   }
 
+  /**
+   * Checks if name filter is present in the request.
+   *
+   * @return true if name filter is present and not empty (after trimming), false otherwise
+   */
   public boolean hasNameFilter() {
     return this.getName() != null && !this.getName().trim().isEmpty();
   }
 
+  /**
+   * Checks if type filter is present in the request.
+   *
+   * @return true if type filter is present and not empty, false otherwise
+   */
   public boolean hasTypeFilter() {
     return this.getType() != null && !this.getType().isEmpty();
   }
 
+  /**
+   * Checks if tag filter is present in the request.
+   *
+   * @return true if tag filter is present and not empty, false otherwise
+   */
   public boolean hasTagFilter() {
     return this.getTag() != null && !this.getTag().isEmpty();
   }
 
+  /**
+   * Builds and validates the filter request from string parameters. Parses comma-separated values
+   * for status, tag, owner, and type. Validates pagination parameters and sets defaults where
+   * appropriate.
+   *
+   * @throws RestException if validation fails for status, type, limit, or page
+   */
   public void buildRequest(
       String status,
       String tag,
@@ -116,12 +155,7 @@ public class FilterExperimentsRequest {
   private void validateAndSetType(String type) {
     if (type != null && !type.isEmpty()) {
       try {
-        List<ExperimentType> typeList =
-            Arrays.stream(type.split(","))
-                .map(String::trim)
-                .map(String::toUpperCase)
-                .map(s -> ExperimentType.valueOf(s.replace("/", "_")))
-                .toList();
+        List<String> typeList = Arrays.stream(type.split(",")).map(String::trim).toList();
         this.setType(typeList);
       } catch (Exception e) {
         log.warn(
