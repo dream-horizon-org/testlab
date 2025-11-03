@@ -11,7 +11,6 @@ import io.vertx.rxjava3.sqlclient.Row;
 import io.vertx.rxjava3.sqlclient.RowSet;
 import java.util.Arrays;
 import java.util.List;
-import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -31,7 +30,7 @@ class TagsDAOImplTest {
 
   private TagsDAOImpl tagsDAO;
 
-  private final UUID testProjectId = UUID.fromString("123e4567-e89b-12d3-a456-426614174000");
+  private final String testProjectKey = "123e4567-e89b-12d3-a456-426614174000";
 
   @BeforeEach
   void setUp() {
@@ -45,7 +44,7 @@ class TagsDAOImplTest {
         .thenReturn(Single.just(Arrays.asList("A/B-test", "feature-flag")));
 
     // When
-    Single<List<String>> result = tagsDAO.fetchTags(testProjectId);
+    Single<List<String>> result = tagsDAO.fetchTags(testProjectKey);
 
     // Then
     List<String> actualTags = result.blockingGet();
@@ -63,7 +62,7 @@ class TagsDAOImplTest {
         .thenReturn(Single.just(Arrays.asList()));
 
     // When
-    Single<List<String>> result = tagsDAO.fetchTags(testProjectId);
+    Single<List<String>> result = tagsDAO.fetchTags(testProjectKey);
 
     // Then
     List<String> actualTags = result.blockingGet();
@@ -80,7 +79,7 @@ class TagsDAOImplTest {
         .thenReturn(Single.error(dbException));
 
     // When
-    Single<List<String>> result = tagsDAO.fetchTags(testProjectId);
+    Single<List<String>> result = tagsDAO.fetchTags(testProjectKey);
 
     // Then
     Exception exception = assertThrows(RuntimeException.class, result::blockingGet);

@@ -7,7 +7,6 @@ import com.ascend.testlab.service.TagsService;
 import com.dream11.rest.exception.RestException;
 import com.google.inject.Inject;
 import io.reactivex.rxjava3.core.Single;
-import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -29,18 +28,18 @@ public class TagsServiceImpl implements TagsService {
   /**
    * {@inheritDoc}
    *
-   * @param projectId the UUID of the project to fetch tags for
+   * @param projectKey the project key to fetch tags for
    * @return a Single containing TagsResponse with the list of distinct tags
    * @throws com.dream11.rest.exception.RestException if the operation fails
    */
   @Override
-  public Single<TagsResponse> getTags(UUID projectId) {
+  public Single<TagsResponse> getTags(String projectKey) {
     return tagsDAO
-        .fetchTags(projectId)
+        .fetchTags(projectKey)
         .map(TagsResponse::new)
         .onErrorResumeNext(
             err -> {
-              log.error("Error in list tags for project {}: {}", projectId, err.getMessage());
+              log.error("Error in list tags for project {}: {}", projectKey, err.getMessage());
               return Single.error(
                   ErrorEnum.handleException(
                       err, new RestException(ErrorEnum.REST_FETCH_TAGS_FAILED, err)));

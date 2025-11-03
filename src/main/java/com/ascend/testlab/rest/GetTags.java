@@ -15,7 +15,6 @@ import jakarta.ws.rs.HeaderParam;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
-import java.util.UUID;
 import java.util.concurrent.CompletionStage;
 import lombok.RequiredArgsConstructor;
 
@@ -37,10 +36,10 @@ public class GetTags {
   /**
    * Handles the GET request to retrieve all distinct tags for a specific project.
    *
-   * @param projectId the project ID provided in the x-project-id header
+   * @param projectKey the project key provided in the x-project-id header
    * @return a CompletionStage containing a ResponseEntity with the list of tags
-   * @throws jakarta.validation.ConstraintViolationException if projectId is blank
-   * @throws com.dream11.rest.exception.RestException if projectId is invalid or other errors occur
+   * @throws jakarta.validation.ConstraintViolationException if projectKey is blank
+   * @throws com.dream11.rest.exception.RestException if projectKey is invalid or other errors occur
    */
   @GET
   @Consumes(MediaType.APPLICATION_JSON)
@@ -59,11 +58,11 @@ public class GetTags {
       content = @Content(schema = @Schema(implementation = ResponseEntity.Failure.class)))
   public CompletionStage<ResponseEntity.Success<TagsResponse>> handle(
       @HeaderParam("x-project-id") @NotBlank(message = "x-project-id header is required")
-          String projectId) {
+          String projectKey) {
 
-    CommonUtil.validateProjectId(projectId);
+    CommonUtil.validateProjectKey(projectKey);
     return tagsService
-        .getTags(UUID.fromString(projectId))
+        .getTags(projectKey)
         .map(ResponseEntity.Success::new)
         .toCompletionStage();
   }

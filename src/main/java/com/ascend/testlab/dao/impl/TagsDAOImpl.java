@@ -7,7 +7,6 @@ import com.google.inject.Inject;
 import io.reactivex.rxjava3.core.Single;
 import io.vertx.rxjava3.sqlclient.Tuple;
 import java.util.List;
-import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 
 /**
@@ -27,15 +26,15 @@ public class TagsDAOImpl implements TagsDAO {
   /**
    * {@inheritDoc}
    *
-   * @param projectId the UUID of the project to fetch tags for
+   * @param projectKey the project key to fetch tags for
    * @return a Single containing a list of distinct tag strings
    * @throws com.dream11.rest.exception.RestException if the database operation fails
    */
   @Override
-  public Single<List<String>> fetchTags(UUID projectId) {
+  public Single<List<String>> fetchTags(String projectKey) {
     return pgReaderClient.fetchAll(
         ReadQuery.FETCH_TAGS,
-        Tuple.tuple().addString(projectId.toString()),
+        Tuple.tuple().addString(projectKey),
         (row -> row.getString("tag")));
   }
 }

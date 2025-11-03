@@ -14,22 +14,9 @@ public final class CommonUtil {
     return CpuCoreSensor.availableProcessors();
   }
 
-  public static void validateProjectId(String projectId) {
-    Boolean isValidProjectId = StringUtils.isNotBlank(projectId) && isValidUUID(projectId);
-    if (Boolean.FALSE.equals(isValidProjectId))
+  public static void validateProjectKey(String projectKey) {
+    if (StringUtils.isBlank(projectKey))
       throw ExceptionUtil.getException(ErrorEnum.INVALID_PROJECT_ID);
   }
 
-  public static void validateExperimentId(String experimentId) {
-    if (experimentId == null || experimentId.trim().isEmpty()) {
-      throw ExceptionUtil.getException(ErrorEnum.INVALID_EXPERIMENT_ID);
-    }
-    if (!isValidUUID(experimentId)) {
-      throw ExceptionUtil.getException(ErrorEnum.INVALID_EXPERIMENT_ID);
-    }
-  }
-
-  public static Boolean isValidUUID(String uuidString) {
-    return Constants.UUID_REGEX.matcher(uuidString).matches();
-  }
 }
