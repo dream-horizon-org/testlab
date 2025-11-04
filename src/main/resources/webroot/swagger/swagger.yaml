@@ -21,7 +21,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/SuccessTagsResponse'
         "400":
-          description: Invalid project ID
+          description: Invalid project Key
           content:
             application/json:
               schema:

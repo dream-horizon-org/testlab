@@ -61,7 +61,7 @@ public class Tags {
       useReturnTypeSchema = true)
   @ApiResponse(
       responseCode = "400",
-      description = "Invalid project ID",
+      description = "Invalid project Key",
       content = @Content(schema = @Schema(implementation = ResponseEntity.Failure.class)))
   @ApiResponse(
       responseCode = "500",
