@@ -17,7 +17,6 @@ public interface TagsDAO {
    *
    * @param projectKey the project key to fetch tags for
    * @return a Single containing a list of distinct tag strings
-   * @throws com.dream11.rest.exception.RestException if the database operation fails
    */
   Single<List<String>> fetchTags(String projectKey);
 }

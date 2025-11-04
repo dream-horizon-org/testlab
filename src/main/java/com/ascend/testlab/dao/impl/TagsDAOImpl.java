@@ -7,7 +7,6 @@ import com.google.inject.Inject;
 import io.reactivex.rxjava3.core.Single;
 import io.vertx.rxjava3.sqlclient.Tuple;
 import java.util.List;
-import lombok.RequiredArgsConstructor;
 
 /**
  * Implementation of the TagsDAO interface for database operations on experiment tags.
@@ -18,23 +17,25 @@ import lombok.RequiredArgsConstructor;
  * @see TagsDAO
  * @see PgReaderClient
  */
-@RequiredArgsConstructor(onConstructor_ = @Inject)
 public class TagsDAOImpl implements TagsDAO {
 
+  /** The PostgreSQL reader client. */
   private final PgReaderClient pgReaderClient;
 
   /**
-   * {@inheritDoc}
+   * Constructor for the HealthCheckDAOImpl.
    *
-   * @param projectKey the project key to fetch tags for
-   * @return a Single containing a list of distinct tag strings
-   * @throws com.dream11.rest.exception.RestException if the database operation fails
+   * @param pgReaderClient the PostgreSQL reader client
    */
+  @Inject
+  public TagsDAOImpl(PgReaderClient pgReaderClient) {
+    this.pgReaderClient = pgReaderClient;
+  }
+
+  /** {@inheritDoc} */
   @Override
   public Single<List<String>> fetchTags(String projectKey) {
     return pgReaderClient.fetchAll(
-        ReadQuery.FETCH_TAGS,
-        Tuple.tuple().addString(projectKey),
-        (row -> row.getString("tag")));
+        ReadQuery.FETCH_TAGS, Tuple.tuple().addString(projectKey), (row -> row.getString("tag")));
   }
 }

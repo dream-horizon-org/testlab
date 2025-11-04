@@ -1,7 +1,9 @@
 package com.ascend.testlab.rest;
 
+import com.ascend.testlab.constants.web.WebConstants;
 import com.ascend.testlab.dto.ResponseEntity;
 import com.ascend.testlab.dto.response.TagsResponse;
+import com.ascend.testlab.exception.ErrorMessages;
 import com.ascend.testlab.service.TagsService;
 import com.ascend.testlab.util.CommonUtil;
 import com.google.inject.Inject;
@@ -16,7 +18,6 @@ import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
 import java.util.concurrent.CompletionStage;
-import lombok.RequiredArgsConstructor;
 
 /**
  * REST endpoint for retrieving experiment tags for a specific project.
@@ -28,10 +29,20 @@ import lombok.RequiredArgsConstructor;
  * @see TagsResponse
  */
 @Path("/v1/experiments/tags")
-@RequiredArgsConstructor(onConstructor = @__({@Inject}))
-public class GetTags {
+public class Tags {
 
+  /** The tags service. */
   private final TagsService tagsService;
+
+  /**
+   * Constructor for the Tags class.
+   *
+   * @param tagsService the tags service
+   */
+  @Inject
+  public Tags(TagsService tagsService) {
+    this.tagsService = tagsService;
+  }
 
   /**
    * Handles the GET request to retrieve all distinct tags for a specific project.
@@ -57,13 +68,11 @@ public class GetTags {
       description = "Internal server error",
       content = @Content(schema = @Schema(implementation = ResponseEntity.Failure.class)))
   public CompletionStage<ResponseEntity.Success<TagsResponse>> handle(
-      @HeaderParam("x-project-id") @NotBlank(message = "x-project-id header is required")
+      @HeaderParam(WebConstants.PROJECT_KEY_HEADER)
+          @NotBlank(message = ErrorMessages.PROJECT_KEY_MISSING)
           String projectKey) {
 
     CommonUtil.validateProjectKey(projectKey);
-    return tagsService
-        .getTags(projectKey)
-        .map(ResponseEntity.Success::new)
-        .toCompletionStage();
+    return tagsService.getTags(projectKey).map(ResponseEntity.Success::new).toCompletionStage();
   }
 }

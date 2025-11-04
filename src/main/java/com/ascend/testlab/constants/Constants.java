@@ -1,6 +1,5 @@
 package com.ascend.testlab.constants;
 
-import java.util.regex.Pattern;
 import lombok.experimental.UtilityClass;
 
 /**
@@ -14,6 +13,9 @@ import lombok.experimental.UtilityClass;
 public final class Constants {
   /** The name of the package. */
   public static final String PACKAGE_NAME = "com.ascend.testlab";
+
+  /** The name of the main verticle. */
+  public static final String MAIN_VERTICLE = "com.ascend.testlab.verticle.MainVerticle";
 
   /** The key for the application environment. */
   public static final String APP_ENV_KEY = "app.environment";
@@ -34,5 +36,4 @@ public final class Constants {
 
   /** The delimiter for space. */
   public static final String SPACE = " ";
-
 }

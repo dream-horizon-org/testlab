@@ -7,7 +7,6 @@ import com.ascend.testlab.service.TagsService;
 import com.dream11.rest.exception.RestException;
 import com.google.inject.Inject;
 import io.reactivex.rxjava3.core.Single;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -20,18 +19,22 @@ import lombok.extern.slf4j.Slf4j;
  * @see TagsDAO
  */
 @Slf4j
-@RequiredArgsConstructor(onConstructor = @__({@Inject}))
 public class TagsServiceImpl implements TagsService {
 
+  /** The tags DAO. */
   private final TagsDAO tagsDAO;
 
   /**
-   * {@inheritDoc}
+   * Constructor for the TagsServiceImpl.
    *
-   * @param projectKey the project key to fetch tags for
-   * @return a Single containing TagsResponse with the list of distinct tags
-   * @throws com.dream11.rest.exception.RestException if the operation fails
+   * @param tagsDAO the tags DAO
    */
+  @Inject
+  public TagsServiceImpl(TagsDAO tagsDAO) {
+    this.tagsDAO = tagsDAO;
+  }
+
+  /** {@inheritDoc} */
   @Override
   public Single<TagsResponse> getTags(String projectKey) {
     return tagsDAO

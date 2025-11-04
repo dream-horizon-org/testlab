@@ -22,13 +22,13 @@ class GetTagsTest {
 
   @Mock private TagsService tagsService;
 
-  private GetTags getTags;
+  private Tags getTags;
 
   private final String validProjectKey = "123e4567-e89b-12d3-a456-426614174000";
 
   @BeforeEach
   void setUp() {
-    getTags = new GetTags(tagsService);
+    getTags = new Tags(tagsService);
   }
 
   @Test

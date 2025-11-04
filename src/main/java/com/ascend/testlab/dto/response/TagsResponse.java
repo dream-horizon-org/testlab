@@ -1,6 +1,5 @@
 package com.ascend.testlab.dto.response;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.List;
 
 /**
@@ -11,4 +10,4 @@ import java.util.List;
  * @since 1.0
  * @param tags the list of distinct tag strings for the project
  */
-public record TagsResponse(@JsonProperty("tags") List<String> tags) {}
+public record TagsResponse(List<String> tags) {}
