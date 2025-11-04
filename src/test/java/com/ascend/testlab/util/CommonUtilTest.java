@@ -2,6 +2,8 @@ package com.ascend.testlab.util;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+import com.ascend.testlab.exception.ErrorEnum;
+import com.dream11.rest.exception.RestException;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
@@ -108,6 +110,46 @@ public class CommonUtilTest {
       } finally {
         executor.shutdown();
       }
+    }
+  }
+
+  @Nested
+  @DisplayName("validateProjectKey Tests")
+  class ValidateProjectKeyTests {
+
+    @Test
+    @DisplayName("Should throw RestException for null projectKey")
+    void testValidateProjectKeyNull() {
+      RestException ex =
+          assertThrows(RestException.class, () -> CommonUtil.validateProjectKey(null));
+      assertEquals(ErrorEnum.INVALID_PROJECT_KEY.getErrorCode(), ex.getErrorCode());
+      assertEquals(ErrorEnum.INVALID_PROJECT_KEY.getErrorMessage(), ex.getErrorMessage());
+      assertEquals(ErrorEnum.INVALID_PROJECT_KEY.getHttpStatusCode(), ex.getHttpStatusCode());
+    }
+
+    @Test
+    @DisplayName("Should throw RestException for empty projectKey")
+    void testValidateProjectKeyEmpty() {
+      RestException ex = assertThrows(RestException.class, () -> CommonUtil.validateProjectKey(""));
+      assertEquals(ErrorEnum.INVALID_PROJECT_KEY.getErrorCode(), ex.getErrorCode());
+      assertEquals(ErrorEnum.INVALID_PROJECT_KEY.getErrorMessage(), ex.getErrorMessage());
+      assertEquals(ErrorEnum.INVALID_PROJECT_KEY.getHttpStatusCode(), ex.getHttpStatusCode());
+    }
+
+    @Test
+    @DisplayName("Should throw RestException for blank projectKey")
+    void testValidateProjectKeyBlank() {
+      RestException ex =
+          assertThrows(RestException.class, () -> CommonUtil.validateProjectKey("   "));
+      assertEquals(ErrorEnum.INVALID_PROJECT_KEY.getErrorCode(), ex.getErrorCode());
+      assertEquals(ErrorEnum.INVALID_PROJECT_KEY.getErrorMessage(), ex.getErrorMessage());
+      assertEquals(ErrorEnum.INVALID_PROJECT_KEY.getHttpStatusCode(), ex.getHttpStatusCode());
+    }
+
+    @Test
+    @DisplayName("Should pass for non-blank projectKey")
+    void testValidateProjectKeyValid() {
+      assertDoesNotThrow(() -> CommonUtil.validateProjectKey("test-project"));
     }
   }
 }

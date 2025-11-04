@@ -1,11 +1,13 @@
-package com.ascend.testlab.service.impl;
+package com.ascend.testlab.service;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 import com.ascend.testlab.dao.TagsDAO;
 import com.ascend.testlab.dto.response.TagsResponse;
+import com.ascend.testlab.exception.ErrorEnum;
+import com.ascend.testlab.service.impl.TagsServiceImpl;
+import com.dream11.rest.exception.RestException;
 import io.reactivex.rxjava3.core.Single;
 import java.util.Arrays;
 import java.util.List;
@@ -16,11 +18,11 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class)
-class TagsServiceImplTest {
+class TagsServiceTest {
 
   @Mock private TagsDAO tagsDAO;
 
-  private TagsServiceImpl tagsService;
+  private TagsService tagsService;
 
   private final String testProjectKey = "123e4567-e89b-12d3-a456-426614174000";
 
@@ -53,7 +55,7 @@ class TagsServiceImplTest {
   @Test
   void testGetTags_EmptyResult() {
     // Given
-    when(tagsDAO.fetchTags(testProjectKey)).thenReturn(Single.just(Arrays.asList()));
+    when(tagsDAO.fetchTags(testProjectKey)).thenReturn(Single.just(List.of()));
 
     // When
     Single<TagsResponse> result = tagsService.getTags(testProjectKey);
@@ -76,7 +78,10 @@ class TagsServiceImplTest {
     Single<TagsResponse> result = tagsService.getTags(testProjectKey);
 
     // Then
-    Exception exception = assertThrows(Exception.class, result::blockingGet);
+    RestException exception = assertThrows(RestException.class, result::blockingGet);
+    assertEquals(ErrorEnum.REST_FETCH_TAGS_FAILED.getErrorCode(), exception.getErrorCode());
+    assertEquals(
+        ErrorEnum.REST_FETCH_TAGS_FAILED.getHttpStatusCode(), exception.getHttpStatusCode());
     assertTrue(exception.getMessage().contains("Tags Listing failed"));
     verify(tagsDAO, times(1)).fetchTags(testProjectKey);
   }

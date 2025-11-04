@@ -8,11 +8,8 @@ import com.ascend.testlab.client.postgresql.PgReaderClient;
 import com.ascend.testlab.client.postgresql.PgWriterClient;
 import com.ascend.testlab.client.webclient.WebClient;
 import com.ascend.testlab.config.HttpServerConfig;
-import com.ascend.testlab.dao.HealthCheckDAO;
 import com.ascend.testlab.injection.GuiceInjector;
-import com.ascend.testlab.service.HealthCheckService;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.inject.AbstractModule;
+import com.ascend.testlab.injection.module.ServiceModule;
 import io.reactivex.rxjava3.core.Completable;
 import io.reactivex.rxjava3.observers.TestObserver;
 import io.vertx.core.DeploymentOptions;
@@ -41,8 +38,6 @@ import org.mockito.junit.jupiter.MockitoExtension;
 @ExtendWith({VertxExtension.class, MockitoExtension.class})
 @DisplayName("MainVerticle Tests")
 public class MainVerticleTest {
-
-  private MainVerticle mainVerticle;
   private io.vertx.rxjava3.core.Vertx rxVertx;
   private String deploymentId;
 
@@ -50,8 +45,6 @@ public class MainVerticleTest {
   @Mock private PgReaderClient pgReaderClient;
   @Mock private PgWriterClient pgWriterClient;
   @Mock private WebClient webClient;
-  @Mock private HealthCheckDAO healthCheckDAO;
-  @Mock private HealthCheckService healthCheckService;
 
   @BeforeEach
   void setUp() throws Exception {
@@ -61,31 +54,13 @@ public class MainVerticleTest {
     instanceField.set(null, null);
 
     // Initialize Guice with mocked clients
-    HttpServerConfig httpServerConfig = new HttpServerConfig();
-    httpServerConfig.setHost("localhost");
-    httpServerConfig.setPort(8080);
+    System.getenv().put("POSTGRES_USER", "test");
+    System.getenv().put("POSTGRES_PASSWORD", "test");
 
     Vertx vertx = Vertx.vertx();
     GuiceInjector.initializeInjector(
-        List.of(
-            new AbstractModule() {
-              @Override
-              protected void configure() {
-                bind(Vertx.class).toInstance(vertx);
-                bind(ObjectMapper.class).toInstance(new ObjectMapper());
-                bind(HttpServerConfig.class).toInstance(httpServerConfig);
-                bind(AerospikeClient.class).toInstance(aerospikeClient);
-                bind(PgReaderClient.class).toInstance(pgReaderClient);
-                bind(PgWriterClient.class).toInstance(pgWriterClient);
-                bind(WebClient.class).toInstance(webClient);
-                bind(HealthCheckDAO.class).toInstance(healthCheckDAO);
-                bind(HealthCheckService.class).toInstance(healthCheckService);
-                // Don't bind RestVerticle as singleton - let it create new instances
-                bind(RestVerticle.class).toProvider(() -> new RestVerticle(httpServerConfig));
-              }
-            }));
+        List.of(new ServiceModule(io.vertx.rxjava3.core.Vertx.newInstance(vertx))));
 
-    mainVerticle = new MainVerticle();
     rxVertx = null;
     deploymentId = null;
   }
@@ -133,6 +108,7 @@ public class MainVerticleTest {
       rxVertx = io.vertx.rxjava3.core.Vertx.newInstance(vertx);
 
       // Act
+      MainVerticle mainVerticle = new MainVerticle();
       rxVertx
           .rxDeployVerticle(mainVerticle)
           .subscribe(
@@ -152,6 +128,7 @@ public class MainVerticleTest {
       rxVertx = io.vertx.rxjava3.core.Vertx.newInstance(vertx);
 
       // Act
+      MainVerticle mainVerticle = new MainVerticle();
       rxVertx
           .rxDeployVerticle(mainVerticle)
           .subscribe(
@@ -168,6 +145,7 @@ public class MainVerticleTest {
     @DisplayName("Should return Completable from rxStart")
     void testRxStartReturnsCompletable(Vertx vertx) {
       // Arrange
+      MainVerticle mainVerticle = new MainVerticle();
       mainVerticle.init(vertx, vertx.getOrCreateContext());
 
       // Act
@@ -191,6 +169,7 @@ public class MainVerticleTest {
       when(pgWriterClient.close()).thenReturn(Completable.complete());
       when(webClient.close()).thenReturn(Completable.complete());
 
+      MainVerticle mainVerticle = new MainVerticle();
       mainVerticle.init(vertx, vertx.getOrCreateContext());
 
       // Act
@@ -218,6 +197,7 @@ public class MainVerticleTest {
       when(pgWriterClient.close()).thenReturn(Completable.complete());
       when(webClient.close()).thenReturn(Completable.complete());
 
+      MainVerticle mainVerticle = new MainVerticle();
       mainVerticle.init(vertx, vertx.getOrCreateContext());
 
       // Act
@@ -236,6 +216,7 @@ public class MainVerticleTest {
       when(pgWriterClient.close()).thenReturn(Completable.complete());
       when(webClient.close()).thenReturn(Completable.complete());
 
+      MainVerticle mainVerticle = new MainVerticle();
       mainVerticle.init(vertx, vertx.getOrCreateContext());
 
       // Act
@@ -269,6 +250,7 @@ public class MainVerticleTest {
       when(pgWriterClient.close()).thenReturn(Completable.complete());
       when(webClient.close()).thenReturn(Completable.complete());
 
+      MainVerticle mainVerticle = new MainVerticle();
       mainVerticle.init(vertx, vertx.getOrCreateContext());
 
       // Act
@@ -292,6 +274,7 @@ public class MainVerticleTest {
       when(pgWriterClient.close()).thenReturn(Completable.complete());
       when(webClient.close()).thenReturn(Completable.complete());
 
+      MainVerticle mainVerticle = new MainVerticle();
       mainVerticle.init(vertx, vertx.getOrCreateContext());
 
       // Act
@@ -321,6 +304,7 @@ public class MainVerticleTest {
       rxVertx = io.vertx.rxjava3.core.Vertx.newInstance(vertx);
 
       // Act - Deploy then Undeploy
+      MainVerticle mainVerticle = new MainVerticle();
       rxVertx
           .rxDeployVerticle(mainVerticle)
           .doOnSuccess(id -> deploymentId = id)
@@ -341,6 +325,7 @@ public class MainVerticleTest {
       rxVertx = io.vertx.rxjava3.core.Vertx.newInstance(vertx);
 
       // Act & Assert
+      MainVerticle mainVerticle = new MainVerticle();
       rxVertx
           .rxDeployVerticle(mainVerticle)
           .doOnSuccess(
@@ -437,6 +422,7 @@ public class MainVerticleTest {
           .thenReturn(Completable.complete().delay(100, TimeUnit.MILLISECONDS));
       when(webClient.close()).thenReturn(Completable.complete().delay(100, TimeUnit.MILLISECONDS));
 
+      MainVerticle mainVerticle = new MainVerticle();
       mainVerticle.init(vertx, vertx.getOrCreateContext());
 
       // Act

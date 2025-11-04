@@ -109,4 +109,27 @@ public final class TestUtil {
 
     return requestMapper.apply(specification).then();
   }
+
+  public static void createTagsPartitionForProject(String projectKey) {
+    String ddl =
+        "CREATE TABLE IF NOT EXISTS experiment.tags_p_test "
+            + "PARTITION OF experiment.tags FOR VALUES IN ('"
+            + projectKey
+            + "');";
+    try {
+      TestUtil.executeSQLStatement(TestUtil.getDatabaseConnection(), ddl);
+    } catch (Exception e) {
+      throw new RuntimeException("Failed creating tags partition for tests", e);
+    }
+  }
+
+  public static void dropTagsTestPartition() {
+    String drop = "DROP TABLE IF EXISTS experiment.tags_p_test;";
+    try {
+      TestUtil.executeSQLStatement(TestUtil.getDatabaseConnection(), drop);
+    } catch (Exception e) {
+      // best-effort cleanup
+      log.warn("Failed dropping test tags partition", e);
+    }
+  }
 }

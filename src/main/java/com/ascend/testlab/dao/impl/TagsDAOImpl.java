@@ -19,6 +19,8 @@ import java.util.List;
  */
 public class TagsDAOImpl implements TagsDAO {
 
+  // TODO: Use an admin dao instead of tags
+
   /** The PostgreSQL reader client. */
   private final PgReaderClient pgReaderClient;
 
