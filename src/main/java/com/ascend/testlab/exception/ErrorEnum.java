@@ -37,8 +37,8 @@ public enum ErrorEnum implements RestError {
 
   /** The error code for the invalid project key. */
   INVALID_PROJECT_KEY(
-      "testlab_INVALID_PROJECT_ID",
-      "tenant-id header is missing/invalid",
+      "testlab_INVALID_PROJECT_KEY",
+      "x-project-key header is missing/invalid",
       HttpStatus.SC_BAD_REQUEST),
   ;
 
