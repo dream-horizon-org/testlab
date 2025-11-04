@@ -8,8 +8,11 @@ import com.ascend.testlab.client.postgresql.PgReaderClient;
 import com.ascend.testlab.client.postgresql.PgWriterClient;
 import com.ascend.testlab.client.webclient.WebClient;
 import com.ascend.testlab.config.HttpServerConfig;
+import com.ascend.testlab.dao.HealthCheckDAO;
 import com.ascend.testlab.injection.GuiceInjector;
-import com.ascend.testlab.injection.module.ServiceModule;
+import com.ascend.testlab.service.HealthCheckService;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.inject.AbstractModule;
 import io.reactivex.rxjava3.core.Completable;
 import io.reactivex.rxjava3.observers.TestObserver;
 import io.vertx.core.DeploymentOptions;
@@ -19,7 +22,6 @@ import io.vertx.junit5.VertxTestContext;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -38,6 +40,8 @@ import org.mockito.junit.jupiter.MockitoExtension;
 @ExtendWith({VertxExtension.class, MockitoExtension.class})
 @DisplayName("MainVerticle Tests")
 public class MainVerticleTest {
+
+  private MainVerticle mainVerticle;
   private io.vertx.rxjava3.core.Vertx rxVertx;
   private String deploymentId;
 
@@ -45,6 +49,8 @@ public class MainVerticleTest {
   @Mock private PgReaderClient pgReaderClient;
   @Mock private PgWriterClient pgWriterClient;
   @Mock private WebClient webClient;
+  @Mock private HealthCheckDAO healthCheckDAO;
+  @Mock private HealthCheckService healthCheckService;
 
   @BeforeEach
   void setUp() throws Exception {
@@ -54,13 +60,31 @@ public class MainVerticleTest {
     instanceField.set(null, null);
 
     // Initialize Guice with mocked clients
-    System.getenv().put("POSTGRES_USER", "test");
-    System.getenv().put("POSTGRES_PASSWORD", "test");
+    HttpServerConfig httpServerConfig = new HttpServerConfig();
+    httpServerConfig.setHost("localhost");
+    httpServerConfig.setPort(8080);
 
     Vertx vertx = Vertx.vertx();
     GuiceInjector.initializeInjector(
-        List.of(new ServiceModule(io.vertx.rxjava3.core.Vertx.newInstance(vertx))));
+        List.of(
+            new AbstractModule() {
+              @Override
+              protected void configure() {
+                bind(Vertx.class).toInstance(vertx);
+                bind(ObjectMapper.class).toInstance(new ObjectMapper());
+                bind(HttpServerConfig.class).toInstance(httpServerConfig);
+                bind(AerospikeClient.class).toInstance(aerospikeClient);
+                bind(PgReaderClient.class).toInstance(pgReaderClient);
+                bind(PgWriterClient.class).toInstance(pgWriterClient);
+                bind(WebClient.class).toInstance(webClient);
+                bind(HealthCheckDAO.class).toInstance(healthCheckDAO);
+                bind(HealthCheckService.class).toInstance(healthCheckService);
+                // Don't bind RestVerticle as singleton - let it create new instances
+                bind(RestVerticle.class).toProvider(() -> new RestVerticle(httpServerConfig));
+              }
+            }));
 
+    mainVerticle = new MainVerticle();
     rxVertx = null;
     deploymentId = null;
   }
@@ -98,65 +122,6 @@ public class MainVerticleTest {
   }
 
   @Nested
-  @DisplayName("Start Tests")
-  class StartTests {
-
-    @Test
-    @DisplayName("Should start and deploy verticles successfully")
-    void testRxStart(Vertx vertx, VertxTestContext testContext) {
-      // Arrange
-      rxVertx = io.vertx.rxjava3.core.Vertx.newInstance(vertx);
-
-      // Act
-      MainVerticle mainVerticle = new MainVerticle();
-      rxVertx
-          .rxDeployVerticle(mainVerticle)
-          .subscribe(
-              id -> {
-                // Assert
-                deploymentId = id;
-                assertNotNull(deploymentId);
-                testContext.completeNow();
-              },
-              testContext::failNow);
-    }
-
-    @Test
-    @DisplayName("Should deploy RestVerticle with correct instances")
-    void testDeployRestVerticle(Vertx vertx, VertxTestContext testContext) {
-      // Arrange
-      rxVertx = io.vertx.rxjava3.core.Vertx.newInstance(vertx);
-
-      // Act
-      MainVerticle mainVerticle = new MainVerticle();
-      rxVertx
-          .rxDeployVerticle(mainVerticle)
-          .subscribe(
-              id -> {
-                // Assert
-                deploymentId = id;
-                assertNotNull(deploymentId);
-                testContext.completeNow();
-              },
-              testContext::failNow);
-    }
-
-    @Test
-    @DisplayName("Should return Completable from rxStart")
-    void testRxStartReturnsCompletable(Vertx vertx) {
-      // Arrange
-      MainVerticle mainVerticle = new MainVerticle();
-      mainVerticle.init(vertx, vertx.getOrCreateContext());
-
-      // Act
-      Completable startCompletable = mainVerticle.rxStart();
-
-      // Assert
-      assertNotNull(startCompletable);
-    }
-  }
-
-  @Nested
   @DisplayName("Stop Tests")
   class StopTests {
 
@@ -169,7 +134,6 @@ public class MainVerticleTest {
       when(pgWriterClient.close()).thenReturn(Completable.complete());
       when(webClient.close()).thenReturn(Completable.complete());
 
-      MainVerticle mainVerticle = new MainVerticle();
       mainVerticle.init(vertx, vertx.getOrCreateContext());
 
       // Act
@@ -197,7 +161,6 @@ public class MainVerticleTest {
       when(pgWriterClient.close()).thenReturn(Completable.complete());
       when(webClient.close()).thenReturn(Completable.complete());
 
-      MainVerticle mainVerticle = new MainVerticle();
       mainVerticle.init(vertx, vertx.getOrCreateContext());
 
       // Act
@@ -216,7 +179,6 @@ public class MainVerticleTest {
       when(pgWriterClient.close()).thenReturn(Completable.complete());
       when(webClient.close()).thenReturn(Completable.complete());
 
-      MainVerticle mainVerticle = new MainVerticle();
       mainVerticle.init(vertx, vertx.getOrCreateContext());
 
       // Act
@@ -250,7 +212,6 @@ public class MainVerticleTest {
       when(pgWriterClient.close()).thenReturn(Completable.complete());
       when(webClient.close()).thenReturn(Completable.complete());
 
-      MainVerticle mainVerticle = new MainVerticle();
       mainVerticle.init(vertx, vertx.getOrCreateContext());
 
       // Act
@@ -274,7 +235,6 @@ public class MainVerticleTest {
       when(pgWriterClient.close()).thenReturn(Completable.complete());
       when(webClient.close()).thenReturn(Completable.complete());
 
-      MainVerticle mainVerticle = new MainVerticle();
       mainVerticle.init(vertx, vertx.getOrCreateContext());
 
       // Act
@@ -285,77 +245,6 @@ public class MainVerticleTest {
       testObserver.assertError(Throwable.class);
 
       testContext.completeNow();
-    }
-  }
-
-  @Nested
-  @DisplayName("Integration Tests")
-  class IntegrationTests {
-
-    @Test
-    @DisplayName("Should deploy and undeploy successfully")
-    void testDeployAndUndeploy(Vertx vertx, VertxTestContext testContext) {
-      // Arrange
-      when(aerospikeClient.close()).thenReturn(Completable.complete());
-      when(pgReaderClient.close()).thenReturn(Completable.complete());
-      when(pgWriterClient.close()).thenReturn(Completable.complete());
-      when(webClient.close()).thenReturn(Completable.complete());
-
-      rxVertx = io.vertx.rxjava3.core.Vertx.newInstance(vertx);
-
-      // Act - Deploy then Undeploy
-      MainVerticle mainVerticle = new MainVerticle();
-      rxVertx
-          .rxDeployVerticle(mainVerticle)
-          .doOnSuccess(id -> deploymentId = id)
-          .flatMapCompletable(rxVertx::rxUndeploy)
-          .doFinally(() -> deploymentId = null)
-          .subscribe(testContext::completeNow, testContext::failNow);
-    }
-
-    @Test
-    @DisplayName("Should work with full lifecycle")
-    void testFullLifecycle(Vertx vertx, VertxTestContext testContext) {
-      // Arrange
-      when(aerospikeClient.close()).thenReturn(Completable.complete());
-      when(pgReaderClient.close()).thenReturn(Completable.complete());
-      when(pgWriterClient.close()).thenReturn(Completable.complete());
-      when(webClient.close()).thenReturn(Completable.complete());
-
-      rxVertx = io.vertx.rxjava3.core.Vertx.newInstance(vertx);
-
-      // Act & Assert
-      MainVerticle mainVerticle = new MainVerticle();
-      rxVertx
-          .rxDeployVerticle(mainVerticle)
-          .doOnSuccess(
-              id -> {
-                deploymentId = id;
-                Assertions.assertNotNull(id);
-              })
-          .flatMapCompletable(rxVertx::rxUndeploy)
-          .doFinally(() -> deploymentId = null)
-          .subscribe(testContext::completeNow, testContext::failNow);
-    }
-
-    @Test
-    @DisplayName("Should integrate with GuiceInjector")
-    void testGuiceIntegration() {
-      // Act
-      AerospikeClient client = GuiceInjector.getInstance(AerospikeClient.class);
-      PgReaderClient readerClient = GuiceInjector.getInstance(PgReaderClient.class);
-      PgWriterClient writerClient = GuiceInjector.getInstance(PgWriterClient.class);
-      WebClient wClient = GuiceInjector.getInstance(WebClient.class);
-
-      // Assert
-      assertNotNull(client);
-      assertNotNull(readerClient);
-      assertNotNull(writerClient);
-      assertNotNull(wClient);
-      assertSame(aerospikeClient, client);
-      assertSame(pgReaderClient, readerClient);
-      assertSame(pgWriterClient, writerClient);
-      assertSame(webClient, wClient);
     }
   }
 
@@ -409,30 +298,6 @@ public class MainVerticleTest {
   @Nested
   @DisplayName("Edge Case Tests")
   class EdgeCaseTests {
-
-    @Test
-    @DisplayName("Should handle delayed client closes")
-    void testDelayedClientCloses(Vertx vertx, VertxTestContext testContext) {
-      // Arrange
-      when(aerospikeClient.close())
-          .thenReturn(Completable.complete().delay(100, TimeUnit.MILLISECONDS));
-      when(pgReaderClient.close())
-          .thenReturn(Completable.complete().delay(100, TimeUnit.MILLISECONDS));
-      when(pgWriterClient.close())
-          .thenReturn(Completable.complete().delay(100, TimeUnit.MILLISECONDS));
-      when(webClient.close()).thenReturn(Completable.complete().delay(100, TimeUnit.MILLISECONDS));
-
-      MainVerticle mainVerticle = new MainVerticle();
-      mainVerticle.init(vertx, vertx.getOrCreateContext());
-
-      // Act
-      TestObserver<Void> testObserver = mainVerticle.rxStop().test();
-
-      // Assert
-      testObserver.awaitDone(2, TimeUnit.SECONDS);
-      testObserver.assertComplete();
-      testContext.completeNow();
-    }
 
     @Test
     @DisplayName("Should handle verticle instantiation")

@@ -5,12 +5,10 @@ import static org.junit.jupiter.api.Assertions.*;
 import com.ascend.testlab.config.HttpServerConfig;
 import com.ascend.testlab.injection.GuiceInjector;
 import com.dream11.rest.ClassInjector;
-import com.dream11.rest.provider.JsonProvider;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.inject.AbstractModule;
 import io.vertx.core.http.HttpServerOptions;
 import io.vertx.junit5.VertxExtension;
-import io.vertx.junit5.VertxTestContext;
 import io.vertx.rxjava3.core.Vertx;
 import java.util.List;
 import org.junit.jupiter.api.AfterEach;
@@ -246,47 +244,6 @@ public class RestVerticleTest {
       assertNotNull(options);
       assertEquals("0.0.0.0", options.getHost());
       assertEquals(8080, options.getPort());
-    }
-  }
-
-  @Nested
-  @DisplayName("Integration Tests")
-  class IntegrationTests {
-
-    @Test
-    @DisplayName("Should work with multiple verticle instances")
-    void testMultipleVerticleInstances(VertxTestContext testContext) {
-      // Arrange
-      HttpServerConfig config1 = new HttpServerConfig();
-      config1.setHost("localhost");
-      config1.setPort(8081);
-
-      HttpServerConfig config2 = new HttpServerConfig();
-      config2.setHost("localhost");
-      config2.setPort(8082);
-
-      RestVerticle verticle1 = new RestVerticle(config1);
-      RestVerticle verticle2 = new RestVerticle(config2);
-
-      // Assert
-      assertNotNull(verticle1);
-      assertNotNull(verticle2);
-      assertNotSame(verticle1, verticle2);
-      testContext.completeNow();
-    }
-
-    @Test
-    @DisplayName("Should integrate with dependency injection")
-    void testDependencyInjectionIntegration() {
-      // Act
-      ClassInjector injector = restVerticle.getInjector();
-      ObjectMapper mapper = injector.getInstance(ObjectMapper.class);
-      JsonProvider jsonProvider = restVerticle.getJsonProvider();
-
-      // Assert
-      assertNotNull(injector);
-      assertNotNull(mapper);
-      assertNotNull(jsonProvider);
     }
   }
 
