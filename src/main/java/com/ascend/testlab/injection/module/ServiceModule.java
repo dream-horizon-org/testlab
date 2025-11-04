@@ -17,10 +17,8 @@ import com.ascend.testlab.dao.impl.HealthCheckDAOImpl;
 import com.ascend.testlab.dao.impl.TagDAOImpl;
 import com.ascend.testlab.service.ExperimentService;
 import com.ascend.testlab.service.HealthCheckService;
-import com.ascend.testlab.service.TagService;
 import com.ascend.testlab.service.impl.ExperimentServiceImpl;
 import com.ascend.testlab.service.impl.HealthCheckServiceImpl;
-import com.ascend.testlab.service.impl.TagServiceImpl;
 import com.ascend.testlab.util.CircuitBreakerFactory;
 import com.google.inject.Singleton;
 import io.vertx.rxjava3.core.Vertx;
@@ -94,6 +92,5 @@ public class ServiceModule extends DefaultModule {
   private void bindServices() {
     bind(HealthCheckService.class).to(HealthCheckServiceImpl.class);
     bind(ExperimentService.class).to(ExperimentServiceImpl.class);
-    bind(TagService.class).to(TagServiceImpl.class);
   }
 }
