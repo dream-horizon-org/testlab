@@ -8,7 +8,7 @@ paths:
     get:
       operationId: handle
       parameters:
-      - name: x-project-id
+      - name: x-project-key
         in: header
         required: true
         schema:
