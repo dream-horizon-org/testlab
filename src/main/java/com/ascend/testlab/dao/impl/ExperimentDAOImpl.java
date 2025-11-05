@@ -16,6 +16,16 @@ import java.util.Set;
 import java.util.UUID;
 import lombok.extern.slf4j.Slf4j;
 
+/**
+ * Implementation of ExperimentDAO for PostgreSQL database operations.
+ *
+ * <p>This class handles all experiment-related database operations including create and update
+ * operations with proper type conversions for PostgreSQL-specific types (UUID, JSONB, arrays).
+ *
+ * @author Ravi Pandey
+ * @version 1.0
+ * @since 1.0
+ */
 @Slf4j
 public class ExperimentDAOImpl implements ExperimentDAO {
 
@@ -23,11 +33,27 @@ public class ExperimentDAOImpl implements ExperimentDAO {
 
   private static final ObjectMapper MAPPER = new ObjectMapper();
 
+  /**
+   * Constructs ExperimentDAOImpl with PostgreSQL writer client.
+   *
+   * @param pgWriterClient PostgreSQL writer client for database operations
+   */
   @Inject
   public ExperimentDAOImpl(PgWriterClient pgWriterClient) {
     this.pgWriterClient = pgWriterClient;
   }
 
+  /**
+   * Creates a new experiment in the database.
+   *
+   * <p>This method inserts a new experiment record with all provided fields including enums,
+   * arrays, and JSONB data. It handles proper type conversion for PostgreSQL compatibility.
+   *
+   * @param tenantId tenant identifier for multi-tenancy
+   * @param projectKey project identifier for partitioning
+   * @param request experiment creation request with all experiment details
+   * @return Single emitting 1L on success, 0L on failure
+   */
   @Override
   public Single<Long> create(UUID tenantId, UUID projectKey, CreateExperimentRequest request) {
     log.info(
@@ -150,6 +176,18 @@ public class ExperimentDAOImpl implements ExperimentDAO {
     }
   }
 
+  /**
+   * Updates experiment fields partially based on provided request map.
+   *
+   * <p>This method performs dynamic partial updates on experiment records. It validates fields,
+   * converts data types appropriately, and builds a dynamic SQL query with only the provided
+   * fields.
+   *
+   * @param projectKey project identifier for partitioning
+   * @param experimentId experiment identifier
+   * @param request map of field names to values for update
+   * @return Single emitting true on success, false on failure
+   */
   @Override
   public Single<Boolean> updatePartial(
       UUID projectKey, UUID experimentId, Map<String, Object> request) {
@@ -160,79 +198,8 @@ public class ExperimentDAOImpl implements ExperimentDAO {
         request != null ? request.keySet() : "null");
 
     try {
-      Map<String, Object> requestMap =
-          MAPPER.convertValue(request, new TypeReference<Map<String, Object>>() {});
-
-      // Handle end_date to end_time conversion
-      if (requestMap.get("end_time") == null && requestMap.get("end_date") != null) {
-        try {
-          long epoch = Instant.parse((String) requestMap.get("end_date")).getEpochSecond();
-          requestMap.put("end_time", epoch);
-          log.debug("Converted end_date to end_time: {}", epoch);
-        } catch (Exception e) {
-          log.warn(
-              "Failed to parse end_date: {}, error: {}",
-              requestMap.get("end_date"),
-              e.getMessage());
-          // ignore parsing errors; end_time remains null
-        }
-      }
-
-      // Define allowed columns based on new schema (excluding primary keys and auto-managed fields)
-      Set<String> allowedColumns =
-          Set.of(
-              "name",
-              "description",
-              "hypothesis",
-              "status",
-              "type",
-              "guardrail_health_status",
-              "cohorts",
-              "variant_weights",
-              "assignment_strategy",
-              "overrides",
-              "rule_attributes",
-              "winning_variant",
-              "exposure",
-              "threshold",
-              "start_time",
-              "end_time",
-              "created_by");
-
-      Map<String, Object> updates = new LinkedHashMap<>();
-      for (Map.Entry<String, Object> e : requestMap.entrySet()) {
-        String key = e.getKey();
-        Object value = e.getValue();
-        if (value != null && allowedColumns.contains(key)) {
-          // Handle special cases for different data types
-          if (key.equals("cohorts") && value instanceof java.util.List) {
-            // Convert list to array
-            @SuppressWarnings("unchecked")
-            java.util.List<String> cohortList = (java.util.List<String>) value;
-            updates.put(key, cohortList.toArray(new String[0]));
-          } else if (key.equals("status")
-              || key.equals("type")
-              || key.equals("guardrail_health_status")
-              || key.equals("assignment_strategy")) {
-            // Handle enum fields - cast to appropriate enum type
-            updates.put(key, value instanceof Enum ? ((Enum<?>) value).name() : value.toString());
-          } else if (key.equals("variant_weights")
-              || key.equals("overrides")
-              || key.equals("rule_attributes")
-              || key.equals("winning_variant")) {
-            // JSONB fields - serialize to JSON string
-            try {
-              updates.put(key, MAPPER.writeValueAsString(value));
-            } catch (Exception ex) {
-              log.error("Failed to serialize JSONB field {}: {}", key, ex.getMessage());
-              throw new RuntimeException("Failed to serialize JSONB field: " + key, ex);
-            }
-          } else {
-            // Other fields (strings, numbers, etc.)
-            updates.put(key, value);
-          }
-        }
-      }
+      Map<String, Object> requestMap = convertRequestMap(request);
+      Map<String, Object> updates = buildUpdatesMap(requestMap);
 
       if (updates.isEmpty()) {
         log.info(
@@ -244,75 +211,12 @@ public class ExperimentDAOImpl implements ExperimentDAO {
 
       log.debug("DAO: Fields to update: {}", updates.keySet());
 
-      // Build dynamic UPDATE query
-      StringBuilder sb = new StringBuilder(WriteQuery.UPDATE_EXPERIMENT_PREFIX);
-      Tuple params = Tuple.tuple();
-      int paramIndex = 1; // Start with $1 for positional parameters
-      for (Map.Entry<String, Object> e : updates.entrySet()) {
-        String key = e.getKey();
-        Object value = e.getValue();
+      String query = buildUpdateQuery(updates, projectKey, experimentId);
+      Tuple params = buildUpdateParams(updates, projectKey, experimentId);
 
-        // Add type casting for enum and JSONB fields
-        if (key.equals("status")) {
-          sb.append(key).append(" = $").append(paramIndex).append("::experiment_status, ");
-        } else if (key.equals("type")) {
-          sb.append(key).append(" = $").append(paramIndex).append("::experiment_type, ");
-        } else if (key.equals("guardrail_health_status")) {
-          sb.append(key).append(" = $").append(paramIndex).append("::experiment_health, ");
-        } else if (key.equals("assignment_strategy")) {
-          sb.append(key).append(" = $").append(paramIndex).append("::experiment_strategy, ");
-        } else if (key.equals("cohorts")) {
-          sb.append(key).append(" = $").append(paramIndex).append("::varchar[], ");
-        } else if (key.equals("variant_weights")
-            || key.equals("overrides")
-            || key.equals("rule_attributes")
-            || key.equals("winning_variant")) {
-          sb.append(key).append(" = $").append(paramIndex).append("::jsonb, ");
-        } else {
-          sb.append(key).append(" = $").append(paramIndex).append(", ");
-        }
-        params.addValue(value);
-        paramIndex++;
-      }
+      log.debug("DAO: Executing UPDATE query: {}", query);
 
-      sb.setLength(sb.length() - 2); // Remove trailing ", "
-      // Add WHERE clause with positional parameters continuing from SET clause
-      sb.append(" WHERE project_key = $")
-          .append(paramIndex)
-          .append(" AND experiment_id = $")
-          .append(paramIndex + 1);
-      params
-          .addString(projectKey.toString())
-          .addString(experimentId.toString()); // project_key, experiment_id
-
-      log.debug("DAO: Executing UPDATE query: {}", sb.toString());
-
-      return pgWriterClient
-          .execute(sb.toString(), params)
-          .doOnSuccess(
-              success ->
-                  log.info(
-                      "DAO: Successfully updated experiment, projectKey: {}, experimentId: {}, success: {}",
-                      projectKey,
-                      experimentId,
-                      success))
-          .doOnError(
-              error ->
-                  log.error(
-                      "DAO: Failed to update experiment, projectKey: {}, experimentId: {}, error: {}",
-                      projectKey,
-                      experimentId,
-                      error.getMessage(),
-                      error))
-          .onErrorReturn(
-              error -> {
-                log.error(
-                    "DAO: Returning false for failed experiment update, projectKey: {}, experimentId: {}, error: {}",
-                    projectKey,
-                    experimentId,
-                    error.getMessage());
-                return false;
-              });
+      return executeUpdate(query, params, projectKey, experimentId);
     } catch (Exception e) {
       log.error(
           "DAO: Exception in update experiment, projectKey: {}, experimentId: {}, error: {}",
@@ -322,5 +226,284 @@ public class ExperimentDAOImpl implements ExperimentDAO {
           e);
       return Single.just(false);
     }
+  }
+
+  /**
+   * Converts request map and handles special field transformations.
+   *
+   * <p>Performs end_date to end_time conversion if needed.
+   *
+   * @param request raw request map
+   * @return converted request map with transformations applied
+   */
+  private Map<String, Object> convertRequestMap(Map<String, Object> request) {
+    Map<String, Object> requestMap =
+        MAPPER.convertValue(request, new TypeReference<Map<String, Object>>() {});
+
+    // Handle end_date to end_time conversion
+    if (requestMap.get("end_time") == null && requestMap.get("end_date") != null) {
+      try {
+        long epoch = Instant.parse((String) requestMap.get("end_date")).getEpochSecond();
+        requestMap.put("end_time", epoch);
+        log.debug("Converted end_date to end_time: {}", epoch);
+      } catch (Exception e) {
+        log.warn(
+            "Failed to parse end_date: {}, error: {}", requestMap.get("end_date"), e.getMessage());
+      }
+    }
+    return requestMap;
+  }
+
+  /**
+   * Builds map of valid updates from request map.
+   *
+   * <p>Filters out null values, validates against allowed columns, and processes field values based
+   * on their types.
+   *
+   * @param requestMap converted request map
+   * @return map of validated and processed updates
+   */
+  private Map<String, Object> buildUpdatesMap(Map<String, Object> requestMap) {
+    Set<String> allowedColumns = getAllowedUpdateColumns();
+    Map<String, Object> updates = new LinkedHashMap<>();
+
+    for (Map.Entry<String, Object> entry : requestMap.entrySet()) {
+      String key = entry.getKey();
+      Object value = entry.getValue();
+
+      if (value != null && allowedColumns.contains(key)) {
+        Object processedValue = processFieldValue(key, value);
+        if (processedValue != null) {
+          updates.put(key, processedValue);
+        }
+      }
+    }
+    return updates;
+  }
+
+  /**
+   * Returns set of allowed columns for update operations.
+   *
+   * <p>Excludes primary keys and auto-managed fields like created_at, updated_at.
+   *
+   * @return set of allowed column names
+   */
+  private Set<String> getAllowedUpdateColumns() {
+    return Set.of(
+        "name",
+        "description",
+        "hypothesis",
+        "status",
+        "type",
+        "guardrail_health_status",
+        "cohorts",
+        "variant_weights",
+        "assignment_strategy",
+        "overrides",
+        "rule_attributes",
+        "winning_variant",
+        "exposure",
+        "threshold",
+        "start_time",
+        "end_time",
+        "created_by");
+  }
+
+  /**
+   * Processes field value based on its type.
+   *
+   * <p>Handles special conversions for cohorts (list to array), enums (to string), and JSONB fields
+   * (to JSON string).
+   *
+   * @param key field name
+   * @param value field value
+   * @return processed value ready for database insertion
+   */
+  private Object processFieldValue(String key, Object value) {
+    if (key.equals("cohorts") && value instanceof java.util.List) {
+      return convertCohortsToArray(value);
+    } else if (isEnumField(key)) {
+      return convertEnumValue(value);
+    } else if (isJsonbField(key)) {
+      return serializeToJson(key, value);
+    }
+    return value;
+  }
+
+  /**
+   * Converts cohorts list to string array for PostgreSQL varchar[] type.
+   *
+   * @param value cohorts list
+   * @return string array
+   */
+  private String[] convertCohortsToArray(Object value) {
+    @SuppressWarnings("unchecked")
+    java.util.List<String> cohortList = (java.util.List<String>) value;
+    return cohortList.toArray(new String[0]);
+  }
+
+  /**
+   * Checks if field is an enum type.
+   *
+   * @param key field name
+   * @return true if field is enum type
+   */
+  private boolean isEnumField(String key) {
+    return key.equals("status")
+        || key.equals("type")
+        || key.equals("guardrail_health_status")
+        || key.equals("assignment_strategy");
+  }
+
+  /**
+   * Converts enum value to string representation.
+   *
+   * @param value enum value
+   * @return string representation of enum
+   */
+  private String convertEnumValue(Object value) {
+    return value instanceof Enum ? ((Enum<?>) value).name() : value.toString();
+  }
+
+  /**
+   * Checks if field is a JSONB type.
+   *
+   * @param key field name
+   * @return true if field is JSONB type
+   */
+  private boolean isJsonbField(String key) {
+    return key.equals("variant_weights")
+        || key.equals("overrides")
+        || key.equals("rule_attributes")
+        || key.equals("winning_variant");
+  }
+
+  /**
+   * Serializes object to JSON string for JSONB fields.
+   *
+   * @param key field name for error logging
+   * @param value object to serialize
+   * @return JSON string representation
+   * @throws RuntimeException if serialization fails
+   */
+  private String serializeToJson(String key, Object value) {
+    try {
+      return MAPPER.writeValueAsString(value);
+    } catch (Exception ex) {
+      log.error("Failed to serialize JSONB field {}: {}", key, ex.getMessage());
+      throw new RuntimeException("Failed to serialize JSONB field: " + key, ex);
+    }
+  }
+
+  /**
+   * Builds dynamic UPDATE SQL query with positional parameters.
+   *
+   * <p>Constructs SET clause with appropriate type casts and WHERE clause for project_key and
+   * experiment_id.
+   *
+   * @param updates map of fields to update
+   * @param projectKey project identifier
+   * @param experimentId experiment identifier
+   * @return complete UPDATE SQL query string
+   */
+  private String buildUpdateQuery(Map<String, Object> updates, UUID projectKey, UUID experimentId) {
+    StringBuilder query = new StringBuilder(WriteQuery.UPDATE_EXPERIMENT_PREFIX);
+    int paramIndex = 1;
+
+    for (String key : updates.keySet()) {
+      query.append(key).append(" = $").append(paramIndex);
+      appendTypeCast(query, key);
+      query.append(", ");
+      paramIndex++;
+    }
+
+    query.setLength(query.length() - 2); // Remove trailing ", "
+    query
+        .append(" WHERE project_key = $")
+        .append(paramIndex)
+        .append(" AND experiment_id = $")
+        .append(paramIndex + 1);
+
+    return query.toString();
+  }
+
+  /**
+   * Appends PostgreSQL type cast to query for specific field types.
+   *
+   * @param query query string builder
+   * @param key field name to determine type cast
+   */
+  private void appendTypeCast(StringBuilder query, String key) {
+    if (key.equals("status")) {
+      query.append("::experiment_status");
+    } else if (key.equals("type")) {
+      query.append("::experiment_type");
+    } else if (key.equals("guardrail_health_status")) {
+      query.append("::experiment_health");
+    } else if (key.equals("assignment_strategy")) {
+      query.append("::experiment_strategy");
+    } else if (key.equals("cohorts")) {
+      query.append("::varchar[]");
+    } else if (isJsonbField(key)) {
+      query.append("::jsonb");
+    }
+  }
+
+  /**
+   * Builds Tuple of parameters for prepared statement.
+   *
+   * <p>Adds update values followed by WHERE clause parameters (projectKey, experimentId).
+   *
+   * @param updates map of fields to update
+   * @param projectKey project identifier
+   * @param experimentId experiment identifier
+   * @return Tuple with all query parameters
+   */
+  private Tuple buildUpdateParams(Map<String, Object> updates, UUID projectKey, UUID experimentId) {
+    Tuple params = Tuple.tuple();
+    for (Object value : updates.values()) {
+      params.addValue(value);
+    }
+    params.addString(projectKey.toString()).addString(experimentId.toString());
+    return params;
+  }
+
+  /**
+   * Executes UPDATE query and handles success/error logging.
+   *
+   * @param query SQL query string
+   * @param params query parameters
+   * @param projectKey project identifier for logging
+   * @param experimentId experiment identifier for logging
+   * @return Single emitting true on success, false on failure
+   */
+  private Single<Boolean> executeUpdate(
+      String query, Tuple params, UUID projectKey, UUID experimentId) {
+    return pgWriterClient
+        .execute(query, params)
+        .doOnSuccess(
+            success ->
+                log.info(
+                    "DAO: Successfully updated experiment, projectKey: {}, experimentId: {}, success: {}",
+                    projectKey,
+                    experimentId,
+                    success))
+        .doOnError(
+            error ->
+                log.error(
+                    "DAO: Failed to update experiment, projectKey: {}, experimentId: {}, error: {}",
+                    projectKey,
+                    experimentId,
+                    error.getMessage(),
+                    error))
+        .onErrorReturn(
+            error -> {
+              log.error(
+                  "DAO: Returning false for failed experiment update, projectKey: {}, experimentId: {}, error: {}",
+                  projectKey,
+                  experimentId,
+                  error.getMessage());
+              return false;
+            });
   }
 }

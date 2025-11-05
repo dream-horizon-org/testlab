@@ -32,6 +32,37 @@ paths:
               schema:
                 $ref: '#/components/schemas/CreateExperimentResponse'
   /v1/experiment/{experiment_id}:
+    get:
+      summary: Get Assign experiment of the user
+      operationId: getAssignExperiment
+      parameters:
+      - name: x-tenant-id
+        in: header
+        schema:
+          type: string
+          format: uuid
+      - name: x-project-key
+        in: header
+        schema:
+          type: string
+          format: uuid
+      - name: x-user-id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: status
+        in: query
+        schema:
+          type: string
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                type: object
     patch:
       summary: Update experiment partially with optional tag replace
       operationId: update

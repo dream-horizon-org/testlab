@@ -6,20 +6,47 @@ import com.ascend.testlab.dto.response.CreateExperimentResponse;
 import com.ascend.testlab.service.ExperimentService;
 import com.google.inject.Inject;
 import io.reactivex.rxjava3.core.Single;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import lombok.extern.slf4j.Slf4j;
 
+/**
+ * Implementation of ExperimentService for experiment business logic.
+ *
+ * <p>This class handles experiment creation, updates, and assignments with proper validation, error
+ * handling, and logging.
+ *
+ * @author Ravi Pandey
+ * @version 1.0
+ * @since 1.0
+ */
 @Slf4j
 public class ExperimentServiceImpl implements ExperimentService {
 
   private final ExperimentDAO experimentDAO;
 
+  /**
+   * Constructs ExperimentServiceImpl with experiment DAO.
+   *
+   * @param experimentDAO experiment data access object
+   */
   @Inject
   public ExperimentServiceImpl(ExperimentDAO experimentDAO) {
     this.experimentDAO = experimentDAO;
   }
 
+  /**
+   * Creates a new experiment with validation and error handling.
+   *
+   * <p>Sets projectKey and experimentId from headers, delegates to DAO, and returns response with
+   * status.
+   *
+   * @param tenantId tenant identifier for multi-tenancy
+   * @param projectKey project identifier from header
+   * @param request experiment creation request with all experiment details
+   * @return Single emitting CreateExperimentResponse with id, status, and message
+   */
   @Override
   public Single<CreateExperimentResponse> create(
       UUID tenantId, UUID projectKey, CreateExperimentRequest request) {
@@ -84,6 +111,17 @@ public class ExperimentServiceImpl implements ExperimentService {
     }
   }
 
+  /**
+   * Updates experiment fields partially with validation.
+   *
+   * <p>Delegates to DAO for dynamic partial updates and returns success status.
+   *
+   * @param tenantId tenant identifier for multi-tenancy
+   * @param projectKey project identifier from header
+   * @param experimentId experiment identifier
+   * @param request map of field names to values for update
+   * @return Single emitting true on success, false on failure
+   */
   @Override
   public Single<Boolean> update(
       UUID tenantId, UUID projectKey, UUID experimentId, Map<String, Object> request) {
@@ -134,5 +172,11 @@ public class ExperimentServiceImpl implements ExperimentService {
           e);
       return Single.just(false);
     }
+  }
+
+  @Override
+  public Single<CreateExperimentRequest> assignExperiment(
+      UUID tenantId, UUID projectKey, UUID userId, List<String> status) {
+    return Single.just(new CreateExperimentRequest());
   }
 }
