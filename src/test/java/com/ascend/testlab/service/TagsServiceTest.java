@@ -6,9 +6,9 @@ import static org.mockito.Mockito.*;
 import com.ascend.testlab.dao.TagsDAO;
 import com.ascend.testlab.dto.response.TagsResponse;
 import com.ascend.testlab.service.impl.TagsServiceImpl;
+import com.dream11.rest.exception.RestException;
 import io.reactivex.rxjava3.core.Single;
 import io.reactivex.rxjava3.observers.TestObserver;
-import io.vertx.core.Vertx;
 import io.vertx.junit5.VertxExtension;
 import java.util.Arrays;
 import java.util.List;
@@ -34,11 +34,9 @@ class TagsServiceTest {
   @Mock private TagsDAO tagsDAO;
   private TagsService tagsService;
   private final String testProjectKey = "123e4567-e89b-12d3-a456-426614174000";
-  private Vertx vertx;
 
   @BeforeEach
-  void setUp(Vertx vertx) {
-    this.vertx = vertx;
+  void setUp() {
     tagsService = new TagsServiceImpl(tagsDAO);
   }
 
@@ -110,7 +108,7 @@ class TagsServiceTest {
       TestObserver<TagsResponse> testObserver = result.test();
 
       // Assert
-      testObserver.assertError(com.dream11.rest.exception.RestException.class);
+      testObserver.assertError(RestException.class);
       verify(tagsDAO, times(1)).fetchTags(testProjectKey);
     }
   }
