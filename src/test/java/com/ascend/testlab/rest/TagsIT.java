@@ -7,6 +7,7 @@ import com.ascend.testlab.util.TestUtil;
 import io.restassured.response.ValidatableResponse;
 import java.util.Map;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.http.HttpStatus;
 import org.hamcrest.Matchers;
@@ -53,7 +54,7 @@ class TagsIT {
 
     String[] expectedTags = new String[] {"ui-test", "feature-flag", "performance"};
     try {
-      TestUtil.createTagsPartitionForProject(projectKey);
+      TestUtil.createPartitionForProject("tags", projectKey);
       seedTags(projectKey, expectedTags);
 
       ValidatableResponse response =
@@ -67,7 +68,7 @@ class TagsIT {
         response.body("data.tags", Matchers.hasItem(tag));
       }
     } finally {
-      TestUtil.dropTagsTestPartition();
+      TestUtil.dropTestPartition("tags");
     }
   }
 
@@ -92,7 +93,7 @@ class TagsIT {
 
   private void seedTags(String projectKey, String[] tags) {
     String values =
-        java.util.stream.IntStream.range(0, tags.length)
+        IntStream.range(0, tags.length)
             .mapToObj(i -> "('" + projectKey + "','exp-" + (i + 1) + "','" + tags[i] + "')")
             .collect(Collectors.joining(","));
     String insert =

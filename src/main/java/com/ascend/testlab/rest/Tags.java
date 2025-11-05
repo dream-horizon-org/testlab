@@ -5,7 +5,6 @@ import com.ascend.testlab.dto.ResponseEntity;
 import com.ascend.testlab.dto.response.TagsResponse;
 import com.ascend.testlab.exception.ErrorMessages;
 import com.ascend.testlab.service.TagsService;
-import com.ascend.testlab.util.CommonUtil;
 import com.google.inject.Inject;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -47,7 +46,7 @@ public class Tags {
   /**
    * Handles the GET request to retrieve all distinct tags for a specific project.
    *
-   * @param projectKey the project key provided in the x-project-id header
+   * @param projectKey the project key provided in the x-project-key header
    * @return a CompletionStage containing a ResponseEntity with the list of tags
    * @throws jakarta.validation.ConstraintViolationException if projectKey is blank
    * @throws com.dream11.rest.exception.RestException if projectKey is invalid or other errors occur
@@ -72,7 +71,6 @@ public class Tags {
           @NotBlank(message = ErrorMessages.PROJECT_KEY_MISSING)
           String projectKey) {
 
-    CommonUtil.validateProjectKey(projectKey);
     return tagsService.getTags(projectKey).map(ResponseEntity.Success::new).toCompletionStage();
   }
 }

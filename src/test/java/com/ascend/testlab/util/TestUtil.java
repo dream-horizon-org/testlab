@@ -110,26 +110,38 @@ public final class TestUtil {
     return requestMapper.apply(specification).then();
   }
 
-  public static void createTagsPartitionForProject(String projectKey) {
+  /**
+   * Create a partition for the given table and project key for test purposes.
+   *
+   * @param tableName the name of the table to partition
+   * @param projectKey the project key
+   */
+  public static void createPartitionForProject(String tableName, String projectKey) {
     String ddl =
-        "CREATE TABLE IF NOT EXISTS experiment.tags_p_test "
-            + "PARTITION OF experiment.tags FOR VALUES IN ('"
-            + projectKey
-            + "');";
+        String.format(
+            "CREATE TABLE IF NOT EXISTS experiment.%s_p_test "
+                + "PARTITION OF experiment.%s FOR VALUES IN ('%s');",
+            tableName, tableName, projectKey);
     try {
       TestUtil.executeSQLStatement(TestUtil.getDatabaseConnection(), ddl);
     } catch (Exception e) {
-      throw new RuntimeException("Failed creating tags partition for tests", e);
+      throw new RuntimeException(
+          String.format("Failed creating partition for tests on table '%s'", tableName), e);
     }
   }
 
-  public static void dropTagsTestPartition() {
-    String drop = "DROP TABLE IF EXISTS experiment.tags_p_test;";
+  /**
+   * Drop the partition for the given table for test cleanup.
+   *
+   * @param tableName the name of the table whose test partition should be dropped
+   */
+  public static void dropTestPartition(String tableName) {
+    String drop = String.format("DROP TABLE IF EXISTS experiment.%s_p_test;", tableName);
     try {
       TestUtil.executeSQLStatement(TestUtil.getDatabaseConnection(), drop);
     } catch (Exception e) {
       // best-effort cleanup
-      log.warn("Failed dropping test tags partition", e);
+      log.warn(String.format("Failed dropping test partition for table '%s'", tableName), e);
     }
   }
 }
