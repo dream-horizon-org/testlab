@@ -11,10 +11,8 @@ import com.ascend.testlab.client.webclient.impl.WebClientImpl;
 import com.ascend.testlab.config.*;
 import com.ascend.testlab.dao.ExperimentDAO;
 import com.ascend.testlab.dao.HealthCheckDAO;
-import com.ascend.testlab.dao.TagDAO;
 import com.ascend.testlab.dao.impl.ExperimentDAOImpl;
 import com.ascend.testlab.dao.impl.HealthCheckDAOImpl;
-import com.ascend.testlab.dao.impl.TagDAOImpl;
 import com.ascend.testlab.service.ExperimentService;
 import com.ascend.testlab.service.HealthCheckService;
 import com.ascend.testlab.service.impl.ExperimentServiceImpl;
@@ -85,7 +83,6 @@ public class ServiceModule extends DefaultModule {
   private void bindDAOs() {
     bind(HealthCheckDAO.class).to(HealthCheckDAOImpl.class);
     bind(ExperimentDAO.class).to(ExperimentDAOImpl.class);
-    bind(TagDAO.class).to(TagDAOImpl.class);
   }
 
   /** Bind the service interfaces to their implementations. */
