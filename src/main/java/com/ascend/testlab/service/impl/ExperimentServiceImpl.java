@@ -6,7 +6,6 @@ import com.ascend.testlab.dto.response.CreateExperimentResponse;
 import com.ascend.testlab.service.ExperimentService;
 import com.google.inject.Inject;
 import io.reactivex.rxjava3.core.Single;
-import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import lombok.extern.slf4j.Slf4j;
@@ -172,11 +171,5 @@ public class ExperimentServiceImpl implements ExperimentService {
           e);
       return Single.just(false);
     }
-  }
-
-  @Override
-  public Single<CreateExperimentRequest> assignExperiment(
-      UUID tenantId, UUID projectKey, UUID userId, List<String> status) {
-    return Single.just(new CreateExperimentRequest());
   }
 }

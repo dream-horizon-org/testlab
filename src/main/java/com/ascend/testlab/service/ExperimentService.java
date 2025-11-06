@@ -3,7 +3,6 @@ package com.ascend.testlab.service;
 import com.ascend.testlab.dto.request.CreateExperimentRequest;
 import com.ascend.testlab.dto.response.CreateExperimentResponse;
 import io.reactivex.rxjava3.core.Single;
-import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -41,16 +40,4 @@ public interface ExperimentService {
    */
   Single<Boolean> update(
       UUID tenantId, UUID projectKey, UUID experimentId, Map<String, Object> request);
-
-  /**
-   * Assigns experiment to user based on status criteria.
-   *
-   * @param tenantId tenant identifier for multi-tenancy
-   * @param projectKey project identifier from header
-   * @param userId user identifier for assignment
-   * @param status list of experiment statuses to filter
-   * @return Single emitting assigned experiment request
-   */
-  Single<CreateExperimentRequest> assignExperiment(
-      UUID tenantId, UUID projectKey, UUID userId, List<String> status);
 }

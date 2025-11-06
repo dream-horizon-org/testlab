@@ -104,35 +104,4 @@ public class ExperimentResource {
         .map(ResponseEntity.Success::new)
         .toCompletionStage();
   }
-
-  /**
-   * Gets assigned experiment for a user.
-   *
-   * <p>Endpoint: GET /v1/experiment/{experiment_id}?status=LIVE,DRAFT
-   *
-   * <p>Retrieves experiment assigned to a specific user based on status filter. Status parameter
-   * accepts comma-separated values.
-   *
-   * @param tenantId tenant identifier from x-tenant-id header
-   * @param projectKey project identifier from x-project-key header
-   * @param userId user identifier from path parameter
-   * @param status comma-separated list of experiment statuses to filter
-   * @return CompletionStage with assigned experiment details
-   */
-  @GET
-  @Path("/{experiment_id}")
-  @Consumes(MediaType.APPLICATION_JSON)
-  @Produces(MediaType.APPLICATION_JSON)
-  @Operation(summary = "Get Assign experiment of the user")
-  public CompletionStage<ResponseEntity.Success<CreateExperimentRequest>> getAssignExperiment(
-      @HeaderParam("x-tenant-id") UUID tenantId,
-      @HeaderParam("x-project-key") UUID projectKey,
-      @PathParam("x-user-id") UUID userId,
-      @QueryParam("status") String status) {
-    List<String> statusList = List.of(status.split(","));
-    return experimentService
-        .assignExperiment(tenantId, projectKey, userId, statusList)
-        .map(ResponseEntity.Success::new)
-        .toCompletionStage();
-  }
 }
