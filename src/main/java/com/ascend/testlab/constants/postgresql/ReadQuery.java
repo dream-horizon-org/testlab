@@ -14,4 +14,8 @@ public final class ReadQuery {
 
   /** The health check query to check if the PostgreSQL reader database is connected. */
   public static final String HEALTH_CHECK = "SELECT 1;";
+
+  /** The query to fetch distinct tags for a given project key. */
+  public static final String FETCH_TAGS =
+      "SELECT distinct tag FROM experiment.tags WHERE project_key = $1;";
 }

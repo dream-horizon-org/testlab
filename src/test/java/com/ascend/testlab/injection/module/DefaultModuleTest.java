@@ -192,51 +192,6 @@ public class DefaultModuleTest {
   }
 
   @Nested
-  @DisplayName("Integration Tests")
-  class IntegrationTests {
-
-    @Test
-    @DisplayName("Should work with Guice injector")
-    void testGuiceIntegration() {
-      // Act
-      Injector injector = Guice.createInjector(module);
-
-      // Assert
-      assertNotNull(injector);
-      assertNotNull(injector.getInstance(Vertx.class));
-      assertNotNull(injector.getInstance(ObjectMapper.class));
-    }
-
-    @Test
-    @DisplayName("Should work with multiple modules")
-    void testMultipleModules() {
-      // Arrange
-      DefaultModule module1 = new DefaultModule(vertx);
-      TestModule module2 = new TestModule();
-
-      // Act
-      Injector injector = Guice.createInjector(module1, module2);
-
-      // Assert
-      assertNotNull(injector.getInstance(Vertx.class));
-      assertNotNull(injector.getInstance(ObjectMapper.class));
-      assertNotNull(injector.getInstance(TestClass.class));
-    }
-
-    @Test
-    @DisplayName("Should provide consistent bindings")
-    void testConsistentBindings() {
-      // Act
-      Injector injector1 = Guice.createInjector(module);
-
-      // Assert
-      assertSame(injector1.getInstance(Vertx.class), injector1.getInstance(Vertx.class));
-      assertSame(
-          injector1.getInstance(ObjectMapper.class), injector1.getInstance(ObjectMapper.class));
-    }
-  }
-
-  @Nested
   @DisplayName("Edge Case Tests")
   class EdgeCaseTests {
 

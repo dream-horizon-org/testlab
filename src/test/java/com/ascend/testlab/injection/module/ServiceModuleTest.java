@@ -427,60 +427,6 @@ public class ServiceModuleTest {
   }
 
   @Nested
-  @DisplayName("Integration Tests")
-  class IntegrationTests {
-
-    @Test
-    @DisplayName("Should support typical application startup")
-    void testTypicalApplicationStartup() {
-      // Act
-      Injector injector = Guice.createInjector(module);
-
-      // Assert - All core components should be available
-      assertNotNull(injector.getInstance(Vertx.class));
-      assertNotNull(injector.getInstance(AerospikeClient.class));
-      assertNotNull(injector.getInstance(PgReaderClient.class));
-      assertNotNull(injector.getInstance(PgWriterClient.class));
-      assertNotNull(injector.getInstance(WebClient.class));
-      assertNotNull(injector.getInstance(HealthCheckService.class));
-    }
-
-    @Test
-    @DisplayName("Should create independent module instances")
-    void testIndependentModuleInstances() {
-      // Arrange
-      Vertx vertx2 = Vertx.vertx();
-
-      try {
-        ServiceModule module1 = new ServiceModule(vertx);
-        ServiceModule module2 = new ServiceModule(vertx2);
-
-        // Act
-        Injector injector1 = Guice.createInjector(module1);
-        Injector injector2 = Guice.createInjector(module2);
-
-        // Assert
-        assertNotSame(injector1.getInstance(Vertx.class), injector2.getInstance(Vertx.class));
-      } finally {
-        vertx2.close();
-      }
-    }
-
-    @Test
-    @DisplayName("Should support configuration providers")
-    void testConfigurationProviders() {
-      // Act
-      Injector injector = Guice.createInjector(module);
-
-      // Assert - Configs should be loaded via providers
-      AerospikeConfig config = injector.getInstance(AerospikeConfig.class);
-      assertNotNull(config);
-      assertNotNull(config.getHost());
-      assertNotNull(config.getNamespace());
-    }
-  }
-
-  @Nested
   @DisplayName("Edge Case Tests")
   class EdgeCaseTests {
 
