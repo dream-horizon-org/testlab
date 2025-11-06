@@ -26,7 +26,12 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class FilterExperiments {
 
-  @Inject private ExperimentService experimentService;
+  private final ExperimentService experimentService;
+
+  @Inject
+  public FilterExperiments(ExperimentService experimentService) {
+    this.experimentService = experimentService;
+  }
 
   /**
    * Supports filtering by multiple criteria including status, tag, owner, name, and type. Also

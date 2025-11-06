@@ -33,13 +33,13 @@ public enum ErrorEnum implements RestError {
       "Tags Listing failed due to: %s",
       HttpStatus.SC_INTERNAL_SERVER_ERROR),
 
-/* Client Errors */
-
+  /** The error code for validating experiment status failed. */
   VALID_EXPERIMENT_STATUS_FAILED(
       "VALID_EXPERIMENT_STATUS_FAILED",
       "Experiment status is not valid",
       HttpStatus.SC_BAD_REQUEST),
 
+  /** The error code for validating experiment type failed. */
   VALID_EXPERIMENT_TYPE_FAILED(
       "VALID_EXPERIMENT_TYPE_FAILED", "Experiment type is not valid", HttpStatus.SC_BAD_REQUEST),
 
@@ -49,6 +49,7 @@ public enum ErrorEnum implements RestError {
   INVALID_PAGE_NUMBER(
       "INVALID_PAGE_NUMBER", "Page number must be greater than 0", HttpStatus.SC_BAD_REQUEST),
 
+  /** The error code when experiment is not found. */
   EXPERIMENT_NOT_FOUND(
       "EXPERIMENT_NOT_FOUND",
       "Experiment not found for the given experimentId",
@@ -58,6 +59,8 @@ public enum ErrorEnum implements RestError {
       "DATABASE_ERROR",
       "Database error occurred while processing the request",
       HttpStatus.SC_INTERNAL_SERVER_ERROR);
+
+  /* Client Errors */
 
   /** The error code. */
   private final String errorCode;

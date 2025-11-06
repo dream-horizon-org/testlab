@@ -11,7 +11,6 @@ import com.google.inject.Inject;
 import io.reactivex.rxjava3.core.Single;
 import java.util.*;
 import java.util.stream.Collectors;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -26,10 +25,14 @@ import lombok.extern.slf4j.Slf4j;
  * @see ExperimentDAO
  */
 @Slf4j
-@RequiredArgsConstructor(onConstructor_ = @Inject)
 public class ExperimentServiceImpl implements ExperimentService {
 
   private final ExperimentDAO experimentDAO;
+
+  @Inject
+  public ExperimentServiceImpl(ExperimentDAO experimentDAO) {
+    this.experimentDAO = experimentDAO;
+  }
 
   /**
    * {@inheritDoc}

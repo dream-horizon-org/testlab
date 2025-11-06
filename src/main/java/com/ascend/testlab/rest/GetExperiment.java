@@ -12,7 +12,6 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
 import java.util.concurrent.CompletionStage;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -26,11 +25,15 @@ import lombok.extern.slf4j.Slf4j;
  */
 @Path(Constants.GET_EXPERIMENT_PATH)
 @Slf4j
-@RequiredArgsConstructor(onConstructor_ = @Inject)
 public class GetExperiment {
 
   /** The experiment service for retrieving experiment data. */
   private final ExperimentService experimentService;
+
+  @Inject
+  public GetExperiment(ExperimentService experimentService) {
+    this.experimentService = experimentService;
+  }
 
   /**
    * Handles GET request to retrieve experiment details by experiment ID.

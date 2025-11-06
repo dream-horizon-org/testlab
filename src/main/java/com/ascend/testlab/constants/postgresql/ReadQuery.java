@@ -24,17 +24,19 @@ public final class ReadQuery {
    * details including tags and owners aggregated as comma-separated strings.
    */
   public static final String GET_EXPERIMENT =
-      "SELECT e.project_key, e.experiment_id, e.name, e.description, e.hypothesis, e.status, e.type, "
-          + "e.guardrail_health_status, e.cohorts, e.variant_weights, e.assignment_strategy, e.overrides, "
-          + "e.rule_attributes, e.winning_variant, e.exposure, e.threshold, e.start_time, e.end_time, "
-          + "e.created_by, e.created_at, e.updated_at, "
-          + "string_agg(DISTINCT t.tag, ',') as tags, "
-          + "string_agg(DISTINCT o.owner, ',') as owners "
-          + "FROM experiments e "
-          + "LEFT JOIN experiment.tags t ON e.project_key = t.project_key AND e.experiment_id = t.experiment_id "
-          + "LEFT JOIN experiment.owners o ON e.project_key = o.project_key AND e.experiment_id = o.experiment_id "
-          + "WHERE e.project_key = $1 AND e.experiment_id = $2 "
-          + "GROUP BY e.project_key, e.experiment_id";
+      """
+      SELECT e.project_key, e.experiment_id, e.name, e.description, e.hypothesis, e.status, e.type,
+             e.guardrail_health_status, e.cohorts, e.variant_weights, e.assignment_strategy, e.overrides,
+             e.rule_attributes, e.winning_variant, e.exposure, e.threshold, e.start_time, e.end_time,
+             e.created_by, e.created_at, e.updated_at,
+             string_agg(DISTINCT t.tag, ',') as tags,
+             string_agg(DISTINCT o.owner, ',') as owners
+      FROM experiments e
+      LEFT JOIN experiment.tags t ON e.project_key = t.project_key AND e.experiment_id = t.experiment_id
+      LEFT JOIN experiment.owners o ON e.project_key = o.project_key AND e.experiment_id = o.experiment_id
+      WHERE e.project_key = $1 AND e.experiment_id = $2
+      GROUP BY e.project_key, e.experiment_id
+      """;
 
   /**
    * Filter clause for searching experiments by name using PostgreSQL full-text search. Uses the
@@ -85,14 +87,16 @@ public final class ReadQuery {
    * and owners aggregated as comma-separated strings.
    */
   public static final String FILTER_EXPERIMENT =
-      "SELECT e.project_key, e.experiment_id, e.name, e.description, e.hypothesis, e.status, e.type, "
-          + "e.guardrail_health_status, cohorts,  e.variant_weights, e.assignment_strategy, e.overrides, "
-          + "e.rule_attributes, e.winning_variant, e.exposure, e.threshold, e.start_time, e.end_time, "
-          + "e.created_by, e.created_at, e.updated_at, "
-          + "string_agg(DISTINCT t.tag, ',') as tags, "
-          + "string_agg(DISTINCT o.owner, ',') as owners "
-          + "FROM experiments e "
-          + "LEFT JOIN experiment.tags t ON e.project_key = t.project_key AND e.experiment_id = t.experiment_id "
-          + "LEFT JOIN experiment.owners o ON e.project_key = o.project_key AND e.experiment_id = o.experiment_id "
-          + "WHERE e.project_key = $1 ";
+      """
+      SELECT e.project_key, e.experiment_id, e.name, e.description, e.hypothesis, e.status, e.type,
+             e.guardrail_health_status, cohorts,  e.variant_weights, e.assignment_strategy, e.overrides,
+             e.rule_attributes, e.winning_variant, e.exposure, e.threshold, e.start_time, e.end_time,
+             e.created_by, e.created_at, e.updated_at,
+             string_agg(DISTINCT t.tag, ',') as tags,
+             string_agg(DISTINCT o.owner, ',') as owners
+      FROM experiments e
+      LEFT JOIN experiment.tags t ON e.project_key = t.project_key AND e.experiment_id = t.experiment_id
+      LEFT JOIN experiment.owners o ON e.project_key = o.project_key AND e.experiment_id = o.experiment_id
+      WHERE e.project_key = $1
+      """;
 }

@@ -8,6 +8,7 @@ import static org.hamcrest.Matchers.notNullValue;
 
 import com.ascend.testlab.Setup;
 import com.ascend.testlab.constants.Constants;
+import com.ascend.testlab.constants.TestConstants;
 import com.ascend.testlab.util.TestUtil;
 import io.restassured.response.ValidatableResponse;
 import java.sql.Connection;
@@ -41,7 +42,7 @@ class FilterExperimentsIT {
 
   @Test
   void testFilterExperimentsSuccess() {
-    String route = "/v1/experiment";
+    String route = TestConstants.FILTER_EXPERIMENTS_PATH;
     Map<String, String> headers = new HashMap<>();
     headers.put(Constants.PROJECT_ID, TEST_PROJECT_ID);
 
@@ -61,7 +62,7 @@ class FilterExperimentsIT {
 
   @Test
   void testFilterExperimentsByStatus() {
-    String route = "/v1/experiment";
+    String route = TestConstants.FILTER_EXPERIMENTS_PATH;
     Map<String, String> headers = new HashMap<>();
     headers.put(Constants.PROJECT_ID, TEST_PROJECT_ID);
     Map<String, String> queryParams = new HashMap<>();
@@ -79,7 +80,7 @@ class FilterExperimentsIT {
 
   @Test
   void testFilterExperimentsByMultipleStatuses() {
-    String route = "/v1/experiment";
+    String route = TestConstants.FILTER_EXPERIMENTS_PATH;
     Map<String, String> headers = new HashMap<>();
     headers.put(Constants.PROJECT_ID, TEST_PROJECT_ID);
     Map<String, String> queryParams = new HashMap<>();
@@ -96,7 +97,7 @@ class FilterExperimentsIT {
 
   @Test
   void testFilterExperimentsByName() {
-    String route = "/v1/experiment";
+    String route = TestConstants.FILTER_EXPERIMENTS_PATH;
     Map<String, String> headers = new HashMap<>();
     headers.put(Constants.PROJECT_ID, TEST_PROJECT_ID);
     Map<String, String> queryParams = new HashMap<>();
@@ -114,7 +115,7 @@ class FilterExperimentsIT {
 
   @Test
   void testFilterExperimentsByTag() {
-    String route = "/v1/experiment";
+    String route = TestConstants.FILTER_EXPERIMENTS_PATH;
     Map<String, String> headers = new HashMap<>();
     headers.put(Constants.PROJECT_ID, TEST_PROJECT_ID);
     Map<String, String> queryParams = new HashMap<>();
@@ -132,7 +133,7 @@ class FilterExperimentsIT {
 
   @Test
   void testFilterExperimentsByOwner() {
-    String route = "/v1/experiment";
+    String route = TestConstants.FILTER_EXPERIMENTS_PATH;
     Map<String, String> headers = new HashMap<>();
     headers.put(Constants.PROJECT_ID, TEST_PROJECT_ID);
     Map<String, String> queryParams = new HashMap<>();
@@ -149,7 +150,7 @@ class FilterExperimentsIT {
 
   @Test
   void testFilterExperimentsByType() {
-    String route = "/v1/experiment";
+    String route = TestConstants.FILTER_EXPERIMENTS_PATH;
     Map<String, String> headers = new HashMap<>();
     headers.put(Constants.PROJECT_ID, TEST_PROJECT_ID);
     Map<String, String> queryParams = new HashMap<>();
@@ -166,7 +167,7 @@ class FilterExperimentsIT {
 
   @Test
   void testFilterExperimentsWithPagination() {
-    String route = "/v1/experiment";
+    String route = TestConstants.FILTER_EXPERIMENTS_PATH;
     Map<String, String> headers = new HashMap<>();
     headers.put(Constants.PROJECT_ID, TEST_PROJECT_ID);
     Map<String, String> queryParams = new HashMap<>();
@@ -186,7 +187,7 @@ class FilterExperimentsIT {
 
   @Test
   void testFilterExperimentsWithMultipleFilters() {
-    String route = "/v1/experiment";
+    String route = TestConstants.FILTER_EXPERIMENTS_PATH;
     Map<String, String> headers = new HashMap<>();
     headers.put(Constants.PROJECT_ID, TEST_PROJECT_ID);
     Map<String, String> queryParams = new HashMap<>();
@@ -207,7 +208,7 @@ class FilterExperimentsIT {
 
   @Test
   void testFilterExperimentsMissingProjectId() {
-    String route = "/v1/experiment";
+    String route = TestConstants.FILTER_EXPERIMENTS_PATH;
 
     ValidatableResponse response =
         TestUtil.executeRequest(null, null, null, spec -> spec.get(route));
@@ -217,7 +218,7 @@ class FilterExperimentsIT {
 
   @Test
   void testFilterExperimentsInvalidStatus() {
-    String route = "/v1/experiment";
+    String route = TestConstants.FILTER_EXPERIMENTS_PATH;
     Map<String, String> headers = new HashMap<>();
     headers.put(Constants.PROJECT_ID, TEST_PROJECT_ID);
     Map<String, String> queryParams = new HashMap<>();
@@ -231,7 +232,7 @@ class FilterExperimentsIT {
 
   @Test
   void testFilterExperimentsInvalidPagination() {
-    String route = "/v1/experiment";
+    String route = TestConstants.FILTER_EXPERIMENTS_PATH;
     Map<String, String> headers = new HashMap<>();
     headers.put(Constants.PROJECT_ID, TEST_PROJECT_ID);
     Map<String, String> queryParams = new HashMap<>();
@@ -245,7 +246,7 @@ class FilterExperimentsIT {
 
   @Test
   void testFilterExperimentsNoResults() {
-    String route = "/v1/experiment";
+    String route = TestConstants.FILTER_EXPERIMENTS_PATH;
     Map<String, String> headers = new HashMap<>();
     headers.put(Constants.PROJECT_ID, UUID.randomUUID().toString()); // Different project ID
 

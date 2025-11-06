@@ -80,5 +80,8 @@ public final class TestConstants {
   public static final String TEST_EXPERIMENT_ID = "11111111-1111-1111-1111-111111111111";
   public static final String INVALID_EXPERIMENT_ID = UUID.randomUUID().toString();
 
+  /** API Path */
+  public static final String FILTER_EXPERIMENTS_PATH = "/v1/experiment";
+
   private TestConstants() {}
 }

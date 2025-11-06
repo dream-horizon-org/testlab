@@ -11,14 +11,17 @@ import io.reactivex.rxjava3.core.Single;
 import io.vertx.rxjava3.sqlclient.Tuple;
 import java.util.*;
 import java.util.stream.Collectors;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
-@RequiredArgsConstructor(onConstructor_ = @Inject)
 public class ExperimentDAOImpl implements ExperimentDAO {
 
   private final PgReaderClient pgReaderClient;
+
+  @Inject
+  public ExperimentDAOImpl(PgReaderClient pgReaderClient) {
+    this.pgReaderClient = pgReaderClient;
+  }
 
   @Override
   public Single<Experiment> getExperiment(String projectId, String experimentId) {
