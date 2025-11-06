@@ -136,12 +136,12 @@ public final class TestUtil {
    * @param tableName the name of the table whose test partition should be dropped
    */
   public static void dropTestPartition(String tableName) {
-    String drop = String.format("DROP TABLE IF EXISTS experiment.%s_p_test;", tableName);
+    String ddl = String.format("DROP TABLE IF EXISTS experiment.%s_p_test;", tableName);
     try {
-      TestUtil.executeSQLStatement(TestUtil.getDatabaseConnection(), drop);
+      TestUtil.executeSQLStatement(TestUtil.getDatabaseConnection(), ddl);
     } catch (Exception e) {
       // best-effort cleanup
-      log.warn(String.format("Failed dropping test partition for table '%s'", tableName), e);
+      log.warn("Failed dropping test partition for table {}", tableName, e);
     }
   }
 }

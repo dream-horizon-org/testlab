@@ -6,7 +6,7 @@ info:
 paths:
   /v1/experiments/tags:
     get:
-      operationId: handle
+      operationId: getTagsHandle
       parameters:
       - name: x-project-key
         in: header

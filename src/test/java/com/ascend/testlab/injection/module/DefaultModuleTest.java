@@ -245,13 +245,4 @@ public class DefaultModuleTest {
       this.value = value;
     }
   }
-
-  static class TestClass {}
-
-  static class TestModule extends com.google.inject.AbstractModule {
-    @Override
-    protected void configure() {
-      bind(TestClass.class);
-    }
-  }
 }
