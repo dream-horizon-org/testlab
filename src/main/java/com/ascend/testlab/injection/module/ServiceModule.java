@@ -9,9 +9,13 @@ import com.ascend.testlab.client.postgresql.impl.PgWriterClientImpl;
 import com.ascend.testlab.client.webclient.WebClient;
 import com.ascend.testlab.client.webclient.impl.WebClientImpl;
 import com.ascend.testlab.config.*;
+import com.ascend.testlab.dao.ExperimentNameAvailabilityDAO;
 import com.ascend.testlab.dao.HealthCheckDAO;
+import com.ascend.testlab.dao.impl.ExperimentNameAvailabilityDAOImpl;
 import com.ascend.testlab.dao.impl.HealthCheckDAOImpl;
+import com.ascend.testlab.service.ExperimentNameAvailabilityService;
 import com.ascend.testlab.service.HealthCheckService;
+import com.ascend.testlab.service.impl.ExperimentNameAvailabilityServiceImpl;
 import com.ascend.testlab.service.impl.HealthCheckServiceImpl;
 import com.ascend.testlab.util.CircuitBreakerFactory;
 import com.google.inject.Singleton;
@@ -78,10 +82,12 @@ public class ServiceModule extends DefaultModule {
   /** Bind the DAO interfaces to their implementations. */
   private void bindDAOs() {
     bind(HealthCheckDAO.class).to(HealthCheckDAOImpl.class);
+    bind(ExperimentNameAvailabilityDAO.class).to(ExperimentNameAvailabilityDAOImpl.class);
   }
 
   /** Bind the service interfaces to their implementations. */
   private void bindServices() {
     bind(HealthCheckService.class).to(HealthCheckServiceImpl.class);
+    bind(ExperimentNameAvailabilityService.class).to(ExperimentNameAvailabilityServiceImpl.class);
   }
 }

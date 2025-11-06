@@ -49,4 +49,14 @@ public final class WebConstants {
 
   /** The name of the successful calls count. */
   public static final String SUCCESSFUL_CALLS_COUNT = "successfulCallsCount";
+
+  /* Header Parameter Constants */
+
+  /** The name of the project key header. */
+  public static final String PROJECT_KEY_HEADER = "x-project-key";
+
+  /* Query Parameter Constants */
+
+  /** The name of the experiment name query parameter. */
+  public static final String EXPERIMENT_NAME = "name";
 }
