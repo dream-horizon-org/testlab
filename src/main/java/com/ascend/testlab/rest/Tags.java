@@ -66,9 +66,12 @@ public class Tags {
       responseCode = "500",
       description = "Internal server error",
       content = @Content(schema = @Schema(implementation = ResponseEntity.Failure.class)))
-  public CompletionStage<ResponseEntity.Success<TagsResponse>> handle(
+  public CompletionStage<ResponseEntity.Success<TagsResponse>> getTagsHandle(
       @HeaderParam(WebConstants.PROJECT_KEY_HEADER)
-          @NotBlank(message = ErrorMessages.PROJECT_KEY_MISSING)
+          @NotBlank(
+              message =
+                  ErrorMessages
+                      .PROJECT_KEY_MISSING) // TODO: use default here & in compose, remove check
           String projectKey) {
 
     return tagsService.getTags(projectKey).map(ResponseEntity.Success::new).toCompletionStage();

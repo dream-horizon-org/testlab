@@ -33,14 +33,9 @@ public enum ErrorEnum implements RestError {
       "Tags Listing failed due to: %s",
       HttpStatus.SC_INTERNAL_SERVER_ERROR),
 
-  /* Client Errors */
+/* Client Errors */
 
-  /** The error code for the invalid project key. */
-  INVALID_PROJECT_KEY(
-      "testlab_INVALID_PROJECT_KEY",
-      "x-project-key header is missing/invalid",
-      HttpStatus.SC_BAD_REQUEST),
-  ;
+;
 
   /** The error code. */
   private final String errorCode;
