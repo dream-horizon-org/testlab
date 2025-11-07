@@ -5,7 +5,7 @@ import static org.mockito.Mockito.*;
 
 import com.ascend.testlab.client.postgresql.PgReaderClient;
 import com.ascend.testlab.constants.postgresql.ReadQuery;
-import com.ascend.testlab.dao.impl.NameAvailabilityDAOImpl;
+import com.ascend.testlab.dao.impl.AdminDAOImpl;
 import io.reactivex.rxjava3.core.Single;
 import io.reactivex.rxjava3.observers.TestObserver;
 import io.vertx.core.Vertx;
@@ -24,31 +24,99 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 /**
- * Comprehensive unit tests for NameAvailabilityDAO.
+ * Comprehensive unit tests for AdminDAO.
  *
  * @author Nithya sree
  * @version 1.0
  * @since 1.0
  */
 @ExtendWith({VertxExtension.class, MockitoExtension.class})
-@DisplayName("NameAvailabilityDAO Tests")
-class NameAvailabilityDAOTest {
+@DisplayName("AdminDAO Tests")
+class AdminDAOTest {
 
   @Mock private PgReaderClient pgReaderClient;
 
-  private NameAvailabilityDAO nameAvailabilityDAO;
+  private AdminDAO adminDAO;
 
   private final String testProjectKey = "123e4567-e89b-12d3-a456-426614174000";
   private final String testExperimentName = "test-experiment";
 
   @BeforeEach
   void setUp(Vertx vertx) {
-    nameAvailabilityDAO = new NameAvailabilityDAOImpl(pgReaderClient);
+    adminDAO = new AdminDAOImpl(pgReaderClient);
   }
 
   @Nested
-  @DisplayName("Name Availability Check Success Cases")
-  class NameAvailabilitySuccessTests {
+  @DisplayName("Tag Fetching Tests")
+  class FetchTagsTests {
+    @Test
+    @DisplayName("Should return tags when DB returns tag list")
+    void testFetchTags_Success() {
+      // Arrange
+      when(pgReaderClient.fetchAll(eq(ReadQuery.FETCH_TAGS), any(Tuple.class), any(Function.class)))
+          .thenReturn(Single.just(Arrays.asList("A/B-test", "feature-flag")));
+
+      // Act
+      Single<List<String>> result = adminDAO.fetchTags(testProjectKey);
+      TestObserver<List<String>> testObserver = result.test();
+
+      // Assert
+      testObserver.assertComplete();
+      testObserver.assertNoErrors();
+      testObserver.assertValueCount(1);
+      List<String> actualTags = testObserver.values().get(0);
+      assertNotNull(actualTags);
+      assertEquals(2, actualTags.size());
+      assertTrue(actualTags.contains("A/B-test"));
+      assertTrue(actualTags.contains("feature-flag"));
+      verify(pgReaderClient, times(1))
+          .fetchAll(eq(ReadQuery.FETCH_TAGS), any(Tuple.class), any(Function.class));
+    }
+
+    @Test
+    @DisplayName("Should return empty list when DB returns no tags")
+    void testFetchTags_EmptyResult() {
+      // Arrange
+      when(pgReaderClient.fetchAll(eq(ReadQuery.FETCH_TAGS), any(Tuple.class), any(Function.class)))
+          .thenReturn(Single.just(List.of()));
+
+      // Act
+      Single<List<String>> result = adminDAO.fetchTags(testProjectKey);
+      TestObserver<List<String>> testObserver = result.test();
+
+      // Assert
+      testObserver.assertComplete();
+      testObserver.assertNoErrors();
+      testObserver.assertValueCount(1);
+      List<String> actualTags = testObserver.values().get(0);
+      assertNotNull(actualTags);
+      assertTrue(actualTags.isEmpty());
+      verify(pgReaderClient, times(1))
+          .fetchAll(eq(ReadQuery.FETCH_TAGS), any(Tuple.class), any(Function.class));
+    }
+
+    @Test
+    @DisplayName("Should throw RuntimeException when DB fails")
+    void testFetchTags_DatabaseError() {
+      // Arrange
+      RuntimeException dbException = new RuntimeException("Database connection failed");
+      when(pgReaderClient.fetchAll(eq(ReadQuery.FETCH_TAGS), any(Tuple.class), any(Function.class)))
+          .thenReturn(Single.error(dbException));
+
+      // Act
+      Single<List<String>> result = adminDAO.fetchTags(testProjectKey);
+      TestObserver<List<String>> testObserver = result.test();
+
+      // Assert
+      testObserver.assertError(RuntimeException.class);
+      verify(pgReaderClient, times(1))
+          .fetchAll(eq(ReadQuery.FETCH_TAGS), any(Tuple.class), any(Function.class));
+    }
+  }
+
+  @Nested
+  @DisplayName("Name Availability Check Tests")
+  class NameAvailabilityTests {
     @Test
     @DisplayName("Should return true when name is available (EXISTS returns false)")
     void testIsExperimentNameAvailable_Available() {
@@ -61,7 +129,7 @@ class NameAvailabilityDAOTest {
 
       // Act
       Single<Boolean> result =
-          nameAvailabilityDAO.isExperimentNameAvailable(testProjectKey, testExperimentName);
+          adminDAO.isExperimentNameAvailable(testProjectKey, testExperimentName);
       TestObserver<Boolean> testObserver = result.test();
 
       // Assert
@@ -87,7 +155,7 @@ class NameAvailabilityDAOTest {
 
       // Act
       Single<Boolean> result =
-          nameAvailabilityDAO.isExperimentNameAvailable(testProjectKey, testExperimentName);
+          adminDAO.isExperimentNameAvailable(testProjectKey, testExperimentName);
       TestObserver<Boolean> testObserver = result.test();
 
       // Assert
@@ -100,11 +168,7 @@ class NameAvailabilityDAOTest {
       verify(pgReaderClient, times(1))
           .fetchAll(eq(ReadQuery.CHECK_EXPERIMENT_NAME), any(Tuple.class), any(Function.class));
     }
-  }
 
-  @Nested
-  @DisplayName("Name Availability Check Edge Cases")
-  class NameAvailabilityEdgeCaseTests {
     @Test
     @DisplayName("Should return true when list is empty (safe default)")
     void testIsExperimentNameAvailable_EmptyList() {
@@ -116,7 +180,7 @@ class NameAvailabilityDAOTest {
 
       // Act
       Single<Boolean> result =
-          nameAvailabilityDAO.isExperimentNameAvailable(testProjectKey, testExperimentName);
+          adminDAO.isExperimentNameAvailable(testProjectKey, testExperimentName);
       TestObserver<Boolean> testObserver = result.test();
 
       // Assert
@@ -129,11 +193,7 @@ class NameAvailabilityDAOTest {
       verify(pgReaderClient, times(1))
           .fetchAll(eq(ReadQuery.CHECK_EXPERIMENT_NAME), any(Tuple.class), any(Function.class));
     }
-  }
 
-  @Nested
-  @DisplayName("Name Availability Check Error Handling")
-  class NameAvailabilityErrorTests {
     @Test
     @DisplayName("Should throw RuntimeException when DB fails")
     void testIsExperimentNameAvailable_DatabaseError() {
@@ -145,7 +205,7 @@ class NameAvailabilityDAOTest {
 
       // Act
       Single<Boolean> result =
-          nameAvailabilityDAO.isExperimentNameAvailable(testProjectKey, testExperimentName);
+          adminDAO.isExperimentNameAvailable(testProjectKey, testExperimentName);
       TestObserver<Boolean> testObserver = result.test();
 
       // Assert
@@ -159,6 +219,34 @@ class NameAvailabilityDAOTest {
   @DisplayName("Async Vert.x Style Demo")
   class VertxAsyncDemoTests {
     @Test
+    @DisplayName("Should fetch tags asynchronously using Vert.x event loop context")
+    void testFetchTags_Success_Async(Vertx vertx, VertxTestContext testContext) {
+      // Arrange
+      List<String> mockTags = Arrays.asList("A/B-test", "feature-flag");
+      when(pgReaderClient.fetchAll(eq(ReadQuery.FETCH_TAGS), any(Tuple.class), any(Function.class)))
+          .thenReturn(Single.just(mockTags));
+
+      // Act
+      vertx.runOnContext(
+          v -> {
+            TestObserver<List<String>> testObserver = adminDAO.fetchTags(testProjectKey).test();
+
+            // Assert
+            testObserver.assertComplete();
+            testObserver.assertNoErrors();
+            testObserver.assertValueCount(1);
+            List<String> actualTags = testObserver.values().get(0);
+            assertNotNull(actualTags);
+            assertEquals(2, actualTags.size());
+            assertTrue(actualTags.contains("A/B-test"));
+            assertTrue(actualTags.contains("feature-flag"));
+            verify(pgReaderClient, times(1))
+                .fetchAll(eq(ReadQuery.FETCH_TAGS), any(Tuple.class), any(Function.class));
+            testContext.completeNow();
+          });
+    }
+
+    @Test
     @DisplayName("Should check name availability asynchronously using Vert.x event loop context")
     void testIsExperimentNameAvailable_Success_Async(Vertx vertx, VertxTestContext testContext) {
       // Arrange
@@ -170,9 +258,7 @@ class NameAvailabilityDAOTest {
       vertx.runOnContext(
           v -> {
             TestObserver<Boolean> testObserver =
-                nameAvailabilityDAO
-                    .isExperimentNameAvailable(testProjectKey, testExperimentName)
-                    .test();
+                adminDAO.isExperimentNameAvailable(testProjectKey, testExperimentName).test();
 
             // Assert
             testObserver.assertComplete();

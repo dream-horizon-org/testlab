@@ -139,7 +139,7 @@ class NameAvailabilityIT {
     String experimentId = java.util.UUID.randomUUID().toString();
     String insert =
         String.format(
-            "INSERT INTO experiments_p_test "
+            "INSERT INTO experiment.experiments_p_test "
                 + "(project_key, experiment_id, name, status) "
                 + "VALUES ('%s', '%s', '%s', 'DRAFT');",
             projectKey, experimentId, experimentName);

@@ -10,7 +10,7 @@ CREATE TYPE experiment_type AS ENUM ('A/B');
 CREATE TYPE experiment_health AS ENUM ('WARNING','PASSING','NO_CHECKS_AVAILABLE','FAILED');
 CREATE TYPE experiment_strategy AS ENUM ('RANDOM', 'ROUND_ROBIN');
 
-CREATE TABLE IF NOT EXISTS experiments (
+CREATE TABLE IF NOT EXISTS experiment.experiments (
     project_key          VARCHAR(255) NOT NULL,
     experiment_id       VARCHAR(36) NOT NULL,
     name                VARCHAR(64) NOT NULL,
@@ -37,7 +37,7 @@ CREATE TABLE IF NOT EXISTS experiments (
     CONSTRAINT name_unique_check UNIQUE (project_key, name)
 ) PARTITION BY LIST (project_key);
 
-CREATE INDEX idx_name_tsvector ON experiments USING GIN (name_tsvector);
+CREATE INDEX idx_name_tsvector ON experiment.experiments USING GIN (name_tsvector);
 
 
 

@@ -5,7 +5,7 @@ import com.ascend.testlab.dto.ResponseEntity;
 import com.ascend.testlab.dto.response.NameAvailabilityResponse;
 import com.ascend.testlab.exception.ErrorEnum;
 import com.ascend.testlab.exception.ErrorMessages;
-import com.ascend.testlab.service.NameAvailabilityService;
+import com.ascend.testlab.service.AdminService;
 import com.dream11.rest.util.ExceptionUtil;
 import com.google.inject.Inject;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -27,23 +27,23 @@ import java.util.concurrent.CompletionStage;
  * @author Nithya sree
  * @version 1.0
  * @since 1.0
- * @see NameAvailabilityService
+ * @see AdminService
  * @see NameAvailabilityResponse
  */
 @Path("/v1/experiments/name-availability")
 public class NameAvailability {
 
-  /** The name availability service. */
-  private final NameAvailabilityService nameAvailabilityService;
+  /** The admin service. */
+  private final AdminService adminService;
 
   /**
    * Constructor for the NameAvailability class.
    *
-   * @param nameAvailabilityService the service to check name availability
+   * @param adminService the admin service
    */
   @Inject
-  public NameAvailability(NameAvailabilityService nameAvailabilityService) {
-    this.nameAvailabilityService = nameAvailabilityService;
+  public NameAvailability(AdminService adminService) {
+    this.adminService = adminService;
   }
 
   /**
@@ -79,7 +79,7 @@ public class NameAvailability {
 
     validate(experimentName);
 
-    return nameAvailabilityService
+    return adminService
         .isExperimentNameAvailable(projectKey, experimentName)
         .map(ResponseEntity.Success::new)
         .toCompletionStage();

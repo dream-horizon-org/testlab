@@ -56,23 +56,15 @@ public final class TestUtil {
   public static Connection getDatabaseConnection() throws SQLException {
     String dbURL =
         String.format(
-            "jdbc:postgresql://%s:%s/%s?currentSchema=public&searchpath=public,experiment",
+            "jdbc:postgresql://%s:%s/%s",
             System.getProperty(TestConstants.POSTGRES_HOST_KEY),
             System.getProperty(TestConstants.POSTGRES_PORT_KEY),
             System.getProperty(TestConstants.POSTGRES_DATABASE_KEY));
 
-    Connection connection =
-        DriverManager.getConnection(
-            dbURL,
-            System.getProperty(TestConstants.POSTGRES_USER_KEY),
-            System.getProperty(TestConstants.POSTGRES_PASSWORD_KEY));
-
-    // Ensure search_path is set for this connection
-    try (var stmt = connection.createStatement()) {
-      stmt.execute("SET search_path TO public, experiment;");
-    }
-
-    return connection;
+    return DriverManager.getConnection(
+        dbURL,
+        System.getProperty(TestConstants.POSTGRES_USER_KEY),
+        System.getProperty(TestConstants.POSTGRES_PASSWORD_KEY));
   }
 
   public static void executeSQLFile(Connection connection, String filePath)
@@ -127,7 +119,8 @@ public final class TestUtil {
   public static void createPartitionForProject(String tableName, String projectKey) {
     String ddl =
         String.format(
-            "CREATE TABLE IF NOT EXISTS %s_p_test " + "PARTITION OF %s FOR VALUES IN ('%s');",
+            "CREATE TABLE IF NOT EXISTS experiment.%s_p_test "
+                + "PARTITION OF experiment.%s FOR VALUES IN ('%s');",
             tableName, tableName, projectKey);
     try {
       TestUtil.executeSQLStatement(TestUtil.getDatabaseConnection(), ddl);
@@ -143,12 +136,12 @@ public final class TestUtil {
    * @param tableName the name of the table whose test partition should be dropped
    */
   public static void dropTestPartition(String tableName) {
-    String drop = String.format("DROP TABLE IF EXISTS %s_p_test;", tableName);
+    String drop = String.format("DROP TABLE IF EXISTS experiment.%s_p_test;", tableName);
     try {
       TestUtil.executeSQLStatement(TestUtil.getDatabaseConnection(), drop);
     } catch (Exception e) {
       // best-effort cleanup
-      log.warn(String.format("Failed dropping test partition for table '%s'", tableName), e);
+      log.warn("Failed dropping test partition for table {}", tableName, e);
     }
   }
 }

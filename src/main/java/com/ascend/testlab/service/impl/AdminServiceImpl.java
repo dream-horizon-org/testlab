@@ -1,42 +1,60 @@
 package com.ascend.testlab.service.impl;
 
-import com.ascend.testlab.dao.NameAvailabilityDAO;
+import com.ascend.testlab.dao.AdminDAO;
 import com.ascend.testlab.dto.response.NameAvailabilityResponse;
+import com.ascend.testlab.dto.response.TagsResponse;
 import com.ascend.testlab.exception.ErrorEnum;
-import com.ascend.testlab.service.NameAvailabilityService;
+import com.ascend.testlab.service.AdminService;
 import com.dream11.rest.exception.RestException;
 import com.google.inject.Inject;
 import io.reactivex.rxjava3.core.Single;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * Implementation of the NameAvailabilityService interface.
+ * Implementation of the AdminService interface for managing tags and name availability operations.
  *
  * @author Nithya sree
  * @version 1.0
  * @since 1.0
+ * @see AdminService
+ * @see AdminDAO
  */
 @Slf4j
-public class NameAvailabilityServiceImpl implements NameAvailabilityService {
+public class AdminServiceImpl implements AdminService {
 
-  /** The name availability DAO. */
-  private final NameAvailabilityDAO nameAvailabilityDAO;
+  /** The admin DAO. */
+  private final AdminDAO adminDAO;
 
   /**
-   * Constructor for the NameAvailabilityServiceImpl.
+   * Constructor for the AdminServiceImpl.
    *
-   * @param nameAvailabilityDAO the name availability DAO
+   * @param adminDAO the admin DAO
    */
   @Inject
-  public NameAvailabilityServiceImpl(NameAvailabilityDAO nameAvailabilityDAO) {
-    this.nameAvailabilityDAO = nameAvailabilityDAO;
+  public AdminServiceImpl(AdminDAO adminDAO) {
+    this.adminDAO = adminDAO;
+  }
+
+  /** {@inheritDoc} */
+  @Override
+  public Single<TagsResponse> getTags(String projectKey) {
+    return adminDAO
+        .fetchTags(projectKey)
+        .map(TagsResponse::new)
+        .onErrorResumeNext(
+            err -> {
+              log.error("Error in list tags for project {}: {}", projectKey, err.getMessage());
+              return Single.error(
+                  ErrorEnum.handleException(
+                      err, new RestException(ErrorEnum.REST_FETCH_TAGS_FAILED, err)));
+            });
   }
 
   /** {@inheritDoc} */
   @Override
   public Single<NameAvailabilityResponse> isExperimentNameAvailable(
       String projectKey, String experimentName) {
-    return nameAvailabilityDAO
+    return adminDAO
         .isExperimentNameAvailable(projectKey, experimentName)
         .map(
             isAvailable -> {

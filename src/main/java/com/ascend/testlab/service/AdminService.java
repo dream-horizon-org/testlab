@@ -1,16 +1,28 @@
 package com.ascend.testlab.service;
 
 import com.ascend.testlab.dto.response.NameAvailabilityResponse;
+import com.ascend.testlab.dto.response.TagsResponse;
 import io.reactivex.rxjava3.core.Single;
 
 /**
- * Service interface for checking if an experiment name is available.
+ * Service interface for admin operations including tags and name availability.
  *
  * @author Nithya sree
  * @version 1.0
  * @since 1.0
+ * @see TagsResponse
+ * @see NameAvailabilityResponse
  */
-public interface NameAvailabilityService {
+public interface AdminService {
+
+  /**
+   * Retrieves all distinct tags for experiments within the specified project.
+   *
+   * @param projectKey the project key to fetch tags for
+   * @return a Single containing TagsResponse with the list of distinct tags
+   * @throws com.dream11.rest.exception.RestException if the operation fails
+   */
+  Single<TagsResponse> getTags(String projectKey);
 
   /**
    * Checks if an experiment name is available for a given project key.
