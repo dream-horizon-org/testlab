@@ -37,6 +37,6 @@ public class ExperimentNameAvailabilityDAOImpl implements ExperimentNameAvailabi
             ReadQuery.CHECK_EXPERIMENT_NAME,
             Tuple.tuple().addString(projectKey).addString(experimentName),
             row -> row.getBoolean(0))
-        .map(list -> !list.isEmpty() && !list.get(0));
+        .map(list -> list.isEmpty() ? true : !list.get(0));
   }
 }

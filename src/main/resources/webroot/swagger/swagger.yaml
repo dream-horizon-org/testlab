@@ -3,3 +3,65 @@ info:
   title: testlab
   description: testlab Service
   version: "1.0"
+paths:
+  /v1/experiments/name-availability:
+    get:
+      operationId: handle
+      parameters:
+      - name: x-project-key
+        in: header
+        required: true
+        schema:
+          type: string
+      - name: name
+        in: query
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          description: Successfully validated experiment name
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessExperimentNameAvailabilityResponse'
+        "400":
+          description: Invalid project key or experiment name
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Failure'
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Failure'
+components:
+  schemas:
+    ErrorEntity:
+      type: object
+      properties:
+        code:
+          type: string
+        message:
+          type: string
+        cause:
+          type: string
+    Failure:
+      type: object
+      properties:
+        error:
+          $ref: '#/components/schemas/ErrorEntity'
+    ExperimentNameAvailabilityResponse:
+      type: object
+      properties:
+        isAvailable:
+          type: boolean
+        message:
+          type: string
+    SuccessExperimentNameAvailabilityResponse:
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/ExperimentNameAvailabilityResponse'
