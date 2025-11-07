@@ -26,7 +26,7 @@ public class NameAvailabilityDAOImpl implements NameAvailabilityDAO {
    */
   @Inject
   public NameAvailabilityDAOImpl(PgReaderClient pgReaderClient) {
-      this.pgReaderClient = pgReaderClient;
+    this.pgReaderClient = pgReaderClient;
   }
 
   /** {@inheritDoc} */
