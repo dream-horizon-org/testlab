@@ -37,6 +37,34 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Failure'
+  /v1/experiments/tags:
+    get:
+      operationId: getTagsHandle
+      parameters:
+      - name: x-project-key
+        in: header
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          description: Successfully retrieved tags
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessTagsResponse'
+        "400":
+          description: Invalid project Key
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Failure'
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Failure'
 components:
   schemas:
     ErrorEntity:
@@ -65,3 +93,15 @@ components:
       properties:
         data:
           $ref: '#/components/schemas/NameAvailabilityResponse'
+    SuccessTagsResponse:
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/TagsResponse'
+    TagsResponse:
+      type: object
+      properties:
+        tags:
+          type: array
+          items:
+            type: string

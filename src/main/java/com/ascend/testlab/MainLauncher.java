@@ -1,5 +1,6 @@
 package com.ascend.testlab;
 
+import com.ascend.testlab.constants.Constants;
 import com.ascend.testlab.injection.GuiceInjector;
 import com.ascend.testlab.injection.module.ServiceModule;
 import com.ascend.testlab.util.CommonUtil;
@@ -31,7 +32,7 @@ public class MainLauncher extends Launcher {
    */
   public static void main(String[] args) {
     log.info("Starting Application..........");
-    new MainLauncher().dispatch(args);
+    new MainLauncher().dispatch(new String[] {"run", Constants.MAIN_VERTICLE});
   }
 
   /** {@inheritDoc} */

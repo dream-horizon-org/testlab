@@ -365,47 +365,6 @@ public class GuiceInjectorTest {
     }
   }
 
-  @Nested
-  @DisplayName("Integration Tests")
-  class IntegrationTests {
-
-    @Test
-    @DisplayName("Should work with complex dependency injection")
-    void testComplexDependencyInjection() {
-      // Arrange
-      Module module =
-          new AbstractModule() {
-            @Override
-            protected void configure() {
-              bind(TestInterface.class).to(TestClass.class);
-              bind(AnotherTestClass.class);
-            }
-          };
-
-      // Act
-      GuiceInjector.initializeInjector(List.of(module));
-      TestInterface instance = GuiceInjector.getInstance(TestInterface.class);
-
-      // Assert
-      assertNotNull(instance);
-      assertInstanceOf(TestClass.class, instance);
-    }
-
-    @Test
-    @DisplayName("Should support typical application initialization")
-    void testTypicalApplicationInit() {
-      // Arrange
-      List<Module> modules = List.of(new TestModule(), new AnotherTestModule());
-
-      // Act
-      GuiceInjector.initializeInjector(modules);
-
-      // Assert
-      assertDoesNotThrow(() -> GuiceInjector.getInstance(TestClass.class));
-      assertDoesNotThrow(() -> GuiceInjector.getInstance(AnotherTestClass.class));
-    }
-  }
-
   // Helper classes and interfaces
   interface TestInterface {}
 

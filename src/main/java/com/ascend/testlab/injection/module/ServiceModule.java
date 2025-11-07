@@ -11,12 +11,16 @@ import com.ascend.testlab.client.webclient.impl.WebClientImpl;
 import com.ascend.testlab.config.*;
 import com.ascend.testlab.dao.HealthCheckDAO;
 import com.ascend.testlab.dao.NameAvailabilityDAO;
+import com.ascend.testlab.dao.TagsDAO;
 import com.ascend.testlab.dao.impl.HealthCheckDAOImpl;
 import com.ascend.testlab.dao.impl.NameAvailabilityDAOImpl;
+import com.ascend.testlab.dao.impl.TagsDAOImpl;
 import com.ascend.testlab.service.HealthCheckService;
 import com.ascend.testlab.service.NameAvailabilityService;
+import com.ascend.testlab.service.TagsService;
 import com.ascend.testlab.service.impl.HealthCheckServiceImpl;
 import com.ascend.testlab.service.impl.NameAvailabilityServiceImpl;
+import com.ascend.testlab.service.impl.TagsServiceImpl;
 import com.ascend.testlab.util.CircuitBreakerFactory;
 import com.google.inject.Singleton;
 import io.vertx.rxjava3.core.Vertx;
@@ -82,12 +86,14 @@ public class ServiceModule extends DefaultModule {
   /** Bind the DAO interfaces to their implementations. */
   private void bindDAOs() {
     bind(HealthCheckDAO.class).to(HealthCheckDAOImpl.class);
+    bind(TagsDAO.class).to(TagsDAOImpl.class);
     bind(NameAvailabilityDAO.class).to(NameAvailabilityDAOImpl.class);
   }
 
   /** Bind the service interfaces to their implementations. */
   private void bindServices() {
     bind(HealthCheckService.class).to(HealthCheckServiceImpl.class);
+    bind(TagsService.class).to(TagsServiceImpl.class);
     bind(NameAvailabilityService.class).to(NameAvailabilityServiceImpl.class);
   }
 }
