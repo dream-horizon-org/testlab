@@ -17,19 +17,19 @@ import org.junit.jupiter.api.extension.ExtendWith;
 
 @Slf4j
 @ExtendWith(Setup.class)
-class ExperimentNameAvailabilityIT {
+class NameAvailabilityIT {
 
   private final String route = "/v1/experiments/name-availability";
   private final String testProjectKey = "test-project-key";
 
   @BeforeAll
   public static void initialize() {
-    log.info("Starting tests for {}", ExperimentNameAvailabilityIT.class.getSimpleName());
+    log.info("Starting tests for {}", NameAvailabilityIT.class.getSimpleName());
   }
 
   @AfterAll
   public static void cleanup() {
-    log.info("Cleaning up {} resources", ExperimentNameAvailabilityIT.class.getSimpleName());
+    log.info("Cleaning up {} resources", NameAvailabilityIT.class.getSimpleName());
   }
 
   @Test

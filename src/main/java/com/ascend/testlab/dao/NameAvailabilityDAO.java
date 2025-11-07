@@ -9,7 +9,7 @@ import io.reactivex.rxjava3.core.Single;
  * @version 1.0
  * @since 1.0
  */
-public interface ExperimentNameAvailabilityDAO {
+public interface NameAvailabilityDAO {
 
   /**
    * Checks if an experiment name is available for a given project key.

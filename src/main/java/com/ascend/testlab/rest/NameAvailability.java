@@ -2,10 +2,10 @@ package com.ascend.testlab.rest;
 
 import com.ascend.testlab.constants.web.WebConstants;
 import com.ascend.testlab.dto.ResponseEntity;
-import com.ascend.testlab.dto.response.ExperimentNameAvailabilityResponse;
+import com.ascend.testlab.dto.response.NameAvailabilityResponse;
 import com.ascend.testlab.exception.ErrorEnum;
 import com.ascend.testlab.exception.ErrorMessages;
-import com.ascend.testlab.service.ExperimentNameAvailabilityService;
+import com.ascend.testlab.service.NameAvailabilityService;
 import com.dream11.rest.util.ExceptionUtil;
 import com.google.inject.Inject;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -27,24 +27,23 @@ import java.util.concurrent.CompletionStage;
  * @author Nithya sree
  * @version 1.0
  * @since 1.0
- * @see ExperimentNameAvailabilityService
- * @see ExperimentNameAvailabilityResponse
+ * @see NameAvailabilityService
+ * @see NameAvailabilityResponse
  */
 @Path("/v1/experiments/name-availability")
-public class ExperimentNameAvailability {
+public class NameAvailability {
 
-  /** The experiment name availability service. */
-  private final ExperimentNameAvailabilityService experimentNameAvailabilityService;
+  /** The name availability service. */
+  private final NameAvailabilityService nameAvailabilityService;
 
   /**
-   * Constructor for the ExperimentNameAvailability class.
+   * Constructor for the NameAvailability class.
    *
-   * @param experimentNameAvailabilityService the service to check name availability
+   * @param nameAvailabilityService the service to check name availability
    */
   @Inject
-  public ExperimentNameAvailability(
-      ExperimentNameAvailabilityService experimentNameAvailabilityService) {
-    this.experimentNameAvailabilityService = experimentNameAvailabilityService;
+  public NameAvailability(NameAvailabilityService nameAvailabilityService) {
+    this.nameAvailabilityService = nameAvailabilityService;
   }
 
   /**
@@ -70,7 +69,7 @@ public class ExperimentNameAvailability {
       responseCode = "500",
       description = "Internal server error",
       content = @Content(schema = @Schema(implementation = ResponseEntity.Failure.class)))
-  public CompletionStage<ResponseEntity.Success<ExperimentNameAvailabilityResponse>> handle(
+  public CompletionStage<ResponseEntity.Success<NameAvailabilityResponse>> handle(
       @HeaderParam(WebConstants.PROJECT_KEY_HEADER)
           @NotBlank(message = ErrorMessages.PROJECT_KEY_MISSING)
           String projectKey,
@@ -80,7 +79,7 @@ public class ExperimentNameAvailability {
 
     validate(experimentName);
 
-    return experimentNameAvailabilityService
+    return nameAvailabilityService
         .isExperimentNameAvailable(projectKey, experimentName)
         .map(ResponseEntity.Success::new)
         .toCompletionStage();

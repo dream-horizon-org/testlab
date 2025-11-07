@@ -24,7 +24,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/SuccessExperimentNameAvailabilityResponse'
+                $ref: '#/components/schemas/SuccessNameAvailabilityResponse'
         "400":
           description: Invalid project key or experiment name
           content:
@@ -53,15 +53,15 @@ components:
       properties:
         error:
           $ref: '#/components/schemas/ErrorEntity'
-    ExperimentNameAvailabilityResponse:
+    NameAvailabilityResponse:
       type: object
       properties:
         isAvailable:
           type: boolean
         message:
           type: string
-    SuccessExperimentNameAvailabilityResponse:
+    SuccessNameAvailabilityResponse:
       type: object
       properties:
         data:
-          $ref: '#/components/schemas/ExperimentNameAvailabilityResponse'
+          $ref: '#/components/schemas/NameAvailabilityResponse'

@@ -1,54 +1,53 @@
 package com.ascend.testlab.service.impl;
 
-import com.ascend.testlab.dao.ExperimentNameAvailabilityDAO;
-import com.ascend.testlab.dto.response.ExperimentNameAvailabilityResponse;
+import com.ascend.testlab.dao.NameAvailabilityDAO;
+import com.ascend.testlab.dto.response.NameAvailabilityResponse;
 import com.ascend.testlab.exception.ErrorEnum;
-import com.ascend.testlab.service.ExperimentNameAvailabilityService;
+import com.ascend.testlab.service.NameAvailabilityService;
 import com.dream11.rest.exception.RestException;
 import com.google.inject.Inject;
 import io.reactivex.rxjava3.core.Single;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * Implementation of the ExperimentNameAvailabilityService interface.
+ * Implementation of the NameAvailabilityService interface.
  *
  * @author Nithya sree
  * @version 1.0
  * @since 1.0
  */
 @Slf4j
-public class ExperimentNameAvailabilityServiceImpl implements ExperimentNameAvailabilityService {
+public class NameAvailabilityServiceImpl implements NameAvailabilityService {
 
-  /** The experiment name availability DAO. */
-  private final ExperimentNameAvailabilityDAO experimentNameAvailabilityDAO;
+  /** The name availability DAO. */
+  private final NameAvailabilityDAO nameAvailabilityDAO;
 
   /**
-   * Constructor for the ExperimentNameAvailabilityServiceImpl.
+   * Constructor for the NameAvailabilityServiceImpl.
    *
-   * @param experimentNameAvailabilityDAO the experiment name availability DAO
+   * @param nameAvailabilityDAO the name availability DAO
    */
   @Inject
-  public ExperimentNameAvailabilityServiceImpl(
-      ExperimentNameAvailabilityDAO experimentNameAvailabilityDAO) {
-    this.experimentNameAvailabilityDAO = experimentNameAvailabilityDAO;
+  public NameAvailabilityServiceImpl(NameAvailabilityDAO nameAvailabilityDAO) {
+    this.nameAvailabilityDAO = nameAvailabilityDAO;
   }
 
   /** {@inheritDoc} */
   @Override
-  public Single<ExperimentNameAvailabilityResponse> isExperimentNameAvailable(
+  public Single<NameAvailabilityResponse> isExperimentNameAvailable(
       String projectKey, String experimentName) {
-    return experimentNameAvailabilityDAO
+    return nameAvailabilityDAO
         .isExperimentNameAvailable(projectKey, experimentName)
         .map(
             isAvailable -> {
               if (isAvailable) {
-                return new ExperimentNameAvailabilityResponse(
+                return new NameAvailabilityResponse(
                     true,
                     String.format(
                         "Experiment name '%s' is available in project '%s'",
                         experimentName, projectKey));
               } else {
-                return new ExperimentNameAvailabilityResponse(
+                return new NameAvailabilityResponse(
                     false,
                     String.format(
                         "Experiment name '%s' already exists in project '%s'",

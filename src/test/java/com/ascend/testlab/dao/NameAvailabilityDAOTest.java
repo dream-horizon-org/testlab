@@ -5,7 +5,7 @@ import static org.mockito.Mockito.*;
 
 import com.ascend.testlab.client.postgresql.PgReaderClient;
 import com.ascend.testlab.constants.postgresql.ReadQuery;
-import com.ascend.testlab.dao.impl.ExperimentNameAvailabilityDAOImpl;
+import com.ascend.testlab.dao.impl.NameAvailabilityDAOImpl;
 import io.reactivex.rxjava3.core.Single;
 import io.reactivex.rxjava3.observers.TestObserver;
 import io.vertx.core.Vertx;
@@ -24,26 +24,26 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 /**
- * Comprehensive unit tests for ExperimentNameAvailabilityDAO.
+ * Comprehensive unit tests for NameAvailabilityDAO.
  *
  * @author Nithya sree
  * @version 1.0
  * @since 1.0
  */
 @ExtendWith({VertxExtension.class, MockitoExtension.class})
-@DisplayName("ExperimentNameAvailabilityDAO Tests")
-class ExperimentNameAvailabilityDAOTest {
+@DisplayName("NameAvailabilityDAO Tests")
+class NameAvailabilityDAOTest {
 
   @Mock private PgReaderClient pgReaderClient;
 
-  private ExperimentNameAvailabilityDAO experimentNameAvailabilityDAO;
+  private NameAvailabilityDAO nameAvailabilityDAO;
 
   private final String testProjectKey = "123e4567-e89b-12d3-a456-426614174000";
   private final String testExperimentName = "test-experiment";
 
   @BeforeEach
   void setUp(Vertx vertx) {
-    experimentNameAvailabilityDAO = new ExperimentNameAvailabilityDAOImpl(pgReaderClient);
+    nameAvailabilityDAO = new NameAvailabilityDAOImpl(pgReaderClient);
   }
 
   @Nested
@@ -61,8 +61,7 @@ class ExperimentNameAvailabilityDAOTest {
 
       // Act
       Single<Boolean> result =
-          experimentNameAvailabilityDAO.isExperimentNameAvailable(
-              testProjectKey, testExperimentName);
+          nameAvailabilityDAO.isExperimentNameAvailable(testProjectKey, testExperimentName);
       TestObserver<Boolean> testObserver = result.test();
 
       // Assert
@@ -88,8 +87,7 @@ class ExperimentNameAvailabilityDAOTest {
 
       // Act
       Single<Boolean> result =
-          experimentNameAvailabilityDAO.isExperimentNameAvailable(
-              testProjectKey, testExperimentName);
+          nameAvailabilityDAO.isExperimentNameAvailable(testProjectKey, testExperimentName);
       TestObserver<Boolean> testObserver = result.test();
 
       // Assert
@@ -118,8 +116,7 @@ class ExperimentNameAvailabilityDAOTest {
 
       // Act
       Single<Boolean> result =
-          experimentNameAvailabilityDAO.isExperimentNameAvailable(
-              testProjectKey, testExperimentName);
+          nameAvailabilityDAO.isExperimentNameAvailable(testProjectKey, testExperimentName);
       TestObserver<Boolean> testObserver = result.test();
 
       // Assert
@@ -148,8 +145,7 @@ class ExperimentNameAvailabilityDAOTest {
 
       // Act
       Single<Boolean> result =
-          experimentNameAvailabilityDAO.isExperimentNameAvailable(
-              testProjectKey, testExperimentName);
+          nameAvailabilityDAO.isExperimentNameAvailable(testProjectKey, testExperimentName);
       TestObserver<Boolean> testObserver = result.test();
 
       // Assert
@@ -174,7 +170,7 @@ class ExperimentNameAvailabilityDAOTest {
       vertx.runOnContext(
           v -> {
             TestObserver<Boolean> testObserver =
-                experimentNameAvailabilityDAO
+                nameAvailabilityDAO
                     .isExperimentNameAvailable(testProjectKey, testExperimentName)
                     .test();
 

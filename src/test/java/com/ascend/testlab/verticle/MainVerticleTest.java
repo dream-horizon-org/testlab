@@ -8,11 +8,11 @@ import com.ascend.testlab.client.postgresql.PgReaderClient;
 import com.ascend.testlab.client.postgresql.PgWriterClient;
 import com.ascend.testlab.client.webclient.WebClient;
 import com.ascend.testlab.config.HttpServerConfig;
-import com.ascend.testlab.dao.ExperimentNameAvailabilityDAO;
 import com.ascend.testlab.dao.HealthCheckDAO;
+import com.ascend.testlab.dao.NameAvailabilityDAO;
 import com.ascend.testlab.injection.GuiceInjector;
-import com.ascend.testlab.service.ExperimentNameAvailabilityService;
 import com.ascend.testlab.service.HealthCheckService;
+import com.ascend.testlab.service.NameAvailabilityService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.inject.AbstractModule;
 import io.reactivex.rxjava3.core.Completable;
@@ -54,8 +54,8 @@ public class MainVerticleTest {
   @Mock private WebClient webClient;
   @Mock private HealthCheckDAO healthCheckDAO;
   @Mock private HealthCheckService healthCheckService;
-  @Mock private ExperimentNameAvailabilityDAO experimentNameAvailabilityDAO;
-  @Mock private ExperimentNameAvailabilityService experimentNameAvailabilityService;
+  @Mock private NameAvailabilityDAO nameAvailabilityDAO;
+  @Mock private NameAvailabilityService nameAvailabilityService;
 
   @BeforeEach
   void setUp() throws Exception {
@@ -84,9 +84,8 @@ public class MainVerticleTest {
                 bind(WebClient.class).toInstance(webClient);
                 bind(HealthCheckDAO.class).toInstance(healthCheckDAO);
                 bind(HealthCheckService.class).toInstance(healthCheckService);
-                bind(ExperimentNameAvailabilityDAO.class).toInstance(experimentNameAvailabilityDAO);
-                bind(ExperimentNameAvailabilityService.class)
-                    .toInstance(experimentNameAvailabilityService);
+                bind(NameAvailabilityDAO.class).toInstance(nameAvailabilityDAO);
+                bind(NameAvailabilityService.class).toInstance(nameAvailabilityService);
                 // Don't bind RestVerticle as singleton - let it create new instances
                 bind(RestVerticle.class).toProvider(() -> new RestVerticle(httpServerConfig));
               }

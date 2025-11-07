@@ -7,4 +7,4 @@ package com.ascend.testlab.dto.response;
  * @version 1.0
  * @since 1.0
  */
-public record ExperimentNameAvailabilityResponse(Boolean isAvailable, String message) {}
+public record NameAvailabilityResponse(Boolean isAvailable, String message) {}
