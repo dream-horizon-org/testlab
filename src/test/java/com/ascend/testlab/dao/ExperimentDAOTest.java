@@ -10,6 +10,7 @@ import com.ascend.testlab.constants.enums.ExperimentType;
 import com.ascend.testlab.dao.impl.ExperimentDAOImpl;
 import com.ascend.testlab.dto.entity.Experiment;
 import com.ascend.testlab.dto.request.FilterExperimentsRequest;
+import com.ascend.testlab.dto.response.FilterExperimentsResponse;
 import io.reactivex.rxjava3.core.Single;
 import io.reactivex.rxjava3.observers.TestObserver;
 import io.vertx.junit5.VertxExtension;
@@ -39,8 +40,6 @@ import org.mockito.junit.jupiter.MockitoExtension;
 public class ExperimentDAOTest {
 
   @Mock private PgReaderClient pgReaderClient;
-
-  @Mock private Row mockRow;
 
   private ExperimentDAO experimentDAO;
 
@@ -132,153 +131,264 @@ public class ExperimentDAOTest {
   }
 
   @Nested
-  @DisplayName("Fetch Experiments Tests")
-  class FetchExperimentsTests {
+  @DisplayName("Filter Experiments Tests")
+  class FilterExperimentsTests {
 
     @Test
     @DisplayName("Should return experiments without filters")
-    void testFetchExperimentsNoFilters(VertxTestContext testContext) {
+    void testFilterExperimentsNoFilters(VertxTestContext testContext) {
       // Arrange
-      List<Experiment> expectedExperiments = Arrays.asList(createMockExperiment());
-      FilterExperimentsRequest request = new FilterExperimentsRequest();
-      doReturn(Single.just(expectedExperiments))
+      Experiment experiment = createMockExperiment();
+      FilterExperimentsRequest request =
+          FilterExperimentsRequest.builder().limit(20).page(1).build();
+      List<Row> mockRows = createMockRows(experiment, 1);
+      doReturn(Single.just(mockRows))
           .when(pgReaderClient)
           .fetchAll(anyString(), any(Tuple.class), any());
 
       // Act
-      TestObserver<List<Experiment>> testObserver =
-          experimentDAO.fetchExperiments(PROJECT_ID, request).test();
+      TestObserver<FilterExperimentsResponse> testObserver =
+          experimentDAO.filterExperiments(PROJECT_ID, request).test();
 
       // Assert
       testObserver.assertComplete();
       testObserver.assertNoErrors();
-      testObserver.assertValue(experiments -> experiments.size() == 1);
+      testObserver.assertValue(
+          response ->
+              response.getExperimentList().size() == 1
+                  && response.getPagination().getTotalCount() == 1
+                  && response.getPagination().getCurrentPage() == 1
+                  && response.getPagination().getPageSize() == 20);
       verify(pgReaderClient, times(1)).fetchAll(anyString(), any(Tuple.class), any());
       testContext.completeNow();
     }
 
     @Test
     @DisplayName("Should return empty list when no experiments found")
-    void testFetchExperimentsEmpty(VertxTestContext testContext) {
+    void testFilterExperimentsEmpty(VertxTestContext testContext) {
       // Arrange
-      FilterExperimentsRequest request = new FilterExperimentsRequest();
-      doReturn(Single.just(Collections.<Experiment>emptyList()))
+      FilterExperimentsRequest request =
+          FilterExperimentsRequest.builder().limit(20).page(1).build();
+      doReturn(Single.just(Collections.<Row>emptyList()))
           .when(pgReaderClient)
           .fetchAll(anyString(), any(Tuple.class), any());
 
       // Act
-      TestObserver<List<Experiment>> testObserver =
-          experimentDAO.fetchExperiments(PROJECT_ID, request).test();
+      TestObserver<FilterExperimentsResponse> testObserver =
+          experimentDAO.filterExperiments(PROJECT_ID, request).test();
 
       // Assert
       testObserver.assertComplete();
       testObserver.assertNoErrors();
-      testObserver.assertValue(List::isEmpty);
+      testObserver.assertValue(
+          response ->
+              response.getExperimentList().isEmpty()
+                  && response.getPagination().getTotalCount() == 0
+                  && response.getPagination().getCurrentPage() == 1
+                  && response.getPagination().getPageSize() == 20);
       verify(pgReaderClient, times(1)).fetchAll(anyString(), any(Tuple.class), any());
       testContext.completeNow();
     }
 
     @Test
     @DisplayName("Should filter experiments by name")
-    void testFetchExperimentsWithNameFilter(VertxTestContext testContext) {
+    void testFilterExperimentsWithNameFilter(VertxTestContext testContext) {
       // Arrange
-      List<Experiment> expectedExperiments = Arrays.asList(createMockExperiment());
+      Experiment experiment = createMockExperiment();
       FilterExperimentsRequest request =
-          FilterExperimentsRequest.builder().name("test experiment").build();
-      doReturn(Single.just(expectedExperiments))
+          FilterExperimentsRequest.builder().name("test experiment").limit(20).page(1).build();
+      List<Row> mockRows = createMockRows(experiment, 1);
+      doReturn(Single.just(mockRows))
           .when(pgReaderClient)
           .fetchAll(anyString(), any(Tuple.class), any());
 
       // Act
-      TestObserver<List<Experiment>> testObserver =
-          experimentDAO.fetchExperiments(PROJECT_ID, request).test();
+      TestObserver<FilterExperimentsResponse> testObserver =
+          experimentDAO.filterExperiments(PROJECT_ID, request).test();
 
       // Assert
       testObserver.assertComplete();
       testObserver.assertNoErrors();
-      testObserver.assertValue(experiments -> experiments.size() == 1);
+      testObserver.assertValue(
+          response ->
+              response.getExperimentList().size() == 1
+                  && response.getPagination().getTotalCount() == 1);
       verify(pgReaderClient, times(1)).fetchAll(anyString(), any(Tuple.class), any());
       testContext.completeNow();
     }
 
     @Test
     @DisplayName("Should filter experiments by status")
-    void testFetchExperimentsWithStatusFilter(VertxTestContext testContext) {
+    void testFilterExperimentsWithStatusFilter(VertxTestContext testContext) {
       // Arrange
-      List<Experiment> expectedExperiments = Arrays.asList(createMockExperiment());
+      Experiment experiment = createMockExperiment();
       FilterExperimentsRequest request =
-          FilterExperimentsRequest.builder()
-              .status(Arrays.asList(ExperimentStatus.LIVE, ExperimentStatus.PAUSED))
-              .build();
-      doReturn(Single.just(expectedExperiments))
+          FilterExperimentsRequest.builder().status("LIVE,PAUSED").limit(20).page(1).build();
+      List<Row> mockRows = createMockRows(experiment, 1);
+      doReturn(Single.just(mockRows))
           .when(pgReaderClient)
           .fetchAll(anyString(), any(Tuple.class), any());
 
       // Act
-      TestObserver<List<Experiment>> testObserver =
-          experimentDAO.fetchExperiments(PROJECT_ID, request).test();
+      TestObserver<FilterExperimentsResponse> testObserver =
+          experimentDAO.filterExperiments(PROJECT_ID, request).test();
 
       // Assert
       testObserver.assertComplete();
       testObserver.assertNoErrors();
-      testObserver.assertValue(experiments -> experiments.size() == 1);
+      testObserver.assertValue(
+          response ->
+              response.getExperimentList().size() == 1
+                  && response.getPagination().getTotalCount() == 1);
       verify(pgReaderClient, times(1)).fetchAll(anyString(), any(Tuple.class), any());
       testContext.completeNow();
     }
 
     @Test
     @DisplayName("Should filter experiments by type")
-    void testFetchExperimentsWithTypeFilter(VertxTestContext testContext) {
+    void testFilterExperimentsWithTypeFilter(VertxTestContext testContext) {
       // Arrange
-      List<Experiment> expectedExperiments = Arrays.asList(createMockExperiment());
+      Experiment experiment = createMockExperiment();
       FilterExperimentsRequest request =
-          FilterExperimentsRequest.builder().type(Arrays.asList("A_B")).build();
-      doReturn(Single.just(expectedExperiments))
+          FilterExperimentsRequest.builder().type("A/B").limit(20).page(1).build();
+      List<Row> mockRows = createMockRows(experiment, 1);
+      doReturn(Single.just(mockRows))
           .when(pgReaderClient)
           .fetchAll(anyString(), any(Tuple.class), any());
 
       // Act
-      TestObserver<List<Experiment>> testObserver =
-          experimentDAO.fetchExperiments(PROJECT_ID, request).test();
+      TestObserver<FilterExperimentsResponse> testObserver =
+          experimentDAO.filterExperiments(PROJECT_ID, request).test();
 
       // Assert
       testObserver.assertComplete();
       testObserver.assertNoErrors();
-      testObserver.assertValue(experiments -> experiments.size() == 1);
+      testObserver.assertValue(
+          response ->
+              response.getExperimentList().size() == 1
+                  && response.getPagination().getTotalCount() == 1);
+      verify(pgReaderClient, times(1)).fetchAll(anyString(), any(Tuple.class), any());
+      testContext.completeNow();
+    }
+
+    @Test
+    @DisplayName("Should filter experiments by tag")
+    void testFilterExperimentsWithTagFilter(VertxTestContext testContext) {
+      // Arrange
+      Experiment experiment = createMockExperiment();
+      FilterExperimentsRequest request =
+          FilterExperimentsRequest.builder().tag("tag1").limit(20).page(1).build();
+      List<Row> mockRows = createMockRows(experiment, 1);
+      doReturn(Single.just(mockRows))
+          .when(pgReaderClient)
+          .fetchAll(anyString(), any(Tuple.class), any());
+
+      // Act
+      TestObserver<FilterExperimentsResponse> testObserver =
+          experimentDAO.filterExperiments(PROJECT_ID, request).test();
+
+      // Assert
+      testObserver.assertComplete();
+      testObserver.assertNoErrors();
+      testObserver.assertValue(
+          response ->
+              response.getExperimentList().size() == 1
+                  && response.getPagination().getTotalCount() == 1);
+      verify(pgReaderClient, times(1)).fetchAll(anyString(), any(Tuple.class), any());
+      testContext.completeNow();
+    }
+
+    @Test
+    @DisplayName("Should filter experiments by owner")
+    void testFilterExperimentsWithOwnerFilter(VertxTestContext testContext) {
+      // Arrange
+      Experiment experiment = createMockExperiment();
+      FilterExperimentsRequest request =
+          FilterExperimentsRequest.builder().owner("owner1").limit(20).page(1).build();
+      List<Row> mockRows = createMockRows(experiment, 1);
+      doReturn(Single.just(mockRows))
+          .when(pgReaderClient)
+          .fetchAll(anyString(), any(Tuple.class), any());
+
+      // Act
+      TestObserver<FilterExperimentsResponse> testObserver =
+          experimentDAO.filterExperiments(PROJECT_ID, request).test();
+
+      // Assert
+      testObserver.assertComplete();
+      testObserver.assertNoErrors();
+      testObserver.assertValue(
+          response ->
+              response.getExperimentList().size() == 1
+                  && response.getPagination().getTotalCount() == 1);
       verify(pgReaderClient, times(1)).fetchAll(anyString(), any(Tuple.class), any());
       testContext.completeNow();
     }
 
     @Test
     @DisplayName("Should filter experiments with multiple filters")
-    void testFetchExperimentsWithMultipleFilters(VertxTestContext testContext) {
+    void testFilterExperimentsWithMultipleFilters(VertxTestContext testContext) {
       // Arrange
-      List<Experiment> expectedExperiments = Arrays.asList(createMockExperiment());
+      Experiment experiment = createMockExperiment();
       FilterExperimentsRequest request =
           FilterExperimentsRequest.builder()
               .name("test")
-              .status(Arrays.asList(ExperimentStatus.LIVE))
-              .type(Arrays.asList("A_B"))
+              .status("LIVE")
+              .type("A_B")
+                  .limit(20)
+                  .page(1)
               .build();
-      doReturn(Single.just(expectedExperiments))
+      List<Row> mockRows = createMockRows(experiment, 1);
+      doReturn(Single.just(mockRows))
           .when(pgReaderClient)
           .fetchAll(anyString(), any(Tuple.class), any());
 
       // Act
-      TestObserver<List<Experiment>> testObserver =
-          experimentDAO.fetchExperiments(PROJECT_ID, request).test();
+      TestObserver<FilterExperimentsResponse> testObserver =
+          experimentDAO.filterExperiments(PROJECT_ID, request).test();
 
       // Assert
       testObserver.assertComplete();
       testObserver.assertNoErrors();
-      testObserver.assertValue(experiments -> experiments.size() == 1);
+      testObserver.assertValue(
+          response ->
+              response.getExperimentList().size() == 1
+                  && response.getPagination().getTotalCount() == 1);
+      verify(pgReaderClient, times(1)).fetchAll(anyString(), any(Tuple.class), any());
+      testContext.completeNow();
+    }
+
+    @Test
+    @DisplayName("Should handle pagination correctly")
+    void testFilterExperimentsWithPagination(VertxTestContext testContext) {
+      // Arrange
+      Experiment experiment = createMockExperiment();
+      FilterExperimentsRequest request =
+          FilterExperimentsRequest.builder().page(2).limit(10).build();
+      List<Row> mockRows = createMockRows(experiment, 15);
+      doReturn(Single.just(mockRows))
+          .when(pgReaderClient)
+          .fetchAll(anyString(), any(Tuple.class), any());
+
+      // Act
+      TestObserver<FilterExperimentsResponse> testObserver =
+          experimentDAO.filterExperiments(PROJECT_ID, request).test();
+
+      // Assert
+      testObserver.assertComplete();
+      testObserver.assertNoErrors();
+      testObserver.assertValue(
+          response ->
+              response.getPagination().getTotalCount() == 15
+                  && response.getPagination().getCurrentPage() == 2
+                  && response.getPagination().getPageSize() == 10);
       verify(pgReaderClient, times(1)).fetchAll(anyString(), any(Tuple.class), any());
       testContext.completeNow();
     }
 
     @Test
     @DisplayName("Should handle error when fetching experiments")
-    void testFetchExperimentsError(VertxTestContext testContext) {
+    void testFilterExperimentsError(VertxTestContext testContext) {
       // Arrange
       FilterExperimentsRequest request = new FilterExperimentsRequest();
       RuntimeException expectedException = new RuntimeException("Database error");
@@ -286,8 +396,8 @@ public class ExperimentDAOTest {
           .thenReturn(Single.error(expectedException));
 
       // Act
-      TestObserver<List<Experiment>> testObserver =
-          experimentDAO.fetchExperiments(PROJECT_ID, request).test();
+      TestObserver<FilterExperimentsResponse> testObserver =
+          experimentDAO.filterExperiments(PROJECT_ID, request).test();
 
       // Assert
       testObserver.assertError(RuntimeException.class);
@@ -296,306 +406,6 @@ public class ExperimentDAOTest {
     }
   }
 
-  @Nested
-  @DisplayName("Get Experiment IDs By Tags Tests")
-  class GetExperimentIdsByTagsTests {
-
-    @Test
-    @DisplayName("Should return experiment IDs when tags match")
-    void testGetExperimentIdsByTagsSuccess(VertxTestContext testContext) {
-      // Arrange
-      Set<UUID> expectedIds = new HashSet<>(Arrays.asList(EXPERIMENT_UUID));
-      List<String> tags = Arrays.asList("tag1", "tag2");
-      when(pgReaderClient.fetchAll(anyString(), any(Tuple.class), any()))
-          .thenReturn(Single.just(new ArrayList<>(expectedIds)));
-
-      // Act
-      TestObserver<Set<UUID>> testObserver =
-          experimentDAO.getExperimentIdsByTags(PROJECT_ID, tags).test();
-
-      // Assert
-      testObserver.assertComplete();
-      testObserver.assertNoErrors();
-      testObserver.assertValue(ids -> ids.size() == 1 && ids.contains(EXPERIMENT_UUID));
-      verify(pgReaderClient, times(1)).fetchAll(anyString(), any(Tuple.class), any());
-      testContext.completeNow();
-    }
-
-    @Test
-    @DisplayName("Should return empty set when no tags match")
-    void testGetExperimentIdsByTagsEmpty(VertxTestContext testContext) {
-      // Arrange
-      List<String> tags = Arrays.asList("nonexistent-tag");
-      when(pgReaderClient.fetchAll(anyString(), any(Tuple.class), any()))
-          .thenReturn(Single.just(Collections.emptyList()));
-
-      // Act
-      TestObserver<Set<UUID>> testObserver =
-          experimentDAO.getExperimentIdsByTags(PROJECT_ID, tags).test();
-
-      // Assert
-      testObserver.assertComplete();
-      testObserver.assertNoErrors();
-      testObserver.assertValue(Set::isEmpty);
-      verify(pgReaderClient, times(1)).fetchAll(anyString(), any(Tuple.class), any());
-      testContext.completeNow();
-    }
-
-    @Test
-    @DisplayName("Should handle error and return empty set")
-    void testGetExperimentIdsByTagsError(VertxTestContext testContext) {
-      // Arrange
-      List<String> tags = Arrays.asList("tag1");
-      RuntimeException expectedException = new RuntimeException("Database error");
-      when(pgReaderClient.fetchAll(anyString(), any(Tuple.class), any()))
-          .thenReturn(Single.error(expectedException));
-
-      // Act
-      TestObserver<Set<UUID>> testObserver =
-          experimentDAO.getExperimentIdsByTags(PROJECT_ID, tags).test();
-
-      // Assert
-      testObserver.assertComplete();
-      testObserver.assertNoErrors();
-      testObserver.assertValue(Set::isEmpty);
-      verify(pgReaderClient, times(1)).fetchAll(anyString(), any(Tuple.class), any());
-      testContext.completeNow();
-    }
-  }
-
-  @Nested
-  @DisplayName("Get Experiment IDs By Owners Tests")
-  class GetExperimentIdsByOwnersTests {
-
-    @Test
-    @DisplayName("Should return experiment IDs when owners match")
-    void testGetExperimentIdsByOwnersSuccess(VertxTestContext testContext) {
-      // Arrange
-      Set<UUID> expectedIds = new HashSet<>(Arrays.asList(EXPERIMENT_UUID));
-      List<String> owners = Arrays.asList("owner1", "owner2");
-      when(pgReaderClient.fetchAll(anyString(), any(Tuple.class), any()))
-          .thenReturn(Single.just(new ArrayList<>(expectedIds)));
-
-      // Act
-      TestObserver<Set<UUID>> testObserver =
-          experimentDAO.getExperimentIdsByOwners(PROJECT_ID, owners).test();
-
-      // Assert
-      testObserver.assertComplete();
-      testObserver.assertNoErrors();
-      testObserver.assertValue(ids -> ids.size() == 1 && ids.contains(EXPERIMENT_UUID));
-      verify(pgReaderClient, times(1)).fetchAll(anyString(), any(Tuple.class), any());
-      testContext.completeNow();
-    }
-
-    @Test
-    @DisplayName("Should return empty set when no owners match")
-    void testGetExperimentIdsByOwnersEmpty(VertxTestContext testContext) {
-      // Arrange
-      List<String> owners = Arrays.asList("nonexistent-owner");
-      when(pgReaderClient.fetchAll(anyString(), any(Tuple.class), any()))
-          .thenReturn(Single.just(Collections.emptyList()));
-
-      // Act
-      TestObserver<Set<UUID>> testObserver =
-          experimentDAO.getExperimentIdsByOwners(PROJECT_ID, owners).test();
-
-      // Assert
-      testObserver.assertComplete();
-      testObserver.assertNoErrors();
-      testObserver.assertValue(Set::isEmpty);
-      verify(pgReaderClient, times(1)).fetchAll(anyString(), any(Tuple.class), any());
-      testContext.completeNow();
-    }
-
-    @Test
-    @DisplayName("Should handle error and return empty set")
-    void testGetExperimentIdsByOwnersError(VertxTestContext testContext) {
-      // Arrange
-      List<String> owners = Arrays.asList("owner1");
-      RuntimeException expectedException = new RuntimeException("Database error");
-      when(pgReaderClient.fetchAll(anyString(), any(Tuple.class), any()))
-          .thenReturn(Single.error(expectedException));
-
-      // Act
-      TestObserver<Set<UUID>> testObserver =
-          experimentDAO.getExperimentIdsByOwners(PROJECT_ID, owners).test();
-
-      // Assert
-      testObserver.assertComplete();
-      testObserver.assertNoErrors();
-      testObserver.assertValue(Set::isEmpty);
-      verify(pgReaderClient, times(1)).fetchAll(anyString(), any(Tuple.class), any());
-      testContext.completeNow();
-    }
-  }
-
-  @Nested
-  @DisplayName("Fetch Experiments By IDs Tests")
-  class FetchExperimentsByIdsTests {
-
-    @Test
-    @DisplayName("Should return experiments by IDs without filters")
-    void testFetchExperimentsByIdsNoFilters(VertxTestContext testContext) {
-      // Arrange
-      Set<String> experimentIds = new HashSet<>(Arrays.asList(EXPERIMENT_ID));
-      FilterExperimentsRequest request = new FilterExperimentsRequest();
-      List<Experiment> expectedExperiments = Arrays.asList(createMockExperiment());
-      doReturn(Single.just(expectedExperiments))
-          .when(pgReaderClient)
-          .fetchAll(anyString(), any(Tuple.class), any());
-
-      // Act
-      TestObserver<List<Experiment>> testObserver =
-          experimentDAO.fetchExperimentsByIds(PROJECT_ID, experimentIds, request).test();
-
-      // Assert
-      testObserver.assertComplete();
-      testObserver.assertNoErrors();
-      testObserver.assertValue(experiments -> experiments.size() == 1);
-      verify(pgReaderClient, times(1)).fetchAll(anyString(), any(Tuple.class), any());
-      testContext.completeNow();
-    }
-
-    @Test
-    @DisplayName("Should return experiments by IDs with name filter")
-    void testFetchExperimentsByIdsWithNameFilter(VertxTestContext testContext) {
-      // Arrange
-      Set<String> experimentIds = new HashSet<>(Arrays.asList(EXPERIMENT_ID));
-      FilterExperimentsRequest request = FilterExperimentsRequest.builder().name("test").build();
-      List<Experiment> expectedExperiments = Arrays.asList(createMockExperiment());
-      doReturn(Single.just(expectedExperiments))
-          .when(pgReaderClient)
-          .fetchAll(anyString(), any(Tuple.class), any());
-
-      // Act
-      TestObserver<List<Experiment>> testObserver =
-          experimentDAO.fetchExperimentsByIds(PROJECT_ID, experimentIds, request).test();
-
-      // Assert
-      testObserver.assertComplete();
-      testObserver.assertNoErrors();
-      testObserver.assertValue(experiments -> experiments.size() == 1);
-      verify(pgReaderClient, times(1)).fetchAll(anyString(), any(Tuple.class), any());
-      testContext.completeNow();
-    }
-
-    @Test
-    @DisplayName("Should return experiments by IDs with status filter")
-    void testFetchExperimentsByIdsWithStatusFilter(VertxTestContext testContext) {
-      // Arrange
-      Set<String> experimentIds = new HashSet<>(Arrays.asList(EXPERIMENT_ID));
-      FilterExperimentsRequest request =
-          FilterExperimentsRequest.builder().status(Arrays.asList(ExperimentStatus.LIVE)).build();
-      List<Experiment> expectedExperiments = Arrays.asList(createMockExperiment());
-      doReturn(Single.just(expectedExperiments))
-          .when(pgReaderClient)
-          .fetchAll(anyString(), any(Tuple.class), any());
-
-      // Act
-      TestObserver<List<Experiment>> testObserver =
-          experimentDAO.fetchExperimentsByIds(PROJECT_ID, experimentIds, request).test();
-
-      // Assert
-      testObserver.assertComplete();
-      testObserver.assertNoErrors();
-      testObserver.assertValue(experiments -> experiments.size() == 1);
-      verify(pgReaderClient, times(1)).fetchAll(anyString(), any(Tuple.class), any());
-      testContext.completeNow();
-    }
-
-    @Test
-    @DisplayName("Should return experiments by IDs with multiple filters")
-    void testFetchExperimentsByIdsWithMultipleFilters(VertxTestContext testContext) {
-      // Arrange
-      Set<String> experimentIds = new HashSet<>(Arrays.asList(EXPERIMENT_ID));
-      FilterExperimentsRequest request =
-          FilterExperimentsRequest.builder()
-              .name("test")
-              .status(Arrays.asList(ExperimentStatus.LIVE))
-              .type(Arrays.asList("A_B"))
-              .build();
-      List<Experiment> expectedExperiments = Arrays.asList(createMockExperiment());
-      doReturn(Single.just(expectedExperiments))
-          .when(pgReaderClient)
-          .fetchAll(anyString(), any(Tuple.class), any());
-
-      // Act
-      TestObserver<List<Experiment>> testObserver =
-          experimentDAO.fetchExperimentsByIds(PROJECT_ID, experimentIds, request).test();
-
-      // Assert
-      testObserver.assertComplete();
-      testObserver.assertNoErrors();
-      testObserver.assertValue(experiments -> experiments.size() == 1);
-      verify(pgReaderClient, times(1)).fetchAll(anyString(), any(Tuple.class), any());
-      testContext.completeNow();
-    }
-
-    @Test
-    @DisplayName("Should return empty list when no experiments match IDs and filters")
-    void testFetchExperimentsByIdsEmpty(VertxTestContext testContext) {
-      // Arrange
-      Set<String> experimentIds = new HashSet<>(Arrays.asList(EXPERIMENT_ID));
-      FilterExperimentsRequest request = new FilterExperimentsRequest();
-      when(pgReaderClient.fetchAll(anyString(), any(Tuple.class), any()))
-          .thenReturn(Single.just(Collections.emptyList()));
-
-      // Act
-      TestObserver<List<Experiment>> testObserver =
-          experimentDAO.fetchExperimentsByIds(PROJECT_ID, experimentIds, request).test();
-
-      // Assert
-      testObserver.assertComplete();
-      testObserver.assertNoErrors();
-      testObserver.assertValue(List::isEmpty);
-      verify(pgReaderClient, times(1)).fetchAll(anyString(), any(Tuple.class), any());
-      testContext.completeNow();
-    }
-
-    @Test
-    @DisplayName("Should handle error when fetching experiments by IDs")
-    void testFetchExperimentsByIdsError(VertxTestContext testContext) {
-      // Arrange
-      Set<String> experimentIds = new HashSet<>(Arrays.asList(EXPERIMENT_ID));
-      FilterExperimentsRequest request = new FilterExperimentsRequest();
-      RuntimeException expectedException = new RuntimeException("Database error");
-      when(pgReaderClient.fetchAll(anyString(), any(Tuple.class), any()))
-          .thenReturn(Single.error(expectedException));
-
-      // Act
-      TestObserver<List<Experiment>> testObserver =
-          experimentDAO.fetchExperimentsByIds(PROJECT_ID, experimentIds, request).test();
-
-      // Assert
-      testObserver.assertError(RuntimeException.class);
-      verify(pgReaderClient, times(1)).fetchAll(anyString(), any(Tuple.class), any());
-      testContext.completeNow();
-    }
-
-    @Test
-    @DisplayName("Should handle multiple experiment IDs")
-    void testFetchExperimentsByIdsMultipleIds(VertxTestContext testContext) {
-      // Arrange
-      Set<String> experimentIds = new HashSet<>(Arrays.asList(EXPERIMENT_ID, "experiment-789"));
-      FilterExperimentsRequest request = new FilterExperimentsRequest();
-      List<Experiment> expectedExperiments = Arrays.asList(createMockExperiment());
-      doReturn(Single.just(expectedExperiments))
-          .when(pgReaderClient)
-          .fetchAll(anyString(), any(Tuple.class), any());
-
-      // Act
-      TestObserver<List<Experiment>> testObserver =
-          experimentDAO.fetchExperimentsByIds(PROJECT_ID, experimentIds, request).test();
-
-      // Assert
-      testObserver.assertComplete();
-      testObserver.assertNoErrors();
-      testObserver.assertValue(experiments -> experiments.size() == 1);
-      verify(pgReaderClient, times(1)).fetchAll(anyString(), any(Tuple.class), any());
-      testContext.completeNow();
-    }
-  }
 
   @Nested
   @DisplayName("Integration Tests")
@@ -606,32 +416,29 @@ public class ExperimentDAOTest {
     void testMultipleOperationsSequentially(VertxTestContext testContext) {
       // Arrange
       Experiment experiment = createMockExperiment();
-      Set<UUID> tagIds = new HashSet<>(Arrays.asList(EXPERIMENT_UUID));
-      FilterExperimentsRequest request = new FilterExperimentsRequest();
+      FilterExperimentsRequest request =
+          FilterExperimentsRequest.builder().limit(20).page(1).build();
+      List<Row> mockRows = createMockRows(experiment, 1);
 
       doReturn(Single.just(experiment))
           .when(pgReaderClient)
           .fetchOne(anyString(), any(Tuple.class), any());
-      doReturn(Single.just(Arrays.asList(experiment)))
-          .doReturn(Single.just(new ArrayList<>(tagIds)))
+      doReturn(Single.just(mockRows))
           .when(pgReaderClient)
           .fetchAll(anyString(), any(Tuple.class), any());
 
       // Act
       TestObserver<Experiment> getObserver =
           experimentDAO.getExperiment(PROJECT_ID, EXPERIMENT_ID).test();
-      TestObserver<List<Experiment>> fetchObserver =
-          experimentDAO.fetchExperiments(PROJECT_ID, request).test();
-      TestObserver<Set<UUID>> tagsObserver =
-          experimentDAO.getExperimentIdsByTags(PROJECT_ID, Arrays.asList("tag1")).test();
+      TestObserver<FilterExperimentsResponse> filterObserver =
+          experimentDAO.filterExperiments(PROJECT_ID, request).test();
 
       // Assert
       getObserver.assertComplete().assertNoErrors();
-      fetchObserver.assertComplete().assertNoErrors();
-      tagsObserver.assertComplete().assertNoErrors();
+      filterObserver.assertComplete().assertNoErrors();
 
       verify(pgReaderClient, times(1)).fetchOne(anyString(), any(Tuple.class), any());
-      verify(pgReaderClient, times(2)).fetchAll(anyString(), any(Tuple.class), any());
+      verify(pgReaderClient, times(1)).fetchAll(anyString(), any(Tuple.class), any());
       testContext.completeNow();
     }
   }
@@ -660,5 +467,49 @@ public class ExperimentDAOTest {
         .tags("tag1,tag2")
         .owner("owner1")
         .build();
+  }
+
+  /**
+   * Helper method to create mock Row objects for testing. Creates a list of Row objects that can be
+   * mapped to Experiment entities.
+   *
+   * @param experiment the experiment to use for populating row data
+   * @param totalCount the total count value to set in the row (for pagination)
+   * @return a list of mock Row objects
+   */
+  private List<Row> createMockRows(Experiment experiment, int totalCount) {
+    Row mockRow = mock(Row.class);
+    LocalDateTime now = LocalDateTime.now();
+
+    // Set up all the fields that ExperimentMapper expects
+    when(mockRow.getUUID("project_key")).thenReturn(experiment.getProjectId());
+    when(mockRow.getUUID("experiment_id")).thenReturn(experiment.getExperimentId());
+    when(mockRow.getString("name")).thenReturn(experiment.getName());
+    when(mockRow.getString("description")).thenReturn(experiment.getDescription());
+    when(mockRow.getString("hypothesis")).thenReturn(experiment.getHypothesis());
+    when(mockRow.getString("status"))
+        .thenReturn(experiment.getStatus() != null ? experiment.getStatus().name() : null);
+    when(mockRow.getString("type"))
+        .thenReturn(experiment.getType() != null ? experiment.getType().toJson() : null);
+    when(mockRow.getString("guardrail_health_status")).thenReturn(null);
+    when(mockRow.getArrayOfStrings("cohorts")).thenReturn(new String[0]);
+    when(mockRow.getJson("variant_weights")).thenReturn(null);
+    when(mockRow.getString("assignment_strategy")).thenReturn(null);
+    when(mockRow.getJson("overrides")).thenReturn(null);
+    when(mockRow.getJson("rule_attributes")).thenReturn(null);
+    when(mockRow.getJson("winning_variant")).thenReturn(null);
+    when(mockRow.getInteger("exposure")).thenReturn(experiment.getExposure());
+    when(mockRow.getLong("threshold")).thenReturn(experiment.getThreshold());
+    when(mockRow.getLong("start_time")).thenReturn(experiment.getStartTime());
+    when(mockRow.getLong("end_time")).thenReturn(experiment.getEndTime());
+    when(mockRow.getString("created_by")).thenReturn(experiment.getCreatedBy());
+    when(mockRow.getLocalDateTime("created_at")).thenReturn(now);
+    when(mockRow.getLocalDateTime("updated_at")).thenReturn(now);
+    when(mockRow.getString("tags")).thenReturn(experiment.getTags());
+    when(mockRow.getString("owners")).thenReturn(experiment.getOwner());
+    // Add total_count for pagination
+    when(mockRow.getInteger("total_count")).thenReturn(totalCount);
+
+    return Arrays.asList(mockRow);
   }
 }

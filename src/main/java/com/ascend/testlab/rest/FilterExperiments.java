@@ -1,11 +1,16 @@
 package com.ascend.testlab.rest;
 
-import com.ascend.testlab.constants.Constants;
+import com.ascend.testlab.constants.web.WebConstants;
 import com.ascend.testlab.dto.ResponseEntity;
 import com.ascend.testlab.dto.request.FilterExperimentsRequest;
 import com.ascend.testlab.dto.response.FilterExperimentsResponse;
+import com.ascend.testlab.exception.ErrorMessages;
 import com.ascend.testlab.service.ExperimentService;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import jakarta.inject.Inject;
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
@@ -22,7 +27,7 @@ import lombok.extern.slf4j.Slf4j;
  * @since 1.0
  * @see ExperimentService
  */
-@Path(Constants.FILTER_EXPERIMENTS_PATH)
+@Path(WebConstants.FILTER_EXPERIMENTS_PATH)
 @Slf4j
 public class FilterExperiments {
 
@@ -38,45 +43,42 @@ public class FilterExperiments {
    * supports pagination through limit and page parameters. All filters are optional, allowing for
    * flexible querying of experiments.
    *
+   * <p>Multiple filter values can be provided as comma-separated strings for status, type, tag, and
+   * owner parameters. The name filter supports text search and does not support comma-separated
+   * values.
+   *
+   * <p>Pagination defaults to limit=20 and page=1 if not specified. Page numbers start at 1.
+   *
    * @param projectId the project ID (required, passed as header parameter "x-project-id")
-   * @param status optional filter for experiment status (e.g., LIVE, PAUSED, DRAFT, CONCLUDED,
-   *     TERMINATED)
-   * @param tag optional filter for experiment tags
-   * @param owner optional filter for experiment owner
-   * @param name optional filter for experiment name (supports text search)
-   * @param type optional filter for experiment type (e.g., A/B)
-   * @param limit optional parameter to limit the number of results per page
-   * @param page optional parameter to specify the page number for pagination
+   * @param request the filter request containing optional query parameters for status, tag, owner,
+   *     name, type, limit, and page
    * @return a CompletionStage containing a successful response with paginated experiment data
    */
   @GET
   @Produces(MediaType.APPLICATION_JSON)
   @Consumes(MediaType.APPLICATION_JSON)
+  @ApiResponse(
+          content = @Content(schema = @Schema(implementation = ResponseEntity.Success.class)),
+          responseCode = "200",
+          description = "Successful Response")
+  @ApiResponse(
+          content = @Content(schema = @Schema(implementation = ResponseEntity.Failure.class)),
+          responseCode = "400",
+          description = "Project id is not present")
+  @ApiResponse(
+          content = @Content(schema = @Schema(implementation = ResponseEntity.Failure.class)),
+          responseCode = "500",
+          description = "Internal Server Error")
   public CompletionStage<ResponseEntity.Success<FilterExperimentsResponse>> handle(
-      @HeaderParam(Constants.PROJECT_ID) @NotBlank(message = "Project id is mandatory")
+      @HeaderParam(WebConstants.PROJECT_KEY_HEADER) @NotBlank(message = ErrorMessages.PROJECT_KEY_MISSING)
           String projectId,
-      @QueryParam(Constants.EXPERIMENT_STATUS) String status,
-      @QueryParam(Constants.TAG) String tag,
-      @QueryParam(Constants.OWNER) String owner,
-      @QueryParam(Constants.NAME) String name,
-      @QueryParam(Constants.EXPERIMENT_TYPE) String type,
-      @QueryParam(Constants.LIMIT) Integer limit,
-      @QueryParam(Constants.OFFSET) Integer page) {
-
-    FilterExperimentsRequest request = new FilterExperimentsRequest();
-    request.buildRequest(status, tag, owner, name, type, limit, page);
+      @BeanParam @Valid FilterExperimentsRequest request) {
+    // Validate and process all filter parameters
+    request.validate();
 
     return experimentService
         .filterExperiments(projectId, request)
-        .map(
-            paginatedResponse -> {
-              log.info(
-                  "Successfully fetched {} experiments (page {}) for projectId: {}",
-                  paginatedResponse.getExperimentList().size(),
-                  paginatedResponse.getPagination().getCurrentPage(),
-                  projectId);
-              return new ResponseEntity.Success<>(paginatedResponse);
-            })
+        .map(ResponseEntity.Success::new)
         .toCompletionStage();
   }
 }

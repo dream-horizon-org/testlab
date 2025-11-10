@@ -54,4 +54,24 @@ public final class WebConstants {
 
   /** The name of the project key header. */
   public static final String PROJECT_KEY_HEADER = "x-project-key";
+
+  /** API Path */
+  public static final String FILTER_EXPERIMENTS_PATH = "/v1/experiments";
+
+  public static final String GET_EXPERIMENT_PATH = "/v1/experiments/{experimentId}";
+
+  public static final String EXPERIMENT_ID = "experimentId";
+
+  /** Filter Query Parameters */
+  public static final String EXPERIMENT_STATUS = "status";
+
+  public static final String EXPERIMENT_TYPE = "type";
+  public static final String TAG = "tag";
+  public static final String OWNER = "owner";
+  public static final String NAME = "name";
+
+  /** Pagination */
+  public static final String OFFSET = "page";
+
+  public static final String LIMIT = "limit";
 }

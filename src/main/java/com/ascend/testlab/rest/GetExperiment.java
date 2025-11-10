@@ -1,8 +1,9 @@
 package com.ascend.testlab.rest;
 
-import com.ascend.testlab.constants.Constants;
+import com.ascend.testlab.constants.web.WebConstants;
 import com.ascend.testlab.dto.ResponseEntity;
 import com.ascend.testlab.dto.entity.Experiment;
+import com.ascend.testlab.exception.ErrorMessages;
 import com.ascend.testlab.service.ExperimentService;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -23,7 +24,7 @@ import lombok.extern.slf4j.Slf4j;
  * @since 1.0
  * @see ExperimentService
  */
-@Path(Constants.GET_EXPERIMENT_PATH)
+@Path(WebConstants.GET_EXPERIMENT_PATH)
 @Slf4j
 public class GetExperiment {
 
@@ -57,17 +58,21 @@ public class GetExperiment {
       content = @Content(schema = @Schema(implementation = ResponseEntity.Failure.class)),
       responseCode = "400",
       description = "Experiment Id is not valid")
+  @ApiResponse(
+      content = @Content(schema = @Schema(implementation = ResponseEntity.Failure.class)),
+      responseCode = "404",
+      description = "Experiment not found")
+  @ApiResponse(
+      content = @Content(schema = @Schema(implementation = ResponseEntity.Failure.class)),
+      responseCode = "500",
+      description = "Internal Server Error")
   public CompletionStage<ResponseEntity.Success<Experiment>> getExperimentHandler(
-      @HeaderParam(Constants.PROJECT_ID) @NotBlank(message = "project id is mandatory")
+      @HeaderParam(WebConstants.PROJECT_KEY_HEADER) @NotBlank(message = ErrorMessages.PROJECT_KEY_MISSING)
           String projectId,
-      @PathParam(Constants.EXPERIMENT_ID) String experimentId) {
+      @PathParam(WebConstants.EXPERIMENT_ID) String experimentId) {
     return experimentService
         .getExperiment(projectId, experimentId)
-        .map(
-            experiment -> {
-              log.info("Successfully fetched experiment for experimentId: {}", experimentId);
-              return new ResponseEntity.Success<>(experiment);
-            })
+        .map(ResponseEntity.Success::new)
         .toCompletionStage();
   }
 }

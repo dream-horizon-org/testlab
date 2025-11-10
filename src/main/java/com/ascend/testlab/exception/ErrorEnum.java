@@ -33,34 +33,45 @@ public enum ErrorEnum implements RestError {
       "Tags Listing failed due to: %s",
       HttpStatus.SC_INTERNAL_SERVER_ERROR),
 
+  /** The error code for getting experiment by ID failed. */
+  REST_GET_EXPERIMENT_BY_ID_FAILED(
+          "testlab_REST_GET_EXPERIMENT_BY_ID_FAILED",
+          "Get Experiment by Id failed due to: %s",
+          HttpStatus.SC_INTERNAL_SERVER_ERROR
+  ),
+
+  /** The error code for filtering experiments failed. */
+  REST_FILTER_EXPERIMENTS_FAILED(
+            "testlab_REST_FILTER_EXPERIMENTS_FAILED",
+            "Filter Experiments failed due to: %s",
+            HttpStatus.SC_INTERNAL_SERVER_ERROR
+    ),
+
+    /* Client Errors */
+
+    /** The error code when experiment is not found. */
+    EXPERIMENT_NOT_FOUND(
+      "EXPERIMENT_NOT_FOUND",
+              "Experiment not found for the given experimentId",
+      HttpStatus.SC_NOT_FOUND),
+
   /** The error code for validating experiment status failed. */
-  VALID_EXPERIMENT_STATUS_FAILED(
-      "VALID_EXPERIMENT_STATUS_FAILED",
+  INVALID_EXPERIMENT_STATUS(
+      "INVALID_EXPERIMENT_STATUS",
       "Experiment status is not valid",
       HttpStatus.SC_BAD_REQUEST),
 
   /** The error code for validating experiment type failed. */
-  VALID_EXPERIMENT_TYPE_FAILED(
-      "VALID_EXPERIMENT_TYPE_FAILED", "Experiment type is not valid", HttpStatus.SC_BAD_REQUEST),
+  INVALID_EXPERIMENT_TYPE(
+      "INVALID_EXPERIMENT_TYPE", "Experiment type is not valid", HttpStatus.SC_BAD_REQUEST),
 
+  /** The error code for invalid page limit. */
   INVALID_PAGE_LIMIT(
       "INVALID_PAGE_LIMIT", "Page limit must be greater than 0", HttpStatus.SC_BAD_REQUEST),
 
+  /** The error code for invalid page number. */
   INVALID_PAGE_NUMBER(
-      "INVALID_PAGE_NUMBER", "Page number must be greater than 0", HttpStatus.SC_BAD_REQUEST),
-
-  /** The error code when experiment is not found. */
-  EXPERIMENT_NOT_FOUND(
-      "EXPERIMENT_NOT_FOUND",
-      "Experiment not found for the given experimentId",
-      HttpStatus.SC_NOT_FOUND),
-
-  DATABASE_ERROR(
-      "DATABASE_ERROR",
-      "Database error occurred while processing the request",
-      HttpStatus.SC_INTERNAL_SERVER_ERROR);
-
-  /* Client Errors */
+      "INVALID_PAGE_NUMBER", "Page number must be greater than 0", HttpStatus.SC_BAD_REQUEST);
 
   /** The error code. */
   private final String errorCode;

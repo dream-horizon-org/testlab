@@ -29,9 +29,16 @@ public interface ExperimentService {
   /**
    * Filters experiments based on the provided criteria and returns paginated results.
    *
+   * <p>Supports filtering by multiple criteria including status, type, name, tags, and owners.
+   * Multiple filter values can be provided as comma-separated strings for status, type, tag, and
+   * owner parameters. The name filter supports text search and does not support comma-separated
+   * values.
+   *
+   * <p>Pagination defaults to limit=20 and page=1 if not specified. Page numbers start at 1.
+   *
    * @param projectId the project ID to filter experiments within
    * @param request the filter criteria including status, type, name, tags, owners, and pagination
-   *     parameters
+   *     parameters (limit and page)
    * @return a Single containing FilterExperimentsResponse with filtered and paginated experiments
    *     along with pagination metadata
    */

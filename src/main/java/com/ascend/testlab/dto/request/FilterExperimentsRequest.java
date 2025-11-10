@@ -2,11 +2,14 @@ package com.ascend.testlab.dto.request;
 
 import com.ascend.testlab.constants.enums.ExperimentStatus;
 import com.ascend.testlab.constants.enums.ExperimentType;
+import com.ascend.testlab.constants.web.WebConstants;
 import com.ascend.testlab.exception.ErrorEnum;
 import com.dream11.rest.exception.RestException;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import jakarta.validation.constraints.Positive;
+import jakarta.ws.rs.DefaultValue;
+import jakarta.ws.rs.QueryParam;
 import java.util.Arrays;
-import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -28,16 +31,41 @@ import lombok.extern.slf4j.Slf4j;
 @JsonIgnoreProperties(ignoreUnknown = true)
 @Slf4j
 public class FilterExperimentsRequest {
-  private List<ExperimentStatus> status;
-  private List<String> owner;
+  @QueryParam(WebConstants.EXPERIMENT_STATUS)
+  private String status;
+
+  @QueryParam(WebConstants.OWNER)
+  private String owner;
+
+  @QueryParam(WebConstants.NAME)
   private String name;
-  private List<String> type;
-  private List<String> tag;
+
+  @QueryParam(WebConstants.EXPERIMENT_TYPE)
+  private String type;
+
+  @QueryParam(WebConstants.TAG)
+  private String tag;
+
+  @QueryParam(WebConstants.LIMIT)
+  @DefaultValue("20")
+  @Positive(message = "Limit must be greater than zero")
   private Integer limit;
+
+  @QueryParam(WebConstants.OFFSET)
+  @DefaultValue("1")
+  @Positive(message = "Page value must be greater than zero")
   private Integer page;
 
-  // Constants for validation
-  private static final int DEFAULT_LIMIT = 20;
+  /**
+   * Validates all filter parameters. This method should be called before using the request to
+   * ensure all parameters are valid.
+   *
+   * @throws RestException if any validation fails
+   */
+  public void validate() {
+    validateStatus(status);
+    validateType(type);
+  }
 
   /**
    * Checks if status filter is present in the request.
@@ -45,7 +73,7 @@ public class FilterExperimentsRequest {
    * @return true if status filter is present and not empty, false otherwise
    */
   public boolean hasStatusFilter() {
-    return this.getStatus() != null && !this.getStatus().isEmpty();
+    return this.status != null && !this.status.trim().isEmpty();
   }
 
   /**
@@ -54,7 +82,7 @@ public class FilterExperimentsRequest {
    * @return true if owner filter is present and not empty, false otherwise
    */
   public boolean hasOwnerFilter() {
-    return this.getOwner() != null && !this.getOwner().isEmpty();
+    return this.owner != null && !this.owner.trim().isEmpty();
   }
 
   /**
@@ -63,7 +91,7 @@ public class FilterExperimentsRequest {
    * @return true if name filter is present and not empty (after trimming), false otherwise
    */
   public boolean hasNameFilter() {
-    return this.getName() != null && !this.getName().trim().isEmpty();
+    return this.name != null && !this.name.trim().isEmpty();
   }
 
   /**
@@ -72,7 +100,7 @@ public class FilterExperimentsRequest {
    * @return true if type filter is present and not empty, false otherwise
    */
   public boolean hasTypeFilter() {
-    return this.getType() != null && !this.getType().isEmpty();
+    return this.type != null && !this.type.trim().isEmpty();
   }
 
   /**
@@ -81,95 +109,46 @@ public class FilterExperimentsRequest {
    * @return true if tag filter is present and not empty, false otherwise
    */
   public boolean hasTagFilter() {
-    return this.getTag() != null && !this.getTag().isEmpty();
+    return this.tag != null && !this.tag.trim().isEmpty();
   }
 
-  /**
-   * Builds and validates the filter request from string parameters. Parses comma-separated values
-   * for status, tag, owner, and type. Validates pagination parameters and sets defaults where
-   * appropriate.
-   *
-   * @throws RestException if validation fails for status, type, limit, or page
-   */
-  public void buildRequest(
-      String status,
-      String tag,
-      String owner,
-      String name,
-      String type,
-      Integer limit,
-      Integer page) {
-
-    // Convert status string to ExperimentStatus enum list
-    validateAndSetStatus(status);
-
-    // Convert type string to ExperimentType enum list
-    validateAndSetType(type);
-
-    // Handle string parameters
-    validateAndSetTag(tag);
-
-    if (owner != null && !owner.isEmpty()) {
-      this.setOwner(Arrays.stream(owner.split(",")).map(String::trim).toList());
-    }
-    if (name != null && !name.isEmpty()) {
-      this.setName(name.trim());
-    }
-
-    // Handle pagination parameters with validation
-    if (limit != null) {
-      if (limit <= 0) {
-        throw new RestException(ErrorEnum.INVALID_PAGE_LIMIT);
-      }
-      this.setLimit(limit);
-    } else {
-      this.setLimit(DEFAULT_LIMIT);
-    }
-
-    if (page != null && page <= 0) {
-      throw new RestException(ErrorEnum.INVALID_PAGE_NUMBER);
-    }
-    this.setPage(page);
-  }
-
-  private void validateAndSetStatus(String status) {
-    if (status != null && !status.isEmpty()) {
+  private void validateStatus(String status) {
+    if (status != null && !status.trim().isEmpty()) {
       try {
-        List<ExperimentStatus> statusList =
-            Arrays.stream(status.split(","))
-                .map(String::trim)
-                .map(String::toUpperCase)
-                .map(ExperimentStatus::valueOf)
-                .toList();
-        this.setStatus(statusList);
-      } catch (Exception e) {
+        String[] statusValues = status.split(",");
+        for (String statusValue : statusValues) {
+          String trimmed = statusValue.trim();
+          if (!trimmed.isEmpty()) {
+            ExperimentStatus.valueOf(trimmed.toUpperCase());
+          }
+        }
+      } catch (IllegalArgumentException e) {
         log.warn(
             "Invalid status value provided: {}. Valid values are: {}",
             status,
             Arrays.toString(ExperimentStatus.values()));
-        throw new RestException(ErrorEnum.VALID_EXPERIMENT_STATUS_FAILED);
+        throw new RestException(ErrorEnum.INVALID_EXPERIMENT_STATUS);
       }
     }
   }
 
-  private void validateAndSetType(String type) {
-    if (type != null && !type.isEmpty()) {
+  private void validateType(String type) {
+    if (type != null && !type.trim().isEmpty()) {
       try {
-        List<String> typeList = Arrays.stream(type.split(",")).map(String::trim).toList();
-        this.setType(typeList);
-      } catch (Exception e) {
+        String[] typeValues = type.split(",");
+        for (String typeValue : typeValues) {
+          String trimmed = typeValue.trim();
+          if (!trimmed.isEmpty()) {
+            ExperimentType.fromValue(trimmed);
+          }
+        }
+      } catch (RestException e) {
         log.warn(
             "Invalid type value provided: {}. Valid values are: {}",
             type,
             Arrays.toString(ExperimentType.values()));
-        throw new RestException(ErrorEnum.VALID_EXPERIMENT_TYPE_FAILED);
+        throw new RestException(ErrorEnum.INVALID_EXPERIMENT_TYPE);
       }
-    }
-  }
-
-  private void validateAndSetTag(String tag) {
-    if (tag != null && !tag.isEmpty()) {
-      this.setTag(Arrays.stream(tag.split(",")).map(String::trim).toList());
     }
   }
 }
