@@ -53,6 +53,12 @@ public class CreateExperimentRequest {
   @JsonProperty("cohorts")
   private List<String> cohorts;
 
+  @JsonProperty("tags")
+  private List<String> tags;
+
+  @JsonProperty("owner")
+  private String owner;
+
   @JsonProperty("variant_weights")
   private Map<String, Object> variantWeights;
 
@@ -82,9 +88,6 @@ public class CreateExperimentRequest {
 
   @JsonProperty("created_by")
   private String createdBy;
-
-  @JsonProperty("name_tsvector")
-  private String nameTsvector;
 
   @JsonProperty("created_at")
   private Timestamp createdAt;

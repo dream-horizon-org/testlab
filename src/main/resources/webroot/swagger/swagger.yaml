@@ -31,38 +31,9 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/CreateExperimentResponse'
+        "400":
+          description: Invalid enum values for status or type
   /v1/experiment/{experiment_id}:
-    get:
-      summary: Get Assign experiment of the user
-      operationId: getAssignExperiment
-      parameters:
-      - name: x-tenant-id
-        in: header
-        schema:
-          type: string
-          format: uuid
-      - name: x-project-key
-        in: header
-        schema:
-          type: string
-          format: uuid
-      - name: x-user-id
-        in: path
-        required: true
-        schema:
-          type: string
-          format: uuid
-      - name: status
-        in: query
-        schema:
-          type: string
-      responses:
-        default:
-          description: default response
-          content:
-            application/json:
-              schema:
-                type: object
     patch:
       summary: Update experiment partially with optional tag replace
       operationId: update
@@ -97,6 +68,34 @@ paths:
             application/json:
               schema:
                 type: object
+  /v1/experiments/tags:
+    get:
+      operationId: getTagsHandle
+      parameters:
+      - name: x-project-key
+        in: header
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          description: Successfully retrieved tags
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessTagsResponse'
+        "400":
+          description: Invalid project Key
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Failure'
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Failure'
 components:
   schemas:
     CreateExperimentResponse:
@@ -158,6 +157,12 @@ components:
           type: array
           items:
             type: string
+        tags:
+          type: array
+          items:
+            type: string
+        owner:
+          type: string
         variant_weights:
           type: object
           additionalProperties:
@@ -193,11 +198,35 @@ components:
           format: int64
         created_by:
           type: string
-        name_tsvector:
-          type: string
         created_at:
           type: string
           format: date-time
         updated_at:
           type: string
           format: date-time
+    ErrorEntity:
+      type: object
+      properties:
+        code:
+          type: string
+        message:
+          type: string
+        cause:
+          type: string
+    Failure:
+      type: object
+      properties:
+        error:
+          $ref: '#/components/schemas/ErrorEntity'
+    SuccessTagsResponse:
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/TagsResponse'
+    TagsResponse:
+      type: object
+      properties:
+        tags:
+          type: array
+          items:
+            type: string

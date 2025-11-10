@@ -18,11 +18,24 @@ import org.apache.http.HttpStatus;
 @AllArgsConstructor
 public enum ErrorEnum implements RestError {
 
+  /* Server Errors */
+
   /** The error code for the health check failed. */
   REST_HEALTH_CHECK_FAILED(
+      // TODO: Verify error code standards
       "testlab_REST_HEALTH_CHECK_FAILED",
       "HealthCheck Failed for testlab service",
-      HttpStatus.SC_INTERNAL_SERVER_ERROR);
+      HttpStatus.SC_INTERNAL_SERVER_ERROR),
+
+  /** The error code for the tags listing failed. */
+  REST_FETCH_TAGS_FAILED(
+      "testlab_REST_FETCH_TAGS_FAILED",
+      "Tags Listing failed due to: %s",
+      HttpStatus.SC_INTERNAL_SERVER_ERROR),
+
+/* Client Errors */
+
+;
 
   /** The error code. */
   private final String errorCode;

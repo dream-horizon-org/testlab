@@ -60,6 +60,18 @@ CREATE TABLE IF NOT EXISTS experiment.tags (
     PRIMARY KEY ( project_key, experiment_id, tag)
 ) PARTITION BY LIST (project_key);
 
+-- Example partition creation for experiments table (partitions are created dynamically by the application)
+-- CREATE TABLE IF NOT EXISTS experiments_550e8400_e29b_41d4_a716_446655440001 
+--   PARTITION OF experiments FOR VALUES IN ('550e8400-e29b-41d4-a716-446655440001');
+
+-- Example partition creation for tags table (partitions are created dynamically by the application)
+-- CREATE TABLE IF NOT EXISTS experiment.tags_550e8400_e29b_41d4_a716_446655440001 
+--   PARTITION OF experiment.tags FOR VALUES IN ('550e8400-e29b-41d4-a716-446655440001');
+
+-- Example partition creation for owners table (partitions are created dynamically by the application)
+-- CREATE TABLE IF NOT EXISTS experiment.owners_550e8400_e29b_41d4_a716_446655440001 
+--   PARTITION OF experiment.owners FOR VALUES IN ('550e8400-e29b-41d4-a716-446655440001');
+
 CREATE TABLE IF NOT EXISTS experiment.experiment_update_log (
     project_key     VARCHAR(255) NOT NULL,
     experiment_id  VARCHAR(36) NOT NULL,

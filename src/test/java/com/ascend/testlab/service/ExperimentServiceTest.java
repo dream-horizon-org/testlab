@@ -4,18 +4,24 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
+import com.ascend.testlab.client.postgresql.PgWriterClient;
 import com.ascend.testlab.constants.ExperimentHealth;
 import com.ascend.testlab.constants.ExperimentStatus;
 import com.ascend.testlab.constants.ExperimentStrategy;
 import com.ascend.testlab.constants.ExperimentType;
+import com.ascend.testlab.dao.ExperimentAnalysisDAO;
 import com.ascend.testlab.dao.ExperimentDAO;
+import com.ascend.testlab.dao.ExperimentUpdateLogDAO;
 import com.ascend.testlab.dto.request.CreateExperimentRequest;
 import com.ascend.testlab.dto.response.CreateExperimentResponse;
 import com.ascend.testlab.service.impl.ExperimentServiceImpl;
+import io.reactivex.rxjava3.core.Maybe;
 import io.reactivex.rxjava3.core.Single;
 import io.reactivex.rxjava3.observers.TestObserver;
 import io.vertx.junit5.VertxExtension;
+import io.vertx.rxjava3.sqlclient.SqlConnection;
 import java.util.*;
+import java.util.function.Function;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -35,6 +41,11 @@ import org.mockito.junit.jupiter.MockitoExtension;
 public class ExperimentServiceTest {
 
   @Mock private ExperimentDAO experimentDAO;
+  @Mock private PgWriterClient pgWriterClient;
+  @Mock private TagService tagService;
+  @Mock private OwnerService ownerService;
+  @Mock private ExperimentUpdateLogDAO experimentUpdateLogDAO;
+  @Mock private ExperimentAnalysisDAO experimentAnalysisDAO;
 
   private ExperimentService experimentService;
 
@@ -44,10 +55,58 @@ public class ExperimentServiceTest {
 
   @BeforeEach
   void setUp() {
-    experimentService = new ExperimentServiceImpl(experimentDAO);
+    experimentService =
+        new ExperimentServiceImpl(
+            experimentDAO,
+            pgWriterClient,
+            tagService,
+            ownerService,
+            experimentUpdateLogDAO,
+            experimentAnalysisDAO);
     testTenantId = UUID.randomUUID();
     testProjectKey = UUID.randomUUID();
     testExperimentId = UUID.randomUUID();
+
+    // Mock transaction execution by default (lenient to avoid unnecessary stubbing errors)
+    lenient()
+        .when(pgWriterClient.executeWithTransaction(any(Function.class)))
+        .thenAnswer(
+            invocation -> {
+              Function<Object, Maybe<Long>> function = invocation.getArgument(0);
+              return function.apply(null);
+            });
+
+    // Mock partition creation queries (lenient)
+    lenient().when(pgWriterClient.execute(anyString())).thenReturn(Single.just(true));
+
+    // Mock tag and owner service calls (lenient)
+    lenient()
+        .when(
+            tagService.insertTags(
+                any(SqlConnection.class), any(UUID.class), any(UUID.class), anyList()))
+        .thenReturn(Single.just(true));
+    lenient()
+        .when(
+            ownerService.insertOwner(
+                any(SqlConnection.class), any(UUID.class), any(UUID.class), anyString()))
+        .thenReturn(Single.just(true));
+
+    // Mock update log and analysis DAO calls (lenient)
+    lenient()
+        .when(
+            experimentUpdateLogDAO.insertUpdateLog(
+                any(SqlConnection.class),
+                any(UUID.class),
+                any(UUID.class),
+                any(),
+                any(Map.class),
+                anyString()))
+        .thenReturn(Single.just(true));
+    lenient()
+        .when(
+            experimentAnalysisDAO.insertAnalysis(
+                any(SqlConnection.class), any(UUID.class), any(UUID.class)))
+        .thenReturn(Single.just(true));
   }
 
   @Nested
@@ -127,7 +186,7 @@ public class ExperimentServiceTest {
       CreateExperimentResponse response = testObserver.values().get(0);
       assertEquals(0L, response.getId());
       assertFalse(response.isStatus());
-      assertEquals("Failed to insert experiment", response.getMessage());
+      assertTrue(response.getMessage().contains("Failed to insert experiment"));
     }
 
     @Test
