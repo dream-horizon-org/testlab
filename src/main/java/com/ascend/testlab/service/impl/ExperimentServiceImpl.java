@@ -63,11 +63,16 @@ public class ExperimentServiceImpl implements ExperimentService {
                     projectId,
                     experimentId);
                 return Single.error(
-                          ErrorEnum.handleException(
-                                  err, new RestException(ErrorEnum.EXPERIMENT_NOT_FOUND)));
+                    ErrorEnum.handleException(
+                        err, new RestException(ErrorEnum.EXPERIMENT_NOT_FOUND)));
               } else {
-                  log.error("Error in get Experiments for project {} and experimentID {} : {}", projectId, experimentId, err.getMessage());
-                  return Single.error(ErrorEnum.handleException(
+                log.error(
+                    "Error in get Experiments for project {} and experimentID {} : {}",
+                    projectId,
+                    experimentId,
+                    err.getMessage());
+                return Single.error(
+                    ErrorEnum.handleException(
                         err, new RestException(ErrorEnum.REST_GET_EXPERIMENT_BY_ID_FAILED, err)));
               }
             });
@@ -88,10 +93,15 @@ public class ExperimentServiceImpl implements ExperimentService {
   @Override
   public Single<FilterExperimentsResponse> filterExperiments(
       String projectId, FilterExperimentsRequest request) {
-    return experimentDAO.filterExperiments(projectId, request)
-            .onErrorResumeNext(err -> {
-                log.error("Error in filter Experiments for project {}: {}", projectId, err.getMessage());
-                return Single.error(ErrorEnum.handleException(err, new RestException(ErrorEnum.REST_FILTER_EXPERIMENTS_FAILED, err)));
+    return experimentDAO
+        .filterExperiments(projectId, request)
+        .onErrorResumeNext(
+            err -> {
+              log.error(
+                  "Error in filter Experiments for project {}: {}", projectId, err.getMessage());
+              return Single.error(
+                  ErrorEnum.handleException(
+                      err, new RestException(ErrorEnum.REST_FILTER_EXPERIMENTS_FAILED, err)));
             });
   }
 }

@@ -335,8 +335,8 @@ public class ExperimentDAOTest {
               .name("test")
               .status("LIVE")
               .type("A_B")
-                  .limit(20)
-                  .page(1)
+              .limit(20)
+              .page(1)
               .build();
       List<Row> mockRows = createMockRows(experiment, 1);
       doReturn(Single.just(mockRows))
@@ -405,7 +405,6 @@ public class ExperimentDAOTest {
       testContext.completeNow();
     }
   }
-
 
   @Nested
   @DisplayName("Integration Tests")

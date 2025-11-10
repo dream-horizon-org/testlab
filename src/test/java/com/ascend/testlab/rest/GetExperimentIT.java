@@ -37,7 +37,7 @@ class GetExperimentIT {
     Map<String, String> headers = Map.of(WebConstants.PROJECT_KEY_HEADER, PROJECT_ID);
 
     try {
-        createPartitionForProject(PROJECT_ID);
+      createPartitionForProject(PROJECT_ID);
       seedExperiment(PROJECT_ID, EXPERIMENT_ID);
 
       ValidatableResponse response =
@@ -49,7 +49,7 @@ class GetExperimentIT {
       response.body("data.experimentId", Matchers.equalTo(EXPERIMENT_ID));
       response.body("data.projectId", Matchers.equalTo(PROJECT_ID));
     } finally {
-        TestUtil.dropTestPartition("experiments");
+      TestUtil.dropTestPartition("experiments");
     }
   }
 
@@ -115,9 +115,10 @@ class GetExperimentIT {
   private void dropTestPartition(String projectKey) {
     try {
       // Delete test data first
-      String delete = String.format("DELETE FROM experiments WHERE project_key = '%s';", projectKey);
+      String delete =
+          String.format("DELETE FROM experiments WHERE project_key = '%s';", projectKey);
       TestUtil.executeSQLStatement(TestUtil.getDatabaseConnection(), delete);
-      
+
       // Drop the partition
       String ddl = "DROP TABLE IF EXISTS experiments_p_test;";
       TestUtil.executeSQLStatement(TestUtil.getDatabaseConnection(), ddl);

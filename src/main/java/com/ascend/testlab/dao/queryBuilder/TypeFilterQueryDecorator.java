@@ -5,8 +5,8 @@ import java.util.Arrays;
 import java.util.stream.Collectors;
 
 /**
- * Decorator that adds a type filter to the query.
- * Supports multiple types as a comma-separated list.
+ * Decorator that adds a type filter to the query. Supports multiple types as a comma-separated
+ * list.
  *
  * @author Yashita Bansal
  * @version 1.0
@@ -29,6 +29,7 @@ public class TypeFilterQueryDecorator extends FilterQueryDecorator {
 
   /**
    * Appends a type filter clause to the wrapped query.
+   *
    * @return the SQL query string with the type filter clause
    */
   @Override
@@ -39,8 +40,8 @@ public class TypeFilterQueryDecorator extends FilterQueryDecorator {
   }
 
   /**
-   * Formats comma-separated values for use in a SQL IN clause.
-   * Trims whitespace, filters empty values, and wraps each value in single quotes.
+   * Formats comma-separated values for use in a SQL IN clause. Trims whitespace, filters empty
+   * values, and wraps each value in single quotes.
    */
   private String formatValuesForInClause(String values) {
     return Arrays.stream(values.split(","))

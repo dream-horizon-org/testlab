@@ -5,8 +5,8 @@ import java.util.Arrays;
 import java.util.stream.Collectors;
 
 /**
- * Decorator that adds a status filter to the query.
- * Supports multiple statuses as a comma-separated list.
+ * Decorator that adds a status filter to the query. Supports multiple statuses as a comma-separated
+ * list.
  *
  * @author Yashita Bansal
  * @version 1.0
@@ -28,8 +28,8 @@ public class StatusFilterQueryDecorator extends FilterQueryDecorator {
   }
 
   /**
-   * Appends a status filter clause to the wrapped query.
-   * Formats multiple statuses for use in an IN clause.
+   * Appends a status filter clause to the wrapped query. Formats multiple statuses for use in an IN
+   * clause.
    *
    * @return the SQL query string with the status filter clause
    */
@@ -41,8 +41,8 @@ public class StatusFilterQueryDecorator extends FilterQueryDecorator {
   }
 
   /**
-   * Formats comma-separated values for use in a SQL IN clause.
-   * Trims whitespace, filters empty values, and wraps each value in single quotes.
+   * Formats comma-separated values for use in a SQL IN clause. Trims whitespace, filters empty
+   * values, and wraps each value in single quotes.
    *
    * @param values comma-separated string of values
    * @return formatted string for SQL IN clause (e.g., "'value1', 'value2'")

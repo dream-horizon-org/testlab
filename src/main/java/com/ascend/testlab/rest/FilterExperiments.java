@@ -58,19 +58,20 @@ public class FilterExperiments {
   @Produces(MediaType.APPLICATION_JSON)
   @Consumes(MediaType.APPLICATION_JSON)
   @ApiResponse(
-          content = @Content(schema = @Schema(implementation = ResponseEntity.Success.class)),
-          responseCode = "200",
-          description = "Successful Response")
+      content = @Content(schema = @Schema(implementation = ResponseEntity.Success.class)),
+      responseCode = "200",
+      description = "Successful Response")
   @ApiResponse(
-          content = @Content(schema = @Schema(implementation = ResponseEntity.Failure.class)),
-          responseCode = "400",
-          description = "Project id is not present")
+      content = @Content(schema = @Schema(implementation = ResponseEntity.Failure.class)),
+      responseCode = "400",
+      description = "Project id is not present")
   @ApiResponse(
-          content = @Content(schema = @Schema(implementation = ResponseEntity.Failure.class)),
-          responseCode = "500",
-          description = "Internal Server Error")
+      content = @Content(schema = @Schema(implementation = ResponseEntity.Failure.class)),
+      responseCode = "500",
+      description = "Internal Server Error")
   public CompletionStage<ResponseEntity.Success<FilterExperimentsResponse>> handle(
-      @HeaderParam(WebConstants.PROJECT_KEY_HEADER) @NotBlank(message = ErrorMessages.PROJECT_KEY_MISSING)
+      @HeaderParam(WebConstants.PROJECT_KEY_HEADER)
+          @NotBlank(message = ErrorMessages.PROJECT_KEY_MISSING)
           String projectId,
       @BeanParam @Valid FilterExperimentsRequest request) {
     // Validate and process all filter parameters

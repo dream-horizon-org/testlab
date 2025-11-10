@@ -13,9 +13,7 @@ public class BaseQueryBuilder implements FilterQueryBuilder {
   /** The base filter experiment query. */
   protected final String query;
 
-  /**
-   * Constructs a new BaseQueryBuilder with the base filter experiment query.
-   */
+  /** Constructs a new BaseQueryBuilder with the base filter experiment query. */
   public BaseQueryBuilder() {
     this.query = ReadQuery.FILTER_EXPERIMENT;
   }

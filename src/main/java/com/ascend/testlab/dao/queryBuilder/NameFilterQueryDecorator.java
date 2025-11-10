@@ -3,8 +3,8 @@ package com.ascend.testlab.dao.queryBuilder;
 import com.ascend.testlab.constants.postgresql.ReadQuery;
 
 /**
- * Decorator that adds a name filter to the query using full-text search.
- * Uses PostgreSQL's plainto_tsquery for text search functionality.
+ * Decorator that adds a name filter to the query using full-text search. Uses PostgreSQL's
+ * plainto_tsquery for text search functionality.
  *
  * @author Yashita Bansal
  * @version 1.0
@@ -26,8 +26,8 @@ public class NameFilterQueryDecorator extends FilterQueryDecorator {
   }
 
   /**
-   * Appends a name filter clause to the wrapped query.
-   * Escapes single quotes in the name to prevent SQL injection.
+   * Appends a name filter clause to the wrapped query. Escapes single quotes in the name to prevent
+   * SQL injection.
    *
    * @return the SQL query string with the name filter clause
    */

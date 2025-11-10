@@ -1,6 +1,5 @@
 package com.ascend.testlab.constants;
 
-import java.util.UUID;
 
 public final class TestConstants {
 

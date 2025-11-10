@@ -67,7 +67,8 @@ public class GetExperiment {
       responseCode = "500",
       description = "Internal Server Error")
   public CompletionStage<ResponseEntity.Success<Experiment>> getExperimentHandler(
-      @HeaderParam(WebConstants.PROJECT_KEY_HEADER) @NotBlank(message = ErrorMessages.PROJECT_KEY_MISSING)
+      @HeaderParam(WebConstants.PROJECT_KEY_HEADER)
+          @NotBlank(message = ErrorMessages.PROJECT_KEY_MISSING)
           String projectId,
       @PathParam(WebConstants.EXPERIMENT_ID) String experimentId) {
     return experimentService

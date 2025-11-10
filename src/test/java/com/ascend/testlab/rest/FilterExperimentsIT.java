@@ -35,7 +35,6 @@ class FilterExperimentsIT {
     cleanupTestData();
   }
 
-
   @Test
   void testFilterExperiments_Success() {
     Map<String, String> headers = Map.of(WebConstants.PROJECT_KEY_HEADER, PROJECT_ID);
@@ -146,8 +145,7 @@ class FilterExperimentsIT {
   @Test
   void testFilterExperiments_WithPagination() {
     Map<String, String> headers = Map.of(WebConstants.PROJECT_KEY_HEADER, PROJECT_ID);
-    Map<String, String> queryParams =
-        Map.of(WebConstants.LIMIT, "1", WebConstants.OFFSET, "1");
+    Map<String, String> queryParams = Map.of(WebConstants.LIMIT, "1", WebConstants.OFFSET, "1");
 
     ValidatableResponse response =
         TestUtil.executeRequest(null, headers, queryParams, spec -> spec.get(this.route));
@@ -242,9 +240,9 @@ class FilterExperimentsIT {
   }
 
   /**
-   * Seeds test data for filter experiments tests. This ensures all tests have the necessary data
-   * to run successfully. The seed.sql already contains some data, but we add additional test data
-   * here to ensure comprehensive test coverage.
+   * Seeds test data for filter experiments tests. This ensures all tests have the necessary data to
+   * run successfully. The seed.sql already contains some data, but we add additional test data here
+   * to ensure comprehensive test coverage.
    */
   private static void seedFilterTestData() {
     try {
@@ -253,23 +251,14 @@ class FilterExperimentsIT {
 
       // Seed additional experiments with various attributes for comprehensive filter testing
       // Note: seed.sql already has data, but we add more here to ensure all filter scenarios work
-      seedExperiment(
-          PROJECT_ID,
-          EXPERIMENT_ID_1,
-          "Filter Test Experiment 1",
-          "LIVE",
-          "A/B");
+      seedExperiment(PROJECT_ID, EXPERIMENT_ID_1, "Filter Test Experiment 1", "LIVE", "A/B");
       seedTags(PROJECT_ID, EXPERIMENT_ID_1, "test-tag-1", "test-tag-2");
       seedOwners(PROJECT_ID, EXPERIMENT_ID_1, "filter-test@example.com");
 
-      seedExperiment(
-          PROJECT_ID,
-          EXPERIMENT_ID_2,
-          "Filter Test Experiment 2",
-          "DRAFT",
-          "A/B");
+      seedExperiment(PROJECT_ID, EXPERIMENT_ID_2, "Filter Test Experiment 2", "DRAFT", "A/B");
       seedTags(PROJECT_ID, EXPERIMENT_ID_2, "test-tag-2", "test-tag-3");
-      seedOwners(PROJECT_ID, EXPERIMENT_ID_2, "filter-test@example.com", "another-owner@example.com");
+      seedOwners(
+          PROJECT_ID, EXPERIMENT_ID_2, "filter-test@example.com", "another-owner@example.com");
 
       log.info("Seeded filter test data for project: {}", PROJECT_ID);
     } catch (Exception e) {
@@ -279,8 +268,8 @@ class FilterExperimentsIT {
   }
 
   /**
-   * Cleans up test-specific data after all tests complete. We only clean up data we added,
-   * not the seed.sql data which is shared across test classes.
+   * Cleans up test-specific data after all tests complete. We only clean up data we added, not the
+   * seed.sql data which is shared across test classes.
    */
   private static void cleanupTestData() {
     try {
@@ -310,8 +299,8 @@ class FilterExperimentsIT {
   }
 
   /**
-   * Creates partitions for all tables needed for the test project_key.
-   * This is required because the tables are partitioned by project_key.
+   * Creates partitions for all tables needed for the test project_key. This is required because the
+   * tables are partitioned by project_key.
    *
    * @param projectKey the project key to create partitions for
    */
@@ -400,7 +389,8 @@ class FilterExperimentsIT {
         if (i > 0) {
           values.append(",");
         }
-        values.append(String.format("('%s', '%s', '%s', NOW(), NOW())", experimentId, projectKey, tags[i]));
+        values.append(
+            String.format("('%s', '%s', '%s', NOW(), NOW())", experimentId, projectKey, tags[i]));
       }
       String insert =
           String.format(
@@ -436,7 +426,8 @@ class FilterExperimentsIT {
         if (i > 0) {
           values.append(",");
         }
-        values.append(String.format("('%s', '%s', '%s', NOW(), NOW())", experimentId, projectKey, owners[i]));
+        values.append(
+            String.format("('%s', '%s', '%s', NOW(), NOW())", experimentId, projectKey, owners[i]));
       }
       String insert =
           String.format(

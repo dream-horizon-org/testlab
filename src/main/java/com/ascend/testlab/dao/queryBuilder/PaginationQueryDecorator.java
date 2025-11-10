@@ -12,12 +12,13 @@ import com.ascend.testlab.constants.postgresql.ReadQuery;
 public class PaginationQueryDecorator extends FilterQueryDecorator {
   /** The maximum number of results to return. */
   private final int limit;
+
   /** The number of results to skip. */
   private final int offset;
 
   /**
-   * Constructs a new PaginationQueryDecorator with the given wrapped query builder,
-   * limit, and offset.
+   * Constructs a new PaginationQueryDecorator with the given wrapped query builder, limit, and
+   * offset.
    *
    * @param wrappedFilterQuery the FilterQueryBuilder to wrap
    * @param limit the maximum number of results to return

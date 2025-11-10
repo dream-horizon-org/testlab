@@ -3,9 +3,9 @@ package com.ascend.testlab.service;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
-import com.ascend.testlab.dao.ExperimentDAO;
 import com.ascend.testlab.constants.enums.ExperimentStatus;
 import com.ascend.testlab.constants.enums.ExperimentType;
+import com.ascend.testlab.dao.ExperimentDAO;
 import com.ascend.testlab.dto.entity.Experiment;
 import com.ascend.testlab.dto.request.FilterExperimentsRequest;
 import com.ascend.testlab.dto.response.FilterExperimentsResponse;
@@ -239,8 +239,7 @@ public class ExperimentServiceTest {
       testObserver.assertComplete();
       testObserver.assertNoErrors();
       testObserver.assertValueCount(1);
-      testObserver.assertValue(
-          response -> response.getExperimentList().size() == 1);
+      testObserver.assertValue(response -> response.getExperimentList().size() == 1);
       verify(experimentDAO, times(1)).filterExperiments(PROJECT_ID, request);
     }
 
@@ -249,9 +248,7 @@ public class ExperimentServiceTest {
     void testFilterExperimentsWithStatusFilter() {
       // Arrange
       FilterExperimentsRequest request =
-          FilterExperimentsRequest.builder()
-              .status("LIVE,PAUSED")
-              .build();
+          FilterExperimentsRequest.builder().status("LIVE,PAUSED").build();
       FilterExperimentsResponse expectedResponse = createMockFilterResponse();
       when(experimentDAO.filterExperiments(PROJECT_ID, request))
           .thenReturn(Single.just(expectedResponse));
@@ -272,9 +269,7 @@ public class ExperimentServiceTest {
     void testFilterExperimentsWithTypeFilter() {
       // Arrange
       FilterExperimentsRequest request =
-          FilterExperimentsRequest.builder()
-              .type("A_B,MULTI_VARIANT")
-              .build();
+          FilterExperimentsRequest.builder().type("A_B,MULTI_VARIANT").build();
       FilterExperimentsResponse expectedResponse = createMockFilterResponse();
       when(experimentDAO.filterExperiments(PROJECT_ID, request))
           .thenReturn(Single.just(expectedResponse));
@@ -295,9 +290,7 @@ public class ExperimentServiceTest {
     void testFilterExperimentsWithNameFilter() {
       // Arrange
       FilterExperimentsRequest request =
-          FilterExperimentsRequest.builder()
-              .name("test experiment")
-              .build();
+          FilterExperimentsRequest.builder().name("test experiment").build();
       FilterExperimentsResponse expectedResponse = createMockFilterResponse();
       when(experimentDAO.filterExperiments(PROJECT_ID, request))
           .thenReturn(Single.just(expectedResponse));
@@ -318,9 +311,7 @@ public class ExperimentServiceTest {
     void testFilterExperimentsWithTagFilter() {
       // Arrange
       FilterExperimentsRequest request =
-          FilterExperimentsRequest.builder()
-              .tag("tag1,tag2")
-              .build();
+          FilterExperimentsRequest.builder().tag("tag1,tag2").build();
       FilterExperimentsResponse expectedResponse = createMockFilterResponse();
       when(experimentDAO.filterExperiments(PROJECT_ID, request))
           .thenReturn(Single.just(expectedResponse));
@@ -341,9 +332,7 @@ public class ExperimentServiceTest {
     void testFilterExperimentsWithOwnerFilter() {
       // Arrange
       FilterExperimentsRequest request =
-          FilterExperimentsRequest.builder()
-              .owner("owner1,owner2")
-              .build();
+          FilterExperimentsRequest.builder().owner("owner1,owner2").build();
       FilterExperimentsResponse expectedResponse = createMockFilterResponse();
       when(experimentDAO.filterExperiments(PROJECT_ID, request))
           .thenReturn(Single.just(expectedResponse));
@@ -395,8 +384,7 @@ public class ExperimentServiceTest {
       FilterExperimentsRequest request = new FilterExperimentsRequest();
       FilterExperimentsResponse emptyResponse =
           new FilterExperimentsResponse(
-              Collections.emptyList(),
-              new FilterExperimentsResponse.PaginationMeta(1, 20, 0));
+              Collections.emptyList(), new FilterExperimentsResponse.PaginationMeta(1, 20, 0));
       when(experimentDAO.filterExperiments(PROJECT_ID, request))
           .thenReturn(Single.just(emptyResponse));
 
@@ -407,8 +395,7 @@ public class ExperimentServiceTest {
       // Assert
       testObserver.assertComplete();
       testObserver.assertNoErrors();
-      testObserver.assertValue(
-          response -> response.getExperimentList().isEmpty());
+      testObserver.assertValue(response -> response.getExperimentList().isEmpty());
       verify(experimentDAO, times(1)).filterExperiments(PROJECT_ID, request);
     }
 
@@ -417,15 +404,11 @@ public class ExperimentServiceTest {
     void testFilterExperimentsWithPagination() {
       // Arrange
       FilterExperimentsRequest request =
-          FilterExperimentsRequest.builder()
-              .limit(10)
-              .page(2)
-              .build();
+          FilterExperimentsRequest.builder().limit(10).page(2).build();
       FilterExperimentsResponse.PaginationMeta paginationMeta =
           new FilterExperimentsResponse.PaginationMeta(2, 10, 25);
       FilterExperimentsResponse expectedResponse =
-          new FilterExperimentsResponse(
-              Arrays.asList(createMockExperiment()), paginationMeta);
+          new FilterExperimentsResponse(Arrays.asList(createMockExperiment()), paginationMeta);
       when(experimentDAO.filterExperiments(PROJECT_ID, request))
           .thenReturn(Single.just(expectedResponse));
 
@@ -608,8 +591,7 @@ public class ExperimentServiceTest {
       // Arrange
       Experiment expectedExperiment = createMockExperiment();
       when(experimentDAO.getExperiment(PROJECT_ID, EXPERIMENT_ID))
-          .thenReturn(
-              Single.just(expectedExperiment).delay(100, TimeUnit.MILLISECONDS));
+          .thenReturn(Single.just(expectedExperiment).delay(100, TimeUnit.MILLISECONDS));
 
       // Act
       TestObserver<Experiment> testObserver =
@@ -630,8 +612,7 @@ public class ExperimentServiceTest {
       FilterExperimentsRequest request = new FilterExperimentsRequest();
       FilterExperimentsResponse expectedResponse = createMockFilterResponse();
       when(experimentDAO.filterExperiments(PROJECT_ID, request))
-          .thenReturn(
-              Single.just(expectedResponse).delay(100, TimeUnit.MILLISECONDS));
+          .thenReturn(Single.just(expectedResponse).delay(100, TimeUnit.MILLISECONDS));
 
       // Act
       TestObserver<FilterExperimentsResponse> testObserver =
@@ -793,8 +774,6 @@ public class ExperimentServiceTest {
   private FilterExperimentsResponse createMockFilterResponse() {
     FilterExperimentsResponse.PaginationMeta paginationMeta =
         new FilterExperimentsResponse.PaginationMeta(1, 20, 1);
-    return new FilterExperimentsResponse(
-        Arrays.asList(createMockExperiment()), paginationMeta);
+    return new FilterExperimentsResponse(Arrays.asList(createMockExperiment()), paginationMeta);
   }
 }
-

@@ -38,15 +38,11 @@ public final class ReadQuery {
       GROUP BY e.project_key, e.experiment_id
       """;
 
-  /**
-   * Filter clause for searching experiments by name using PostgreSQL full-text search.
-   */
+  /** Filter clause for searching experiments by name using PostgreSQL full-text search. */
   public static final String NAME_FILTER =
       " AND e.name_tsvector @@ plainto_tsquery('simple', <<NAME>>)";
 
-  /**
-   * GROUP BY clause for experiment queries. Groups results by project_key and experiment_id
-   */
+  /** GROUP BY clause for experiment queries. Groups results by project_key and experiment_id */
   public static final String GROUP_BY = " GROUP BY e.project_key, e.experiment_id";
 
   /** ORDER BY clause to sort experiments by creation date in descending order (newest first). */
@@ -85,7 +81,8 @@ public final class ReadQuery {
 
   /**
    * Base query for filtering experiments by project_key. Returns experiment details including tags
-   * and owners aggregated as comma-separated strings. Also includes total_count  to get the total number of matching experiments.
+   * and owners aggregated as comma-separated strings. Also includes total_count to get the total
+   * number of matching experiments.
    */
   public static final String FILTER_EXPERIMENT =
       """

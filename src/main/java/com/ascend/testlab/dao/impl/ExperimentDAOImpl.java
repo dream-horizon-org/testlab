@@ -38,9 +38,7 @@ public class ExperimentDAOImpl implements ExperimentDAO {
     this.pgReaderClient = pgReaderClient;
   }
 
-  /**
-   * {@inheritDoc}
-   */
+  /** {@inheritDoc} */
   @Override
   public Single<Experiment> getExperiment(String projectId, String experimentId) {
     return pgReaderClient.fetchOne(
@@ -49,9 +47,7 @@ public class ExperimentDAOImpl implements ExperimentDAO {
         ExperimentMapper::mapRowToExperiment);
   }
 
-  /**
-   * {@inheritDoc}
-   */
+  /** {@inheritDoc} */
   @Override
   public Single<FilterExperimentsResponse> filterExperiments(
       String projectId, FilterExperimentsRequest req) {
@@ -63,8 +59,8 @@ public class ExperimentDAOImpl implements ExperimentDAO {
   }
 
   /**
-   * Maps database rows to a FilterExperimentsResponse object.
-   * Extracts experiment data from rows and builds pagination metadata.
+   * Maps database rows to a FilterExperimentsResponse object. Extracts experiment data from rows
+   * and builds pagination metadata.
    */
   private FilterExperimentsResponse mapRowsToFilteredExperiment(
       List<Row> rows, FilterExperimentsRequest req) {

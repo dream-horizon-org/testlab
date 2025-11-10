@@ -10,7 +10,6 @@ import io.vertx.rxjava3.sqlclient.Row;
 import java.sql.Timestamp;
 import java.util.List;
 import java.util.UUID;
-
 import lombok.extern.slf4j.Slf4j;
 
 /**
