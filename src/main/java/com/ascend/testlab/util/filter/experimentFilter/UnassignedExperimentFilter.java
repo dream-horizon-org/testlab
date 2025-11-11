@@ -1,14 +1,24 @@
-package com.ascend.testlab.util.filter;
+package com.ascend.testlab.util.filter.experimentFilter;
 
 import com.ascend.testlab.dto.response.UserExperimentMap;
 import com.ascend.testlab.entity.Experiment;
+import com.ascend.testlab.util.filter.AbstractExperimentFilter;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
+/**
+ * Filters experiments that have not been assigned to the user yet.
+ *
+ * @author anudeepreddy20
+ * @version 1.0
+ * @since 1.0
+ * @see AbstractExperimentFilter
+ */
 @Slf4j
 @RequiredArgsConstructor
 public class UnassignedExperimentFilter extends AbstractExperimentFilter {
@@ -17,7 +27,7 @@ public class UnassignedExperimentFilter extends AbstractExperimentFilter {
 
   @Override
   protected List<Experiment> applyFilter(List<Experiment> experiments) {
-    if (userAssignments == null || userAssignments.isEmpty()) {
+    if (Objects.isNull(userAssignments) || userAssignments.isEmpty()) {
       log.debug("No user assignments, all experiments are unassigned");
       return experiments;
     }

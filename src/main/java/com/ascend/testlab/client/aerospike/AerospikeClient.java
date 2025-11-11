@@ -4,10 +4,12 @@ import com.aerospike.client.Bin;
 import com.aerospike.client.Key;
 import com.aerospike.client.Operation;
 import com.aerospike.client.Record;
+import com.aerospike.client.policy.BatchPolicy;
 import com.aerospike.client.policy.Policy;
 import com.aerospike.client.policy.WritePolicy;
 import io.reactivex.rxjava3.core.Completable;
 import io.reactivex.rxjava3.core.Single;
+import java.util.List;
 
 /**
  * Interface for the client to interact with Aerospike database.
@@ -56,6 +58,16 @@ public interface AerospikeClient {
    */
   // TODO: add support for get method without policy and key specification
   Single<Record> get(Policy policy, Key key, String... binNames);
+
+  /**
+   * Get a record from Aerospike database.
+   *
+   * @param batchPolicy the policy to use for the operation
+   * @param keys the key of the record
+   * @param binNames the names of the bins to get
+   * @return a Single that emits the record
+   */
+  Single<List<Record>> get(BatchPolicy batchPolicy, Key[] keys, String... binNames);
 
   /**
    * Put a record into Aerospike database.

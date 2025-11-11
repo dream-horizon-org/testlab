@@ -1,13 +1,22 @@
 package com.ascend.testlab.client.webclient.impl;
 
 import com.ascend.testlab.client.webclient.WebClient;
+import com.ascend.testlab.config.ApplicationConfig;
 import com.ascend.testlab.config.WebClientConfig;
+import com.ascend.testlab.exception.ErrorEnum;
 import com.google.inject.Inject;
 import io.github.resilience4j.circuitbreaker.CircuitBreaker;
 import io.reactivex.rxjava3.core.Completable;
+import io.reactivex.rxjava3.core.Maybe;
+import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.client.WebClientOptions;
+import io.vertx.rxjava3.core.MultiMap;
 import io.vertx.rxjava3.core.Vertx;
+import io.vertx.rxjava3.core.buffer.Buffer;
+import io.vertx.rxjava3.ext.web.client.HttpRequest;
+import java.util.Map;
 import java.util.Objects;
+import java.util.function.Function;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -51,6 +60,36 @@ public class WebClientImpl implements WebClient {
   public WebClient setCircuitBreaker(CircuitBreaker circuitBreaker) {
     this.circuitBreaker = circuitBreaker;
     return this;
+  }
+
+  /** {@inheritDoc} */
+  @Override
+  public <R> Maybe<R> sendHTTPGETRequest(
+      ApplicationConfig.ServiceConfig serviceConfig,
+      Map<String, String> queryParams,
+      MultiMap headers,
+      ErrorEnum errorEnum,
+      Function<JsonObject, R> responseMapper) {
+
+    Integer port = serviceConfig.getPort();
+    String host = serviceConfig.getServiceURL();
+    String endPoint = serviceConfig.getApiEndPoint();
+
+    HttpRequest<Buffer> request =
+        webClient
+            .get(port, host, endPoint)
+            .putHeaders(headers)
+            .timeout(serviceConfig.getApiTimeoutMS());
+    queryParams.forEach(request::addQueryParam);
+
+    return request
+        .rxSend()
+        .flatMapMaybe(response -> Maybe.just(responseMapper.apply(response.bodyAsJsonObject())))
+        .onErrorResumeNext(
+            err -> {
+              log.error("Error in GET request {}{}: ", host, endPoint, err);
+              return Maybe.empty();
+            });
   }
 
   private static WebClientOptions getWebClientOptions(WebClientConfig webClientConfig) {

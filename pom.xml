@@ -41,6 +41,7 @@
     <maven-shade-plugin.version>3.5.1</maven-shade-plugin.version>
     <maven-surefire-plugin.version>3.1.2</maven-surefire-plugin.version>
     <swagger-maven-plugin-jakarta.version>2.2.16</swagger-maven-plugin-jakarta.version>
+      <semver4j.version>5.2.2</semver4j.version>
 
     <!-- dependency versions -->
     <aerospike-client.version>6.2.0</aerospike-client.version>
@@ -244,6 +245,12 @@
       <artifactId>logstash-logback-encoder</artifactId>
       <version>${logstash-encoder.version}</version>
     </dependency>
+
+      <dependency>
+          <groupId>org.semver4j</groupId>
+          <artifactId>semver4j</artifactId>
+          <version>${semver4j.version}</version>
+      </dependency>
 
     <dependency>
       <groupId>org.apache.commons</groupId>

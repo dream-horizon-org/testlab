@@ -9,6 +9,7 @@ CREATE TYPE experiment_status AS ENUM ('LIVE','PAUSED','DRAFT','CONCLUDED','TERM
 CREATE TYPE experiment_type AS ENUM ('A/B');
 CREATE TYPE experiment_health AS ENUM ('WARNING','PASSING','NO_CHECKS_AVAILABLE','FAILED');
 CREATE TYPE experiment_strategy AS ENUM ('RANDOM', 'ROUND_ROBIN');
+CREATE TYPE assignment_domain AS ENUM ('MANUAL', 'COHORT', 'DEFAULT');
 
 CREATE TABLE IF NOT EXISTS experiments (
     project_key          VARCHAR(255) NOT NULL,
@@ -21,8 +22,10 @@ CREATE TABLE IF NOT EXISTS experiments (
     guardrail_health_status experiment_health,
     cohorts             VARCHAR(255) ARRAY,
     variant_weights     JSONB,
-    assignment_strategy experiment_strategy,
-    overrides           JSONB,
+    variants            JSONB,
+    distribution_strategy experiment_strategy,
+    assignment_domain   assignment_domain,
+    overrides           VARCHAR(255),
     rule_attributes     JSONB,
     winning_variant     JSONB,
     exposure            INTEGER,

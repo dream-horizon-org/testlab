@@ -1,11 +1,15 @@
-package com.ascend.testlab.util.filter;
+package com.ascend.testlab.util.filter.experimentFilter;
 
 import com.ascend.testlab.entity.Experiment;
 import java.util.List;
 
 /**
- * Filter interface for experiment filtering using Chain of Responsibility pattern Each filter can
- * decide whether to pass an experiment to the next filter in the chain
+ * Filter interface for experiment filtering using Chain of Responsibility pattern. Each filter can
+ * decide whether to pass an experiment to the next filter in the chain.
+ *
+ * @author anudeepreddy20
+ * @version 1.0
+ * @since 1.0
  */
 public interface ExperimentFilter {
 

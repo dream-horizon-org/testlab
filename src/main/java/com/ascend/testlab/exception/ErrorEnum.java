@@ -27,6 +27,16 @@ public enum ErrorEnum implements RestError {
   MISSING_USER_IDENTIFIER(
       "EXPERIMENT_SERVICE_MISSING_USER_IDENTIFIER",
       "Missing User Identifier, pass user-id/guest-id",
+      HttpStatus.SC_BAD_REQUEST),
+
+  USER_COHORTS_SERVICE_REQUEST_FAILED(
+      "FF_USER_COHORTS_SERVICE_REQUEST_FAILED",
+      "User-Cohorts service request failed with statusCode:%s",
+      HttpStatus.SC_INTERNAL_SERVER_ERROR),
+
+  INVALID_REQUEST_BODY(
+      "FF_INVALID_REQUEST_BODY",
+      "Request body param(s) is/are missing/invalid",
       HttpStatus.SC_BAD_REQUEST);
 
   /** The error code. */

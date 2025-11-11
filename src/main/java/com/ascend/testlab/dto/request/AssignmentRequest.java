@@ -5,15 +5,28 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.apache.commons.lang3.StringUtils;
 
-/** Request object for experiment assignment */
+/**
+ * Request object for experiment assignment.
+ *
+ * @author anudeepreddy20
+ * @version 1.0
+ * @since 1.0
+ */
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
 public class AssignmentRequest {
-  private List<String> experiments; // List of experiment IDs to assign (optional)
-  private List<String> entities; // Target entities (e.g., "mobile", "android", "web")
-  private Attributes attributes; // User attributes for filtering
-  private String guestId; // Guest ID for carryover to logged-in user
+  private List<String> experiments;
+  private Attributes attributes;
+  private String guestId;
+  private String userId;
+
+  public void validate() {
+    if (StringUtils.isBlank(guestId) || StringUtils.isBlank(userId)) {
+      throw new IllegalArgumentException("guestId and userId cannot be blank");
+    }
+  }
 }

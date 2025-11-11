@@ -6,10 +6,17 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+/**
+ * Response object for experiment assignment containing the list of assigned experiments.
+ *
+ * @author anudeepreddy20
+ * @version 1.0
+ * @since 1.0
+ */
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
 public class AssignmentResponse {
-  private List<UserExperimentMap> apiAssignmentMap;
+  private List<UserExperimentMap> experimentMap;
 }

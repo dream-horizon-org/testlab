@@ -1,21 +1,42 @@
 package com.ascend.testlab.dto.request;
 
-import java.util.List;
-import java.util.Map;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-/** User attributes for experiment filtering and targeting */
+/**
+ * User attributes for experiment filtering and targeting.
+ *
+ * @author anudeepreddy20
+ * @version 1.0
+ * @since 1.0
+ */
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class Attributes {
-  private String appVersion;
+  @JsonProperty("build_version")
   private String buildVersion;
-  private String trait; // User trait for filtering
-  private List<String> cohorts; // User cohorts for filtering
-  private Map<String, Object> customAttributes; // Additional custom attributes
+
+  private String model;
+  private String device;
+
+  @JsonProperty("app_name")
+  private String appName;
+
+  private String platform;
+
+  @JsonProperty("os_version")
+  private String osVersion;
+
+  @JsonProperty("app_version")
+  private String appVersion;
+
+  @JsonProperty("build_number")
+  private String buildNumber;
 }

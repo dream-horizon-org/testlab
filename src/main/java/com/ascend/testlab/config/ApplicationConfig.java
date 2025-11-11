@@ -1,6 +1,8 @@
 package com.ascend.testlab.config;
 
 import com.ascend.testlab.config.provider.ConfigProvider;
+import com.typesafe.config.Optional;
+import io.vertx.core.http.HttpClientOptions;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
@@ -14,6 +16,20 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 public class ApplicationConfig {
+
+  /** The cohort service URL for fetching user cohorts. */
+  private ServiceConfig cohortsConfig;
+
+  @Data
+  @NoArgsConstructor
+  public static class ServiceConfig {
+    private String serviceURL;
+    private String apiEndPoint;
+    private int apiTimeoutMS;
+    @Optional private String token;
+    @Optional private Integer port = HttpClientOptions.DEFAULT_DEFAULT_PORT;
+  }
+
   /**
    * Get the provider for the application config.
    *

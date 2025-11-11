@@ -3,3 +3,146 @@ info:
   title: testlab
   description: testlab Service
   version: "1.0"
+paths:
+  /v1/allocation:
+    put:
+      operationId: handle_1
+      parameters:
+      - name: x-user-Id
+        in: header
+        schema:
+          type: string
+      - name: x-tenant-Id
+        in: header
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReassignmentRequest'
+      responses:
+        "200":
+          description: Successful Reassignment
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Success'
+        "400":
+          description: Bad Request due to invalid/missing body params / header
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Failure'
+        "404":
+          description: Experiment or user assignment not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Failure'
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Failure'
+    post:
+      operationId: handle
+      parameters:
+      - name: x-tenant-Id
+        in: header
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AssignmentRequest'
+      responses:
+        "200":
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Success'
+        "304":
+          description: Successful Not Modified Response
+        "400":
+          description: Bad Request due to invalid/missing body params / header
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Failure'
+        "401":
+          description: Bad Request due to invalid api-key
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Failure'
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Failure'
+components:
+  schemas:
+    Success:
+      type: object
+      properties:
+        data:
+          type: object
+    ErrorEntity:
+      type: object
+      properties:
+        code:
+          type: string
+        message:
+          type: string
+        cause:
+          type: string
+    Failure:
+      type: object
+      properties:
+        error:
+          $ref: '#/components/schemas/ErrorEntity'
+    AssignmentRequest:
+      type: object
+      properties:
+        experiments:
+          type: array
+          items:
+            type: string
+        attributes:
+          $ref: '#/components/schemas/Attributes'
+        guestId:
+          type: string
+        userId:
+          type: string
+    Attributes:
+      type: object
+      properties:
+        appVersion:
+          type: string
+        buildVersion:
+          type: string
+        customAttributes:
+          type: object
+          additionalProperties:
+            type: object
+    ReassignmentRequest:
+      required:
+      - experimentId
+      - userId
+      type: object
+      properties:
+        experimentId:
+          type: string
+        variantName:
+          type: string
+        reason:
+          type: string
+        forceReassign:
+          type: boolean
+        userId:
+          type: string

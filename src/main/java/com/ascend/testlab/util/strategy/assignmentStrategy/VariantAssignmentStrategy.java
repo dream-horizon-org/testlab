@@ -1,9 +1,15 @@
-package com.ascend.testlab.util.strategy;
+package com.ascend.testlab.util.strategy.assignmentStrategy;
 
 import com.ascend.testlab.entity.Variant;
 import java.util.List;
 
-/** Strategy interface for variant assignment */
+/**
+ * Strategy interface for variant assignment.
+ *
+ * @author anudeepreddy20
+ * @version 1.0
+ * @since 1.0
+ */
 public interface VariantAssignmentStrategy {
 
   /**

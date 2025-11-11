@@ -1,13 +1,22 @@
 package com.ascend.testlab.util.filter;
 
 import com.ascend.testlab.dto.request.AssignmentRequest;
+import com.ascend.testlab.dto.request.Attributes;
 import com.ascend.testlab.dto.response.UserExperimentMap;
-import java.util.List;
+import com.ascend.testlab.util.filter.experimentFilter.CohortFilter;
+import com.ascend.testlab.util.filter.experimentFilter.CustomAttributesFilter;
+import com.ascend.testlab.util.filter.experimentFilter.ExperimentFilter;
+import com.ascend.testlab.util.filter.experimentFilter.UnassignedExperimentFilter;
+import java.util.*;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * Factory class for building filter chains using Builder pattern Creates a chain of filters based
- * on request parameters
+ * Factory class for building filter chains using Builder pattern. Creates a chain of filters based
+ * on request parameters.
+ *
+ * @author anudeepreddy20
+ * @version 1.0
+ * @since 1.0
  */
 @Slf4j
 public class ExperimentFilterChainBuilder {
@@ -26,37 +35,31 @@ public class ExperimentFilterChainBuilder {
     return this;
   }
 
-  public ExperimentFilterChainBuilder withCustomAttributesFilter(
-      java.util.Map<String, Object> customAttributes) {
-    if (customAttributes != null && !customAttributes.isEmpty()) {
-      addFilter(new CustomAttributesFilter(customAttributes));
+  public ExperimentFilterChainBuilder withCustomAttributesFilter(Attributes attributes) {
+    if (Objects.nonNull(attributes)) {
+      addFilter(new CustomAttributesFilter(attributes));
     }
     return this;
   }
 
   public static ExperimentFilter buildFromRequest(
-      AssignmentRequest request, List<UserExperimentMap> userAssignments) {
+      AssignmentRequest request, List<UserExperimentMap> userAssignments, List<String> cohorts) {
 
     ExperimentFilterChainBuilder builder = new ExperimentFilterChainBuilder();
 
     builder.withUnassignedFilter(userAssignments);
+    builder.withCohortFilter(cohorts != null ? cohorts : new ArrayList<>());
 
-    if (request.getAttributes() != null) {
-      if (request.getAttributes().getCohorts() != null) {
-        builder.withCohortFilter(request.getAttributes().getCohorts());
-      }
-
-      if (request.getAttributes().getCustomAttributes() != null
-          && !request.getAttributes().getCustomAttributes().isEmpty()) {
-        builder.withCustomAttributesFilter(request.getAttributes().getCustomAttributes());
-      }
+    if (Objects.nonNull(request) && Objects.nonNull(request.getAttributes())) {
+      Attributes attributes = request.getAttributes();
+      builder.withCustomAttributesFilter(attributes);
     }
 
     return builder.build();
   }
 
   public ExperimentFilter build() {
-    if (firstFilter == null) {
+    if (Objects.isNull(firstFilter)) {
       log.warn("No filters added to chain, returning pass-through filter");
       return new PassThroughFilter();
     }
@@ -77,7 +80,7 @@ public class ExperimentFilterChainBuilder {
   }
 
   private void addFilter(ExperimentFilter filter) {
-    if (firstFilter == null) {
+    if (Objects.isNull(firstFilter)) {
       firstFilter = filter;
       currentFilter = filter;
     } else {

@@ -1,0 +1,138 @@
+package com.ascend.testlab.util.filter.experimentFilter;
+
+import com.ascend.testlab.constants.attributes.RelationalOperator;
+import com.ascend.testlab.constants.enums.DataTypeEnum;
+import com.ascend.testlab.dto.request.Attributes;
+import com.ascend.testlab.entity.Experiment;
+import com.ascend.testlab.entity.RuleAttributes;
+import com.ascend.testlab.util.filter.AbstractExperimentFilter;
+import java.util.List;
+import java.util.Objects;
+import java.util.stream.Collectors;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+
+/**
+ * Filters experiments based on custom attributes matching. Experiments pass the filter if their
+ * rule attribute condition evaluates to true (OR logic).
+ *
+ * @author anudeepreddy20
+ * @version 1.0
+ * @since 1.0
+ * @see AbstractExperimentFilter
+ */
+@Slf4j
+@RequiredArgsConstructor
+public class CustomAttributesFilter extends AbstractExperimentFilter {
+
+  private final Attributes attributes;
+
+  @Override
+  protected List<Experiment> applyFilter(List<Experiment> experiments) {
+    if (Objects.isNull(attributes)) {
+      log.debug("No user attributes provided, filtering out attribute-restricted experiments");
+      return experiments.stream()
+          .filter(
+              exp -> Objects.isNull(exp.getRuleAttributes()) || exp.getRuleAttributes().isEmpty())
+          .collect(Collectors.toList());
+    }
+
+    return experiments.stream()
+        .filter(
+            exp -> {
+              if (Objects.isNull(exp.getRuleAttributes()) || exp.getRuleAttributes().isEmpty()) {
+                return true;
+              }
+
+              boolean anyConditionMatches =
+                  exp.getRuleAttributes().stream().anyMatch(this::evaluateRuleAttribute);
+
+              if (!anyConditionMatches) {
+                log.trace(
+                    "Experiment {} filtered out - none of the {} rule attribute conditions matched",
+                    exp.getExperimentId(),
+                    exp.getRuleAttributes().size());
+              } else {
+                log.debug(
+                    "Experiment {} passed filter - at least one rule attribute condition matched",
+                    exp.getExperimentId());
+              }
+
+              return anyConditionMatches;
+            })
+        .collect(Collectors.toList());
+  }
+
+  /**
+   * Evaluates a single RuleAttributes condition against user attributes.
+   *
+   * @param ruleAttributes the rule attribute condition to evaluate
+   * @return true if the condition evaluates to true, false otherwise
+   */
+  private boolean evaluateRuleAttribute(RuleAttributes ruleAttributes) {
+    try {
+      String operandName = ruleAttributes.getOperand();
+      String userAttributeValue = getUserAttributeValue(operandName);
+
+      if (Objects.isNull(userAttributeValue)) {
+        log.trace("User attribute value is null for operand: {}", operandName);
+        return false;
+      }
+
+      String expectedValue = ruleAttributes.getValue();
+
+      RelationalOperator operator = RelationalOperator.getOperator(ruleAttributes.getOperator());
+
+      DataTypeEnum dataType = DataTypeEnum.getDataType(ruleAttributes.getOperandDataType());
+      boolean result =
+          dataType
+              .getEvaluation()
+              .evaluate(userAttributeValue, expectedValue, operator, operandName);
+
+      log.debug(
+          "Evaluated condition: {} {} {} = {}",
+          operandName,
+          operator.getName(),
+          expectedValue,
+          result);
+
+      return result;
+    } catch (Exception e) {
+      log.error("Error evaluating rule attribute: {}", ruleAttributes, e);
+      return false;
+    }
+  }
+
+  /**
+   * Extracts the user attribute value based on operand name.
+   *
+   * @param operandName the operand name (e.g., "app_version", "platform")
+   * @return the user attribute value as string, or null if not found
+   */
+  private String getUserAttributeValue(String operandName) {
+    if (attributes == null) {
+      return null;
+    }
+
+    try {
+
+      return switch (operandName) {
+        case "app_version" -> attributes.getAppVersion();
+        case "platform" -> attributes.getPlatform();
+        case "os_version" -> attributes.getOsVersion();
+        case "build_version" -> attributes.getBuildVersion();
+        case "build_number" -> attributes.getBuildNumber();
+        case "model" -> attributes.getModel();
+        case "device" -> attributes.getDevice();
+        case "app_name" -> attributes.getAppName();
+        default -> {
+          log.warn("Unknown operand: {}", operandName);
+          yield null;
+        }
+      };
+    } catch (Exception e) {
+      log.error("Error extracting user attribute for operand: {}", operandName, e);
+      return null;
+    }
+  }
+}

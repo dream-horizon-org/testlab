@@ -14,8 +14,10 @@ import com.ascend.testlab.dao.HealthCheckDAO;
 import com.ascend.testlab.dao.impl.AssignmentDAOImpl;
 import com.ascend.testlab.dao.impl.HealthCheckDAOImpl;
 import com.ascend.testlab.service.AssignmentService;
+import com.ascend.testlab.service.CohortService;
 import com.ascend.testlab.service.HealthCheckService;
 import com.ascend.testlab.service.impl.AssignmentServiceImpl;
+import com.ascend.testlab.service.impl.CohortServiceImpl;
 import com.ascend.testlab.service.impl.HealthCheckServiceImpl;
 import com.ascend.testlab.util.CircuitBreakerFactory;
 import com.google.inject.Singleton;
@@ -89,5 +91,6 @@ public class ServiceModule extends DefaultModule {
   private void bindServices() {
     bind(HealthCheckService.class).to(HealthCheckServiceImpl.class);
     bind(AssignmentService.class).to(AssignmentServiceImpl.class);
+    bind(CohortService.class).to(CohortServiceImpl.class);
   }
 }

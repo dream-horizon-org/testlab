@@ -2,10 +2,19 @@ package com.ascend.testlab.dao;
 
 import com.ascend.testlab.dto.response.UserExperimentMap;
 import com.ascend.testlab.entity.Experiment;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import io.reactivex.rxjava3.core.Single;
 import java.util.List;
 import java.util.UUID;
 
+/**
+ * Interface for the assignment DAO. Contains methods to manage experiment assignments, user
+ * assignments, variant counts, and locking mechanisms.
+ *
+ * @author anudeepreddy20
+ * @version 1.0
+ * @since 1.0
+ */
 public interface AssignmentDAO {
 
   /**
@@ -34,7 +43,8 @@ public interface AssignmentDAO {
    * @return success status
    */
   Single<Boolean> insertUserAssignments(
-      String userId, UUID tenantId, List<UserExperimentMap> assignments);
+      String userId, UUID tenantId, List<UserExperimentMap> assignments)
+      throws JsonProcessingException;
 
   /**
    * Updates variant count in Aerospike for threshold checking
@@ -43,7 +53,7 @@ public interface AssignmentDAO {
    * @param variantName variant name
    * @return updated count
    */
-  Single<Long> incrementVariantCount(UUID experimentId, String variantName);
+  Single<Long> incrementVariantCount(UUID tenantId, UUID experimentId, String variantName);
 
   /**
    * Checks if experiment has reached threshold
@@ -51,7 +61,7 @@ public interface AssignmentDAO {
    * @param experimentId experiment identifier
    * @return true if threshold not breached
    */
-  Single<Boolean> checkThreshold(Experiment experimentId);
+  Single<Boolean> checkThreshold(UUID tenantId, Experiment experimentId);
 
   /**
    * Acquires lock for user assignment in Aerospike
@@ -72,15 +82,30 @@ public interface AssignmentDAO {
   Single<Boolean> releaseUserLock(String userId, UUID tenantId);
 
   /**
-   * Fetches concluded experiments with winning variant
+   * Fetches concluded experiments with winning variant for a tenant
    *
    * @param tenantId tenant identifier
-   * @param apiPath API path filter
-   * @param entities entity filter
    * @return list of concluded experiments
    */
-  Single<List<UserExperimentMap>> fetchConcludedExperiments(
-      UUID tenantId, String apiPath, List<String> entities);
+  Single<List<Experiment>> fetchConcludedExperiments(UUID tenantId);
 
-  //  Single<List<UserExperimentMap>> getGuestAssignments(String guestId, UUID tenantId);
+  //  /**
+  //   * Updates an existing user experiment assignment with a new variant
+  //   *
+  //   * @param userId user identifier
+  //   * @param tenantId tenant identifier
+  //   * @param assignment the updated assignment
+  //   * @return success status
+  //   */
+  //  Single<Boolean> updateUserAssignment(String userId, UUID tenantId, UserExperimentMap
+  // assignment);
+
+  /**
+   * Decrements variant count in Aerospike (used when reassigning)
+   *
+   * @param experimentId experiment identifier
+   * @param variantName variant name
+   * @return updated count
+   */
+  Single<Long> decrementVariantCount(UUID tenantId, UUID experimentId, String variantName);
 }

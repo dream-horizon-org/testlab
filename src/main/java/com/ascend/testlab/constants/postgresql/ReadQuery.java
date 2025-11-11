@@ -15,5 +15,15 @@ public final class ReadQuery {
   /** The health check query to check if the PostgreSQL reader database is connected. */
   public static final String HEALTH_CHECK = "SELECT 1;";
 
-  public static final String GET_EXPERIMENTS = "SELECT COUNT(1) FROM health_check;";
+  /** Query to fetch active experiments for a tenant within a time range */
+  public static final String GET_EXPERIMENTS =
+      "SELECT * " + "FROM experiments " + "WHERE project_key = $1 AND status = 'LIVE'";
+
+  /** Query to fetch concluded experiments for a tenant with winning variants */
+  public static final String GET_CONCLUDED_EXPERIMENTS =
+      "SELECT * "
+          + "FROM experiments "
+          + "WHERE project_key = $1 "
+          + "AND status = 'CONCLUDED' "
+          + "AND winning_variant IS NOT NULL";
 }

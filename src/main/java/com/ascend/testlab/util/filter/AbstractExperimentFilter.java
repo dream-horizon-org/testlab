@@ -1,10 +1,18 @@
 package com.ascend.testlab.util.filter;
 
 import com.ascend.testlab.entity.Experiment;
+import com.ascend.testlab.util.filter.experimentFilter.ExperimentFilter;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 
-/** Abstract base class for experiment filters implementing Chain of Responsibility pattern */
+/**
+ * Abstract base class for experiment filters implementing Chain of Responsibility pattern.
+ *
+ * @author anudeepreddy20
+ * @version 1.0
+ * @since 1.0
+ * @see ExperimentFilter
+ */
 @Slf4j
 public abstract class AbstractExperimentFilter implements ExperimentFilter {
 
