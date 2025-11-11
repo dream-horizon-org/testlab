@@ -26,8 +26,6 @@ public class ApplicationConfig {
     private String serviceURL;
     private String apiEndPoint;
     private int apiTimeoutMS;
-    @Optional private String token;
-    @Optional private Integer port = HttpClientOptions.DEFAULT_DEFAULT_PORT;
   }
 
   /**
