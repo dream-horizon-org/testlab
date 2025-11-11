@@ -219,3 +219,6 @@ backups/
 
 META-INF/
 src/main/resources/META-INF/
+
+# TODO: fix later, host docs in `.github.io`
+docs/api-*

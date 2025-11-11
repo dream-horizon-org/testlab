@@ -4,18 +4,46 @@ info:
   description: testlab Service
   version: "1.0"
 paths:
+  /v1/experiments/tags:
+    get:
+      operationId: getTagsHandle
+      parameters:
+      - name: x-project-key
+        in: header
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          description: Successfully retrieved tags
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessTagsResponse'
+        "400":
+          description: Invalid project Key
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Failure'
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Failure'
   /v1/allocation:
     put:
       operationId: handle_1
       parameters:
-      - name: x-user-Id
-        in: header
-        schema:
-          type: string
-      - name: x-tenant-Id
-        in: header
-        schema:
-          type: string
+        - name: x-user-Id
+          in: header
+          schema:
+            type: string
+        - name: x-tenant-Id
+          in: header
+          schema:
+            type: string
       requestBody:
         content:
           application/json:
@@ -49,10 +77,10 @@ paths:
     post:
       operationId: handle
       parameters:
-      - name: x-tenant-Id
-        in: header
-        schema:
-          type: string
+        - name: x-tenant-Id
+          in: header
+          schema:
+            type: string
       requestBody:
         content:
           application/json:
@@ -146,3 +174,15 @@ components:
           type: boolean
         userId:
           type: string
+    SuccessTagsResponse:
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/TagsResponse'
+    TagsResponse:
+      type: object
+      properties:
+        tags:
+          type: array
+          items:
+            type: string

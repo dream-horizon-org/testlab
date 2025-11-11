@@ -12,13 +12,17 @@ import com.ascend.testlab.config.*;
 import com.ascend.testlab.dao.AssignmentDAO;
 import com.ascend.testlab.dao.HealthCheckDAO;
 import com.ascend.testlab.dao.impl.AssignmentDAOImpl;
+import com.ascend.testlab.dao.TagsDAO;
 import com.ascend.testlab.dao.impl.HealthCheckDAOImpl;
 import com.ascend.testlab.service.AssignmentService;
 import com.ascend.testlab.service.CohortService;
+import com.ascend.testlab.dao.impl.TagsDAOImpl;
 import com.ascend.testlab.service.HealthCheckService;
 import com.ascend.testlab.service.impl.AssignmentServiceImpl;
 import com.ascend.testlab.service.impl.CohortServiceImpl;
+import com.ascend.testlab.service.TagsService;
 import com.ascend.testlab.service.impl.HealthCheckServiceImpl;
+import com.ascend.testlab.service.impl.TagsServiceImpl;
 import com.ascend.testlab.util.CircuitBreakerFactory;
 import com.google.inject.Singleton;
 import io.vertx.rxjava3.core.Vertx;
@@ -84,6 +88,7 @@ public class ServiceModule extends DefaultModule {
   /** Bind the DAO interfaces to their implementations. */
   private void bindDAOs() {
     bind(HealthCheckDAO.class).to(HealthCheckDAOImpl.class);
+    bind(TagsDAO.class).to(TagsDAOImpl.class);
     bind(AssignmentDAO.class).to(AssignmentDAOImpl.class);
   }
 
@@ -92,5 +97,6 @@ public class ServiceModule extends DefaultModule {
     bind(HealthCheckService.class).to(HealthCheckServiceImpl.class);
     bind(AssignmentService.class).to(AssignmentServiceImpl.class);
     bind(CohortService.class).to(CohortServiceImpl.class);
+    bind(TagsService.class).to(TagsServiceImpl.class);
   }
 }

@@ -14,6 +14,9 @@ public final class Constants {
   /** The name of the package. */
   public static final String PACKAGE_NAME = "com.ascend.testlab";
 
+  /** The name of the main verticle. */
+  public static final String MAIN_VERTICLE = "com.ascend.testlab.verticle.MainVerticle";
+
   /** The key for the application environment. */
   public static final String APP_ENV_KEY = "app.environment";
 
