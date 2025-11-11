@@ -1,4 +1,4 @@
-package com.ascend.testlab.dao.queryBuilder;
+package com.ascend.testlab.dao.querybuilder;
 
 /**
  * Interface for building filter queries for experiments.

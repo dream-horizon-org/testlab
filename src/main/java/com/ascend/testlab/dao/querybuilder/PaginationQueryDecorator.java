@@ -1,6 +1,8 @@
-package com.ascend.testlab.dao.queryBuilder;
+package com.ascend.testlab.dao.querybuilder;
 
 import com.ascend.testlab.constants.postgresql.ReadQuery;
+import com.ascend.testlab.exception.ErrorEnum;
+import com.dream11.rest.exception.RestException;
 
 /**
  * Decorator that adds pagination (LIMIT and OFFSET) to the query.
@@ -37,10 +39,12 @@ public class PaginationQueryDecorator extends FilterQueryDecorator {
    */
   @Override
   public String buildQuery() {
-    String pagination =
-        ReadQuery.PAGINATION
-            .replace("<<LIMIT>>", String.valueOf(limit))
-            .replace("<<OFFSET>>", String.valueOf(offset));
-    return wrappedFilterQuery.buildQuery() + pagination;
+    try {
+      String pagination = ReadQuery.PAGINATION.apply(limit, offset);
+      return wrappedFilterQuery.buildQuery() + pagination;
+    } catch (Throwable e) {
+      throw ErrorEnum.handleException(
+          e, new RestException(ErrorEnum.REST_FILTER_EXPERIMENTS_FAILED, e));
+    }
   }
 }

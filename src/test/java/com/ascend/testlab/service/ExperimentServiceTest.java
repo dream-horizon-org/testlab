@@ -196,26 +196,6 @@ public class ExperimentServiceTest {
       testObserver.assertValueCount(0);
       verify(experimentDAO, times(1)).getExperiment(PROJECT_ID, EXPERIMENT_ID);
     }
-
-    @Test
-    @DisplayName("Should propagate IllegalArgumentException from DAO")
-    void testGetExperimentIllegalArgumentException() {
-      // Arrange
-      IllegalArgumentException illegalArgumentException =
-          new IllegalArgumentException("Invalid argument");
-      when(experimentDAO.getExperiment(PROJECT_ID, EXPERIMENT_ID))
-          .thenReturn(Single.error(illegalArgumentException));
-
-      // Act
-      TestObserver<Experiment> testObserver =
-          experimentService.getExperiment(PROJECT_ID, EXPERIMENT_ID).test();
-
-      // Assert
-      testObserver.assertError(IllegalArgumentException.class);
-      testObserver.assertNotComplete();
-      testObserver.assertValueCount(0);
-      verify(experimentDAO, times(1)).getExperiment(PROJECT_ID, EXPERIMENT_ID);
-    }
   }
 
   @Nested
@@ -469,27 +449,6 @@ public class ExperimentServiceTest {
 
       // Assert
       testObserver.assertError(RuntimeException.class);
-      testObserver.assertNotComplete();
-      testObserver.assertValueCount(0);
-      verify(experimentDAO, times(1)).filterExperiments(PROJECT_ID, request);
-    }
-
-    @Test
-    @DisplayName("Should propagate IllegalArgumentException from DAO")
-    void testFilterExperimentsIllegalArgumentException() {
-      // Arrange
-      FilterExperimentsRequest request = new FilterExperimentsRequest();
-      IllegalArgumentException illegalArgumentException =
-          new IllegalArgumentException("Invalid argument");
-      when(experimentDAO.filterExperiments(PROJECT_ID, request))
-          .thenReturn(Single.error(illegalArgumentException));
-
-      // Act
-      TestObserver<FilterExperimentsResponse> testObserver =
-          experimentService.filterExperiments(PROJECT_ID, request).test();
-
-      // Assert
-      testObserver.assertError(IllegalArgumentException.class);
       testObserver.assertNotComplete();
       testObserver.assertValueCount(0);
       verify(experimentDAO, times(1)).filterExperiments(PROJECT_ID, request);

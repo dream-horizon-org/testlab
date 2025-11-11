@@ -1,5 +1,7 @@
 package com.ascend.testlab.constants.postgresql;
 
+import io.reactivex.rxjava3.functions.BiFunction;
+import io.reactivex.rxjava3.functions.Function;
 import lombok.experimental.UtilityClass;
 
 /**
@@ -39,8 +41,8 @@ public final class ReadQuery {
       """;
 
   /** Filter clause for searching experiments by name using PostgreSQL full-text search. */
-  public static final String NAME_FILTER =
-      " AND e.name_tsvector @@ plainto_tsquery('simple', <<NAME>>)";
+  public static final Function<String, String> NAME_FILTER =
+      " AND e.name_tsvector @@ plainto_tsquery('simple', '%s')"::formatted;
 
   /** GROUP BY clause for experiment queries. Groups results by project_key and experiment_id */
   public static final String GROUP_BY = " GROUP BY e.project_key, e.experiment_id";
@@ -49,35 +51,35 @@ public final class ReadQuery {
   public static final String ORDER_BY_CREATED_AT = " ORDER BY e.created_at DESC";
 
   /**
-   * LIMIT and OFFSET clause for pagination. Placeholders <<LIMIT>> and <<OFFSET>> should be
-   * replaced with the limit and offset values respectively.
+   * LIMIT and OFFSET clause for pagination. Uses format placeholders %d for limit and offset
+   * values.
    */
-  public static final String PAGINATION = " LIMIT <<LIMIT>> OFFSET <<OFFSET>>";
+  public static final BiFunction<Integer, Integer, String> PAGINATION =
+      " LIMIT %d OFFSET %d"::formatted;
 
   /**
-   * Filter clause for filtering experiments by status. Placeholder <<STATUS>> should be replaced
-   * with a comma-separated list of status values.
+   * Filter clause for filtering experiments by status. Uses format placeholder %s for a
+   * comma-separated list of status values.
    */
-  public static final String STATUS_FILTER = " AND e.status in (<<STATUS>>)";
+  public static final Function<String, String> STATUS_FILTER = " AND e.status IN (%s)"::formatted;
 
   /**
-   * Filter clause for filtering experiments by type. Placeholder <<TYPE>> should be replaced with a
+   * Filter clause for filtering experiments by type. Uses format placeholder %s for a
    * comma-separated list of type values.
    */
-  public static final String TYPE_FILTER = " AND e.type in (<<TYPE>>)";
+  public static final Function<String, String> TYPE_FILTER = " AND e.type in (%s)"::formatted;
 
   /**
-   * Query to find distinct experiment IDs that have the specified tags. Placeholder <<TAG>> should
-   * be replaced with a comma-separated list of tag values. Used as a subquery to filter experiments
-   * by tags.
+   * Filter clause for filtering experiments by tags. Uses format placeholder %s for a
+   * comma-separated list of tag values.
    */
-  public static final String TAGS_FILTER = " AND t.tag in (<<TAG>>)";
+  public static final Function<String, String> TAGS_FILTER = " AND t.tag in (%s)"::formatted;
 
   /**
-   * Query to find distinct experiment IDs that have the specified owners. Placeholder <<OWNER>>
-   * should be replaced with a comma-separated list of owner values.
+   * Filter clause for filtering experiments by owners. Uses format placeholder %s for a
+   * comma-separated list of owner values.
    */
-  public static final String GET_EXPERIMENT_BY_OWNER_FILTER = " AND o.owner in (<<OWNER>>)";
+  public static final Function<String, String> OWNER_FILTER = " AND o.owner in (%s)"::formatted;
 
   /**
    * Base query for filtering experiments by project_key. Returns experiment details including tags

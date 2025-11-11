@@ -1,6 +1,5 @@
 package com.ascend.testlab.constants;
 
-
 public final class TestConstants {
 
   /** The {@code app.environment} value for the test environment. */

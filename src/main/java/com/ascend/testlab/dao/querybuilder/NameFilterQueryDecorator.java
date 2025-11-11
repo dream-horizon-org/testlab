@@ -1,6 +1,8 @@
-package com.ascend.testlab.dao.queryBuilder;
+package com.ascend.testlab.dao.querybuilder;
 
 import com.ascend.testlab.constants.postgresql.ReadQuery;
+import com.ascend.testlab.exception.ErrorEnum;
+import com.dream11.rest.exception.RestException;
 
 /**
  * Decorator that adds a name filter to the query using full-text search. Uses PostgreSQL's
@@ -33,9 +35,13 @@ public class NameFilterQueryDecorator extends FilterQueryDecorator {
    */
   @Override
   public String buildQuery() {
-    // plainto_tsquery expects a quoted string, so we need to escape single quotes in the name
-    String escapedName = name.replace("'", "''");
-    String query = ReadQuery.NAME_FILTER.replace("<<NAME>>", "'" + escapedName + "'");
-    return wrappedFilterQuery.buildQuery() + query;
+    try {
+      // plainto_tsquery expects a quoted string, so we need to escape single quotes in the name
+      String query = ReadQuery.NAME_FILTER.apply(name);
+      return wrappedFilterQuery.buildQuery() + query;
+    } catch (Throwable e) {
+      throw ErrorEnum.handleException(
+          e, new RestException(ErrorEnum.REST_FILTER_EXPERIMENTS_FAILED, e));
+    }
   }
 }

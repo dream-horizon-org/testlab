@@ -4,7 +4,7 @@ import com.ascend.testlab.client.postgresql.PgReaderClient;
 import com.ascend.testlab.constants.postgresql.ReadQuery;
 import com.ascend.testlab.dao.ExperimentDAO;
 import com.ascend.testlab.dao.mapper.ExperimentMapper;
-import com.ascend.testlab.dao.queryBuilder.FilterExperimentsQueryFactory;
+import com.ascend.testlab.dao.querybuilder.FilterExperimentsQueryFactory;
 import com.ascend.testlab.dto.entity.Experiment;
 import com.ascend.testlab.dto.request.FilterExperimentsRequest;
 import com.ascend.testlab.dto.response.FilterExperimentsResponse;

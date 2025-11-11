@@ -1,6 +1,8 @@
-package com.ascend.testlab.dao.queryBuilder;
+package com.ascend.testlab.dao.querybuilder;
 
 import com.ascend.testlab.constants.postgresql.ReadQuery;
+import com.ascend.testlab.exception.ErrorEnum;
+import com.dream11.rest.exception.RestException;
 import java.util.Arrays;
 import java.util.stream.Collectors;
 
@@ -34,10 +36,15 @@ public class TagFilterQueryDecorator extends FilterQueryDecorator {
    */
   @Override
   public String buildQuery() {
-    String formattedTag = formatValuesForInClause(tag);
-    String tagQuery = ReadQuery.TAGS_FILTER.replace("<<TAG>>", formattedTag);
+    try {
+      String formattedTag = formatValuesForInClause(tag);
+      String tagQuery = ReadQuery.TAGS_FILTER.apply(formattedTag);
 
-    return wrappedFilterQuery.buildQuery() + tagQuery;
+      return wrappedFilterQuery.buildQuery() + tagQuery;
+    } catch (Throwable e) {
+      throw ErrorEnum.handleException(
+          e, new RestException(ErrorEnum.REST_FILTER_EXPERIMENTS_FAILED, e));
+    }
   }
 
   /**

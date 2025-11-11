@@ -1,4 +1,4 @@
-package com.ascend.testlab.dao.queryBuilder;
+package com.ascend.testlab.dao.querybuilder;
 
 /**
  * Base decorator class that implements the FilterQueryBuilder interface. This class follows the

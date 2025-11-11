@@ -1,6 +1,8 @@
-package com.ascend.testlab.dao.queryBuilder;
+package com.ascend.testlab.dao.querybuilder;
 
 import com.ascend.testlab.constants.postgresql.ReadQuery;
+import com.ascend.testlab.exception.ErrorEnum;
+import com.dream11.rest.exception.RestException;
 import java.util.Arrays;
 import java.util.stream.Collectors;
 
@@ -35,9 +37,14 @@ public class OwnerFilterQueryDecorator extends FilterQueryDecorator {
    */
   @Override
   public String buildQuery() {
-    String formattedOwner = formatValuesForInClause(owner);
-    String query = ReadQuery.GET_EXPERIMENT_BY_OWNER_FILTER.replace("<<OWNER>>", formattedOwner);
-    return wrappedFilterQuery.buildQuery() + query;
+    try {
+      String formattedOwner = formatValuesForInClause(owner);
+      String query = ReadQuery.OWNER_FILTER.apply(formattedOwner);
+      return wrappedFilterQuery.buildQuery() + query;
+    } catch (Throwable e) {
+      throw ErrorEnum.handleException(
+          e, new RestException(ErrorEnum.REST_FILTER_EXPERIMENTS_FAILED, e));
+    }
   }
 
   /**

@@ -1,4 +1,4 @@
-package com.ascend.testlab.dao.queryBuilder;
+package com.ascend.testlab.dao.querybuilder;
 
 import com.ascend.testlab.dto.request.FilterExperimentsRequest;
 

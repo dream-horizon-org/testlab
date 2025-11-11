@@ -4,7 +4,7 @@ info:
   description: testlab Service
   version: "1.0"
 paths:
-  /v1/experiment:
+  /v1/experiments:
     get:
       operationId: handle
       parameters:
@@ -46,13 +46,25 @@ paths:
           format: int32
           default: 1
       responses:
-        default:
-          description: default response
+        "200":
+          description: Successful Response
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/SuccessFilterExperimentsResponse'
-  /v1/experiment/{experimentId}:
+                $ref: '#/components/schemas/Success'
+        "400":
+          description: Project id is not present
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Failure'
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Failure'
+  /v1/experiments/{experimentId}:
     get:
       operationId: getExperimentHandler
       parameters:
@@ -121,6 +133,25 @@ paths:
                 $ref: '#/components/schemas/Failure'
 components:
   schemas:
+    Success:
+      type: object
+      properties:
+        data:
+          type: object
+    ErrorEntity:
+      type: object
+      properties:
+        code:
+          type: string
+        message:
+          type: string
+        cause:
+          type: string
+    Failure:
+      type: object
+      properties:
+        error:
+          $ref: '#/components/schemas/ErrorEntity'
     Experiment:
       type: object
       properties:
@@ -231,25 +262,6 @@ components:
       properties:
         data:
           $ref: '#/components/schemas/FilterExperimentsResponse'
-    Success:
-      type: object
-      properties:
-        data:
-          type: object
-    ErrorEntity:
-      type: object
-      properties:
-        code:
-          type: string
-        message:
-          type: string
-        cause:
-          type: string
-    Failure:
-      type: object
-      properties:
-        error:
-          $ref: '#/components/schemas/ErrorEntity'
     SuccessExperiment:
       type: object
       properties:
