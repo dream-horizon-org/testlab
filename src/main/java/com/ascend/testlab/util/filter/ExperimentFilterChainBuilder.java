@@ -6,6 +6,7 @@ import com.ascend.testlab.dto.response.UserExperimentMap;
 import com.ascend.testlab.util.filter.experimentFilter.CohortFilter;
 import com.ascend.testlab.util.filter.experimentFilter.CustomAttributesFilter;
 import com.ascend.testlab.util.filter.experimentFilter.ExperimentFilter;
+import com.ascend.testlab.util.filter.experimentFilter.ExposureFilter;
 import com.ascend.testlab.util.filter.experimentFilter.UnassignedExperimentFilter;
 import java.util.*;
 import lombok.extern.slf4j.Slf4j;
@@ -24,21 +25,25 @@ public class ExperimentFilterChainBuilder {
   private ExperimentFilter firstFilter;
   private ExperimentFilter currentFilter;
 
-  public ExperimentFilterChainBuilder withUnassignedFilter(
-      List<UserExperimentMap> userAssignments) {
+  public ExperimentFilterChainBuilder unassignedFilter(List<UserExperimentMap> userAssignments) {
     addFilter(new UnassignedExperimentFilter(userAssignments));
     return this;
   }
 
-  public ExperimentFilterChainBuilder withCohortFilter(List<String> cohorts) {
+  public ExperimentFilterChainBuilder cohortFilter(List<String> cohorts) {
     addFilter(new CohortFilter(cohorts));
     return this;
   }
 
-  public ExperimentFilterChainBuilder withCustomAttributesFilter(Attributes attributes) {
+  public ExperimentFilterChainBuilder ruleAttributesFilter(Attributes attributes) {
     if (Objects.nonNull(attributes)) {
       addFilter(new CustomAttributesFilter(attributes));
     }
+    return this;
+  }
+
+  public ExperimentFilterChainBuilder exposureFilter() {
+    addFilter(new ExposureFilter());
     return this;
   }
 
@@ -47,13 +52,15 @@ public class ExperimentFilterChainBuilder {
 
     ExperimentFilterChainBuilder builder = new ExperimentFilterChainBuilder();
 
-    builder.withUnassignedFilter(userAssignments);
-    builder.withCohortFilter(cohorts != null ? cohorts : new ArrayList<>());
+    builder.unassignedFilter(userAssignments);
+    builder.cohortFilter(cohorts != null ? cohorts : new ArrayList<>());
 
     if (Objects.nonNull(request) && Objects.nonNull(request.getAttributes())) {
       Attributes attributes = request.getAttributes();
-      builder.withCustomAttributesFilter(attributes);
+      builder.ruleAttributesFilter(attributes);
     }
+
+    builder.exposureFilter();
 
     return builder.build();
   }

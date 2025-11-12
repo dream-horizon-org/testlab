@@ -250,10 +250,10 @@ public class AssignmentServiceImpl implements AssignmentService {
     log.debug(
         "Applying filters to {} experiments with {} cohorts", experiments.size(), cohorts.size());
 
-    ExperimentFilter filterChain =
+    ExperimentFilter experimentFilter =
         ExperimentFilterChainBuilder.buildFromRequest(request, userAssignments, cohorts);
 
-    List<Experiment> filtered = filterChain.filter(experiments);
+    List<Experiment> filtered = experimentFilter.filter(experiments);
 
     log.debug("After all filters: {} experiments remain", filtered.size());
     return filtered;
