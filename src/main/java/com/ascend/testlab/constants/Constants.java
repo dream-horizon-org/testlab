@@ -40,4 +40,6 @@ public final class Constants {
   public static final String GET_TYPE = "getType";
 
   public static final String GET_NAME = "getName";
+
+  public static final String NAME = "name";
 }

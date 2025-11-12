@@ -140,39 +140,40 @@ public class ExperimentDAOImpl implements ExperimentDAO {
                   .addValue(request.getProjectKey().toString()) // $1 project_key
                   .addValue(request.getExperimentId().toString()) // $2 experiment_id
                   .addValue(request.getName()) // $3 name
-                  .addValue(request.getDescription()) // $4 description
-                  .addValue(request.getHypothesis()) // $5 hypothesis
+                  .addValue(request.getExperimentKey()) // $4 experiment_key
+                  .addValue(request.getDescription()) // $5 description
+                  .addValue(request.getHypothesis()) // $6 hypothesis
                   .addValue(
-                      request.getStatus() == null ? null : request.getStatus().name()) // $6 status
+                      request.getStatus() == null ? null : request.getStatus().name()) // $7 status
                   .addValue(
-                      request.getType() == null ? null : request.getType().getValue()) // $7 type
+                      request.getType() == null ? null : request.getType().getValue()) // $8 type
                   .addValue(
                       request.getGuardrailHealthStatus() == null
                           ? null
-                          : request.getGuardrailHealthStatus().name()) // $8 guardrail_health_status
-                  .addValue(cohortsArray) // $9 cohorts as varchar array
-                  .addValue(variantWeightsJson) // $10 variant_weights as jsonb string
-                  .addValue(variantsJson) // $11 variants as jsonb string
+                          : request.getGuardrailHealthStatus().name()) // $9 guardrail_health_status
+                  .addValue(cohortsArray) // $10 cohorts as varchar array
+                  .addValue(variantWeightsJson) // $11 variant_weights as jsonb string
+                  .addValue(variantsJson) // $12 variants as jsonb string
                   .addValue(
                       request.getDistributionStrategy() == null
                           ? null
-                          : request.getDistributionStrategy().name()) // $12 distribution_strategy
+                          : request.getDistributionStrategy().name()) // $13 distribution_strategy
                   .addValue(
                       request.getAssignmentDomain() == null
                           ? null
-                          : request.getAssignmentDomain().name()) // $13 assignment_domain
+                          : request.getAssignmentDomain().name()) // $14 assignment_domain
                   .addValue(
                       request.getAssignmentStrategy() == null
                           ? null
-                          : request.getAssignmentStrategy().name()) // $14 assignment_strategy
-                  .addValue(request.getOverrides()) // $15 overrides as varchar
-                  .addValue(ruleAttributesJson) // $16 rule_attributes as jsonb string
-                  .addValue(winningVariantJson) // $17 winning_variant as jsonb string
-                  .addValue(request.getExposure()) // $18 exposure
-                  .addValue(request.getThreshold()) // $19 threshold
-                  .addValue(request.getStartTime()) // $20 start_time
-                  .addValue(request.getEndTime()) // $21 end_time
-                  .addValue(request.getCreatedBy())) // $22 created_by
+                          : request.getAssignmentStrategy().name()) // $15 assignment_strategy
+                  .addValue(request.getOverrides()) // $16 overrides as varchar
+                  .addValue(ruleAttributesJson) // $17 rule_attributes as jsonb string
+                  .addValue(winningVariantJson) // $18 winning_variant as jsonb string
+                  .addValue(request.getExposure()) // $19 exposure
+                  .addValue(request.getThreshold()) // $20 threshold
+                  .addValue(request.getStartTime()) // $21 start_time
+                  .addValue(request.getEndTime()) // $22 end_time
+                  .addValue(request.getCreatedBy())) // $23 created_by
           .doOnSuccess(
               success ->
                   log.info(

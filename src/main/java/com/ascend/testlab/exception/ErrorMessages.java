@@ -21,4 +21,14 @@ public final class ErrorMessages {
   public static final String INVALID_OPERAND = "invalid operand value";
 
   public static final String INVALID_OPERAND_DATA_TYPE = "invalid operand data type";
+
+  public static final String INVALID_EXPERIMENT_STATUS = "invalid experiment status";
+
+  public static final String INVALID_EXPERIMENT_TYPE = "invalid experiment type";
+
+  public static final String INVALID_EXPERIMENT_HEALTH = "invalid experiment health status";
+
+  public static final String INVALID_EXPERIMENT_STRATEGY = "invalid experiment strategy";
+
+  public static final String INVALID_ASSIGNMENT_DOMAIN = "invalid assignment domain";
 }

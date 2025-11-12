@@ -88,11 +88,16 @@ public class ExperimentServiceImpl implements ExperimentService {
       request.setProjectKey(projectKey);
       request.setExperimentId(experimentId);
 
+      // Generate experiment_key from name: replace spaces and hyphens with underscores
+      String experimentKey = generateExperimentKey(request.getName());
+      request.setExperimentKey(experimentKey);
+
       log.debug(
-          "Using tenantId: {}, projectKey: {} from header, generated experimentId: {} for experiment: {}",
+          "Using tenantId: {}, projectKey: {} from header, generated experimentId: {}, experimentKey: {} for experiment: {}",
           tenantId,
           projectKey,
           experimentId,
+          experimentKey,
           request.getName());
 
       // Execute all insert operations in a transaction (delegated to DAO)
@@ -386,6 +391,19 @@ public class ExperimentServiceImpl implements ExperimentService {
       return Single.just(true);
     }
     return ownerDAO.insertOwner(connection, projectKey, experimentId, owner);
+  }
+
+  /**
+   * Generates experiment key from experiment name by replacing spaces and hyphens with underscores.
+   *
+   * @param name experiment name
+   * @return experiment key with underscores
+   */
+  private String generateExperimentKey(String name) {
+    if (name == null || name.isEmpty()) {
+      return "";
+    }
+    return name.replaceAll("[ -]", "_");
   }
 
   private static class UpdateContext {

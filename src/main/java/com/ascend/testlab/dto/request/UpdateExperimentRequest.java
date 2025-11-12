@@ -1,11 +1,14 @@
 package com.ascend.testlab.dto.request;
 
+import com.ascend.testlab.annotations.ValidEnumValue;
+import com.ascend.testlab.constants.Constants;
 import com.ascend.testlab.constants.enums.ExperimentHealth;
 import com.ascend.testlab.constants.enums.ExperimentStatus;
 import com.ascend.testlab.constants.enums.ExperimentStrategy;
 import com.ascend.testlab.constants.enums.ExperimentType;
 import com.ascend.testlab.entity.AssignmentDomain;
 import com.ascend.testlab.entity.Variant;
+import com.ascend.testlab.exception.ErrorMessages;
 import com.ascend.testlab.validation.annotations.ValidVariantKeys;
 import com.ascend.testlab.validation.annotations.ValidVariantWeights;
 import com.ascend.testlab.variantWeights.VariantWeights;
@@ -44,12 +47,24 @@ public class UpdateExperimentRequest {
   private String hypothesis;
 
   @JsonProperty("status")
+  @ValidEnumValue(
+      enumClass = ExperimentStatus.class,
+      method = Constants.NAME,
+      message = ErrorMessages.INVALID_EXPERIMENT_STATUS)
   private ExperimentStatus status;
 
   @JsonProperty("type")
+  @ValidEnumValue(
+      enumClass = ExperimentType.class,
+      method = Constants.NAME,
+      message = ErrorMessages.INVALID_EXPERIMENT_TYPE)
   private ExperimentType type;
 
   @JsonProperty("guardrail_health_status")
+  @ValidEnumValue(
+      enumClass = ExperimentHealth.class,
+      method = Constants.NAME,
+      message = ErrorMessages.INVALID_EXPERIMENT_HEALTH)
   private ExperimentHealth guardrailHealthStatus;
 
   @JsonProperty("cohorts")
@@ -62,6 +77,10 @@ public class UpdateExperimentRequest {
   private VariantWeights variantWeights;
 
   @JsonProperty("assignment_strategy")
+  @ValidEnumValue(
+      enumClass = ExperimentStrategy.class,
+      method = Constants.NAME,
+      message = ErrorMessages.INVALID_EXPERIMENT_STRATEGY)
   private ExperimentStrategy assignmentStrategy;
 
   @JsonProperty("variants")
@@ -71,9 +90,17 @@ public class UpdateExperimentRequest {
   private Map<String, @Valid Variant> variants;
 
   @JsonProperty("distribution_strategy")
+  @ValidEnumValue(
+      enumClass = ExperimentStrategy.class,
+      method = Constants.NAME,
+      message = ErrorMessages.INVALID_EXPERIMENT_STRATEGY)
   private ExperimentStrategy distributionStrategy;
 
   @JsonProperty("assignment_domain")
+  @ValidEnumValue(
+      enumClass = AssignmentDomain.class,
+      method = Constants.NAME,
+      message = ErrorMessages.INVALID_ASSIGNMENT_DOMAIN)
   private AssignmentDomain assignmentDomain;
 
   @JsonProperty("overrides")

@@ -164,6 +164,8 @@ components:
           maxLength: 64
           minLength: 1
           type: string
+        experiment_key:
+          type: string
         description:
           maxLength: 255
           minLength: 0

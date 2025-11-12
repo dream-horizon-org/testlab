@@ -21,6 +21,13 @@ public class EnumValueValidator implements ConstraintValidator<ValidEnumValue, O
     if (value == null) {
       return true;
     }
+
+    // If the value is already an enum instance of the expected type, it's valid
+    if (enumClass.isInstance(value)) {
+      return true;
+    }
+
+    // Otherwise, validate string value against enum method results
     return invokeMethodAndValidateValue(value);
   }
 

@@ -1,5 +1,7 @@
 package com.ascend.testlab.dto.request;
 
+import com.ascend.testlab.annotations.ValidEnumValue;
+import com.ascend.testlab.constants.Constants;
 import com.ascend.testlab.constants.enums.ExperimentHealth;
 import com.ascend.testlab.constants.enums.ExperimentStatus;
 import com.ascend.testlab.constants.enums.ExperimentStrategy;
@@ -7,6 +9,7 @@ import com.ascend.testlab.constants.enums.ExperimentType;
 import com.ascend.testlab.entity.AssignmentDomain;
 import com.ascend.testlab.entity.RuleAttributes;
 import com.ascend.testlab.entity.Variant;
+import com.ascend.testlab.exception.ErrorMessages;
 import com.ascend.testlab.validation.annotations.ValidVariantKeys;
 import com.ascend.testlab.validation.annotations.ValidVariantWeights;
 import com.ascend.testlab.variantWeights.VariantWeights;
@@ -45,6 +48,9 @@ public class CreateExperimentRequest {
   @Size(min = 1, max = 64, message = "Name must be between 1 and 64 characters")
   private String name;
 
+  @JsonProperty("experiment_key")
+  private String experimentKey;
+
   @JsonProperty("description")
   @NotBlank(message = "Description is required")
   @Size(max = 255, message = "Description must not exceed 255 characters")
@@ -57,13 +63,25 @@ public class CreateExperimentRequest {
 
   @JsonProperty("status")
   @NotNull(message = "Status is required")
+  @ValidEnumValue(
+      enumClass = ExperimentStatus.class,
+      method = Constants.NAME,
+      message = ErrorMessages.INVALID_EXPERIMENT_STATUS)
   private ExperimentStatus status;
 
   @JsonProperty("type")
   @NotNull(message = "Experiment type is required")
+  @ValidEnumValue(
+      enumClass = ExperimentType.class,
+      method = Constants.NAME,
+      message = ErrorMessages.INVALID_EXPERIMENT_TYPE)
   private ExperimentType type;
 
   @JsonProperty("guardrail_health_status")
+  @ValidEnumValue(
+      enumClass = ExperimentHealth.class,
+      method = Constants.NAME,
+      message = ErrorMessages.INVALID_EXPERIMENT_HEALTH)
   private ExperimentHealth guardrailHealthStatus;
 
   @JsonProperty("metrics")
@@ -93,6 +111,10 @@ public class CreateExperimentRequest {
 
   @JsonProperty("assignment_strategy")
   @NotNull(message = "Assignment strategy is required")
+  @ValidEnumValue(
+      enumClass = ExperimentStrategy.class,
+      method = Constants.NAME,
+      message = ErrorMessages.INVALID_EXPERIMENT_STRATEGY)
   private ExperimentStrategy assignmentStrategy;
 
   @JsonProperty("rule_attributes")
@@ -112,9 +134,17 @@ public class CreateExperimentRequest {
   private Map<String, @Valid Variant> variants;
 
   @JsonProperty("distribution_strategy")
+  @ValidEnumValue(
+      enumClass = ExperimentStrategy.class,
+      method = Constants.NAME,
+      message = ErrorMessages.INVALID_EXPERIMENT_STRATEGY)
   private ExperimentStrategy distributionStrategy;
 
   @JsonProperty("assignment_domain")
+  @ValidEnumValue(
+      enumClass = AssignmentDomain.class,
+      method = Constants.NAME,
+      message = ErrorMessages.INVALID_ASSIGNMENT_DOMAIN)
   private AssignmentDomain assignmentDomain;
 
   @JsonProperty("overrides")
