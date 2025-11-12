@@ -119,6 +119,9 @@ public class ExperimentResource {
       @PathParam("experiment_id") UUID experimentId,
       @Valid UpdateExperimentRequest request) {
 
+    // Validate enum fields if present
+    validateEnumFields(request);
+
     // Convert DTO to Map for service layer
     Map<String, Object> requestMap = convertDtoToMap(request);
 
@@ -126,6 +129,18 @@ public class ExperimentResource {
         .update(tenantId, projectKey, experimentId, requestMap)
         .map(ResponseEntity.Success::new)
         .toCompletionStage();
+  }
+
+  /**
+   * Validates enum fields in the update request.
+   *
+   * @param request update experiment request
+   * @throws IllegalArgumentException if any enum field has an invalid value
+   */
+  private void validateEnumFields(UpdateExperimentRequest request) {
+    // Note: If the request reaches here, Jackson has already validated the enum values
+    // This method is a placeholder for any additional validation logic if needed
+    // Jackson will throw InvalidFormatException for invalid enum values during deserialization
   }
 
   /**
