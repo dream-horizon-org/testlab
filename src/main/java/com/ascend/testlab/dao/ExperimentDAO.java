@@ -65,4 +65,23 @@ public interface ExperimentDAO {
    * @return Single emitting true on success, false on failure
    */
   Single<Boolean> updatePartial(UUID projectKey, UUID experimentId, Map<String, Object> request);
+
+  /**
+   * Updates experiment with tags and logs in a transaction.
+   *
+   * @param projectKey project identifier for partitioning
+   * @param experimentId experiment identifier
+   * @param experimentFields map of experiment fields to update
+   * @param tags list of tags to update (null if no tag update)
+   * @param previousData experiment data before update
+   * @param updatedBy user who updated the experiment
+   * @return Maybe emitting true on success
+   */
+  Maybe<Boolean> updateWithTransaction(
+      UUID projectKey,
+      UUID experimentId,
+      Map<String, Object> experimentFields,
+      List<String> tags,
+      Map<String, Object> previousData,
+      String updatedBy);
 }

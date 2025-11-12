@@ -721,4 +721,144 @@ public class ExperimentDAOImpl implements ExperimentDAO {
               return false;
             });
   }
+
+  /**
+   * Updates experiment with tags and logs in a transaction.
+   *
+   * @param projectKey project identifier for partitioning
+   * @param experimentId experiment identifier
+   * @param experimentFields map of experiment fields to update
+   * @param tags list of tags to update (null if no tag update)
+   * @param previousData experiment data before update
+   * @param updatedBy user who updated the experiment
+   * @return Maybe emitting true on success
+   */
+  @Override
+  public Maybe<Boolean> updateWithTransaction(
+      UUID projectKey,
+      UUID experimentId,
+      Map<String, Object> experimentFields,
+      List<String> tags,
+      Map<String, Object> previousData,
+      String updatedBy) {
+
+    log.info(
+        "DAO: Starting transactional update, projectKey: {}, experimentId: {}",
+        projectKey,
+        experimentId);
+
+    return pgWriterClient.executeWithTransaction(
+        connection ->
+            updateExperimentFields(projectKey, experimentId, experimentFields)
+                .flatMap(success -> validateUpdateSuccess(success, "experiment fields"))
+                .flatMap(unused -> updateTagsIfPresent(connection, projectKey, experimentId, tags))
+                .flatMap(success -> validateUpdateSuccess(success, "tags"))
+                .flatMapMaybe(
+                    unused ->
+                        logUpdate(connection, projectKey, experimentId, previousData, updatedBy)));
+  }
+
+  /**
+   * Updates experiment fields if not empty.
+   *
+   * @param projectKey project identifier
+   * @param experimentId experiment identifier
+   * @param fields fields to update
+   * @return Single emitting true on success
+   */
+  private Single<Boolean> updateExperimentFields(
+      UUID projectKey, UUID experimentId, Map<String, Object> fields) {
+    return fields.isEmpty() ? Single.just(true) : updatePartial(projectKey, experimentId, fields);
+  }
+
+  /**
+   * Updates tags if present.
+   *
+   * @param connection SQL connection
+   * @param projectKey project identifier
+   * @param experimentId experiment identifier
+   * @param tags tags to update
+   * @return Single emitting true on success
+   */
+  private Single<Boolean> updateTagsIfPresent(
+      io.vertx.rxjava3.sqlclient.SqlConnection connection,
+      UUID projectKey,
+      UUID experimentId,
+      List<String> tags) {
+    if (tags == null) {
+      return Single.just(true);
+    }
+
+    return tagDAO
+        .getActiveTags(connection, projectKey, experimentId)
+        .flatMap(
+            existingTags -> {
+              List<String> tagsToRemove =
+                  existingTags.stream()
+                      .filter(tag -> !tags.contains(tag))
+                      .collect(java.util.stream.Collectors.toList());
+
+              List<String> tagsToAdd =
+                  tags.stream()
+                      .filter(tag -> !existingTags.contains(tag))
+                      .collect(java.util.stream.Collectors.toList());
+
+              Single<Boolean> markInactive =
+                  tagsToRemove.isEmpty()
+                      ? Single.just(true)
+                      : tagDAO.markTagsInactive(connection, projectKey, experimentId, tagsToRemove);
+
+              Single<Boolean> insertNew =
+                  tagsToAdd.isEmpty()
+                      ? Single.just(true)
+                      : tagDAO.batchInsertTags(connection, projectKey, experimentId, tagsToAdd);
+
+              return markInactive.flatMap(
+                  markSuccess -> {
+                    if (!markSuccess) {
+                      return Single.error(new RuntimeException("Failed to mark tags as inactive"));
+                    }
+                    return insertNew;
+                  });
+            });
+  }
+
+  /**
+   * Logs the update operation.
+   *
+   * @param connection SQL connection
+   * @param projectKey project identifier
+   * @param experimentId experiment identifier
+   * @param previousData data before update
+   * @param updatedBy user who updated
+   * @return Maybe emitting true on success
+   */
+  private Maybe<Boolean> logUpdate(
+      io.vertx.rxjava3.sqlclient.SqlConnection connection,
+      UUID projectKey,
+      UUID experimentId,
+      Map<String, Object> previousData,
+      String updatedBy) {
+
+    return getExperimentData(projectKey, experimentId)
+        .flatMap(
+            currentData ->
+                experimentUpdateLogDAO.insertUpdateLog(
+                    connection, projectKey, experimentId, previousData, currentData, updatedBy))
+        .map(success -> true)
+        .toMaybe();
+  }
+
+  /**
+   * Validates operation success.
+   *
+   * @param success operation result
+   * @param operation operation name
+   * @return Single emitting true on success, error otherwise
+   */
+  private Single<Boolean> validateUpdateSuccess(Boolean success, String operation) {
+    return success
+        ? Single.just(true)
+        : Single.error(new RuntimeException("Failed to update " + operation));
+  }
 }

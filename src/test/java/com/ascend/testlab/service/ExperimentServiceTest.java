@@ -290,6 +290,17 @@ public class ExperimentServiceTest {
   @DisplayName("Update Experiment Tests")
   class UpdateExperimentTests {
 
+    private void mockUpdateWithTransaction() {
+      Map<String, Object> previousData = new HashMap<>();
+      previousData.put("description", "Old description");
+
+      when(experimentDAO.getExperimentData(any(UUID.class), any(UUID.class)))
+          .thenReturn(Single.just(previousData));
+      when(experimentDAO.updateWithTransaction(
+              any(UUID.class), any(UUID.class), anyMap(), any(), anyMap(), any()))
+          .thenReturn(Maybe.just(true));
+    }
+
     @Test
     @DisplayName("Should successfully update experiment")
     void testUpdateExperimentSuccess() {
@@ -299,8 +310,15 @@ public class ExperimentServiceTest {
       updates.put("status", "LIVE");
       updates.put("exposure", 75);
 
-      when(experimentDAO.updatePartial(any(UUID.class), any(UUID.class), anyMap()))
-          .thenReturn(Single.just(true));
+      Map<String, Object> previousData = new HashMap<>();
+      previousData.put("description", "Old description");
+      previousData.put("status", "DRAFT");
+
+      when(experimentDAO.getExperimentData(any(UUID.class), any(UUID.class)))
+          .thenReturn(Single.just(previousData));
+      when(experimentDAO.updateWithTransaction(
+              any(UUID.class), any(UUID.class), anyMap(), any(), anyMap(), any()))
+          .thenReturn(Maybe.just(true));
 
       // Act
       TestObserver<Boolean> testObserver =
@@ -311,7 +329,10 @@ public class ExperimentServiceTest {
       testObserver.assertNoErrors();
       testObserver.assertValue(true);
 
-      verify(experimentDAO, times(1)).updatePartial(any(UUID.class), any(UUID.class), anyMap());
+      verify(experimentDAO, times(1)).getExperimentData(any(UUID.class), any(UUID.class));
+      verify(experimentDAO, times(1))
+          .updateWithTransaction(
+              any(UUID.class), any(UUID.class), anyMap(), any(), anyMap(), any());
     }
 
     @Test
@@ -321,8 +342,14 @@ public class ExperimentServiceTest {
       Map<String, Object> updates = new HashMap<>();
       updates.put("description", "Updated description");
 
-      when(experimentDAO.updatePartial(any(UUID.class), any(UUID.class), anyMap()))
-          .thenReturn(Single.just(true));
+      Map<String, Object> previousData = new HashMap<>();
+      previousData.put("description", "Old description");
+
+      when(experimentDAO.getExperimentData(any(UUID.class), any(UUID.class)))
+          .thenReturn(Single.just(previousData));
+      when(experimentDAO.updateWithTransaction(
+              any(UUID.class), any(UUID.class), anyMap(), any(), anyMap(), any()))
+          .thenReturn(Maybe.just(true));
 
       // Act
       TestObserver<Boolean> testObserver =
@@ -346,8 +373,7 @@ public class ExperimentServiceTest {
       updates.put("exposure", 80);
       updates.put("threshold", 15000L);
 
-      when(experimentDAO.updatePartial(any(UUID.class), any(UUID.class), anyMap()))
-          .thenReturn(Single.just(true));
+      mockUpdateWithTransaction();
 
       // Act
       TestObserver<Boolean> testObserver =
@@ -366,8 +392,7 @@ public class ExperimentServiceTest {
       Map<String, Object> updates = new HashMap<>();
       updates.put("cohorts", Arrays.asList("premium_users", "mobile_users", "web_users"));
 
-      when(experimentDAO.updatePartial(any(UUID.class), any(UUID.class), anyMap()))
-          .thenReturn(Single.just(true));
+      mockUpdateWithTransaction();
 
       // Act
       TestObserver<Boolean> testObserver =
@@ -395,8 +420,7 @@ public class ExperimentServiceTest {
           Arrays.asList("user1@example.com", "user2@example.com", "user3@example.com");
       updates.put("overrides", overrides);
 
-      when(experimentDAO.updatePartial(any(UUID.class), any(UUID.class), anyMap()))
-          .thenReturn(Single.just(true));
+      mockUpdateWithTransaction();
 
       // Act
       TestObserver<Boolean> testObserver =
@@ -415,8 +439,12 @@ public class ExperimentServiceTest {
       Map<String, Object> updates = new HashMap<>();
       updates.put("description", "Updated description");
 
-      when(experimentDAO.updatePartial(any(UUID.class), any(UUID.class), anyMap()))
-          .thenReturn(Single.just(false));
+      Map<String, Object> previousData = new HashMap<>();
+      when(experimentDAO.getExperimentData(any(UUID.class), any(UUID.class)))
+          .thenReturn(Single.just(previousData));
+      when(experimentDAO.updateWithTransaction(
+              any(UUID.class), any(UUID.class), anyMap(), any(), anyMap(), any()))
+          .thenReturn(Maybe.just(false));
 
       // Act
       TestObserver<Boolean> testObserver =
@@ -436,7 +464,7 @@ public class ExperimentServiceTest {
       updates.put("description", "Updated description");
 
       RuntimeException exception = new RuntimeException("Database connection failed");
-      when(experimentDAO.updatePartial(any(UUID.class), any(UUID.class), anyMap()))
+      when(experimentDAO.getExperimentData(any(UUID.class), any(UUID.class)))
           .thenReturn(Single.error(exception));
 
       // Act
@@ -455,8 +483,7 @@ public class ExperimentServiceTest {
       // Arrange
       Map<String, Object> updates = new HashMap<>();
 
-      when(experimentDAO.updatePartial(any(UUID.class), any(UUID.class), anyMap()))
-          .thenReturn(Single.just(true));
+      mockUpdateWithTransaction();
 
       // Act
       TestObserver<Boolean> testObserver =
@@ -472,8 +499,7 @@ public class ExperimentServiceTest {
     @DisplayName("Should handle null update map")
     void testUpdateNullMap() {
       // Arrange
-      when(experimentDAO.updatePartial(any(UUID.class), any(UUID.class), isNull()))
-          .thenReturn(Single.just(true));
+      mockUpdateWithTransaction();
 
       // Act
       TestObserver<Boolean> testObserver =
@@ -545,8 +571,12 @@ public class ExperimentServiceTest {
       Map<String, Object> updates3 = new HashMap<>();
       updates3.put("exposure", 90);
 
-      when(experimentDAO.updatePartial(any(UUID.class), any(UUID.class), anyMap()))
-          .thenReturn(Single.just(true));
+      Map<String, Object> previousData = new HashMap<>();
+      when(experimentDAO.getExperimentData(any(UUID.class), any(UUID.class)))
+          .thenReturn(Single.just(previousData));
+      when(experimentDAO.updateWithTransaction(
+              any(UUID.class), any(UUID.class), anyMap(), any(), anyMap(), any()))
+          .thenReturn(Maybe.just(true));
 
       // Act
       TestObserver<Boolean> observer1 =
@@ -561,7 +591,10 @@ public class ExperimentServiceTest {
       observer2.assertComplete().assertNoErrors().assertValue(true);
       observer3.assertComplete().assertNoErrors().assertValue(true);
 
-      verify(experimentDAO, times(3)).updatePartial(any(UUID.class), any(UUID.class), anyMap());
+      verify(experimentDAO, times(3)).getExperimentData(any(UUID.class), any(UUID.class));
+      verify(experimentDAO, times(3))
+          .updateWithTransaction(
+              any(UUID.class), any(UUID.class), anyMap(), any(), anyMap(), any());
     }
   }
 

@@ -9,7 +9,6 @@ import com.ascend.testlab.dto.request.CreateExperimentRequest;
 import com.ascend.testlab.dto.response.CreateExperimentResponse;
 import com.ascend.testlab.service.ExperimentService;
 import com.google.inject.Inject;
-import io.reactivex.rxjava3.core.Maybe;
 import io.reactivex.rxjava3.core.Single;
 import io.vertx.rxjava3.sqlclient.SqlConnection;
 import java.util.HashMap;
@@ -236,150 +235,15 @@ public class ExperimentServiceImpl implements ExperimentService {
                     previousData.keySet()))
         .flatMap(
             previousData ->
-                executeUpdateTransaction(projectKey, experimentId, context, previousData)
+                experimentDAO
+                    .updateWithTransaction(
+                        projectKey,
+                        experimentId,
+                        context.experimentFields,
+                        context.tags,
+                        previousData,
+                        context.updatedBy)
                     .toSingle());
-  }
-
-  /**
-   * Executes the actual update transaction with all operations.
-   *
-   * @param projectKey project identifier
-   * @param experimentId experiment identifier
-   * @param context update context
-   * @param previousData experiment data before update
-   * @return Maybe emitting true on success
-   */
-  private Maybe<Boolean> executeUpdateTransaction(
-      UUID projectKey, UUID experimentId, UpdateContext context, Map<String, Object> previousData) {
-
-    return pgWriterClient.executeWithTransaction(
-        connection ->
-            updateExperimentFields(projectKey, experimentId, context.experimentFields)
-                .flatMap(success -> validateSuccess(success, "experiment fields"))
-                .flatMap(
-                    unused ->
-                        updateExperimentTags(connection, projectKey, experimentId, context.tags))
-                .flatMap(success -> validateSuccess(success, "tags"))
-                .flatMapMaybe(
-                    unused ->
-                        getAndLogUpdate(
-                            connection,
-                            projectKey,
-                            experimentId,
-                            previousData,
-                            context.updatedBy)));
-  }
-
-  /**
-   * Updates experiment fields if present.
-   *
-   * @param projectKey project identifier
-   * @param experimentId experiment identifier
-   * @param fields fields to update
-   * @return Single emitting true on success
-   */
-  private Single<Boolean> updateExperimentFields(
-      UUID projectKey, UUID experimentId, Map<String, Object> fields) {
-    return fields.isEmpty()
-        ? Single.just(true)
-        : experimentDAO.updatePartial(projectKey, experimentId, fields);
-  }
-
-  /**
-   * Updates tags if present.
-   *
-   * @param connection SQL connection
-   * @param projectKey project identifier
-   * @param experimentId experiment identifier
-   * @param tags tags to update
-   * @return Single emitting true on success
-   */
-  private Single<Boolean> updateExperimentTags(
-      io.vertx.rxjava3.sqlclient.SqlConnection connection,
-      UUID projectKey,
-      UUID experimentId,
-      List<String> tags) {
-    return tags == null
-        ? Single.just(true)
-        : updateTags(connection, projectKey, experimentId, tags);
-  }
-
-  /**
-   * Validates operation success and continues or errors.
-   *
-   * @param success operation result
-   * @param operation operation name for error message
-   * @return Single emitting true on success, error otherwise
-   */
-  private Single<Boolean> validateSuccess(Boolean success, String operation) {
-    return success
-        ? Single.just(true)
-        : Single.error(new RuntimeException("Failed to update " + operation));
-  }
-
-  /**
-   * Gets current data and logs the update.
-   *
-   * @param connection SQL connection
-   * @param projectKey project identifier
-   * @param experimentId experiment identifier
-   * @param previousData data before update
-   * @param updatedBy user who performed update
-   * @return Maybe emitting true on success
-   */
-  private Maybe<Boolean> getAndLogUpdate(
-      io.vertx.rxjava3.sqlclient.SqlConnection connection,
-      UUID projectKey,
-      UUID experimentId,
-      Map<String, Object> previousData,
-      String updatedBy) {
-
-    return experimentDAO
-        .getExperimentData(projectKey, experimentId)
-        .doOnSuccess(
-            currentData ->
-                log.debug(
-                    "Retrieved current data for experimentId: {}, fields: {}",
-                    experimentId,
-                    currentData.keySet()))
-        .flatMapMaybe(
-            currentData ->
-                insertUpdateLog(
-                    connection, projectKey, experimentId, previousData, currentData, updatedBy));
-  }
-
-  /**
-   * Inserts update log entry.
-   *
-   * @param connection SQL connection
-   * @param projectKey project identifier
-   * @param experimentId experiment identifier
-   * @param previousData data before update
-   * @param currentData data after update
-   * @param updatedBy user who performed update
-   * @return Maybe emitting true on success
-   */
-  private Maybe<Boolean> insertUpdateLog(
-      io.vertx.rxjava3.sqlclient.SqlConnection connection,
-      UUID projectKey,
-      UUID experimentId,
-      Map<String, Object> previousData,
-      Map<String, Object> currentData,
-      String updatedBy) {
-
-    return experimentUpdateLogDAO
-        .insertUpdateLog(connection, projectKey, experimentId, previousData, currentData, updatedBy)
-        .flatMapMaybe(
-            success -> {
-              if (!success) {
-                return Maybe.error(new RuntimeException("Failed to insert update log"));
-              }
-              log.info(
-                  "Successfully updated experiment, tags, and logged update for experimentId: {}, projectKey: {}",
-                  experimentId,
-                  projectKey);
-              return Maybe.just(true);
-            });
   }
 
   /**
