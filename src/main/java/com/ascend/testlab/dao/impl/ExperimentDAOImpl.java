@@ -509,7 +509,6 @@ public class ExperimentDAOImpl implements ExperimentDAO {
         "assignment_domain",
         "assignment_strategy",
         "overrides",
-        "rule_attributes",
         "winning_variant",
         "exposure",
         "threshold",

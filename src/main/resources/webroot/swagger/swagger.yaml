@@ -409,12 +409,6 @@ components:
           maxLength: 255
           minLength: 0
           type: string
-        rule_attributes:
-          maxItems: 50
-          minItems: 0
-          type: array
-          items:
-            $ref: '#/components/schemas/RuleAttributes'
         winning_variant:
           $ref: '#/components/schemas/VariantWeights'
         exposure:

@@ -5,7 +5,6 @@ import com.ascend.testlab.constants.enums.ExperimentStatus;
 import com.ascend.testlab.constants.enums.ExperimentStrategy;
 import com.ascend.testlab.constants.enums.ExperimentType;
 import com.ascend.testlab.entity.AssignmentDomain;
-import com.ascend.testlab.entity.RuleAttributes;
 import com.ascend.testlab.entity.Variant;
 import com.ascend.testlab.validation.annotations.ValidVariantKeys;
 import com.ascend.testlab.validation.annotations.ValidVariantWeights;
@@ -80,11 +79,6 @@ public class UpdateExperimentRequest {
   @JsonProperty("overrides")
   @Size(max = 255, message = "Overrides must not exceed 255 characters")
   private String overrides;
-
-  @JsonProperty("rule_attributes")
-  @Valid
-  @Size(max = 50, message = "Maximum 50 rule attributes allowed")
-  private List<RuleAttributes> ruleAttributes;
 
   @JsonProperty("winning_variant")
   @Valid
