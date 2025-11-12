@@ -27,6 +27,15 @@ public interface ExperimentDAO {
   Single<Long> create(UUID tenantId, UUID projectKey, CreateExperimentRequest request);
 
   /**
+   * Gets current experiment data as a map.
+   *
+   * @param projectKey project identifier for partitioning
+   * @param experimentId experiment identifier
+   * @return Single emitting map of experiment data
+   */
+  Single<Map<String, Object>> getExperimentData(UUID projectKey, UUID experimentId);
+
+  /**
    * Updates experiment fields partially based on provided request map.
    *
    * @param projectKey project identifier for partitioning

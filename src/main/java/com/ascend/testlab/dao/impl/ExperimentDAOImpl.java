@@ -1,6 +1,8 @@
 package com.ascend.testlab.dao.impl;
 
+import com.ascend.testlab.client.postgresql.PgReaderClient;
 import com.ascend.testlab.client.postgresql.PgWriterClient;
+import com.ascend.testlab.constants.postgresql.ReadQuery;
 import com.ascend.testlab.constants.postgresql.WriteQuery;
 import com.ascend.testlab.dao.ExperimentDAO;
 import com.ascend.testlab.dto.request.CreateExperimentRequest;
@@ -8,8 +10,12 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.inject.Inject;
 import io.reactivex.rxjava3.core.Single;
+import io.vertx.core.json.JsonArray;
+import io.vertx.core.json.JsonObject;
+import io.vertx.rxjava3.sqlclient.Row;
 import io.vertx.rxjava3.sqlclient.Tuple;
 import java.time.Instant;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
@@ -30,17 +36,20 @@ import lombok.extern.slf4j.Slf4j;
 public class ExperimentDAOImpl implements ExperimentDAO {
 
   private final PgWriterClient pgWriterClient;
+  private final PgReaderClient pgReaderClient;
 
   private static final ObjectMapper MAPPER = new ObjectMapper();
 
   /**
-   * Constructs ExperimentDAOImpl with PostgreSQL writer client.
+   * Constructs ExperimentDAOImpl with PostgreSQL writer and reader clients.
    *
    * @param pgWriterClient PostgreSQL writer client for database operations
+   * @param pgReaderClient PostgreSQL reader client for database operations
    */
   @Inject
-  public ExperimentDAOImpl(PgWriterClient pgWriterClient) {
+  public ExperimentDAOImpl(PgWriterClient pgWriterClient, PgReaderClient pgReaderClient) {
     this.pgWriterClient = pgWriterClient;
+    this.pgReaderClient = pgReaderClient;
   }
 
   /**
@@ -174,6 +183,78 @@ public class ExperimentDAOImpl implements ExperimentDAO {
           e);
       return Single.just(0L);
     }
+  }
+
+  /**
+   * Gets current experiment data as a map for update log.
+   *
+   * @param projectKey project identifier for partitioning
+   * @param experimentId experiment identifier
+   * @return Single emitting map of experiment data
+   */
+  @Override
+  public Single<Map<String, Object>> getExperimentData(UUID projectKey, UUID experimentId) {
+    log.debug(
+        "DAO: Getting experiment data for projectKey: {}, experimentId: {}",
+        projectKey,
+        experimentId);
+
+    Tuple params =
+        Tuple.tuple().addString(projectKey.toString()).addString(experimentId.toString());
+
+    return pgReaderClient
+        .fetchOne(ReadQuery.GET_EXPERIMENT_DATA, params, this::rowToMap)
+        .doOnSuccess(
+            data ->
+                log.info(
+                    "DAO: Successfully retrieved experiment data for experimentId: {}, fields: {}",
+                    experimentId,
+                    data.keySet()))
+        .doOnError(
+            error ->
+                log.error(
+                    "DAO: Failed to get experiment data for experimentId: {}, error: {}",
+                    experimentId,
+                    error.getMessage(),
+                    error))
+        .onErrorReturn(
+            error -> {
+              log.error(
+                  "DAO: Returning empty map for get experiment data, experimentId: {}, error: {}",
+                  experimentId,
+                  error.getMessage());
+              return new HashMap<>();
+            });
+  }
+
+  /**
+   * Converts database row to map.
+   *
+   * @param row database row
+   * @return map of column names to values
+   */
+  private Map<String, Object> rowToMap(Row row) {
+    Map<String, Object> map = new HashMap<>();
+    for (int i = 0; i < row.size(); i++) {
+      String columnName = row.getColumnName(i);
+      Object value = row.getValue(i);
+
+      // Convert JsonObject and JsonArray to Map/List for serialization
+      if (value instanceof JsonObject) {
+        map.put(columnName, ((JsonObject) value).getMap());
+      } else if (value instanceof JsonArray) {
+        map.put(columnName, ((JsonArray) value).getList());
+      } else if (value instanceof java.time.OffsetDateTime) {
+        // Convert OffsetDateTime to String for JSON serialization
+        map.put(columnName, value.toString());
+      } else if (value instanceof java.time.LocalDateTime) {
+        // Convert LocalDateTime to String for JSON serialization
+        map.put(columnName, value.toString());
+      } else {
+        map.put(columnName, value);
+      }
+    }
+    return map;
   }
 
   /**

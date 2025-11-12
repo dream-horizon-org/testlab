@@ -8,10 +8,18 @@ public final class WriteQuery {
           + "VALUES ($1, $2, $3, $4, $5, $6::experiment_status, $7::experiment_type, $8::experiment_health, $9::varchar[], $10::jsonb, $11::experiment_strategy, $12::jsonb, $13::jsonb, $14::jsonb, $15, $16, $17, $18, $19, to_tsvector('simple', $3))";
 
   public static final String INSERT_EXPERIMENT_TAG =
-      "INSERT INTO experiment.tags (experiment_id, project_key, tag) VALUES ($1, $2, $3)";
+      "INSERT INTO experiment.tags (experiment_id, project_key, tag, status) VALUES ($1, $2, $3, 1) "
+          + "ON CONFLICT (project_key, experiment_id, tag) DO UPDATE SET status = 1, updated_at = CURRENT_TIMESTAMP";
 
   public static final String INSERT_EXPERIMENT_OWNER =
       "INSERT INTO experiment.owners (experiment_id, project_key, owner) VALUES ($1, $2, $3)";
+
+  public static final String GET_ACTIVE_TAGS =
+      "SELECT tag FROM experiment.tags WHERE project_key = $1 AND experiment_id = $2 AND status = 1";
+
+  public static final String MARK_TAGS_INACTIVE =
+      "UPDATE experiment.tags SET status = 0, updated_at = CURRENT_TIMESTAMP "
+          + "WHERE project_key = $1 AND experiment_id = $2 AND tag = ANY($3)";
 
   public static final String DELETE_EXPERIMENT_TAGS =
       "DELETE FROM experiment.tags WHERE project_key = $1 AND experiment_id = $2";

@@ -1,5 +1,6 @@
 package com.ascend.testlab.dao.impl;
 
+import com.ascend.testlab.client.postgresql.PgReaderClient;
 import com.ascend.testlab.client.postgresql.PgWriterClient;
 import com.ascend.testlab.constants.postgresql.WriteQuery;
 import com.ascend.testlab.dao.TagDAO;
@@ -26,15 +27,18 @@ import lombok.extern.slf4j.Slf4j;
 public class TagDAOImpl implements TagDAO {
 
   private final PgWriterClient pgWriterClient;
+  private final PgReaderClient pgReaderClient;
 
   /**
-   * Constructs TagDAOImpl with PostgreSQL writer client.
+   * Constructs TagDAOImpl with PostgreSQL writer and reader clients.
    *
    * @param pgWriterClient PostgreSQL writer client for database operations
+   * @param pgReaderClient PostgreSQL reader client for database operations
    */
   @Inject
-  public TagDAOImpl(PgWriterClient pgWriterClient) {
+  public TagDAOImpl(PgWriterClient pgWriterClient, PgReaderClient pgReaderClient) {
     this.pgWriterClient = pgWriterClient;
+    this.pgReaderClient = pgReaderClient;
   }
 
   /**
@@ -96,6 +100,105 @@ public class TagDAOImpl implements TagDAO {
             error -> {
               log.error(
                   "DAO: Returning false for tag batch insert, experimentId: {}, error: {}",
+                  experimentId,
+                  error.getMessage());
+              return false;
+            });
+  }
+
+  /**
+   * Gets active tags for an experiment.
+   *
+   * @param connection SQL connection for transaction
+   * @param projectKey project identifier for partitioning
+   * @param experimentId experiment identifier
+   * @return Single emitting list of active tag names
+   */
+  @Override
+  public Single<List<String>> getActiveTags(
+      SqlConnection connection, UUID projectKey, UUID experimentId) {
+    log.debug(
+        "DAO: Getting active tags for experimentId: {}, projectKey: {}", experimentId, projectKey);
+
+    Tuple params =
+        Tuple.tuple().addString(projectKey.toString()).addString(experimentId.toString());
+
+    return pgReaderClient
+        .fetchAll(WriteQuery.GET_ACTIVE_TAGS, params, row -> row.getString("tag"))
+        .doOnSuccess(
+            tags ->
+                log.info(
+                    "DAO: Retrieved {} active tags for experimentId: {}, projectKey: {}",
+                    tags.size(),
+                    experimentId,
+                    projectKey))
+        .doOnError(
+            error ->
+                log.error(
+                    "DAO: Failed to get active tags for experimentId: {}, error: {}",
+                    experimentId,
+                    error.getMessage(),
+                    error))
+        .onErrorReturn(
+            error -> {
+              log.error(
+                  "DAO: Returning empty list for get active tags, experimentId: {}, error: {}",
+                  experimentId,
+                  error.getMessage());
+              return new ArrayList<>();
+            });
+  }
+
+  /**
+   * Marks tags as inactive (status = 0).
+   *
+   * @param connection SQL connection for transaction
+   * @param projectKey project identifier for partitioning
+   * @param experimentId experiment identifier
+   * @param tags list of tags to mark as inactive
+   * @return Single emitting true on success, false on failure
+   */
+  @Override
+  public Single<Boolean> markTagsInactive(
+      SqlConnection connection, UUID projectKey, UUID experimentId, List<String> tags) {
+    if (tags == null || tags.isEmpty()) {
+      log.debug("DAO: No tags to mark as inactive for experimentId: {}", experimentId);
+      return Single.just(true);
+    }
+
+    log.debug(
+        "DAO: Marking {} tags as inactive for experimentId: {}, projectKey: {}",
+        tags.size(),
+        experimentId,
+        projectKey);
+
+    String[] tagsArray = tags.toArray(new String[0]);
+    Tuple params =
+        Tuple.tuple()
+            .addString(projectKey.toString())
+            .addString(experimentId.toString())
+            .addValue(tagsArray);
+
+    return pgWriterClient
+        .execute(connection, WriteQuery.MARK_TAGS_INACTIVE, params)
+        .doOnSuccess(
+            success ->
+                log.info(
+                    "DAO: Successfully marked {} tags as inactive for experimentId: {}, projectKey: {}",
+                    tags.size(),
+                    experimentId,
+                    projectKey))
+        .doOnError(
+            error ->
+                log.error(
+                    "DAO: Failed to mark tags as inactive for experimentId: {}, error: {}",
+                    experimentId,
+                    error.getMessage(),
+                    error))
+        .onErrorReturn(
+            error -> {
+              log.error(
+                  "DAO: Returning false for mark tags inactive, experimentId: {}, error: {}",
                   experimentId,
                   error.getMessage());
               return false;

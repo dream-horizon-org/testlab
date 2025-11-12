@@ -29,6 +29,21 @@ public interface TagService {
       SqlConnection connection, UUID projectKey, UUID experimentId, List<String> tags);
 
   /**
+   * Updates tags for an experiment by merging with existing tags.
+   *
+   * <p>Gets existing active tags, marks removed tags as inactive (status=0), and inserts new tags
+   * with status=1.
+   *
+   * @param connection SQL connection for transaction
+   * @param projectKey project identifier for partitioning
+   * @param experimentId experiment identifier
+   * @param newTags list of new tags to set
+   * @return Single emitting true on success, false on failure
+   */
+  Single<Boolean> updateTags(
+      SqlConnection connection, UUID projectKey, UUID experimentId, List<String> newTags);
+
+  /**
    * Deletes all tags for an experiment.
    *
    * @param connection SQL connection for transaction

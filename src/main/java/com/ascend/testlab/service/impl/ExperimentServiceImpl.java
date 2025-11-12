@@ -15,6 +15,7 @@ import com.google.inject.Inject;
 import io.reactivex.rxjava3.core.Maybe;
 import io.reactivex.rxjava3.core.Single;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import lombok.extern.slf4j.Slf4j;
@@ -367,7 +368,9 @@ public class ExperimentServiceImpl implements ExperimentService {
   /**
    * Updates experiment fields partially with validation.
    *
-   * <p>Delegates to DAO for dynamic partial updates and returns success status.
+   * <p>Delegates to DAO for dynamic partial updates. If tags are included in the request, handles
+   * them separately in a transaction (marks removed tags as inactive, inserts new tags). Also logs
+   * the update in experiment_update_log table with previous and current data.
    *
    * @param tenantId tenant identifier for multi-tenancy
    * @param projectKey project identifier from header
@@ -386,35 +389,18 @@ public class ExperimentServiceImpl implements ExperimentService {
         request != null ? request.keySet() : "null");
 
     try {
-      return experimentDAO
-          .updatePartial(projectKey, experimentId, request)
-          .doOnSuccess(
-              success ->
-                  log.info(
-                      "Successfully updated experiment, tenantId: {}, projectKey: {}, experimentId: {}, success: {}",
-                      tenantId,
-                      projectKey,
-                      experimentId,
-                      success))
-          .doOnError(
-              error ->
-                  log.error(
-                      "Failed to update experiment for tenantId: {}, projectKey: {}, experimentId: {}, error: {}",
-                      tenantId,
-                      projectKey,
-                      experimentId,
-                      error.getMessage(),
-                      error))
-          .onErrorReturn(
-              error -> {
-                log.error(
-                    "Returning false for experiment update, tenantId: {}, projectKey: {}, experimentId: {}, error: {}",
-                    tenantId,
-                    projectKey,
-                    experimentId,
-                    error.getMessage());
-                return false;
-              });
+      UpdateContext context = extractUpdateContext(request, experimentId);
+
+      if (!context.hasUpdates()) {
+        log.warn("No fields to update for experimentId: {}", experimentId);
+        return Single.just(true);
+      }
+
+      return executeTransactionalUpdate(tenantId, projectKey, experimentId, context)
+          .doOnSuccess(success -> logSuccess(tenantId, projectKey, experimentId, success))
+          .doOnError(error -> logError(tenantId, projectKey, experimentId, error))
+          .onErrorReturn(error -> handleError(tenantId, projectKey, experimentId, error));
+
     } catch (Exception e) {
       log.error(
           "Exception in update experiment service for tenantId: {}, projectKey: {}, experimentId: {}, error: {}",
@@ -424,6 +410,287 @@ public class ExperimentServiceImpl implements ExperimentService {
           e.getMessage(),
           e);
       return Single.just(false);
+    }
+  }
+
+  /**
+   * Extracts update context from request, separating experiment fields, tags, and metadata.
+   *
+   * @param request raw update request
+   * @param experimentId experiment identifier for logging
+   * @return UpdateContext containing separated fields
+   */
+  private UpdateContext extractUpdateContext(Map<String, Object> request, UUID experimentId) {
+    Map<String, Object> experimentFields = new HashMap<>(request);
+
+    List<String> tags = extractField(experimentFields, "tags", List.class);
+    if (tags != null) {
+      log.debug("Tags found in update request for experimentId: {}, tags: {}", experimentId, tags);
+    }
+
+    String updatedBy = extractField(experimentFields, "updated_by", String.class);
+    if (updatedBy != null) {
+      log.debug("updated_by found in update request: {}", updatedBy);
+    }
+
+    return new UpdateContext(experimentFields, tags, updatedBy != null ? updatedBy : "system");
+  }
+
+  /**
+   * Extracts and removes a field from map with type safety.
+   *
+   * @param map source map
+   * @param key field key
+   * @param type expected type
+   * @return extracted value or null
+   */
+  @SuppressWarnings("unchecked")
+  private <T> T extractField(Map<String, Object> map, String key, Class<T> type) {
+    Object value = map.remove(key);
+    return type.isInstance(value) ? (T) value : null;
+  }
+
+  /**
+   * Executes transactional update including experiment fields, tags, and update log.
+   *
+   * @param tenantId tenant identifier
+   * @param projectKey project identifier
+   * @param experimentId experiment identifier
+   * @param context update context with separated fields
+   * @return Single emitting true on success
+   */
+  private Single<Boolean> executeTransactionalUpdate(
+      UUID tenantId, UUID projectKey, UUID experimentId, UpdateContext context) {
+
+    log.info(
+        "Executing transactional update for experimentId: {}, projectKey: {}",
+        experimentId,
+        projectKey);
+
+    return experimentDAO
+        .getExperimentData(projectKey, experimentId)
+        .doOnSuccess(
+            previousData ->
+                log.debug(
+                    "Retrieved previous data for experimentId: {}, fields: {}",
+                    experimentId,
+                    previousData.keySet()))
+        .flatMap(
+            previousData ->
+                executeUpdateTransaction(projectKey, experimentId, context, previousData)
+                    .toSingle());
+  }
+
+  /**
+   * Executes the actual update transaction with all operations.
+   *
+   * @param projectKey project identifier
+   * @param experimentId experiment identifier
+   * @param context update context
+   * @param previousData experiment data before update
+   * @return Maybe emitting true on success
+   */
+  private Maybe<Boolean> executeUpdateTransaction(
+      UUID projectKey, UUID experimentId, UpdateContext context, Map<String, Object> previousData) {
+
+    return pgWriterClient.executeWithTransaction(
+        connection ->
+            updateExperimentFields(projectKey, experimentId, context.experimentFields)
+                .flatMap(success -> validateSuccess(success, "experiment fields"))
+                .flatMap(
+                    unused ->
+                        updateExperimentTags(connection, projectKey, experimentId, context.tags))
+                .flatMap(success -> validateSuccess(success, "tags"))
+                .flatMapMaybe(
+                    unused ->
+                        getAndLogUpdate(
+                            connection,
+                            projectKey,
+                            experimentId,
+                            previousData,
+                            context.updatedBy)));
+  }
+
+  /**
+   * Updates experiment fields if present.
+   *
+   * @param projectKey project identifier
+   * @param experimentId experiment identifier
+   * @param fields fields to update
+   * @return Single emitting true on success
+   */
+  private Single<Boolean> updateExperimentFields(
+      UUID projectKey, UUID experimentId, Map<String, Object> fields) {
+    return fields.isEmpty()
+        ? Single.just(true)
+        : experimentDAO.updatePartial(projectKey, experimentId, fields);
+  }
+
+  /**
+   * Updates tags if present.
+   *
+   * @param connection SQL connection
+   * @param projectKey project identifier
+   * @param experimentId experiment identifier
+   * @param tags tags to update
+   * @return Single emitting true on success
+   */
+  private Single<Boolean> updateExperimentTags(
+      io.vertx.rxjava3.sqlclient.SqlConnection connection,
+      UUID projectKey,
+      UUID experimentId,
+      List<String> tags) {
+    return tags == null
+        ? Single.just(true)
+        : tagService.updateTags(connection, projectKey, experimentId, tags);
+  }
+
+  /**
+   * Validates operation success and continues or errors.
+   *
+   * @param success operation result
+   * @param operation operation name for error message
+   * @return Single emitting true on success, error otherwise
+   */
+  private Single<Boolean> validateSuccess(Boolean success, String operation) {
+    return success
+        ? Single.just(true)
+        : Single.error(new RuntimeException("Failed to update " + operation));
+  }
+
+  /**
+   * Gets current data and logs the update.
+   *
+   * @param connection SQL connection
+   * @param projectKey project identifier
+   * @param experimentId experiment identifier
+   * @param previousData data before update
+   * @param updatedBy user who performed update
+   * @return Maybe emitting true on success
+   */
+  private Maybe<Boolean> getAndLogUpdate(
+      io.vertx.rxjava3.sqlclient.SqlConnection connection,
+      UUID projectKey,
+      UUID experimentId,
+      Map<String, Object> previousData,
+      String updatedBy) {
+
+    return experimentDAO
+        .getExperimentData(projectKey, experimentId)
+        .doOnSuccess(
+            currentData ->
+                log.debug(
+                    "Retrieved current data for experimentId: {}, fields: {}",
+                    experimentId,
+                    currentData.keySet()))
+        .flatMapMaybe(
+            currentData ->
+                insertUpdateLog(
+                    connection, projectKey, experimentId, previousData, currentData, updatedBy));
+  }
+
+  /**
+   * Inserts update log entry.
+   *
+   * @param connection SQL connection
+   * @param projectKey project identifier
+   * @param experimentId experiment identifier
+   * @param previousData data before update
+   * @param currentData data after update
+   * @param updatedBy user who performed update
+   * @return Maybe emitting true on success
+   */
+  private Maybe<Boolean> insertUpdateLog(
+      io.vertx.rxjava3.sqlclient.SqlConnection connection,
+      UUID projectKey,
+      UUID experimentId,
+      Map<String, Object> previousData,
+      Map<String, Object> currentData,
+      String updatedBy) {
+
+    return experimentUpdateLogDAO
+        .insertUpdateLog(connection, projectKey, experimentId, previousData, currentData, updatedBy)
+        .flatMapMaybe(
+            success -> {
+              if (!success) {
+                return Maybe.error(new RuntimeException("Failed to insert update log"));
+              }
+              log.info(
+                  "Successfully updated experiment, tags, and logged update for experimentId: {}, projectKey: {}",
+                  experimentId,
+                  projectKey);
+              return Maybe.just(true);
+            });
+  }
+
+  /**
+   * Logs successful update.
+   *
+   * @param tenantId tenant identifier
+   * @param projectKey project identifier
+   * @param experimentId experiment identifier
+   * @param success operation result
+   */
+  private void logSuccess(UUID tenantId, UUID projectKey, UUID experimentId, Boolean success) {
+    log.info(
+        "Successfully updated experiment with update log, tenantId: {}, projectKey: {}, experimentId: {}, success: {}",
+        tenantId,
+        projectKey,
+        experimentId,
+        success);
+  }
+
+  /**
+   * Logs update error.
+   *
+   * @param tenantId tenant identifier
+   * @param projectKey project identifier
+   * @param experimentId experiment identifier
+   * @param error error that occurred
+   */
+  private void logError(UUID tenantId, UUID projectKey, UUID experimentId, Throwable error) {
+    log.error(
+        "Failed to update experiment for tenantId: {}, projectKey: {}, experimentId: {}, error: {}",
+        tenantId,
+        projectKey,
+        experimentId,
+        error.getMessage(),
+        error);
+  }
+
+  /**
+   * Handles update error and returns false.
+   *
+   * @param tenantId tenant identifier
+   * @param projectKey project identifier
+   * @param experimentId experiment identifier
+   * @param error error that occurred
+   * @return false to indicate failure
+   */
+  private Boolean handleError(UUID tenantId, UUID projectKey, UUID experimentId, Throwable error) {
+    log.error(
+        "Returning false for experiment update, tenantId: {}, projectKey: {}, experimentId: {}, error: {}",
+        tenantId,
+        projectKey,
+        experimentId,
+        error.getMessage());
+    return false;
+  }
+
+  /** Inner class to hold update context with separated fields. */
+  private static class UpdateContext {
+    final Map<String, Object> experimentFields;
+    final List<String> tags;
+    final String updatedBy;
+
+    UpdateContext(Map<String, Object> experimentFields, List<String> tags, String updatedBy) {
+      this.experimentFields = experimentFields;
+      this.tags = tags;
+      this.updatedBy = updatedBy;
+    }
+
+    boolean hasUpdates() {
+      return !experimentFields.isEmpty() || tags != null;
     }
   }
 }

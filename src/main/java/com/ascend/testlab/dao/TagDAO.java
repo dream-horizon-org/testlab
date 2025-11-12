@@ -29,6 +29,28 @@ public interface TagDAO {
       SqlConnection connection, UUID projectKey, UUID experimentId, List<String> tags);
 
   /**
+   * Gets active tags for an experiment.
+   *
+   * @param connection SQL connection for transaction
+   * @param projectKey project identifier for partitioning
+   * @param experimentId experiment identifier
+   * @return Single emitting list of active tag names
+   */
+  Single<List<String>> getActiveTags(SqlConnection connection, UUID projectKey, UUID experimentId);
+
+  /**
+   * Marks tags as inactive (status = 0).
+   *
+   * @param connection SQL connection for transaction
+   * @param projectKey project identifier for partitioning
+   * @param experimentId experiment identifier
+   * @param tags list of tags to mark as inactive
+   * @return Single emitting true on success, false on failure
+   */
+  Single<Boolean> markTagsInactive(
+      SqlConnection connection, UUID projectKey, UUID experimentId, List<String> tags);
+
+  /**
    * Deletes all tags for an experiment.
    *
    * @param connection SQL connection for transaction

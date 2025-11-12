@@ -18,4 +18,12 @@ public final class ReadQuery {
   /** The query to fetch distinct tags for a given project key. */
   public static final String FETCH_TAGS =
       "SELECT distinct tag FROM experiment.tags WHERE project_key = $1;";
+
+  /** The query to fetch experiment data for update log. */
+  public static final String GET_EXPERIMENT_DATA =
+      "SELECT project_key, experiment_id, name, description, hypothesis, status, type, "
+          + "guardrail_health_status, cohorts, variant_weights, assignment_strategy, overrides, "
+          + "rule_attributes, winning_variant, exposure, threshold, start_time, end_time, "
+          + "created_by, created_at, updated_at "
+          + "FROM experiments WHERE project_key = $1 AND experiment_id = $2";
 }

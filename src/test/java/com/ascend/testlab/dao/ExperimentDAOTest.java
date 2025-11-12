@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
+import com.ascend.testlab.client.postgresql.PgReaderClient;
 import com.ascend.testlab.client.postgresql.PgWriterClient;
 import com.ascend.testlab.constants.ExperimentHealth;
 import com.ascend.testlab.constants.ExperimentStatus;
@@ -35,6 +36,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 public class ExperimentDAOTest {
 
   @Mock private PgWriterClient pgWriterClient;
+  @Mock private PgReaderClient pgReaderClient;
 
   private ExperimentDAO experimentDAO;
 
@@ -44,7 +46,7 @@ public class ExperimentDAOTest {
 
   @BeforeEach
   void setUp() {
-    experimentDAO = new ExperimentDAOImpl(pgWriterClient);
+    experimentDAO = new ExperimentDAOImpl(pgWriterClient, pgReaderClient);
     testTenantId = UUID.randomUUID();
     testProjectKey = UUID.randomUUID();
     testExperimentId = UUID.randomUUID();
