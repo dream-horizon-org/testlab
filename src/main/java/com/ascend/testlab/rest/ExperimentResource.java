@@ -4,6 +4,7 @@ import com.ascend.testlab.dto.ResponseEntity;
 import com.ascend.testlab.dto.request.CreateExperimentRequest;
 import com.ascend.testlab.dto.request.UpdateExperimentRequest;
 import com.ascend.testlab.dto.response.CreateExperimentResponse;
+import com.ascend.testlab.dto.response.UpdateExperimentResponse;
 import com.ascend.testlab.service.ExperimentService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.inject.Inject;
@@ -113,7 +114,7 @@ public class ExperimentResource {
             responseCode = "400",
             description = "Invalid enum values or validation constraints")
       })
-  public CompletionStage<ResponseEntity.Success<Boolean>> update(
+  public CompletionStage<ResponseEntity.Success<UpdateExperimentResponse>> update(
       @HeaderParam("x-tenant-id") UUID tenantId,
       @HeaderParam("x-project-key") UUID projectKey,
       @PathParam("experiment_id") UUID experimentId,

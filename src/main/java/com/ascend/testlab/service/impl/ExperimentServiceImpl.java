@@ -7,6 +7,7 @@ import com.ascend.testlab.dao.OwnerDAO;
 import com.ascend.testlab.dao.TagDAO;
 import com.ascend.testlab.dto.request.CreateExperimentRequest;
 import com.ascend.testlab.dto.response.CreateExperimentResponse;
+import com.ascend.testlab.dto.response.UpdateExperimentResponse;
 import com.ascend.testlab.service.ExperimentService;
 import com.google.inject.Inject;
 import io.reactivex.rxjava3.core.Single;
@@ -142,7 +143,7 @@ public class ExperimentServiceImpl implements ExperimentService {
    * @return Single emitting true on success, false on failure
    */
   @Override
-  public Single<Boolean> update(
+  public Single<UpdateExperimentResponse> update(
       UUID tenantId, UUID projectKey, UUID experimentId, Map<String, Object> request) {
     log.info(
         "Updating experiment for tenantId: {}, projectKey: {}, experimentId: {}, fields: {}",
@@ -156,13 +157,18 @@ public class ExperimentServiceImpl implements ExperimentService {
 
       if (!context.hasUpdates()) {
         log.warn("No fields to update for experimentId: {}", experimentId);
-        return Single.just(true);
+        return Single.just(new UpdateExperimentResponse(experimentId, true, "No updates provided"));
       }
 
       return executeTransactionalUpdate(tenantId, projectKey, experimentId, context)
-          .doOnSuccess(success -> logSuccess(tenantId, projectKey, experimentId, success))
+          .map(
+              success ->
+                  new UpdateExperimentResponse(
+                      experimentId, success, success ? "updated" : "Update failed"))
+          .doOnSuccess(
+              response -> logSuccess(tenantId, projectKey, experimentId, response.isStatus()))
           .doOnError(error -> logError(tenantId, projectKey, experimentId, error))
-          .onErrorReturn(error -> handleError(tenantId, projectKey, experimentId, error));
+          .onErrorReturn(error -> handleUpdateError(tenantId, projectKey, experimentId, error));
 
     } catch (Exception e) {
       log.error(
@@ -172,7 +178,8 @@ public class ExperimentServiceImpl implements ExperimentService {
           experimentId,
           e.getMessage(),
           e);
-      return Single.just(false);
+      return Single.just(
+          new UpdateExperimentResponse(experimentId, false, "Failed: " + e.getMessage()));
     }
   }
 
@@ -303,6 +310,17 @@ public class ExperimentServiceImpl implements ExperimentService {
         experimentId,
         error.getMessage());
     return false;
+  }
+
+  private UpdateExperimentResponse handleUpdateError(
+      UUID tenantId, UUID projectKey, UUID experimentId, Throwable error) {
+    log.error(
+        "Returning error response for experiment update, tenantId: {}, projectKey: {}, experimentId: {}, error: {}",
+        tenantId,
+        projectKey,
+        experimentId,
+        error.getMessage());
+    return new UpdateExperimentResponse(experimentId, false, "Failed: " + error.getMessage());
   }
 
   /** Inner class to hold update context with separated fields. */

@@ -15,6 +15,7 @@ import com.ascend.testlab.dao.OwnerDAO;
 import com.ascend.testlab.dao.TagDAO;
 import com.ascend.testlab.dto.request.CreateExperimentRequest;
 import com.ascend.testlab.dto.response.CreateExperimentResponse;
+import com.ascend.testlab.dto.response.UpdateExperimentResponse;
 import com.ascend.testlab.service.impl.ExperimentServiceImpl;
 import io.reactivex.rxjava3.core.Maybe;
 import io.reactivex.rxjava3.core.Single;
@@ -321,13 +322,14 @@ public class ExperimentServiceTest {
           .thenReturn(Maybe.just(true));
 
       // Act
-      TestObserver<Boolean> testObserver =
+      TestObserver<UpdateExperimentResponse> testObserver =
           experimentService.update(testTenantId, testProjectKey, testExperimentId, updates).test();
 
       // Assert
       testObserver.assertComplete();
       testObserver.assertNoErrors();
-      testObserver.assertValue(true);
+      testObserver.assertValue(
+          response -> response.isStatus() && "updated".equals(response.getMessage()));
 
       verify(experimentDAO, times(1)).getExperimentData(any(UUID.class), any(UUID.class));
       verify(experimentDAO, times(1))
@@ -352,13 +354,14 @@ public class ExperimentServiceTest {
           .thenReturn(Maybe.just(true));
 
       // Act
-      TestObserver<Boolean> testObserver =
+      TestObserver<UpdateExperimentResponse> testObserver =
           experimentService.update(testTenantId, testProjectKey, testExperimentId, updates).test();
 
       // Assert
       testObserver.assertComplete();
       testObserver.assertNoErrors();
-      testObserver.assertValue(true);
+      testObserver.assertValue(
+          response -> response.isStatus() && "updated".equals(response.getMessage()));
     }
 
     @Test
@@ -376,13 +379,14 @@ public class ExperimentServiceTest {
       mockUpdateWithTransaction();
 
       // Act
-      TestObserver<Boolean> testObserver =
+      TestObserver<UpdateExperimentResponse> testObserver =
           experimentService.update(testTenantId, testProjectKey, testExperimentId, updates).test();
 
       // Assert
       testObserver.assertComplete();
       testObserver.assertNoErrors();
-      testObserver.assertValue(true);
+      testObserver.assertValue(
+          response -> response.isStatus() && "updated".equals(response.getMessage()));
     }
 
     @Test
@@ -395,13 +399,14 @@ public class ExperimentServiceTest {
       mockUpdateWithTransaction();
 
       // Act
-      TestObserver<Boolean> testObserver =
+      TestObserver<UpdateExperimentResponse> testObserver =
           experimentService.update(testTenantId, testProjectKey, testExperimentId, updates).test();
 
       // Assert
       testObserver.assertComplete();
       testObserver.assertNoErrors();
-      testObserver.assertValue(true);
+      testObserver.assertValue(
+          response -> response.isStatus() && "updated".equals(response.getMessage()));
     }
 
     @Test
@@ -423,13 +428,14 @@ public class ExperimentServiceTest {
       mockUpdateWithTransaction();
 
       // Act
-      TestObserver<Boolean> testObserver =
+      TestObserver<UpdateExperimentResponse> testObserver =
           experimentService.update(testTenantId, testProjectKey, testExperimentId, updates).test();
 
       // Assert
       testObserver.assertComplete();
       testObserver.assertNoErrors();
-      testObserver.assertValue(true);
+      testObserver.assertValue(
+          response -> response.isStatus() && "updated".equals(response.getMessage()));
     }
 
     @Test
@@ -447,13 +453,14 @@ public class ExperimentServiceTest {
           .thenReturn(Maybe.just(false));
 
       // Act
-      TestObserver<Boolean> testObserver =
+      TestObserver<UpdateExperimentResponse> testObserver =
           experimentService.update(testTenantId, testProjectKey, testExperimentId, updates).test();
 
       // Assert
       testObserver.assertComplete();
       testObserver.assertNoErrors();
-      testObserver.assertValue(false);
+      testObserver.assertValue(
+          response -> !response.isStatus() && "Update failed".equals(response.getMessage()));
     }
 
     @Test
@@ -468,13 +475,14 @@ public class ExperimentServiceTest {
           .thenReturn(Single.error(exception));
 
       // Act
-      TestObserver<Boolean> testObserver =
+      TestObserver<UpdateExperimentResponse> testObserver =
           experimentService.update(testTenantId, testProjectKey, testExperimentId, updates).test();
 
       // Assert
       testObserver.assertComplete();
       testObserver.assertNoErrors();
-      testObserver.assertValue(false);
+      testObserver.assertValue(
+          response -> !response.isStatus() && "Update failed".equals(response.getMessage()));
     }
 
     @Test
@@ -486,13 +494,14 @@ public class ExperimentServiceTest {
       mockUpdateWithTransaction();
 
       // Act
-      TestObserver<Boolean> testObserver =
+      TestObserver<UpdateExperimentResponse> testObserver =
           experimentService.update(testTenantId, testProjectKey, testExperimentId, updates).test();
 
       // Assert
       testObserver.assertComplete();
       testObserver.assertNoErrors();
-      testObserver.assertValue(true);
+      testObserver.assertValue(
+          response -> response.isStatus() && "No updates provided".equals(response.getMessage()));
     }
 
     @Test
@@ -502,13 +511,14 @@ public class ExperimentServiceTest {
       mockUpdateWithTransaction();
 
       // Act
-      TestObserver<Boolean> testObserver =
+      TestObserver<UpdateExperimentResponse> testObserver =
           experimentService.update(testTenantId, testProjectKey, testExperimentId, null).test();
 
       // Assert
       testObserver.assertComplete();
       testObserver.assertNoErrors();
-      testObserver.assertValue(true);
+      testObserver.assertValue(
+          response -> response.isStatus() && "No updates provided".equals(response.getMessage()));
     }
   }
 
@@ -579,17 +589,17 @@ public class ExperimentServiceTest {
           .thenReturn(Maybe.just(true));
 
       // Act
-      TestObserver<Boolean> observer1 =
+      TestObserver<UpdateExperimentResponse> observer1 =
           experimentService.update(testTenantId, testProjectKey, testExperimentId, updates1).test();
-      TestObserver<Boolean> observer2 =
+      TestObserver<UpdateExperimentResponse> observer2 =
           experimentService.update(testTenantId, testProjectKey, testExperimentId, updates2).test();
-      TestObserver<Boolean> observer3 =
+      TestObserver<UpdateExperimentResponse> observer3 =
           experimentService.update(testTenantId, testProjectKey, testExperimentId, updates3).test();
 
       // Assert
-      observer1.assertComplete().assertNoErrors().assertValue(true);
-      observer2.assertComplete().assertNoErrors().assertValue(true);
-      observer3.assertComplete().assertNoErrors().assertValue(true);
+      observer1.assertComplete().assertNoErrors().assertValue(response -> response.isStatus());
+      observer2.assertComplete().assertNoErrors().assertValue(response -> response.isStatus());
+      observer3.assertComplete().assertNoErrors().assertValue(response -> response.isStatus());
 
       verify(experimentDAO, times(3)).getExperimentData(any(UUID.class), any(UUID.class));
       verify(experimentDAO, times(3))

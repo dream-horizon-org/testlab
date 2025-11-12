@@ -2,6 +2,7 @@ package com.ascend.testlab.service;
 
 import com.ascend.testlab.dto.request.CreateExperimentRequest;
 import com.ascend.testlab.dto.response.CreateExperimentResponse;
+import com.ascend.testlab.dto.response.UpdateExperimentResponse;
 import io.reactivex.rxjava3.core.Single;
 import java.util.Map;
 import java.util.UUID;
@@ -36,8 +37,8 @@ public interface ExperimentService {
    * @param projectKey project identifier from header
    * @param experimentId experiment identifier
    * @param request map of field names to values for update
-   * @return Single emitting true on success, false on failure
+   * @return Single emitting UpdateExperimentResponse with id, status, and message
    */
-  Single<Boolean> update(
+  Single<UpdateExperimentResponse> update(
       UUID tenantId, UUID projectKey, UUID experimentId, Map<String, Object> request);
 }
