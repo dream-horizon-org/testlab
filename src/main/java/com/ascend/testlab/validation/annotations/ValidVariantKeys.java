@@ -1,5 +1,6 @@
-package com.ascend.testlab.validation;
+package com.ascend.testlab.validation.annotations;
 
+import com.ascend.testlab.validation.VariantKeysValidator;
 import jakarta.validation.Constraint;
 import jakarta.validation.Payload;
 import java.lang.annotation.*;
@@ -7,8 +8,8 @@ import java.lang.annotation.*;
 /**
  * Custom validation annotation for variant map keys.
  *
- * <p>Validates that variant keys follow the naming convention: control_variant1, control_variant2,
- * etc. in increasing sequential order starting from 1.
+ * <p>Validates that variant keys follow the naming convention: control, variant1, variant2, etc. in
+ * increasing sequential order starting from 1.
  *
  * @author Ravi Pandey
  * @version 1.0
@@ -20,7 +21,7 @@ import java.lang.annotation.*;
 @Documented
 public @interface ValidVariantKeys {
   String message() default
-      "Variant keys must follow the pattern 'control_variant1', 'control_variant2', etc. in increasing sequential order";
+      "Variant keys must follow the pattern 'control', 'variant1', 'variant2', etc. in increasing sequential order";
 
   Class<?>[] groups() default {};
 

@@ -1,5 +1,6 @@
 package com.ascend.testlab.validation;
 
+import com.ascend.testlab.validation.annotations.ValidVariantWeights;
 import com.ascend.testlab.variantWeights.CohortVariantWeights;
 import com.ascend.testlab.variantWeights.ManualVariantWeights;
 import com.ascend.testlab.variantWeights.VariantWeights;

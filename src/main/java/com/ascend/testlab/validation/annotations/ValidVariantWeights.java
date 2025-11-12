@@ -1,5 +1,6 @@
-package com.ascend.testlab.validation;
+package com.ascend.testlab.validation.annotations;
 
+import com.ascend.testlab.validation.VariantWeightsValidator;
 import jakarta.validation.Constraint;
 import jakarta.validation.Payload;
 import java.lang.annotation.*;

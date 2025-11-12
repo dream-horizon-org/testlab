@@ -1,6 +1,7 @@
 package com.ascend.testlab.validation;
 
 import com.ascend.testlab.entity.Variant;
+import com.ascend.testlab.validation.annotations.ValidVariantKeys;
 import jakarta.validation.ConstraintValidator;
 import jakarta.validation.ConstraintValidatorContext;
 import java.util.Map;
@@ -10,16 +11,16 @@ import java.util.regex.Pattern;
 /**
  * Validator for variant map keys.
  *
- * <p>Ensures that variant keys follow the naming convention: control_variant1, control_variant2,
- * etc. in increasing sequential order starting from 1.
+ * <p>Ensures that variant keys follow the naming convention: control, variant1, variant2, etc. in
+ * increasing sequential order starting from 1.
  *
  * <p>Validation rules:
  *
  * <ul>
- *   <li>Keys must match the pattern: control_variant{number}
+ *   <li>First key must be 'control'
+ *   <li>Subsequent keys must match the pattern: variant{number}
  *   <li>Numbers must start from 1 and be sequential (1, 2, 3, ...)
  *   <li>No gaps in the sequence are allowed
- *   <li>Keys must be in sorted order
  * </ul>
  *
  * @author Ravi Pandey
@@ -29,7 +30,8 @@ import java.util.regex.Pattern;
 public class VariantKeysValidator
     implements ConstraintValidator<ValidVariantKeys, Map<String, Variant>> {
 
-  private static final Pattern VARIANT_KEY_PATTERN = Pattern.compile("^control_variant(\\d+)$");
+  private static final String CONTROL_KEY = "control";
+  private static final Pattern VARIANT_KEY_PATTERN = Pattern.compile("^variant(\\d+)$");
 
   @Override
   public void initialize(ValidVariantKeys constraintAnnotation) {
@@ -42,7 +44,17 @@ public class VariantKeysValidator
       return true; // @NotNull and @NotEmpty handle nullability and emptiness
     }
 
-    // Extract and validate all keys
+    // Check if 'control' key exists
+    if (!value.containsKey(CONTROL_KEY)) {
+      context.disableDefaultConstraintViolation();
+      context
+          .buildConstraintViolationWithTemplate(
+              "Variants must contain a 'control' key as the first variant")
+          .addConstraintViolation();
+      return false;
+    }
+
+    // Validate other keys
     int expectedNumber = 1;
     for (String key : value.keySet()) {
       if (key == null || key.isBlank()) {
@@ -53,6 +65,11 @@ public class VariantKeysValidator
         return false;
       }
 
+      // Skip 'control' key
+      if (key.equals(CONTROL_KEY)) {
+        continue;
+      }
+
       Matcher matcher = VARIANT_KEY_PATTERN.matcher(key);
       if (!matcher.matches()) {
         context.disableDefaultConstraintViolation();
@@ -60,7 +77,7 @@ public class VariantKeysValidator
             .buildConstraintViolationWithTemplate(
                 "Variant key '"
                     + key
-                    + "' does not match the required pattern 'control_variant{number}'")
+                    + "' does not match the required pattern 'variant{number}' or 'control'")
             .addConstraintViolation();
         return false;
       }
@@ -70,7 +87,7 @@ public class VariantKeysValidator
         context.disableDefaultConstraintViolation();
         context
             .buildConstraintViolationWithTemplate(
-                "Variant keys must be sequential starting from 1. Expected 'control_variant"
+                "Variant keys must be sequential starting from 1. Expected 'variant"
                     + expectedNumber
                     + "' but found '"
                     + key
