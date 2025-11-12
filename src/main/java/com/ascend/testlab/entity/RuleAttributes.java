@@ -7,6 +7,7 @@ import com.ascend.testlab.constants.attributes.RelationalOperator;
 import com.ascend.testlab.constants.enums.DataTypeEnum;
 import com.ascend.testlab.exception.ErrorMessages;
 import jakarta.validation.constraints.*;
+import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -28,27 +29,35 @@ public class RuleAttributes {
   @NotBlank(message = ErrorMessages.BLANK_RULE_NAME)
   private String name;
 
-  @NotBlank
-  @ValidEnumValue(
-      enumClass = Operand.class,
-      method = Constants.GET_NAME,
-      message = ErrorMessages.INVALID_OPERAND)
-  private String operand;
+  List<Condition> conditions;
 
-  @NotEmpty
-  @ValidEnumValue(
-      enumClass = DataTypeEnum.class,
-      method = Constants.GET_TYPE,
-      message = ErrorMessages.INVALID_OPERAND_DATA_TYPE)
-  private String operandDataType;
+  @Data
+  @Builder
+  @NoArgsConstructor
+  @AllArgsConstructor
+  public static class Condition {
+    @NotBlank
+    @ValidEnumValue(
+        enumClass = Operand.class,
+        method = Constants.GET_NAME,
+        message = ErrorMessages.INVALID_OPERAND)
+    private String operand;
 
-  @NotEmpty
-  @ValidEnumValue(
-      enumClass = RelationalOperator.class,
-      method = Constants.GET_NAME,
-      message = ErrorMessages.INVALID_OPERATOR)
-  private String operator;
+    @NotEmpty
+    @ValidEnumValue(
+        enumClass = DataTypeEnum.class,
+        method = Constants.GET_TYPE,
+        message = ErrorMessages.INVALID_OPERAND_DATA_TYPE)
+    private String operandDataType;
 
-  @NotBlank(message = ErrorMessages.INVALID_CONDITION_VALUE)
-  private String value;
+    @NotEmpty
+    @ValidEnumValue(
+        enumClass = RelationalOperator.class,
+        method = Constants.GET_NAME,
+        message = ErrorMessages.INVALID_OPERATOR)
+    private String operator;
+
+    @NotBlank(message = ErrorMessages.INVALID_CONDITION_VALUE)
+    private String value;
+  }
 }

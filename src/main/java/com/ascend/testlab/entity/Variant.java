@@ -1,6 +1,5 @@
 package com.ascend.testlab.entity;
 
-
 import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Builder;

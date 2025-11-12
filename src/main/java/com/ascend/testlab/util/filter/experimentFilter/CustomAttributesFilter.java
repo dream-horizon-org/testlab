@@ -13,8 +13,9 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * Filters experiments based on custom attributes matching. Experiments pass the filter if their
- * rule attribute condition evaluates to true (OR logic).
+ * Filters experiments based on custom attributes matching. Logic: - Across rules: OR (if ANY rule
+ * matches, the experiment passes) - Within a rule's conditions: AND (ALL conditions must be true
+ * for the rule to match)
  *
  * @author anudeepreddy20
  * @version 1.0
@@ -64,33 +65,69 @@ public class CustomAttributesFilter extends AbstractExperimentFilter {
   }
 
   /**
-   * Evaluates a single RuleAttributes condition against user attributes.
+   * Evaluates a single RuleAttributes against user attributes. All conditions within the rule must
+   * be true (AND logic).
    *
-   * @param ruleAttributes the rule attribute condition to evaluate
-   * @return true if the condition evaluates to true, false otherwise
+   * @param ruleAttributes the rule attribute to evaluate
+   * @return true if ALL conditions in the rule evaluate to true, false otherwise
    */
   private boolean evaluateRuleAttribute(RuleAttributes ruleAttributes) {
     try {
-      String operandName = ruleAttributes.getOperand();
-      String userAttributeValue = getUserAttributeValue(operandName);
-
-      if (Objects.isNull(userAttributeValue)) {
-        log.trace("User attribute value is null for operand: {}", operandName);
+      if (Objects.isNull(ruleAttributes.getConditions())
+          || ruleAttributes.getConditions().isEmpty()) {
+        log.trace("No conditions in rule: {}", ruleAttributes.getName());
         return false;
       }
 
-      String expectedValue = ruleAttributes.getValue();
+      // All conditions within a rule must be true (AND logic)
+      boolean allConditionsMatch =
+          ruleAttributes.getConditions().stream()
+              .allMatch(condition -> evaluateCondition(condition, ruleAttributes.getName()));
 
-      RelationalOperator operator = RelationalOperator.getOperator(ruleAttributes.getOperator());
+      log.debug(
+          "Rule '{}' evaluation result: {} (total conditions: {})",
+          ruleAttributes.getName(),
+          allConditionsMatch,
+          ruleAttributes.getConditions().size());
 
-      DataTypeEnum dataType = DataTypeEnum.getDataType(ruleAttributes.getOperandDataType());
+      return allConditionsMatch;
+    } catch (Exception e) {
+      log.error("Error evaluating rule attribute: {}", ruleAttributes.getName(), e);
+      return false;
+    }
+  }
+
+  /**
+   * Evaluates a single condition against user attributes.
+   *
+   * @param condition the condition to evaluate
+   * @param ruleName the name of the rule (for logging)
+   * @return true if the condition evaluates to true, false otherwise
+   */
+  private boolean evaluateCondition(RuleAttributes.Condition condition, String ruleName) {
+    try {
+      String operandName = condition.getOperand();
+      String userAttributeValue = getUserAttributeValue(operandName);
+
+      if (Objects.isNull(userAttributeValue)) {
+        log.trace(
+            "User attribute value is null for operand: {} in rule: {}", operandName, ruleName);
+        return false;
+      }
+
+      String expectedValue = condition.getValue();
+
+      RelationalOperator operator = RelationalOperator.getOperator(condition.getOperator());
+
+      DataTypeEnum dataType = DataTypeEnum.getDataType(condition.getOperandDataType());
       boolean result =
           dataType
               .getEvaluation()
               .evaluate(userAttributeValue, expectedValue, operator, operandName);
 
       log.debug(
-          "Evaluated condition: {} {} {} = {}",
+          "Rule '{}' - Evaluated condition: {} {} {} = {}",
+          ruleName,
           operandName,
           operator.getName(),
           expectedValue,
@@ -98,7 +135,7 @@ public class CustomAttributesFilter extends AbstractExperimentFilter {
 
       return result;
     } catch (Exception e) {
-      log.error("Error evaluating rule attribute: {}", ruleAttributes, e);
+      log.error("Error evaluating condition in rule '{}': {}", ruleName, condition, e);
       return false;
     }
   }
