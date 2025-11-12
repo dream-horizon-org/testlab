@@ -1,6 +1,7 @@
 package com.ascend.testlab.variantWeights;
 
 import com.ascend.testlab.entity.AssignmentDomain;
+import com.ascend.testlab.validation.annotations.ValidManualVariantKeys;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import java.util.List;
@@ -32,6 +33,7 @@ public class ManualVariantWeights extends VariantWeights {
 
   @NotNull(message = "Weights map is required for manual variant weights")
   @NotEmpty(message = "At least one variant with user assignments must be specified")
+  @ValidManualVariantKeys
   private Map<String, List<String>> weights;
 
   @Override

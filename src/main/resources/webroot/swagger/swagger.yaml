@@ -101,7 +101,7 @@ components:
     CreateExperimentResponse:
       type: object
       properties:
-        experimentId:
+        experiment_id:
           type: string
           format: uuid
         status:
@@ -139,16 +139,21 @@ components:
           type: string
     CreateExperimentRequest:
       required:
+      - assignment_domain
       - assignment_strategy
       - cohorts
       - created_by
       - description
+      - distribution_strategy
       - hypothesis
       - name
       - owner
+      - rule_attributes
       - status
       - type
       - variant_weights
+      - variants
+      - winning_variant
       type: object
       properties:
         project_key:

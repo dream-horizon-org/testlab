@@ -119,21 +119,25 @@ public class CreateExperimentRequest {
 
   @JsonProperty("rule_attributes")
   @Valid
+  @NotNull(message = "RuleAttributes is required")
   @Size(max = 50, message = "Maximum 50 rule attributes allowed")
   private List<RuleAttributes> ruleAttributes;
 
   @JsonProperty("winning_variant")
   @Valid
+  @NotNull(message = "VariantWeights is required")
   @ValidVariantWeights
   private VariantWeights winningVariant;
 
   @JsonProperty("variants")
   @Valid
+  @NotNull(message = "Variant is required")
   @ValidVariantKeys
   @Size(max = 50, message = "Maximum 50 variants allowed")
   private Map<String, @Valid Variant> variants;
 
   @JsonProperty("distribution_strategy")
+  @NotNull(message = "ExperimentStrategy is required")
   @ValidEnumValue(
       enumClass = ExperimentStrategy.class,
       method = Constants.NAME,
@@ -141,6 +145,7 @@ public class CreateExperimentRequest {
   private ExperimentStrategy distributionStrategy;
 
   @JsonProperty("assignment_domain")
+  @NotNull(message = "ExperimentStrategy is required")
   @ValidEnumValue(
       enumClass = AssignmentDomain.class,
       method = Constants.NAME,
