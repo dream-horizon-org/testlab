@@ -1,11 +1,7 @@
 package com.ascend.testlab.entity;
 
-import com.ascend.testlab.annotations.ValidEnumValue;
-import com.ascend.testlab.constants.Constants;
-import com.ascend.testlab.constants.enums.DataTypeEnum;
-import com.ascend.testlab.exception.ErrorMessages;
-import jakarta.validation.constraints.NotBlank;
-import java.util.Map;
+
+import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -24,12 +20,5 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class Variant {
   private String displayName;
-  private Map<String, Object> variables;
-
-  @NotBlank
-  @ValidEnumValue(
-      enumClass = DataTypeEnum.class,
-      method = Constants.GET_TYPE,
-      message = ErrorMessages.INVALID_DATA_TYPE)
-  private String dataType;
+  private List<Variables> variables;
 }

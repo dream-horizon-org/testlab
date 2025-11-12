@@ -19,7 +19,6 @@ import io.reactivex.rxjava3.core.Observable;
 import io.reactivex.rxjava3.core.Single;
 import java.util.*;
 import java.util.stream.Collectors;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 
@@ -33,12 +32,19 @@ import org.apache.commons.lang3.StringUtils;
  * @see AssignmentService
  */
 @Slf4j
-@RequiredArgsConstructor(onConstructor_ = @Inject)
 public class AssignmentServiceImpl implements AssignmentService {
 
   private final AssignmentDAO assignmentDAO;
   private final CohortService cohortService;
   private final ObjectMapper objectMapper;
+
+  @Inject
+  public AssignmentServiceImpl(
+      AssignmentDAO assignmentDAO, CohortService cohortService, ObjectMapper objectMapper) {
+    this.assignmentDAO = assignmentDAO;
+    this.cohortService = cohortService;
+    this.objectMapper = objectMapper;
+  }
 
   @Override
   public Single<AssignmentResponse> assignExperiments(

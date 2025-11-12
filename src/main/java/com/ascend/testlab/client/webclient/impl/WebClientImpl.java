@@ -71,15 +71,11 @@ public class WebClientImpl implements WebClient {
       ErrorEnum errorEnum,
       Function<JsonObject, R> responseMapper) {
 
-    Integer port = serviceConfig.getPort();
     String host = serviceConfig.getServiceURL();
     String endPoint = serviceConfig.getApiEndPoint();
 
     HttpRequest<Buffer> request =
-        webClient
-            .get(port, host, endPoint)
-            .putHeaders(headers)
-            .timeout(serviceConfig.getApiTimeoutMS());
+        webClient.get(host, endPoint).putHeaders(headers).timeout(serviceConfig.getApiTimeoutMS());
     queryParams.forEach(request::addQueryParam);
 
     return request

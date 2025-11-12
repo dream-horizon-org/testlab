@@ -33,7 +33,7 @@ public enum ErrorEnum implements RestError {
       "Tags Listing failed due to: %s",
       HttpStatus.SC_INTERNAL_SERVER_ERROR),
 
-/* Client Errors */
+  /* Client Errors */
 
   MISSING_USER_IDENTIFIER(
       "EXPERIMENT_SERVICE_MISSING_USER_IDENTIFIER",

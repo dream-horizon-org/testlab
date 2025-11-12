@@ -1,8 +1,6 @@
 package com.ascend.testlab.config;
 
 import com.ascend.testlab.config.provider.ConfigProvider;
-import com.typesafe.config.Optional;
-import io.vertx.core.http.HttpClientOptions;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 

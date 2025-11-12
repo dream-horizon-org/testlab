@@ -11,8 +11,9 @@ import lombok.experimental.UtilityClass;
  */
 @UtilityClass
 public final class ErrorMessages {
-    /** The error message for the project key missing. */
-    public static final String PROJECT_KEY_MISSING = "x-project-key header is missing";
+  /** The error message for the project key missing. */
+  public static final String PROJECT_KEY_MISSING = "x-project-key header is missing";
+
   public static final String INVALID_DATA_TYPE = "invalid dataType present";
 
   public static final String INVALID_CONDITION_VALUE = "invalid condition value";
@@ -26,6 +27,4 @@ public final class ErrorMessages {
   public static final String INVALID_OPERAND = "invalid operand value";
 
   public static final String INVALID_OPERAND_DATA_TYPE = "invalid operand data type";
-
-
 }

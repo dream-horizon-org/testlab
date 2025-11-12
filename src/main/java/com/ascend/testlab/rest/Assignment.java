@@ -14,7 +14,6 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import java.util.*;
 import java.util.concurrent.CompletionStage;
-import lombok.RequiredArgsConstructor;
 
 /**
  * Assignment endpoint for the testlab application. Contains methods to handle experiment assignment
@@ -26,9 +25,13 @@ import lombok.RequiredArgsConstructor;
  * @see AssignmentService
  */
 @Path("/v1")
-@RequiredArgsConstructor(onConstructor_ = @Inject)
 public class Assignment {
   private final AssignmentService assignmentService;
+
+  @Inject
+  public Assignment(AssignmentService assignmentService) {
+    this.assignmentService = assignmentService;
+  }
 
   @POST
   @Path("/allocation")

@@ -36,7 +36,6 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.rxjava3.sqlclient.Row;
 import io.vertx.rxjava3.sqlclient.Tuple;
 import java.util.*;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -49,13 +48,24 @@ import lombok.extern.slf4j.Slf4j;
  * @see AssignmentDAO
  */
 @Slf4j
-@RequiredArgsConstructor(onConstructor_ = @Inject)
 public class AssignmentDAOImpl implements AssignmentDAO {
 
   private final PgReaderClient pgReaderClient;
   private final AerospikeClient aerospikeClient;
   private final AerospikeConfig aerospikeConfig;
   private final ObjectMapper objectMapper;
+
+  @Inject
+  public AssignmentDAOImpl(
+      PgReaderClient pgReaderClient,
+      AerospikeClient aerospikeClient,
+      AerospikeConfig aerospikeConfig,
+      ObjectMapper objectMapper) {
+    this.pgReaderClient = pgReaderClient;
+    this.aerospikeClient = aerospikeClient;
+    this.aerospikeConfig = aerospikeConfig;
+    this.objectMapper = objectMapper;
+  }
 
   @Override
   public Single<List<Experiment>> fetchActiveExperiments(UUID tenantId) {

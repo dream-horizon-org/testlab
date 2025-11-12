@@ -12,7 +12,6 @@ import io.reactivex.rxjava3.core.Single;
 import io.vertx.core.json.JsonObject;
 import io.vertx.rxjava3.core.MultiMap;
 import java.util.*;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -25,12 +24,21 @@ import lombok.extern.slf4j.Slf4j;
  * @see CohortService
  */
 @Slf4j
-@RequiredArgsConstructor(onConstructor_ = @Inject)
 public class CohortServiceImpl implements CohortService {
 
   private final WebClient webClient;
   private final ApplicationConfig.ServiceConfig cohortsConfig;
   private final ObjectMapper objectMapper;
+
+  @Inject
+  public CohortServiceImpl(
+      WebClient webClient,
+      ApplicationConfig.ServiceConfig cohortsConfig,
+      ObjectMapper objectMapper) {
+    this.webClient = webClient;
+    this.cohortsConfig = cohortsConfig;
+    this.objectMapper = objectMapper;
+  }
 
   @Override
   public Maybe<List<String>> getUserCohorts(String userId, UUID tenantId) {
