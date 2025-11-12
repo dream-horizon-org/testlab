@@ -1,7 +1,9 @@
 package com.ascend.testlab.dao;
 
 import com.ascend.testlab.dto.request.CreateExperimentRequest;
+import io.reactivex.rxjava3.core.Maybe;
 import io.reactivex.rxjava3.core.Single;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -25,6 +27,25 @@ public interface ExperimentDAO {
    * @return Single emitting 1L on success, 0L on failure
    */
   Single<Long> create(UUID tenantId, UUID projectKey, CreateExperimentRequest request);
+
+  /**
+   * Creates experiment with tags, owner, update log, and analysis in a transaction.
+   *
+   * @param tenantId tenant identifier for multi-tenancy
+   * @param projectKey project identifier for partitioning
+   * @param experimentId experiment identifier
+   * @param request experiment creation request with all experiment details
+   * @param tags list of tags to associate with experiment
+   * @param owner owner of the experiment
+   * @return Maybe emitting experiment ID on success
+   */
+  Maybe<Long> createWithRelatedData(
+      UUID tenantId,
+      UUID projectKey,
+      UUID experimentId,
+      CreateExperimentRequest request,
+      List<String> tags,
+      String owner);
 
   /**
    * Gets current experiment data as a map.

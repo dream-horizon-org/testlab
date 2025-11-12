@@ -2,6 +2,7 @@ package com.ascend.testlab.dao;
 
 import io.reactivex.rxjava3.core.Single;
 import io.vertx.rxjava3.sqlclient.SqlConnection;
+import java.util.List;
 import java.util.UUID;
 
 /**
@@ -23,7 +24,8 @@ public interface ExperimentAnalysisDAO {
    * @param experimentId experiment identifier
    * @return Single emitting true on success, false on failure
    */
-  Single<Boolean> insertAnalysis(SqlConnection connection, UUID projectKey, UUID experimentId);
+  Single<Boolean> insertAnalysis(
+      SqlConnection connection, UUID projectKey, UUID experimentId, List<String> metrics);
 
   /**
    * Inserts an experiment analysis entry with specified values.

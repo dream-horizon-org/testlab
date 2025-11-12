@@ -1,18 +1,17 @@
 package com.ascend.testlab.rest;
 
-import com.ascend.testlab.constants.ExperimentStatus;
-import com.ascend.testlab.constants.ExperimentType;
 import com.ascend.testlab.dto.ResponseEntity;
 import com.ascend.testlab.dto.request.CreateExperimentRequest;
+import com.ascend.testlab.dto.request.UpdateExperimentRequest;
 import com.ascend.testlab.dto.response.CreateExperimentResponse;
 import com.ascend.testlab.service.ExperimentService;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.inject.Inject;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import jakarta.validation.Valid;
-import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.HeaderParam;
 import jakarta.ws.rs.PATCH;
@@ -21,8 +20,7 @@ import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.CompletionStage;
 import lombok.extern.slf4j.Slf4j;
@@ -79,9 +77,6 @@ public class ExperimentResource {
       @HeaderParam("x-project-key") UUID projectKey,
       @Valid CreateExperimentRequest request) {
 
-    // Validate enum values
-    validateEnumValues(request);
-
     return experimentService
         .create(tenantId, projectKey, request)
         .map(ResponseEntity.Success::new)
@@ -106,79 +101,59 @@ public class ExperimentResource {
   @Path("/{experiment_id}")
   @Consumes(MediaType.APPLICATION_JSON)
   @Produces(MediaType.APPLICATION_JSON)
-  @Operation(summary = "Update experiment partially with optional tag replace")
+  @Operation(
+      summary = "Update experiment partially with optional tag replace",
+      responses = {
+        @ApiResponse(
+            responseCode = "200",
+            description = "Updated successfully",
+            content =
+                @Content(
+                    mediaType = MediaType.APPLICATION_JSON,
+                    schema = @Schema(implementation = Boolean.class))),
+        @ApiResponse(
+            responseCode = "400",
+            description = "Invalid enum values or validation constraints")
+      })
   public CompletionStage<ResponseEntity.Success<Boolean>> update(
       @HeaderParam("x-tenant-id") UUID tenantId,
       @HeaderParam("x-project-key") UUID projectKey,
       @PathParam("experiment_id") UUID experimentId,
-      java.util.Map<String, Object> request) {
+      @Valid UpdateExperimentRequest request) {
+
+    // Convert DTO to Map for service layer
+    Map<String, Object> requestMap = convertDtoToMap(request);
+
     return experimentService
-        .update(tenantId, projectKey, experimentId, request)
+        .update(tenantId, projectKey, experimentId, requestMap)
         .map(ResponseEntity.Success::new)
         .toCompletionStage();
   }
 
   /**
-   * Validates enum values in the experiment request.
+   * Converts UpdateExperimentRequest DTO to Map for service layer.
    *
-   * <p>Checks if status, type, guardrail_health_status, and assignment_strategy match valid enum
-   * values.
+   * <p>Serializes the DTO to JSON string and then deserializes to Map to preserve @JsonProperty
+   * annotations.
    *
-   * @param request experiment creation request
-   * @throws BadRequestException if any enum value is invalid
+   * @param request update experiment request DTO
+   * @return map of field names to values
    */
-  private void validateEnumValues(CreateExperimentRequest request) {
-    List<String> errors = new ArrayList<>();
+  private Map<String, Object> convertDtoToMap(UpdateExperimentRequest request) {
+    ObjectMapper mapper = new ObjectMapper();
+    try {
+      // Serialize to JSON string to respect @JsonProperty annotations
+      String jsonString = mapper.writeValueAsString(request);
+      // Deserialize back to Map
+      @SuppressWarnings("unchecked")
+      Map<String, Object> map = mapper.readValue(jsonString, Map.class);
 
-    // Validate status
-    if (request.getStatus() != null) {
-      try {
-        ExperimentStatus.valueOf(request.getStatus().name());
-      } catch (IllegalArgumentException e) {
-        errors.add(
-            String.format(
-                "Invalid status value: '%s'. Valid values are: %s",
-                request.getStatus(), getEnumValues(ExperimentStatus.class)));
-        log.warn("Invalid status value: {}", request.getStatus());
-      }
-    }
+      // Remove null values and fields that shouldn't be passed to service
+      map.values().removeIf(value -> value == null);
 
-    // Validate type
-    if (request.getType() != null) {
-      try {
-        ExperimentType.valueOf(request.getType().name());
-      } catch (IllegalArgumentException e) {
-        errors.add(
-            String.format(
-                "Invalid type value: '%s'. Valid values are: %s",
-                request.getType(), getEnumValues(ExperimentType.class)));
-        log.warn("Invalid type value: {}", request.getType());
-      }
+      return map;
+    } catch (Exception e) {
+      throw new RuntimeException("Failed to convert DTO to Map", e);
     }
-
-    // If there are validation errors, throw BadRequestException
-    if (!errors.isEmpty()) {
-      String errorMessage = String.join("; ", errors);
-      log.error("Validation failed for create experiment request: {}", errorMessage);
-      throw new BadRequestException(errorMessage);
-    }
-  }
-
-  /**
-   * Gets all enum values as a comma-separated string.
-   *
-   * @param enumClass enum class
-   * @return comma-separated string of enum values
-   */
-  private <E extends Enum<E>> String getEnumValues(Class<E> enumClass) {
-    E[] enumConstants = enumClass.getEnumConstants();
-    StringBuilder sb = new StringBuilder();
-    for (int i = 0; i < enumConstants.length; i++) {
-      sb.append(enumConstants[i].name());
-      if (i < enumConstants.length - 1) {
-        sb.append(", ");
-      }
-    }
-    return sb.toString();
   }
 }

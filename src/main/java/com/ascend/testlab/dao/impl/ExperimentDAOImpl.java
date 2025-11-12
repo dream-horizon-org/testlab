@@ -4,11 +4,16 @@ import com.ascend.testlab.client.postgresql.PgReaderClient;
 import com.ascend.testlab.client.postgresql.PgWriterClient;
 import com.ascend.testlab.constants.postgresql.ReadQuery;
 import com.ascend.testlab.constants.postgresql.WriteQuery;
+import com.ascend.testlab.dao.ExperimentAnalysisDAO;
 import com.ascend.testlab.dao.ExperimentDAO;
+import com.ascend.testlab.dao.ExperimentUpdateLogDAO;
+import com.ascend.testlab.dao.OwnerDAO;
+import com.ascend.testlab.dao.TagDAO;
 import com.ascend.testlab.dto.request.CreateExperimentRequest;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.inject.Inject;
+import io.reactivex.rxjava3.core.Maybe;
 import io.reactivex.rxjava3.core.Single;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
@@ -17,6 +22,7 @@ import io.vertx.rxjava3.sqlclient.Tuple;
 import java.time.Instant;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
@@ -37,19 +43,37 @@ public class ExperimentDAOImpl implements ExperimentDAO {
 
   private final PgWriterClient pgWriterClient;
   private final PgReaderClient pgReaderClient;
+  private final TagDAO tagDAO;
+  private final OwnerDAO ownerDAO;
+  private final ExperimentUpdateLogDAO experimentUpdateLogDAO;
+  private final ExperimentAnalysisDAO experimentAnalysisDAO;
 
   private static final ObjectMapper MAPPER = new ObjectMapper();
 
   /**
-   * Constructs ExperimentDAOImpl with PostgreSQL writer and reader clients.
+   * Constructs ExperimentDAOImpl with PostgreSQL clients and related DAOs.
    *
    * @param pgWriterClient PostgreSQL writer client for database operations
    * @param pgReaderClient PostgreSQL reader client for database operations
+   * @param tagDAO DAO for tag operations
+   * @param ownerDAO DAO for owner operations
+   * @param experimentUpdateLogDAO DAO for update log operations
+   * @param experimentAnalysisDAO DAO for analysis operations
    */
   @Inject
-  public ExperimentDAOImpl(PgWriterClient pgWriterClient, PgReaderClient pgReaderClient) {
+  public ExperimentDAOImpl(
+      PgWriterClient pgWriterClient,
+      PgReaderClient pgReaderClient,
+      TagDAO tagDAO,
+      OwnerDAO ownerDAO,
+      ExperimentUpdateLogDAO experimentUpdateLogDAO,
+      ExperimentAnalysisDAO experimentAnalysisDAO) {
     this.pgWriterClient = pgWriterClient;
     this.pgReaderClient = pgReaderClient;
+    this.tagDAO = tagDAO;
+    this.ownerDAO = ownerDAO;
+    this.experimentUpdateLogDAO = experimentUpdateLogDAO;
+    this.experimentAnalysisDAO = experimentAnalysisDAO;
   }
 
   /**
@@ -82,7 +106,7 @@ public class ExperimentDAOImpl implements ExperimentDAO {
 
       // Convert JSONB fields to JSON strings
       String variantWeightsJson = null;
-      String overridesJson = null;
+      String variantsJson = null;
       String ruleAttributesJson = null;
       String winningVariantJson = null;
 
@@ -90,8 +114,8 @@ public class ExperimentDAOImpl implements ExperimentDAO {
         if (request.getVariantWeights() != null) {
           variantWeightsJson = MAPPER.writeValueAsString(request.getVariantWeights());
         }
-        if (request.getOverrides() != null) {
-          overridesJson = MAPPER.writeValueAsString(request.getOverrides());
+        if (request.getVariants() != null) {
+          variantsJson = MAPPER.writeValueAsString(request.getVariants());
         }
         if (request.getRuleAttributes() != null) {
           ruleAttributesJson = MAPPER.writeValueAsString(request.getRuleAttributes());
@@ -113,32 +137,42 @@ public class ExperimentDAOImpl implements ExperimentDAO {
           .execute(
               WriteQuery.INSERT_EXPERIMENT,
               Tuple.tuple()
-                  .addValue(request.getProjectKey().toString()) // project_key
-                  .addValue(request.getExperimentId().toString()) // experiment_id
-                  .addValue(request.getName()) // name
-                  .addValue(request.getDescription()) // description
-                  .addValue(request.getHypothesis()) // hypothesis
+                  .addValue(request.getProjectKey().toString()) // $1 project_key
+                  .addValue(request.getExperimentId().toString()) // $2 experiment_id
+                  .addValue(request.getName()) // $3 name
+                  .addValue(request.getDescription()) // $4 description
+                  .addValue(request.getHypothesis()) // $5 hypothesis
                   .addValue(
-                      request.getStatus() == null ? null : request.getStatus().name()) // status
-                  .addValue(request.getType() == null ? null : request.getType().getValue()) // type
+                      request.getStatus() == null ? null : request.getStatus().name()) // $6 status
+                  .addValue(
+                      request.getType() == null ? null : request.getType().getValue()) // $7 type
                   .addValue(
                       request.getGuardrailHealthStatus() == null
                           ? null
-                          : request.getGuardrailHealthStatus().name()) // guardrail_health_status
-                  .addValue(cohortsArray) // cohorts as varchar array
-                  .addValue(variantWeightsJson) // variant_weights as jsonb string
+                          : request.getGuardrailHealthStatus().name()) // $8 guardrail_health_status
+                  .addValue(cohortsArray) // $9 cohorts as varchar array
+                  .addValue(variantWeightsJson) // $10 variant_weights as jsonb string
+                  .addValue(variantsJson) // $11 variants as jsonb string
+                  .addValue(
+                      request.getDistributionStrategy() == null
+                          ? null
+                          : request.getDistributionStrategy().name()) // $12 distribution_strategy
+                  .addValue(
+                      request.getAssignmentDomain() == null
+                          ? null
+                          : request.getAssignmentDomain().name()) // $13 assignment_domain
                   .addValue(
                       request.getAssignmentStrategy() == null
                           ? null
-                          : request.getAssignmentStrategy().name()) // assignment_strategy
-                  .addValue(overridesJson) // overrides as jsonb string
-                  .addValue(ruleAttributesJson) // rule_attributes as jsonb string
-                  .addValue(winningVariantJson) // winning_variant as jsonb string
-                  .addValue(request.getExposure()) // exposure
-                  .addValue(request.getThreshold()) // threshold
-                  .addValue(request.getStartTime()) // start_time
-                  .addValue(request.getEndTime()) // end_time
-                  .addValue(request.getCreatedBy())) // created_by
+                          : request.getAssignmentStrategy().name()) // $14 assignment_strategy
+                  .addValue(request.getOverrides()) // $15 overrides as varchar
+                  .addValue(ruleAttributesJson) // $16 rule_attributes as jsonb string
+                  .addValue(winningVariantJson) // $17 winning_variant as jsonb string
+                  .addValue(request.getExposure()) // $18 exposure
+                  .addValue(request.getThreshold()) // $19 threshold
+                  .addValue(request.getStartTime()) // $20 start_time
+                  .addValue(request.getEndTime()) // $21 end_time
+                  .addValue(request.getCreatedBy())) // $22 created_by
           .doOnSuccess(
               success ->
                   log.info(
@@ -182,6 +216,97 @@ public class ExperimentDAOImpl implements ExperimentDAO {
           e.getMessage(),
           e);
       return Single.just(0L);
+    }
+  }
+
+  /**
+   * Creates experiment with tags, owner, update log, and analysis in a transaction.
+   *
+   * @param tenantId tenant identifier for multi-tenancy
+   * @param projectKey project identifier for partitioning
+   * @param experimentId experiment identifier
+   * @param request experiment creation request with all experiment details
+   * @param tags list of tags to associate with experiment
+   * @param owner owner of the experiment
+   * @return Maybe emitting experiment ID on success
+   */
+  @Override
+  public Maybe<Long> createWithRelatedData(
+      UUID tenantId,
+      UUID projectKey,
+      UUID experimentId,
+      CreateExperimentRequest request,
+      List<String> tags,
+      String owner) {
+
+    log.info(
+        "DAO: Creating experiment with related data, projectKey: {}, experimentId: {}",
+        projectKey,
+        experimentId);
+
+    return pgWriterClient.executeWithTransaction(
+        connection ->
+            create(tenantId, projectKey, request)
+                .flatMapMaybe(
+                    id -> {
+                      if (id <= 0) {
+                        log.error("DAO: Failed to create experiment - id is 0");
+                        return Maybe.error(new RuntimeException("Failed to insert experiment"));
+                      }
+
+                      log.info("DAO: Experiment created with id: {}, inserting related data", id);
+
+                      // Execute all inserts in parallel using zip
+                      return Single.zip(
+                              tagDAO.batchInsertTags(connection, projectKey, experimentId, tags),
+                              ownerDAO.insertOwner(connection, projectKey, experimentId, owner),
+                              experimentUpdateLogDAO.insertUpdateLog(
+                                  connection,
+                                  projectKey,
+                                  experimentId,
+                                  null, // previous_data is null for create
+                                  convertRequestToMap(request),
+                                  request.getCreatedBy()),
+                              experimentAnalysisDAO.insertAnalysis(
+                                  connection, projectKey, experimentId, request.getMetrics()),
+                              (tagsSuccess, ownerSuccess, updateLogSuccess, analysisSuccess) -> {
+                                // Validate all operations succeeded
+                                if (!tagsSuccess) {
+                                  throw new RuntimeException("Failed to insert tags");
+                                }
+                                if (!ownerSuccess) {
+                                  throw new RuntimeException("Failed to insert owner");
+                                }
+                                if (!updateLogSuccess) {
+                                  throw new RuntimeException("Failed to insert update log");
+                                }
+                                if (!analysisSuccess) {
+                                  throw new RuntimeException("Failed to insert analysis");
+                                }
+                                log.info(
+                                    "DAO: Successfully created experiment with all related data in parallel, id: {}, experimentId: {}, projectKey: {}",
+                                    id,
+                                    experimentId,
+                                    projectKey);
+                                return id;
+                              })
+                          .flatMapMaybe(Maybe::just);
+                    }));
+  }
+
+  /**
+   * Converts CreateExperimentRequest to Map for storing in update log.
+   *
+   * @param request experiment creation request
+   * @return Map representation of the request
+   */
+  private Map<String, Object> convertRequestToMap(CreateExperimentRequest request) {
+    try {
+      String json = MAPPER.writeValueAsString(request);
+      return MAPPER.readValue(json, Map.class);
+    } catch (Exception e) {
+      log.error("DAO: Failed to convert request to map: {}", e.getMessage(), e);
+      return new HashMap<>();
     }
   }
 
@@ -379,6 +504,9 @@ public class ExperimentDAOImpl implements ExperimentDAO {
         "guardrail_health_status",
         "cohorts",
         "variant_weights",
+        "variants",
+        "distribution_strategy",
+        "assignment_domain",
         "assignment_strategy",
         "overrides",
         "rule_attributes",
@@ -433,7 +561,9 @@ public class ExperimentDAOImpl implements ExperimentDAO {
     return key.equals("status")
         || key.equals("type")
         || key.equals("guardrail_health_status")
-        || key.equals("assignment_strategy");
+        || key.equals("assignment_strategy")
+        || key.equals("distribution_strategy")
+        || key.equals("assignment_domain");
   }
 
   /**
@@ -454,7 +584,7 @@ public class ExperimentDAOImpl implements ExperimentDAO {
    */
   private boolean isJsonbField(String key) {
     return key.equals("variant_weights")
-        || key.equals("overrides")
+        || key.equals("variants")
         || key.equals("rule_attributes")
         || key.equals("winning_variant");
   }
@@ -523,6 +653,10 @@ public class ExperimentDAOImpl implements ExperimentDAO {
       query.append("::experiment_health");
     } else if (key.equals("assignment_strategy")) {
       query.append("::experiment_strategy");
+    } else if (key.equals("distribution_strategy")) {
+      query.append("::experiment_strategy");
+    } else if (key.equals("assignment_domain")) {
+      query.append("::assignment_domain");
     } else if (key.equals("cohorts")) {
       query.append("::varchar[]");
     } else if (isJsonbField(key)) {

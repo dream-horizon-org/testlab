@@ -7,6 +7,7 @@ import com.google.inject.Inject;
 import io.reactivex.rxjava3.core.Single;
 import io.vertx.rxjava3.sqlclient.SqlConnection;
 import io.vertx.rxjava3.sqlclient.Tuple;
+import java.util.List;
 import java.util.UUID;
 import lombok.extern.slf4j.Slf4j;
 
@@ -45,8 +46,31 @@ public class ExperimentAnalysisDAOImpl implements ExperimentAnalysisDAO {
    */
   @Override
   public Single<Boolean> insertAnalysis(
-      SqlConnection connection, UUID projectKey, UUID experimentId) {
-    return insertAnalysis(connection, projectKey, experimentId, null, null, null, null);
+      SqlConnection connection, UUID projectKey, UUID experimentId, List<String> metrics) {
+
+    // Safely extract metrics with null and bounds checking
+    String primaryMetrics = null;
+    String secondaryMetrics = null;
+
+    if (metrics != null && !metrics.isEmpty()) {
+      // Check if index 0 exists
+      if (metrics.size() > 0) {
+        primaryMetrics = metrics.get(0);
+      }
+      // Check if index 1 exists
+      if (metrics.size() > 1) {
+        secondaryMetrics = metrics.get(1);
+      }
+    }
+
+    log.debug(
+        "DAO: Inserting analysis with primaryMetrics: {}, secondaryMetrics: {} for experimentId: {}",
+        primaryMetrics,
+        secondaryMetrics,
+        experimentId);
+
+    return insertAnalysis(
+        connection, projectKey, experimentId, null, primaryMetrics, secondaryMetrics, null);
   }
 
   /**

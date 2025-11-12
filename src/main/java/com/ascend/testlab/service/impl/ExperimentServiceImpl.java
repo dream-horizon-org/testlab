@@ -1,19 +1,17 @@
 package com.ascend.testlab.service.impl;
 
 import com.ascend.testlab.client.postgresql.PgWriterClient;
-import com.ascend.testlab.constants.postgresql.WriteQuery;
-import com.ascend.testlab.dao.ExperimentAnalysisDAO;
 import com.ascend.testlab.dao.ExperimentDAO;
 import com.ascend.testlab.dao.ExperimentUpdateLogDAO;
+import com.ascend.testlab.dao.OwnerDAO;
+import com.ascend.testlab.dao.TagDAO;
 import com.ascend.testlab.dto.request.CreateExperimentRequest;
 import com.ascend.testlab.dto.response.CreateExperimentResponse;
 import com.ascend.testlab.service.ExperimentService;
-import com.ascend.testlab.service.OwnerService;
-import com.ascend.testlab.service.TagService;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.inject.Inject;
 import io.reactivex.rxjava3.core.Maybe;
 import io.reactivex.rxjava3.core.Single;
+import io.vertx.rxjava3.sqlclient.SqlConnection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -35,38 +33,32 @@ public class ExperimentServiceImpl implements ExperimentService {
 
   private final ExperimentDAO experimentDAO;
   private final PgWriterClient pgWriterClient;
-  private final TagService tagService;
-  private final OwnerService ownerService;
+  private final TagDAO tagDAO;
+  private final OwnerDAO ownerDAO;
   private final ExperimentUpdateLogDAO experimentUpdateLogDAO;
-  private final ExperimentAnalysisDAO experimentAnalysisDAO;
-  private final ObjectMapper objectMapper;
 
   /**
-   * Constructs ExperimentServiceImpl with experiment DAO, PostgreSQL writer client, tag service,
-   * owner service, update log DAO, and analysis DAO.
+   * Constructs ExperimentServiceImpl with experiment DAO, PostgreSQL writer client, tag DAO, owner
+   * DAO, and update log DAO.
    *
    * @param experimentDAO experiment data access object
    * @param pgWriterClient PostgreSQL writer client for transactional operations
-   * @param tagService tag service for tag operations
-   * @param ownerService owner service for owner operations
-   * @param experimentUpdateLogDAO experiment update log DAO
-   * @param experimentAnalysisDAO experiment analysis DAO
+   * @param tagDAO tag data access object
+   * @param ownerDAO owner data access object
+   * @param experimentUpdateLogDAO experiment update log DAO for logging updates
    */
   @Inject
   public ExperimentServiceImpl(
       ExperimentDAO experimentDAO,
       PgWriterClient pgWriterClient,
-      TagService tagService,
-      OwnerService ownerService,
-      ExperimentUpdateLogDAO experimentUpdateLogDAO,
-      ExperimentAnalysisDAO experimentAnalysisDAO) {
+      TagDAO tagDAO,
+      OwnerDAO ownerDAO,
+      ExperimentUpdateLogDAO experimentUpdateLogDAO) {
     this.experimentDAO = experimentDAO;
     this.pgWriterClient = pgWriterClient;
-    this.tagService = tagService;
-    this.ownerService = ownerService;
+    this.tagDAO = tagDAO;
+    this.ownerDAO = ownerDAO;
     this.experimentUpdateLogDAO = experimentUpdateLogDAO;
-    this.experimentAnalysisDAO = experimentAnalysisDAO;
-    this.objectMapper = new ObjectMapper();
   }
 
   /**
@@ -104,122 +96,12 @@ public class ExperimentServiceImpl implements ExperimentService {
           experimentId,
           request.getName());
 
-      // 1. Create partitions BEFORE transaction (DDL should be outside transaction)
-      return createPartitionsIfNotExist(projectKey)
-          .flatMap(
-              partitionsCreated -> {
-                if (!partitionsCreated) {
-                  log.error("Failed to create partitions for projectKey: {}", projectKey);
-                  return Single.just(
-                      new CreateExperimentResponse(
-                          0L, false, "Failed to create partitions for project"));
-                }
-
-                log.info(
-                    "Partitions verified/created for projectKey: {}, proceeding with transaction",
-                    projectKey);
-
-                // 2. Execute all insert operations in a transaction
-                return pgWriterClient
-                    .executeWithTransaction(
-                        connection -> {
-                          // Create experiment
-                          return experimentDAO
-                              .create(tenantId, projectKey, request)
-                              .flatMapMaybe(
-                                  id -> {
-                                    if (id <= 0) {
-                                      log.error("Failed to create experiment - id is 0");
-                                      return Maybe.error(
-                                          new RuntimeException("Failed to insert experiment"));
-                                    }
-
-                                    log.info(
-                                        "Experiment created with id: {}, now inserting tags and owner",
-                                        id);
-
-                                    // 3. Insert tags using TagService
-                                    final Single<Boolean> tagsInsert =
-                                        tagService.insertTags(
-                                            connection,
-                                            projectKey,
-                                            experimentId,
-                                            request.getTags());
-
-                                    // 4. Insert owner using OwnerService
-                                    final Single<Boolean> ownerInsert =
-                                        ownerService.insertOwner(
-                                            connection,
-                                            projectKey,
-                                            experimentId,
-                                            request.getOwner());
-
-                                    // 5. Insert update log (for create operation, previous_data is
-                                    // null)
-                                    final Single<Boolean> updateLogInsert =
-                                        experimentUpdateLogDAO.insertUpdateLog(
-                                            connection,
-                                            projectKey,
-                                            experimentId,
-                                            null, // previous_data is null for create
-                                            convertRequestToMap(request),
-                                            request.getCreatedBy());
-
-                                    // 6. Insert analysis entry (with default/null values)
-                                    final Single<Boolean> analysisInsert =
-                                        experimentAnalysisDAO.insertAnalysis(
-                                            connection, projectKey, experimentId);
-
-                                    // Execute all inserts sequentially
-                                    return tagsInsert
-                                        .flatMap(
-                                            tagsSuccess -> {
-                                              if (!tagsSuccess) {
-                                                return Single.error(
-                                                    new RuntimeException("Failed to insert tags"));
-                                              }
-                                              return ownerInsert;
-                                            })
-                                        .flatMap(
-                                            ownerSuccess -> {
-                                              if (!ownerSuccess) {
-                                                return Single.error(
-                                                    new RuntimeException("Failed to insert owner"));
-                                              }
-                                              return updateLogInsert;
-                                            })
-                                        .flatMap(
-                                            updateLogSuccess -> {
-                                              if (!updateLogSuccess) {
-                                                return Single.error(
-                                                    new RuntimeException(
-                                                        "Failed to insert update log"));
-                                              }
-                                              return analysisInsert;
-                                            })
-                                        .flatMapMaybe(
-                                            analysisSuccess -> {
-                                              if (!analysisSuccess) {
-                                                return Maybe.error(
-                                                    new RuntimeException(
-                                                        "Failed to insert analysis"));
-                                              }
-                                              log.info(
-                                                  "Successfully created experiment with id: {}, experimentId: {}, projectKey: {}, tags: {}, owner: {}, update_log: true, analysis: true",
-                                                  id,
-                                                  experimentId,
-                                                  projectKey,
-                                                  request.getTags() != null
-                                                      ? request.getTags().size()
-                                                      : 0,
-                                                  request.getOwner());
-                                              return Maybe.just(id);
-                                            });
-                                  });
-                        })
-                    .map(id -> new CreateExperimentResponse(id, true, "created"))
-                    .toSingle();
-              })
+      // Execute all insert operations in a transaction (delegated to DAO)
+      return experimentDAO
+          .createWithRelatedData(
+              tenantId, projectKey, experimentId, request, request.getTags(), request.getOwner())
+          .map(id -> new CreateExperimentResponse(experimentId, true, "created"))
+          .toSingle()
           .onErrorReturn(
               error -> {
                 log.error(
@@ -228,7 +110,8 @@ public class ExperimentServiceImpl implements ExperimentService {
                     projectKey,
                     error.getMessage(),
                     error);
-                return new CreateExperimentResponse(0L, false, "Failed: " + error.getMessage());
+                return new CreateExperimentResponse(
+                    experimentId, false, "Failed: " + error.getMessage());
               });
     } catch (Exception e) {
       log.error(
@@ -237,132 +120,8 @@ public class ExperimentServiceImpl implements ExperimentService {
           projectKey,
           e.getMessage(),
           e);
-      return Single.just(new CreateExperimentResponse(0L, false, "Failed: " + e.getMessage()));
+      return Single.just(new CreateExperimentResponse(null, false, "Failed: " + e.getMessage()));
     }
-  }
-
-  /**
-   * Converts CreateExperimentRequest to Map for storing in update log.
-   *
-   * @param request experiment creation request
-   * @return Map representation of the request
-   */
-  private Map<String, Object> convertRequestToMap(CreateExperimentRequest request) {
-    try {
-      String json = objectMapper.writeValueAsString(request);
-      return objectMapper.readValue(json, Map.class);
-    } catch (Exception e) {
-      log.error("Failed to convert request to map: {}", e.getMessage(), e);
-      return new HashMap<>();
-    }
-  }
-
-  /**
-   * Creates partitions for experiments, tags, and owners tables if they don't exist.
-   *
-   * <p>Dynamically creates partitions for the given project_key to avoid "no partition found"
-   * errors. Uses CREATE TABLE IF NOT EXISTS to safely handle concurrent creation attempts. This
-   * method executes OUTSIDE of the main transaction since DDL statements should not be in
-   * transactions.
-   *
-   * @param projectKey project identifier for partition
-   * @return Single emitting true on success, false on failure
-   */
-  private Single<Boolean> createPartitionsIfNotExist(UUID projectKey) {
-    // Sanitize project_key for table name (replace hyphens with underscores)
-    String sanitizedKey = projectKey.toString().replace("-", "_");
-
-    log.info("Creating partitions for projectKey: {} (sanitized: {})", projectKey, sanitizedKey);
-
-    // Build partition creation queries
-    String createExperimentsPartition =
-        String.format(WriteQuery.CREATE_EXPERIMENTS_PARTITION, sanitizedKey, projectKey);
-    String createTagsPartition =
-        String.format(WriteQuery.CREATE_TAGS_PARTITION, sanitizedKey, projectKey);
-    String createOwnersPartition =
-        String.format(WriteQuery.CREATE_OWNERS_PARTITION, sanitizedKey, projectKey);
-    String createUpdateLogPartition =
-        String.format(WriteQuery.CREATE_UPDATE_LOG_PARTITION, sanitizedKey, projectKey);
-    String createAnalysisPartition =
-        String.format(WriteQuery.CREATE_ANALYSIS_PARTITION, sanitizedKey, projectKey);
-
-    // Execute partition creation queries sequentially (without transaction)
-    return pgWriterClient
-        .execute(createExperimentsPartition)
-        .doOnSuccess(
-            success ->
-                log.debug("Experiments partition created/exists for projectKey: {}", projectKey))
-        .doOnError(
-            error ->
-                log.error(
-                    "Failed to create experiments partition for projectKey: {}, error: {}",
-                    projectKey,
-                    error.getMessage()))
-        .flatMap(
-            success ->
-                pgWriterClient
-                    .execute(createTagsPartition)
-                    .doOnSuccess(
-                        s ->
-                            log.debug(
-                                "Tags partition created/exists for projectKey: {}", projectKey))
-                    .doOnError(
-                        error ->
-                            log.error(
-                                "Failed to create tags partition for projectKey: {}, error: {}",
-                                projectKey,
-                                error.getMessage())))
-        .flatMap(
-            success ->
-                pgWriterClient
-                    .execute(createOwnersPartition)
-                    .doOnSuccess(
-                        s ->
-                            log.debug(
-                                "Owners partition created/exists for projectKey: {}", projectKey))
-                    .doOnError(
-                        error ->
-                            log.error(
-                                "Failed to create owners partition for projectKey: {}, error: {}",
-                                projectKey,
-                                error.getMessage())))
-        .flatMap(
-            success ->
-                pgWriterClient
-                    .execute(createUpdateLogPartition)
-                    .doOnSuccess(
-                        s ->
-                            log.debug(
-                                "Update log partition created/exists for projectKey: {}",
-                                projectKey))
-                    .doOnError(
-                        error ->
-                            log.error(
-                                "Failed to create update log partition for projectKey: {}, error: {}",
-                                projectKey,
-                                error.getMessage())))
-        .flatMap(
-            success ->
-                pgWriterClient
-                    .execute(createAnalysisPartition)
-                    .doOnSuccess(
-                        s ->
-                            log.info(
-                                "All partitions created/verified for projectKey: {}", projectKey))
-                    .doOnError(
-                        error ->
-                            log.error(
-                                "Failed to create analysis partition for projectKey: {}, error: {}",
-                                projectKey,
-                                error.getMessage())))
-        .onErrorReturn(
-            error -> {
-              log.error(
-                  "Error creating partitions for projectKey: {}, error: {}",
-                  projectKey,
-                  error.getMessage());
-              return false;
-            });
   }
 
   /**
@@ -542,7 +301,7 @@ public class ExperimentServiceImpl implements ExperimentService {
       List<String> tags) {
     return tags == null
         ? Single.just(true)
-        : tagService.updateTags(connection, projectKey, experimentId, tags);
+        : updateTags(connection, projectKey, experimentId, tags);
   }
 
   /**
@@ -678,6 +437,93 @@ public class ExperimentServiceImpl implements ExperimentService {
   }
 
   /** Inner class to hold update context with separated fields. */
+  // ==================== Tag Management Methods ====================
+
+  /**
+   * Batch inserts tags for an experiment.
+   *
+   * @param connection SQL connection for transaction
+   * @param projectKey project identifier for partitioning
+   * @param experimentId experiment identifier
+   * @param tags list of tags to insert
+   * @return Single emitting true on success, false on failure
+   */
+  private Single<Boolean> insertTags(
+      SqlConnection connection, UUID projectKey, UUID experimentId, List<String> tags) {
+    if (tags == null || tags.isEmpty()) {
+      return Single.just(true);
+    }
+    return tagDAO.batchInsertTags(connection, projectKey, experimentId, tags);
+  }
+
+  /**
+   * Updates tags for an experiment by merging with existing tags.
+   *
+   * @param connection SQL connection for transaction
+   * @param projectKey project identifier for partitioning
+   * @param experimentId experiment identifier
+   * @param newTags list of new tags to set
+   * @return Single emitting true on success, false on failure
+   */
+  private Single<Boolean> updateTags(
+      SqlConnection connection, UUID projectKey, UUID experimentId, List<String> newTags) {
+    if (newTags == null || newTags.isEmpty()) {
+      return Single.just(true);
+    }
+
+    return tagDAO
+        .getActiveTags(connection, projectKey, experimentId)
+        .flatMap(
+            existingTags -> {
+              List<String> tagsToRemove =
+                  existingTags.stream()
+                      .filter(tag -> !newTags.contains(tag))
+                      .collect(java.util.stream.Collectors.toList());
+
+              List<String> tagsToAdd =
+                  newTags.stream()
+                      .filter(tag -> !existingTags.contains(tag))
+                      .collect(java.util.stream.Collectors.toList());
+
+              Single<Boolean> markInactive =
+                  tagsToRemove.isEmpty()
+                      ? Single.just(true)
+                      : tagDAO.markTagsInactive(connection, projectKey, experimentId, tagsToRemove);
+
+              Single<Boolean> insertNew =
+                  tagsToAdd.isEmpty()
+                      ? Single.just(true)
+                      : tagDAO.batchInsertTags(connection, projectKey, experimentId, tagsToAdd);
+
+              return markInactive.flatMap(
+                  markSuccess -> {
+                    if (!markSuccess) {
+                      return Single.error(new RuntimeException("Failed to mark tags as inactive"));
+                    }
+                    return insertNew;
+                  });
+            });
+  }
+
+  // ==================== Owner Management Methods ====================
+
+  /**
+   * Inserts an owner for an experiment.
+   *
+   * @param connection SQL connection for transaction
+   * @param projectKey project identifier for partitioning
+   * @param experimentId experiment identifier
+   * @param owner owner name/email
+   * @return Single emitting true on success, false on failure
+   */
+  private Single<Boolean> insertOwner(
+      SqlConnection connection, UUID projectKey, UUID experimentId, String owner) {
+    if (owner == null || owner.isEmpty()) {
+      return Single.just(true);
+    }
+    return ownerDAO.insertOwner(connection, projectKey, experimentId, owner);
+  }
+
   private static class UpdateContext {
     final Map<String, Object> experimentFields;
     final List<String> tags;

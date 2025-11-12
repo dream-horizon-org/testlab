@@ -1,4 +1,4 @@
-package com.ascend.testlab.constants;
+package com.ascend.testlab.constants.enums;
 
 public enum ExperimentStatus {
   LIVE,

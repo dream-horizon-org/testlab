@@ -33,9 +33,14 @@ public enum ErrorEnum implements RestError {
       "Tags Listing failed due to: %s",
       HttpStatus.SC_INTERNAL_SERVER_ERROR),
 
-/* Client Errors */
+  INVALID_REQUEST_BODY(
+      "FF_INVALID_REQUEST_BODY",
+      "Request body param(s) is/are missing/invalid",
+      HttpStatus.SC_BAD_REQUEST);
 
-;
+  /* Client Errors */
+
+  ;
 
   /** The error code. */
   private final String errorCode;

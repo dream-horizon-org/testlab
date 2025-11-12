@@ -36,4 +36,8 @@ public final class Constants {
 
   /** The delimiter for space. */
   public static final String SPACE = " ";
+
+  public static final String GET_TYPE = "getType";
+
+  public static final String GET_NAME = "getName";
 }
