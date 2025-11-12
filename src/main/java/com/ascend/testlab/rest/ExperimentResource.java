@@ -54,8 +54,6 @@ public class ExperimentResource {
    * @param projectKey project identifier from x-project-key header
    * @param request validated experiment creation request
    * @return CompletionStage with CreateExperimentResponse containing id, status, and message
-   * @throws BadRequestException if status, type, guardrail_health_status, or assignment_strategy
-   *     don't match enum values
    */
   @POST
   @Consumes(MediaType.APPLICATION_JSON)
