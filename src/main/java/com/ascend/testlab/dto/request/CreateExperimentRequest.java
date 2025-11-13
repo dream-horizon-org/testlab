@@ -109,14 +109,6 @@ public class CreateExperimentRequest {
   @ValidVariantWeights
   private VariantWeights variantWeights;
 
-  @JsonProperty("assignment_strategy")
-  @NotNull(message = "Assignment strategy is required")
-  @ValidEnumValue(
-      enumClass = ExperimentStrategy.class,
-      method = Constants.NAME,
-      message = ErrorMessages.INVALID_EXPERIMENT_STRATEGY)
-  private ExperimentStrategy assignmentStrategy;
-
   @JsonProperty("rule_attributes")
   @Valid
   @NotNull(message = "RuleAttributes is required")

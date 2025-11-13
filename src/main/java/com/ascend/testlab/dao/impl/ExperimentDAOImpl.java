@@ -142,18 +142,14 @@ public class ExperimentDAOImpl implements ExperimentDAO {
                       request.getAssignmentDomain() == null
                           ? null
                           : request.getAssignmentDomain().name()) // $14 assignment_domain
-                  .addValue(
-                      request.getAssignmentStrategy() == null
-                          ? null
-                          : request.getAssignmentStrategy().name()) // $15 assignment_strategy
-                  .addValue(request.getOverrides()) // $16 overrides as varchar
-                  .addValue(ruleAttributesJson) // $17 rule_attributes as jsonb string
-                  .addValue(winningVariantJson) // $18 winning_variant as jsonb string
-                  .addValue(request.getExposure()) // $19 exposure
-                  .addValue(request.getThreshold()) // $20 threshold
-                  .addValue(request.getStartTime()) // $21 start_time
-                  .addValue(request.getEndTime()) // $22 end_time
-                  .addValue(request.getCreatedBy())) // $23 created_by
+                  .addValue(request.getOverrides()) // $15 overrides as varchar
+                  .addValue(ruleAttributesJson) // $16 rule_attributes as jsonb string
+                  .addValue(winningVariantJson) // $17 winning_variant as jsonb string
+                  .addValue(request.getExposure()) // $18 exposure
+                  .addValue(request.getThreshold()) // $19 threshold
+                  .addValue(request.getStartTime()) // $20 start_time
+                  .addValue(request.getEndTime()) // $21 end_time
+                  .addValue(request.getCreatedBy())) // $22 created_by
           .doOnSuccess(
               success ->
                   log.info(
@@ -488,7 +484,6 @@ public class ExperimentDAOImpl implements ExperimentDAO {
         "variants",
         "distribution_strategy",
         "assignment_domain",
-        "assignment_strategy",
         "overrides",
         "winning_variant",
         "exposure",
@@ -541,7 +536,6 @@ public class ExperimentDAOImpl implements ExperimentDAO {
     return key.equals("status")
         || key.equals("type")
         || key.equals("guardrail_health_status")
-        || key.equals("assignment_strategy")
         || key.equals("distribution_strategy")
         || key.equals("assignment_domain");
   }
@@ -631,8 +625,6 @@ public class ExperimentDAOImpl implements ExperimentDAO {
       query.append("::experiment_type");
     } else if (key.equals("guardrail_health_status")) {
       query.append("::experiment_health");
-    } else if (key.equals("assignment_strategy")) {
-      query.append("::experiment_strategy");
     } else if (key.equals("distribution_strategy")) {
       query.append("::experiment_strategy");
     } else if (key.equals("assignment_domain")) {

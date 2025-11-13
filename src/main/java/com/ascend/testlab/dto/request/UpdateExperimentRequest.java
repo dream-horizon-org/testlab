@@ -76,13 +76,6 @@ public class UpdateExperimentRequest {
   @ValidVariantWeights
   private VariantWeights variantWeights;
 
-  @JsonProperty("assignment_strategy")
-  @ValidEnumValue(
-      enumClass = ExperimentStrategy.class,
-      method = Constants.NAME,
-      message = ErrorMessages.INVALID_EXPERIMENT_STRATEGY)
-  private ExperimentStrategy assignmentStrategy;
-
   @JsonProperty("variants")
   @Valid
   @ValidVariantKeys

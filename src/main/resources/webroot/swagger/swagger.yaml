@@ -140,7 +140,6 @@ components:
     CreateExperimentRequest:
       required:
       - assignment_domain
-      - assignment_strategy
       - cohorts
       - created_by
       - description
@@ -228,11 +227,6 @@ components:
           type: string
         variant_weights:
           $ref: '#/components/schemas/VariantWeights'
-        assignment_strategy:
-          type: string
-          enum:
-          - RANDOM
-          - ROUND_ROBIN
         rule_attributes:
           maxItems: 50
           minItems: 0
@@ -392,11 +386,6 @@ components:
             type: string
         variant_weights:
           $ref: '#/components/schemas/VariantWeights'
-        assignment_strategy:
-          type: string
-          enum:
-          - RANDOM
-          - ROUND_ROBIN
         variants:
           type: object
           additionalProperties:

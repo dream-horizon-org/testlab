@@ -266,7 +266,7 @@ public class ExperimentDAOTest {
       updates.put("status", "LIVE");
       updates.put("type", "A_B");
       updates.put("guardrail_health_status", "PASSING");
-      updates.put("assignment_strategy", "RANDOM");
+      updates.put("distribution_strategy", "RANDOM");
       when(pgWriterClient.execute(anyString(), any(Tuple.class))).thenReturn(Single.just(true));
 
       // Act
