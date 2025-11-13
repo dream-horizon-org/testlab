@@ -7,6 +7,7 @@ import com.ascend.testlab.constants.enums.ExperimentStatus;
 import com.ascend.testlab.constants.enums.ExperimentStrategy;
 import com.ascend.testlab.constants.enums.ExperimentType;
 import com.ascend.testlab.entity.AssignmentDomain;
+import com.ascend.testlab.entity.RuleAttributes;
 import com.ascend.testlab.entity.Variant;
 import com.ascend.testlab.exception.ErrorMessages;
 import com.ascend.testlab.validation.annotations.ValidVariantKeys;
@@ -34,10 +35,26 @@ import lombok.Data;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class UpdateExperimentRequest {
 
+  // Non-updatable fields - included only to capture and reject in validation
   @JsonProperty("name")
-  @Size(min = 1, max = 64, message = "Name must be between 1 and 64 characters")
   private String name;
 
+  @JsonProperty("experiment_key")
+  private String experimentKey;
+
+  @JsonProperty("created_by")
+  private String createdBy;
+
+  @JsonProperty("metrics")
+  private List<String> metrics;
+
+  @JsonProperty("tags")
+  private List<String> tags;
+
+  @JsonProperty("owner")
+  private String owner;
+
+  // Updatable fields
   @JsonProperty("description")
   @Size(max = 255, message = "Description must not exceed 255 characters")
   private String description;
@@ -96,14 +113,21 @@ public class UpdateExperimentRequest {
       message = ErrorMessages.INVALID_ASSIGNMENT_DOMAIN)
   private AssignmentDomain assignmentDomain;
 
+  @JsonProperty("rule_attributes")
+  @Valid
+  @Size(max = 50, message = "Maximum 50 rule attributes allowed")
+  private List<RuleAttributes> ruleAttributes;
+
   @JsonProperty("overrides")
   @Size(max = 255, message = "Overrides must not exceed 255 characters")
   private String overrides;
 
   @JsonProperty("winning_variant")
   @Valid
-  @ValidVariantWeights
-  private VariantWeights winningVariant;
+  @NotNull(message = "Winning Variant is required")
+  @ValidVariantKeys
+  @Size(max = 50, message = "Maximum 50 variants allowed")
+  private Map<String, @Valid Variant> winningVariant;
 
   @JsonProperty("exposure")
   @Min(value = 0, message = "Exposure must be at least 0")
@@ -121,11 +145,6 @@ public class UpdateExperimentRequest {
   @JsonProperty("end_time")
   @Min(value = 0, message = "End time must be a valid epoch timestamp")
   private Long endTime;
-
-  // Tags replace existing tags transactionally
-  @JsonProperty("tag")
-  @Size(max = 20, message = "Maximum 20 tags allowed")
-  private List<@NotBlank(message = "Tag cannot be blank") String> tags;
 
   @JsonProperty("updated_by")
   @Size(max = 255, message = "Updated by must not exceed 255 characters")

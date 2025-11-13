@@ -234,7 +234,9 @@ components:
           items:
             $ref: '#/components/schemas/RuleAttributes'
         winning_variant:
-          $ref: '#/components/schemas/VariantWeights'
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/Variant'
         variants:
           type: object
           additionalProperties:
@@ -343,11 +345,25 @@ components:
       discriminator:
         propertyName: type
     UpdateExperimentRequest:
+      required:
+      - winning_variant
       type: object
       properties:
         name:
-          maxLength: 64
-          minLength: 1
+          type: string
+        experiment_key:
+          type: string
+        created_by:
+          type: string
+        metrics:
+          type: array
+          items:
+            type: string
+        tags:
+          type: array
+          items:
+            type: string
+        owner:
           type: string
         description:
           maxLength: 255
@@ -401,12 +417,20 @@ components:
           - MANUAL
           - COHORT
           - DEFAULT
+        rule_attributes:
+          maxItems: 50
+          minItems: 0
+          type: array
+          items:
+            $ref: '#/components/schemas/RuleAttributes'
         overrides:
           maxLength: 255
           minLength: 0
           type: string
         winning_variant:
-          $ref: '#/components/schemas/VariantWeights'
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/Variant'
         exposure:
           maximum: 100
           minimum: 0
@@ -424,14 +448,6 @@ components:
           minimum: 0
           type: integer
           format: int64
-        tag:
-          maxItems: 20
-          minItems: 0
-          type: array
-          items:
-            maxLength: 20
-            minLength: 0
-            type: string
         updated_by:
           maxLength: 255
           minLength: 0

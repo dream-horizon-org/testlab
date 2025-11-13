@@ -21,6 +21,7 @@ import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.CompletionStage;
@@ -123,6 +124,9 @@ public class ExperimentResource {
     // Convert DTO to Map for service layer
     Map<String, Object> requestMap = convertDtoToMap(request);
 
+    // Validate that non-updatable fields are not present in the request
+    validateNonUpdatableFields(requestMap);
+
     return experimentService
         .update(tenantId, projectKey, experimentId, requestMap)
         .map(ResponseEntity.Success::new)
@@ -153,6 +157,30 @@ public class ExperimentResource {
       return map;
     } catch (Exception e) {
       throw new RuntimeException("Failed to convert DTO to Map", e);
+    }
+  }
+
+  /**
+   * Validates that non-updatable fields are not present in the request.
+   *
+   * <p>Fields like name, experiment_key, project_key, experiment_id, created_by, created_at,
+   * updated_at, and metrics cannot be updated.
+   *
+   * @param requestMap map of field names to values from the update request
+   * @throws jakarta.validation.ValidationException if non-updatable fields are present
+   */
+  private void validateNonUpdatableFields(Map<String, Object> requestMap) {
+    List<String> foundNonUpdatableFields =
+        requestMap.keySet().stream()
+            .filter(com.ascend.testlab.constants.Constants.NON_UPDATABLE_FIELDS::contains)
+            .collect(java.util.stream.Collectors.toList());
+
+    if (!foundNonUpdatableFields.isEmpty()) {
+      String errorMessage =
+          String.format(
+              "The following fields cannot be updated: %s",
+              String.join(", ", foundNonUpdatableFields));
+      throw new jakarta.validation.ValidationException(errorMessage);
     }
   }
 }

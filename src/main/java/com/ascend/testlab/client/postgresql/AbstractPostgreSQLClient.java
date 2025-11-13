@@ -2,7 +2,6 @@ package com.ascend.testlab.client.postgresql;
 
 import com.ascend.testlab.config.PostgreSQLConfig;
 import io.reactivex.rxjava3.core.Completable;
-import io.reactivex.rxjava3.core.Maybe;
 import io.reactivex.rxjava3.core.Single;
 import io.vertx.pgclient.PgConnectOptions;
 import io.vertx.rxjava3.core.Vertx;
@@ -122,11 +121,15 @@ public abstract class AbstractPostgreSQLClient {
    *
    * @param transactionalFunction the function to execute with the connection
    * @param <T> the type of the result
-   * @return a Maybe that emits the result of the transactional function
+   * @return a Single that emits the result of the transactional function
    */
-  protected <T> Maybe<T> rxWithTransaction(
-      Function<SqlConnection, Maybe<T>> transactionalFunction) {
-    return pgPool.rxWithTransaction(transactionalFunction).retry(retryCount);
+  protected <T> Single<T> rxWithTransaction(
+      Function<SqlConnection, Single<T>> transactionalFunction) {
+    // Vert.x rxWithTransaction expects Maybe, so we convert Single -> Maybe -> Single
+    return pgPool
+        .rxWithTransaction(connection -> transactionalFunction.apply(connection).toMaybe())
+        .toSingle()
+        .retry(retryCount);
   }
 
   /**

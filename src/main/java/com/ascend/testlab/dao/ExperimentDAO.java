@@ -1,7 +1,6 @@
 package com.ascend.testlab.dao;
 
 import com.ascend.testlab.dto.request.CreateExperimentRequest;
-import io.reactivex.rxjava3.core.Maybe;
 import io.reactivex.rxjava3.core.Single;
 import io.vertx.rxjava3.sqlclient.SqlConnection;
 import java.util.List;
@@ -39,9 +38,9 @@ public interface ExperimentDAO {
    * @param request experiment creation request with all experiment details
    * @param tags list of tags to associate with experiment
    * @param owner owner of the experiment
-   * @return Maybe emitting experiment ID on success
+   * @return Single emitting experiment ID on success
    */
-  Maybe<Long> createWithRelatedData(
+  Single<Long> createWithRelatedData(
       UUID tenantId,
       UUID projectKey,
       UUID experimentId,
@@ -77,9 +76,9 @@ public interface ExperimentDAO {
    * @param tags list of tags to update (null if no tag update)
    * @param previousData experiment data before update
    * @param updatedBy user who updated the experiment
-   * @return Maybe emitting true on success
+   * @return Single emitting true on success
    */
-  Maybe<Boolean> updateWithTransaction(
+  Single<Boolean> updateWithTransaction(
       UUID projectKey,
       UUID experimentId,
       Map<String, Object> experimentFields,

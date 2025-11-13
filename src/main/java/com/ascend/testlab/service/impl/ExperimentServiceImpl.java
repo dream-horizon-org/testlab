@@ -1,6 +1,7 @@
 package com.ascend.testlab.service.impl;
 
 import com.ascend.testlab.client.postgresql.PgWriterClient;
+import com.ascend.testlab.constants.enums.ExperimentStatus;
 import com.ascend.testlab.dao.ExperimentDAO;
 import com.ascend.testlab.dto.request.CreateExperimentRequest;
 import com.ascend.testlab.dto.response.CreateExperimentResponse;
@@ -61,54 +62,40 @@ public class ExperimentServiceImpl implements ExperimentService {
         "Creating experiment for tenantId: {}, projectKey: {}, experimentName: {}, tags: {}, owner: {}",
         tenantId,
         projectKey,
-        request != null ? request.getName() : "null",
+        request.getName(),
         request != null ? request.getTags() : null,
         request != null ? request.getOwner() : null);
 
-    try {
-      // Set project_key and experiment_id - both come from header
-      UUID experimentId = UUID.randomUUID();
-      request.setProjectKey(projectKey);
-      request.setExperimentId(experimentId);
+    // Set project_key and experiment_id - both come from header
+    UUID experimentId = UUID.randomUUID();
+    request.setProjectKey(projectKey);
+    request.setExperimentId(experimentId);
 
-      // Generate experiment_key from name: replace spaces and hyphens with underscores
-      String experimentKey = generateExperimentKey(request.getName());
-      request.setExperimentKey(experimentKey);
+    // Generate experiment_key from name: replace spaces and hyphens with underscores
+    String experimentKey = generateExperimentKey(request.getName());
+    request.setExperimentKey(experimentKey);
 
-      log.debug(
-          "Using tenantId: {}, projectKey: {} from header, generated experimentId: {}, experimentKey: {} for experiment: {}",
-          tenantId,
-          projectKey,
-          experimentId,
-          experimentKey,
-          request.getName());
+    log.debug(
+        "Using tenantId: {}, projectKey: {} from header, generated experimentId: {}, experimentKey: {} for experiment: {}",
+        tenantId,
+        projectKey,
+        experimentId,
+        experimentKey,
+        request.getName());
 
-      // Execute all insert operations in a transaction (delegated to DAO)
-      return experimentDAO
-          .createWithRelatedData(
-              tenantId, projectKey, experimentId, request, request.getTags(), request.getOwner())
-          .map(id -> new CreateExperimentResponse(experimentId, true, "created"))
-          .toSingle()
-          .onErrorReturn(
-              error -> {
+    // Execute all insert operations in a transaction (delegated to DAO)
+    return experimentDAO
+        .createWithRelatedData(
+            tenantId, projectKey, experimentId, request, request.getTags(), request.getOwner())
+        .map(id -> new CreateExperimentResponse(experimentId, true, "created"))
+        .doOnError(
+            error ->
                 log.error(
                     "Transaction failed during experiment creation, tenantId: {}, projectKey: {}, error: {}",
                     tenantId,
                     projectKey,
                     error.getMessage(),
-                    error);
-                return new CreateExperimentResponse(
-                    experimentId, false, "Failed: " + error.getMessage());
-              });
-    } catch (Exception e) {
-      log.error(
-          "Exception in create experiment service for tenantId: {}, projectKey: {}, error: {}",
-          tenantId,
-          projectKey,
-          e.getMessage(),
-          e);
-      return Single.just(new CreateExperimentResponse(null, false, "Failed: " + e.getMessage()));
-    }
+                    error));
   }
 
   /**
@@ -134,35 +121,21 @@ public class ExperimentServiceImpl implements ExperimentService {
         experimentId,
         request != null ? request.keySet() : "null");
 
-    try {
-      UpdateContext context = extractUpdateContext(request, experimentId);
+    UpdateContext context = extractUpdateContext(request, experimentId);
 
-      if (!context.hasUpdates()) {
-        log.warn("No fields to update for experimentId: {}", experimentId);
-        return Single.just(new UpdateExperimentResponse(experimentId, true, "No updates provided"));
-      }
-
-      return executeTransactionalUpdate(tenantId, projectKey, experimentId, context)
-          .map(
-              success ->
-                  new UpdateExperimentResponse(
-                      experimentId, success, success ? "updated" : "Update failed"))
-          .doOnSuccess(
-              response -> logSuccess(tenantId, projectKey, experimentId, response.isStatus()))
-          .doOnError(error -> logError(tenantId, projectKey, experimentId, error))
-          .onErrorReturn(error -> handleUpdateError(tenantId, projectKey, experimentId, error));
-
-    } catch (Exception e) {
-      log.error(
-          "Exception in update experiment service for tenantId: {}, projectKey: {}, experimentId: {}, error: {}",
-          tenantId,
-          projectKey,
-          experimentId,
-          e.getMessage(),
-          e);
-      return Single.just(
-          new UpdateExperimentResponse(experimentId, false, "Failed: " + e.getMessage()));
+    if (!context.hasUpdates()) {
+      log.warn("No fields to update for experimentId: {}", experimentId);
+      return Single.just(new UpdateExperimentResponse(experimentId, true, "No updates provided"));
     }
+
+    return executeTransactionalUpdate(tenantId, projectKey, experimentId, context)
+        .map(
+            success ->
+                new UpdateExperimentResponse(
+                    experimentId, success, success ? "updated" : "Update failed"))
+        .doOnSuccess(
+            response -> logSuccess(tenantId, projectKey, experimentId, response.isStatus()))
+        .doOnError(error -> logError(tenantId, projectKey, experimentId, error));
   }
 
   /**
@@ -228,16 +201,38 @@ public class ExperimentServiceImpl implements ExperimentService {
                     experimentId,
                     previousData.keySet()))
         .flatMap(
-            previousData ->
-                experimentDAO
-                    .updateWithTransaction(
-                        projectKey,
-                        experimentId,
-                        context.experimentFields,
-                        context.tags,
-                        previousData,
-                        context.updatedBy)
-                    .toSingle());
+            previousData -> {
+              // Validate status transition if status is being updated
+              if (context.experimentFields.containsKey("status")) {
+                Object currentStatusObj = previousData.get("status");
+                Object newStatusObj = context.experimentFields.get("status");
+
+                String currentStatus =
+                    currentStatusObj != null ? currentStatusObj.toString() : null;
+                String newStatus = newStatusObj != null ? newStatusObj.toString() : null;
+
+                log.debug(
+                    "Status transition check - current: {}, new: {}, experimentId: {}",
+                    currentStatus,
+                    newStatus,
+                    experimentId);
+
+                try {
+                  validateStatusTransition(currentStatus, newStatus, experimentId);
+                } catch (IllegalArgumentException e) {
+                  log.error("Status transition validation failed: {}", e.getMessage());
+                  return Single.error(e);
+                }
+              }
+
+              return experimentDAO.updateWithTransaction(
+                  projectKey,
+                  experimentId,
+                  context.experimentFields,
+                  context.tags,
+                  previousData,
+                  context.updatedBy);
+            });
   }
 
   /**
@@ -292,17 +287,6 @@ public class ExperimentServiceImpl implements ExperimentService {
         experimentId,
         error.getMessage());
     return false;
-  }
-
-  private UpdateExperimentResponse handleUpdateError(
-      UUID tenantId, UUID projectKey, UUID experimentId, Throwable error) {
-    log.error(
-        "Returning error response for experiment update, tenantId: {}, projectKey: {}, experimentId: {}, error: {}",
-        tenantId,
-        projectKey,
-        experimentId,
-        error.getMessage());
-    return new UpdateExperimentResponse(experimentId, false, "Failed: " + error.getMessage());
   }
 
   /** Inner class to hold update context with separated fields. */
@@ -406,6 +390,126 @@ public class ExperimentServiceImpl implements ExperimentService {
       return "";
     }
     return name.replaceAll("[ -]", "_");
+  }
+
+  /**
+   * Validates status transition based on business rules.
+   *
+   * <p>Status transition rules:
+   *
+   * <ul>
+   *   <li>DRAFT → LIVE, PAUSED, CONCLUDED, TERMINATED
+   *   <li>LIVE → PAUSED, CONCLUDED, TERMINATED
+   *   <li>PAUSED → LIVE, CONCLUDED, TERMINATED
+   *   <li>CONCLUDED → No transitions allowed (terminal state)
+   *   <li>TERMINATED → No transitions allowed (terminal state)
+   * </ul>
+   *
+   * @param currentStatus current experiment status
+   * @param newStatus new status to transition to
+   * @param experimentId experiment identifier for logging
+   * @throws IllegalArgumentException if transition is not allowed
+   */
+  private void validateStatusTransition(String currentStatus, String newStatus, UUID experimentId) {
+    if (currentStatus == null || newStatus == null) {
+      log.warn(
+          "Status validation skipped - currentStatus: {}, newStatus: {}, experimentId: {}",
+          currentStatus,
+          newStatus,
+          experimentId);
+      return;
+    }
+
+    // If status is not changing, allow it
+    if (currentStatus.equals(newStatus)) {
+      log.debug(
+          "Status not changing for experimentId: {}, status: {}", experimentId, currentStatus);
+      return;
+    }
+
+    log.info(
+        "Validating status transition for experimentId: {}, from: {} to: {}",
+        experimentId,
+        currentStatus,
+        newStatus);
+
+    ExperimentStatus current = ExperimentStatus.valueOf(currentStatus);
+    ExperimentStatus target = ExperimentStatus.valueOf(newStatus);
+
+    boolean isValidTransition = false;
+    String errorMessage = null;
+
+    switch (current) {
+      case DRAFT:
+        // DRAFT can transition to LIVE, PAUSED, CONCLUDED, TERMINATED
+        isValidTransition =
+            target == ExperimentStatus.LIVE
+                || target == ExperimentStatus.PAUSED
+                || target == ExperimentStatus.CONCLUDED
+                || target == ExperimentStatus.TERMINATED;
+        if (!isValidTransition) {
+          errorMessage =
+              String.format(
+                  "Invalid status transition from DRAFT to %s. Allowed transitions: LIVE, PAUSED, CONCLUDED, TERMINATED",
+                  target);
+        }
+        break;
+
+      case LIVE:
+        // LIVE can transition to PAUSED, CONCLUDED, TERMINATED
+        isValidTransition =
+            target == ExperimentStatus.PAUSED
+                || target == ExperimentStatus.CONCLUDED
+                || target == ExperimentStatus.TERMINATED;
+        if (!isValidTransition) {
+          errorMessage =
+              String.format(
+                  "Invalid status transition from LIVE to %s. Allowed transitions: PAUSED, CONCLUDED, TERMINATED",
+                  target);
+        }
+        break;
+
+      case PAUSED:
+        // PAUSED can transition to LIVE, CONCLUDED, TERMINATED
+        isValidTransition =
+            target == ExperimentStatus.LIVE
+                || target == ExperimentStatus.CONCLUDED
+                || target == ExperimentStatus.TERMINATED;
+        if (!isValidTransition) {
+          errorMessage =
+              String.format(
+                  "Invalid status transition from PAUSED to %s. Allowed transitions: LIVE, CONCLUDED, TERMINATED",
+                  target);
+        }
+        break;
+
+      case CONCLUDED:
+      case TERMINATED:
+        // Terminal states - no transitions allowed
+        errorMessage =
+            String.format(
+                "Cannot update status from %s. This is a terminal state and cannot be changed.",
+                current);
+        break;
+
+      default:
+        errorMessage = String.format("Unknown current status: %s", current);
+        break;
+    }
+
+    if (!isValidTransition) {
+      log.error(
+          "Status transition validation failed for experimentId: {}, error: {}",
+          experimentId,
+          errorMessage);
+      throw new IllegalArgumentException(errorMessage);
+    }
+
+    log.info(
+        "Status transition validated successfully for experimentId: {}, from: {} to: {}",
+        experimentId,
+        currentStatus,
+        newStatus);
   }
 
   private static class UpdateContext {

@@ -2,6 +2,7 @@ package com.ascend.testlab.dao.impl;
 
 import com.ascend.testlab.client.postgresql.PgReaderClient;
 import com.ascend.testlab.client.postgresql.PgWriterClient;
+import com.ascend.testlab.constants.Constants;
 import com.ascend.testlab.constants.postgresql.ReadQuery;
 import com.ascend.testlab.constants.postgresql.WriteQuery;
 import com.ascend.testlab.dao.ExperimentDAO;
@@ -9,7 +10,6 @@ import com.ascend.testlab.dto.request.CreateExperimentRequest;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.inject.Inject;
-import io.reactivex.rxjava3.core.Maybe;
 import io.reactivex.rxjava3.core.Single;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
@@ -205,10 +205,10 @@ public class ExperimentDAOImpl implements ExperimentDAO {
    * @param request experiment creation request with all experiment details
    * @param tags list of tags to associate with experiment
    * @param owner owner of the experiment
-   * @return Maybe emitting experiment ID on success
+   * @return Single emitting experiment ID on success
    */
   @Override
-  public Maybe<Long> createWithRelatedData(
+  public Single<Long> createWithRelatedData(
       UUID tenantId,
       UUID projectKey,
       UUID experimentId,
@@ -224,50 +224,49 @@ public class ExperimentDAOImpl implements ExperimentDAO {
     return pgWriterClient.executeWithTransaction(
         connection ->
             create(tenantId, projectKey, request)
-                .flatMapMaybe(
+                .flatMap(
                     id -> {
                       if (id <= 0) {
                         log.error("DAO: Failed to create experiment - id is 0");
-                        return Maybe.error(new RuntimeException("Failed to insert experiment"));
+                        return Single.error(new RuntimeException("Failed to insert experiment"));
                       }
 
                       log.info("DAO: Experiment created with id: {}, inserting related data", id);
 
                       // Execute all inserts in parallel using zip
                       return Single.zip(
-                              batchInsertTags(connection, projectKey, experimentId, tags),
-                              insertOwner(connection, projectKey, experimentId, owner),
-                              insertUpdateLog(
-                                  connection,
-                                  projectKey,
-                                  experimentId,
-                                  null, // previous_data is null for create
-                                  convertRequestToMap(request),
-                                  request.getCreatedBy()),
-                              insertAnalysis(
-                                  connection, projectKey, experimentId, request.getMetrics()),
-                              (tagsSuccess, ownerSuccess, updateLogSuccess, analysisSuccess) -> {
-                                // Validate all operations succeeded
-                                if (!tagsSuccess) {
-                                  throw new RuntimeException("Failed to insert tags");
-                                }
-                                if (!ownerSuccess) {
-                                  throw new RuntimeException("Failed to insert owner");
-                                }
-                                if (!updateLogSuccess) {
-                                  throw new RuntimeException("Failed to insert update log");
-                                }
-                                if (!analysisSuccess) {
-                                  throw new RuntimeException("Failed to insert analysis");
-                                }
-                                log.info(
-                                    "DAO: Successfully created experiment with all related data in parallel, id: {}, experimentId: {}, projectKey: {}",
-                                    id,
-                                    experimentId,
-                                    projectKey);
-                                return id;
-                              })
-                          .flatMapMaybe(Maybe::just);
+                          batchInsertTags(connection, projectKey, experimentId, tags),
+                          insertOwner(connection, projectKey, experimentId, owner),
+                          insertUpdateLog(
+                              connection,
+                              projectKey,
+                              experimentId,
+                              null, // previous_data is null for create
+                              convertRequestToMap(request),
+                              request.getCreatedBy()),
+                          insertAnalysis(
+                              connection, projectKey, experimentId, request.getMetrics()),
+                          (tagsSuccess, ownerSuccess, updateLogSuccess, analysisSuccess) -> {
+                            // Validate all operations succeeded
+                            if (!tagsSuccess) {
+                              throw new RuntimeException("Failed to insert tags");
+                            }
+                            if (!ownerSuccess) {
+                              throw new RuntimeException("Failed to insert owner");
+                            }
+                            if (!updateLogSuccess) {
+                              throw new RuntimeException("Failed to insert update log");
+                            }
+                            if (!analysisSuccess) {
+                              throw new RuntimeException("Failed to insert analysis");
+                            }
+                            log.info(
+                                "DAO: Successfully created experiment with all related data in parallel, id: {}, experimentId: {}, projectKey: {}",
+                                id,
+                                experimentId,
+                                projectKey);
+                            return id;
+                          });
                     }));
   }
 
@@ -472,25 +471,7 @@ public class ExperimentDAOImpl implements ExperimentDAO {
    * @return set of allowed column names
    */
   private Set<String> getAllowedUpdateColumns() {
-    return Set.of(
-        "name",
-        "description",
-        "hypothesis",
-        "status",
-        "type",
-        "guardrail_health_status",
-        "cohorts",
-        "variant_weights",
-        "variants",
-        "distribution_strategy",
-        "assignment_domain",
-        "overrides",
-        "winning_variant",
-        "exposure",
-        "threshold",
-        "start_time",
-        "end_time",
-        "created_by");
+    return Constants.ALLOWED_UPDATE_FIELDS;
   }
 
   /**
@@ -703,10 +684,10 @@ public class ExperimentDAOImpl implements ExperimentDAO {
    * @param tags list of tags to update (null if no tag update)
    * @param previousData experiment data before update
    * @param updatedBy user who updated the experiment
-   * @return Maybe emitting true on success
+   * @return Single emitting true on success
    */
   @Override
-  public Maybe<Boolean> updateWithTransaction(
+  public Single<Boolean> updateWithTransaction(
       UUID projectKey,
       UUID experimentId,
       Map<String, Object> experimentFields,
@@ -725,9 +706,15 @@ public class ExperimentDAOImpl implements ExperimentDAO {
                 .flatMap(success -> validateUpdateSuccess(success, "experiment fields"))
                 .flatMap(unused -> updateTagsIfPresent(connection, projectKey, experimentId, tags))
                 .flatMap(success -> validateUpdateSuccess(success, "tags"))
-                .flatMapMaybe(
+                .flatMap(
                     unused ->
-                        logUpdate(connection, projectKey, experimentId, previousData, updatedBy)));
+                        logUpdate(
+                            connection,
+                            projectKey,
+                            experimentId,
+                            experimentFields,
+                            previousData,
+                            updatedBy)));
   }
 
   /**
@@ -795,29 +782,40 @@ public class ExperimentDAOImpl implements ExperimentDAO {
   }
 
   /**
-   * Logs the update operation.
+   * Logs experiment update by computing current data from previous data and updates.
    *
-   * @param connection SQL connection
+   * <p>This method avoids an extra database call by merging the previous data with the update
+   * fields to compute the current state.
+   *
+   * @param connection SQL connection for transaction
    * @param projectKey project identifier
    * @param experimentId experiment identifier
-   * @param previousData data before update
-   * @param updatedBy user who updated
-   * @return Maybe emitting true on success
+   * @param experimentFields fields that were updated
+   * @param previousData experiment data before update
+   * @param updatedBy user who updated the experiment
+   * @return Single emitting true on success
    */
-  private Maybe<Boolean> logUpdate(
+  private Single<Boolean> logUpdate(
       io.vertx.rxjava3.sqlclient.SqlConnection connection,
       UUID projectKey,
       UUID experimentId,
+      Map<String, Object> experimentFields,
       Map<String, Object> previousData,
       String updatedBy) {
 
-    return getExperimentData(projectKey, experimentId)
-        .flatMap(
-            currentData ->
-                insertUpdateLog(
-                    connection, projectKey, experimentId, previousData, currentData, updatedBy))
-        .map(success -> true)
-        .toMaybe();
+    log.debug(
+        "DAO: Computing current data from previous data and {} updated fields",
+        experimentFields.size());
+
+    // Compute current data by merging previous data with updates
+    Map<String, Object> currentData = new HashMap<>(previousData);
+    currentData.putAll(experimentFields);
+
+    log.debug("DAO: Current data computed, logging update for experimentId: {}", experimentId);
+
+    return insertUpdateLog(
+            connection, projectKey, experimentId, previousData, currentData, updatedBy)
+        .map(success -> true);
   }
 
   /**

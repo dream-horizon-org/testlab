@@ -7,14 +7,12 @@ import static org.mockito.Mockito.*;
 import com.ascend.testlab.client.postgresql.PgWriterClient;
 import com.ascend.testlab.constants.enums.ExperimentHealth;
 import com.ascend.testlab.constants.enums.ExperimentStatus;
-import com.ascend.testlab.constants.enums.ExperimentStrategy;
 import com.ascend.testlab.constants.enums.ExperimentType;
 import com.ascend.testlab.dao.ExperimentDAO;
 import com.ascend.testlab.dto.request.CreateExperimentRequest;
 import com.ascend.testlab.dto.response.CreateExperimentResponse;
 import com.ascend.testlab.dto.response.UpdateExperimentResponse;
 import com.ascend.testlab.service.impl.ExperimentServiceImpl;
-import io.reactivex.rxjava3.core.Maybe;
 import io.reactivex.rxjava3.core.Single;
 import io.reactivex.rxjava3.observers.TestObserver;
 import io.vertx.junit5.VertxExtension;
@@ -59,7 +57,7 @@ public class ExperimentServiceTest {
         .when(pgWriterClient.executeWithTransaction(any(Function.class)))
         .thenAnswer(
             invocation -> {
-              Function<Object, Maybe<Long>> function = invocation.getArgument(0);
+              Function<Object, Single<Long>> function = invocation.getArgument(0);
               return function.apply(null);
             });
   }
@@ -80,7 +78,7 @@ public class ExperimentServiceTest {
               any(CreateExperimentRequest.class),
               anyList(),
               anyString()))
-          .thenReturn(Maybe.just(1L));
+          .thenReturn(Single.just(1L));
 
       // Act
       TestObserver<CreateExperimentResponse> testObserver =
@@ -121,7 +119,7 @@ public class ExperimentServiceTest {
               any(CreateExperimentRequest.class),
               anyList(),
               anyString()))
-          .thenReturn(Maybe.just(1L));
+          .thenReturn(Single.just(1L));
 
       // Act
       TestObserver<CreateExperimentResponse> testObserver =
@@ -148,7 +146,7 @@ public class ExperimentServiceTest {
               any(CreateExperimentRequest.class),
               anyList(),
               anyString()))
-          .thenReturn(Maybe.error(new RuntimeException("Failed to insert experiment")));
+          .thenReturn(Single.error(new RuntimeException("Failed to insert experiment")));
 
       // Act
       TestObserver<CreateExperimentResponse> testObserver =
@@ -178,7 +176,7 @@ public class ExperimentServiceTest {
               any(CreateExperimentRequest.class),
               anyList(),
               anyString()))
-          .thenReturn(Maybe.error(exception));
+          .thenReturn(Single.error(exception));
 
       // Act
       TestObserver<CreateExperimentResponse> testObserver =
@@ -229,7 +227,7 @@ public class ExperimentServiceTest {
               any(CreateExperimentRequest.class),
               anyList(),
               anyString()))
-          .thenReturn(Maybe.just(1L));
+          .thenReturn(Single.just(1L));
 
       // Act
       TestObserver<CreateExperimentResponse> testObserver =
@@ -264,7 +262,7 @@ public class ExperimentServiceTest {
               any(CreateExperimentRequest.class),
               anyList(),
               anyString()))
-          .thenReturn(Maybe.just(1L));
+          .thenReturn(Single.just(1L));
 
       // Act
       TestObserver<CreateExperimentResponse> testObserver =
@@ -291,7 +289,7 @@ public class ExperimentServiceTest {
           .thenReturn(Single.just(previousData));
       when(experimentDAO.updateWithTransaction(
               any(UUID.class), any(UUID.class), anyMap(), any(), anyMap(), any()))
-          .thenReturn(Maybe.just(true));
+          .thenReturn(Single.just(true));
     }
 
     @Test
@@ -311,7 +309,7 @@ public class ExperimentServiceTest {
           .thenReturn(Single.just(previousData));
       when(experimentDAO.updateWithTransaction(
               any(UUID.class), any(UUID.class), anyMap(), any(), anyMap(), any()))
-          .thenReturn(Maybe.just(true));
+          .thenReturn(Single.just(true));
 
       // Act
       TestObserver<UpdateExperimentResponse> testObserver =
@@ -343,7 +341,7 @@ public class ExperimentServiceTest {
           .thenReturn(Single.just(previousData));
       when(experimentDAO.updateWithTransaction(
               any(UUID.class), any(UUID.class), anyMap(), any(), anyMap(), any()))
-          .thenReturn(Maybe.just(true));
+          .thenReturn(Single.just(true));
 
       // Act
       TestObserver<UpdateExperimentResponse> testObserver =
@@ -442,7 +440,7 @@ public class ExperimentServiceTest {
           .thenReturn(Single.just(previousData));
       when(experimentDAO.updateWithTransaction(
               any(UUID.class), any(UUID.class), anyMap(), any(), anyMap(), any()))
-          .thenReturn(Maybe.just(false));
+          .thenReturn(Single.just(false));
 
       // Act
       TestObserver<UpdateExperimentResponse> testObserver =
@@ -533,9 +531,9 @@ public class ExperimentServiceTest {
               any(CreateExperimentRequest.class),
               anyList(),
               anyString()))
-          .thenReturn(Maybe.just(1L))
-          .thenReturn(Maybe.just(2L))
-          .thenReturn(Maybe.just(3L));
+          .thenReturn(Single.just(1L))
+          .thenReturn(Single.just(2L))
+          .thenReturn(Single.just(3L));
 
       // Act
       TestObserver<CreateExperimentResponse> observer1 =
@@ -578,7 +576,7 @@ public class ExperimentServiceTest {
           .thenReturn(Single.just(previousData));
       when(experimentDAO.updateWithTransaction(
               any(UUID.class), any(UUID.class), anyMap(), any(), anyMap(), any()))
-          .thenReturn(Maybe.just(true));
+          .thenReturn(Single.just(true));
 
       // Act
       TestObserver<UpdateExperimentResponse> observer1 =
@@ -618,7 +616,7 @@ public class ExperimentServiceTest {
               any(CreateExperimentRequest.class),
               anyList(),
               anyString()))
-          .thenReturn(Maybe.just(1L));
+          .thenReturn(Single.just(1L));
 
       // Act
       TestObserver<CreateExperimentResponse> testObserver =
@@ -647,7 +645,7 @@ public class ExperimentServiceTest {
               any(CreateExperimentRequest.class),
               anyList(),
               anyString()))
-          .thenReturn(Maybe.just(1L));
+          .thenReturn(Single.just(1L));
 
       // Act
       TestObserver<CreateExperimentResponse> testObserver =
@@ -674,7 +672,7 @@ public class ExperimentServiceTest {
               any(CreateExperimentRequest.class),
               anyList(),
               anyString()))
-          .thenReturn(Maybe.just(1L));
+          .thenReturn(Single.just(1L));
 
       // Act
       TestObserver<CreateExperimentResponse> testObserver =
@@ -695,7 +693,6 @@ public class ExperimentServiceTest {
     request.setStatus(ExperimentStatus.DRAFT);
     request.setType(ExperimentType.A_B);
     request.setGuardrailHealthStatus(ExperimentHealth.PASSING);
-    request.setAssignmentStrategy(ExperimentStrategy.RANDOM);
     request.setExposure(50);
     request.setThreshold(1000);
     request.setStartTime(System.currentTimeMillis() / 1000);

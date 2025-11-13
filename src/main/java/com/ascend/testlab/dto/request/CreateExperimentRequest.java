@@ -117,9 +117,10 @@ public class CreateExperimentRequest {
 
   @JsonProperty("winning_variant")
   @Valid
-  @NotNull(message = "VariantWeights is required")
-  @ValidVariantWeights
-  private VariantWeights winningVariant;
+  @NotNull(message = "Winning Variant is required")
+  @ValidVariantKeys
+  @Size(max = 50, message = "Maximum 50 variants allowed")
+  private Map<String, @Valid Variant> winningVariant;
 
   @JsonProperty("variants")
   @Valid

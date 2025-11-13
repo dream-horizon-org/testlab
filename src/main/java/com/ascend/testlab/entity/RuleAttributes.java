@@ -6,6 +6,7 @@ import com.ascend.testlab.constants.attributes.Operand;
 import com.ascend.testlab.constants.attributes.RelationalOperator;
 import com.ascend.testlab.constants.enums.DataTypeEnum;
 import com.ascend.testlab.exception.ErrorMessages;
+import com.ascend.testlab.validation.annotations.ValidConditionValue;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.*;
 import java.util.List;
@@ -38,6 +39,7 @@ public class RuleAttributes {
   @Builder
   @NoArgsConstructor
   @AllArgsConstructor
+  @ValidConditionValue
   public static class Condition {
     @NotBlank
     @ValidEnumValue(

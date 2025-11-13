@@ -1,7 +1,6 @@
 package com.ascend.testlab.client.postgresql;
 
 import io.reactivex.rxjava3.core.Completable;
-import io.reactivex.rxjava3.core.Maybe;
 import io.reactivex.rxjava3.core.Single;
 import io.vertx.rxjava3.sqlclient.Row;
 import io.vertx.rxjava3.sqlclient.SqlConnection;
@@ -103,10 +102,10 @@ public interface PgWriterClient {
    *
    * @param transactionalFunction the function to execute with the connection
    * @param <T> the type of the result
-   * @return a Maybe that emits the result of the transactional function
+   * @return a Single that emits the result of the transactional function
    */
   // TODO: add support to begin/commit/rollback a transaction
-  <T> Maybe<T> executeWithTransaction(Function<SqlConnection, Maybe<T>> transactionalFunction);
+  <T> Single<T> executeWithTransaction(Function<SqlConnection, Single<T>> transactionalFunction);
 
   /**
    * Execute a prepared query with a tuple and fetch one row.

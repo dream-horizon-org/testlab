@@ -22,8 +22,8 @@ public final class ReadQuery {
   /** The query to fetch experiment data for update log. */
   public static final String GET_EXPERIMENT_DATA =
       "SELECT project_key, experiment_id, name, description, hypothesis, status, type, "
-          + "guardrail_health_status, cohorts, variant_weights, assignment_strategy, overrides, "
-          + "rule_attributes, winning_variant, exposure, threshold, start_time, end_time, "
-          + "created_by, created_at, updated_at "
+          + "guardrail_health_status, cohorts, variant_weights, variants, distribution_strategy, "
+          + "assignment_domain, overrides, rule_attributes, winning_variant, exposure, threshold, "
+          + "start_time, end_time, created_by, created_at, updated_at "
           + "FROM experiments WHERE project_key = $1 AND experiment_id = $2";
 }

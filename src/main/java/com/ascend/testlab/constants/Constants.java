@@ -1,5 +1,6 @@
 package com.ascend.testlab.constants;
 
+import java.util.Set;
 import lombok.experimental.UtilityClass;
 
 /**
@@ -42,4 +43,49 @@ public final class Constants {
   public static final String GET_NAME = "getName";
 
   public static final String NAME = "name";
+
+  /* Experiment Update Field Constants */
+
+  /**
+   * Set of fields that are allowed to be updated in an experiment.
+   *
+   * <p>Excludes primary keys, auto-managed fields, and immutable fields.
+   */
+  public static final Set<String> ALLOWED_UPDATE_FIELDS =
+      Set.of(
+          "description",
+          "hypothesis",
+          "status",
+          "type",
+          "guardrail_health_status",
+          "cohorts",
+          "variant_weights",
+          "variants",
+          "distribution_strategy",
+          "assignment_domain",
+          "overrides",
+          "rule_attributes",
+          "winning_variant",
+          "exposure",
+          "threshold",
+          "start_time",
+          "end_time");
+
+  /**
+   * Set of fields that are NOT allowed to be updated in an experiment.
+   *
+   * <p>These fields are either immutable, auto-managed, or should only be set during creation.
+   */
+  public static final Set<String> NON_UPDATABLE_FIELDS =
+      Set.of(
+          "name",
+          "experiment_key",
+          "project_key",
+          "experiment_id",
+          "created_by",
+          "created_at",
+          "updated_at",
+          "metrics",
+          "tags",
+          "owner");
 }

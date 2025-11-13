@@ -8,7 +8,6 @@ import com.ascend.testlab.client.postgresql.PgReaderClient;
 import com.ascend.testlab.client.postgresql.PgWriterClient;
 import com.ascend.testlab.constants.enums.ExperimentHealth;
 import com.ascend.testlab.constants.enums.ExperimentStatus;
-import com.ascend.testlab.constants.enums.ExperimentStrategy;
 import com.ascend.testlab.constants.enums.ExperimentType;
 import com.ascend.testlab.dao.impl.ExperimentDAOImpl;
 import com.ascend.testlab.dto.request.CreateExperimentRequest;
@@ -194,7 +193,6 @@ public class ExperimentDAOTest {
       request.setGuardrailHealthStatus(null);
       request.setCohorts(null);
       request.setVariantWeights(null);
-      request.setAssignmentStrategy(null);
       request.setExposure(50);
       request.setThreshold(1000);
       request.setStartTime(System.currentTimeMillis() / 1000);
@@ -491,7 +489,6 @@ public class ExperimentDAOTest {
     request.setType(ExperimentType.A_B);
     request.setGuardrailHealthStatus(ExperimentHealth.PASSING);
     request.setCohorts(Arrays.asList("test_cohort"));
-    request.setAssignmentStrategy(ExperimentStrategy.RANDOM);
     request.setExposure(50);
     request.setThreshold(1000);
     request.setStartTime(System.currentTimeMillis() / 1000);
