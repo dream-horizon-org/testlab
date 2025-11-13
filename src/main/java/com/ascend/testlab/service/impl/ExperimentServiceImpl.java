@@ -2,9 +2,6 @@ package com.ascend.testlab.service.impl;
 
 import com.ascend.testlab.client.postgresql.PgWriterClient;
 import com.ascend.testlab.dao.ExperimentDAO;
-import com.ascend.testlab.dao.ExperimentUpdateLogDAO;
-import com.ascend.testlab.dao.OwnerDAO;
-import com.ascend.testlab.dao.TagDAO;
 import com.ascend.testlab.dto.request.CreateExperimentRequest;
 import com.ascend.testlab.dto.response.CreateExperimentResponse;
 import com.ascend.testlab.dto.response.UpdateExperimentResponse;
@@ -33,32 +30,17 @@ public class ExperimentServiceImpl implements ExperimentService {
 
   private final ExperimentDAO experimentDAO;
   private final PgWriterClient pgWriterClient;
-  private final TagDAO tagDAO;
-  private final OwnerDAO ownerDAO;
-  private final ExperimentUpdateLogDAO experimentUpdateLogDAO;
 
   /**
-   * Constructs ExperimentServiceImpl with experiment DAO, PostgreSQL writer client, tag DAO, owner
-   * DAO, and update log DAO.
+   * Constructs ExperimentServiceImpl with experiment DAO and PostgreSQL writer client.
    *
    * @param experimentDAO experiment data access object
    * @param pgWriterClient PostgreSQL writer client for transactional operations
-   * @param tagDAO tag data access object
-   * @param ownerDAO owner data access object
-   * @param experimentUpdateLogDAO experiment update log DAO for logging updates
    */
   @Inject
-  public ExperimentServiceImpl(
-      ExperimentDAO experimentDAO,
-      PgWriterClient pgWriterClient,
-      TagDAO tagDAO,
-      OwnerDAO ownerDAO,
-      ExperimentUpdateLogDAO experimentUpdateLogDAO) {
+  public ExperimentServiceImpl(ExperimentDAO experimentDAO, PgWriterClient pgWriterClient) {
     this.experimentDAO = experimentDAO;
     this.pgWriterClient = pgWriterClient;
-    this.tagDAO = tagDAO;
-    this.ownerDAO = ownerDAO;
-    this.experimentUpdateLogDAO = experimentUpdateLogDAO;
   }
 
   /**
@@ -340,7 +322,7 @@ public class ExperimentServiceImpl implements ExperimentService {
     if (tags == null || tags.isEmpty()) {
       return Single.just(true);
     }
-    return tagDAO.batchInsertTags(connection, projectKey, experimentId, tags);
+    return experimentDAO.batchInsertTags(connection, projectKey, experimentId, tags);
   }
 
   /**
@@ -358,7 +340,7 @@ public class ExperimentServiceImpl implements ExperimentService {
       return Single.just(true);
     }
 
-    return tagDAO
+    return experimentDAO
         .getActiveTags(connection, projectKey, experimentId)
         .flatMap(
             existingTags -> {
@@ -375,12 +357,14 @@ public class ExperimentServiceImpl implements ExperimentService {
               Single<Boolean> markInactive =
                   tagsToRemove.isEmpty()
                       ? Single.just(true)
-                      : tagDAO.markTagsInactive(connection, projectKey, experimentId, tagsToRemove);
+                      : experimentDAO.markTagsInactive(
+                          connection, projectKey, experimentId, tagsToRemove);
 
               Single<Boolean> insertNew =
                   tagsToAdd.isEmpty()
                       ? Single.just(true)
-                      : tagDAO.batchInsertTags(connection, projectKey, experimentId, tagsToAdd);
+                      : experimentDAO.batchInsertTags(
+                          connection, projectKey, experimentId, tagsToAdd);
 
               return markInactive.flatMap(
                   markSuccess -> {
@@ -408,7 +392,7 @@ public class ExperimentServiceImpl implements ExperimentService {
     if (owner == null || owner.isEmpty()) {
       return Single.just(true);
     }
-    return ownerDAO.insertOwner(connection, projectKey, experimentId, owner);
+    return experimentDAO.insertOwner(connection, projectKey, experimentId, owner);
   }
 
   /**

@@ -10,9 +10,6 @@ import com.ascend.testlab.constants.enums.ExperimentStatus;
 import com.ascend.testlab.constants.enums.ExperimentStrategy;
 import com.ascend.testlab.constants.enums.ExperimentType;
 import com.ascend.testlab.dao.ExperimentDAO;
-import com.ascend.testlab.dao.ExperimentUpdateLogDAO;
-import com.ascend.testlab.dao.OwnerDAO;
-import com.ascend.testlab.dao.TagDAO;
 import com.ascend.testlab.dto.request.CreateExperimentRequest;
 import com.ascend.testlab.dto.response.CreateExperimentResponse;
 import com.ascend.testlab.dto.response.UpdateExperimentResponse;
@@ -43,9 +40,6 @@ public class ExperimentServiceTest {
 
   @Mock private ExperimentDAO experimentDAO;
   @Mock private PgWriterClient pgWriterClient;
-  @Mock private TagDAO tagDAO;
-  @Mock private OwnerDAO ownerDAO;
-  @Mock private ExperimentUpdateLogDAO experimentUpdateLogDAO;
 
   private ExperimentService experimentService;
 
@@ -55,9 +49,7 @@ public class ExperimentServiceTest {
 
   @BeforeEach
   void setUp() {
-    experimentService =
-        new ExperimentServiceImpl(
-            experimentDAO, pgWriterClient, tagDAO, ownerDAO, experimentUpdateLogDAO);
+    experimentService = new ExperimentServiceImpl(experimentDAO, pgWriterClient);
     testTenantId = UUID.randomUUID();
     testProjectKey = UUID.randomUUID();
     testExperimentId = UUID.randomUUID();

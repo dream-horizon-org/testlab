@@ -9,19 +9,11 @@ import com.ascend.testlab.client.postgresql.impl.PgWriterClientImpl;
 import com.ascend.testlab.client.webclient.WebClient;
 import com.ascend.testlab.client.webclient.impl.WebClientImpl;
 import com.ascend.testlab.config.*;
-import com.ascend.testlab.dao.ExperimentAnalysisDAO;
 import com.ascend.testlab.dao.ExperimentDAO;
-import com.ascend.testlab.dao.ExperimentUpdateLogDAO;
 import com.ascend.testlab.dao.HealthCheckDAO;
-import com.ascend.testlab.dao.OwnerDAO;
-import com.ascend.testlab.dao.TagDAO;
 import com.ascend.testlab.dao.TagsDAO;
-import com.ascend.testlab.dao.impl.ExperimentAnalysisDAOImpl;
 import com.ascend.testlab.dao.impl.ExperimentDAOImpl;
-import com.ascend.testlab.dao.impl.ExperimentUpdateLogDAOImpl;
 import com.ascend.testlab.dao.impl.HealthCheckDAOImpl;
-import com.ascend.testlab.dao.impl.OwnerDAOImpl;
-import com.ascend.testlab.dao.impl.TagDAOImpl;
 import com.ascend.testlab.dao.impl.TagsDAOImpl;
 import com.ascend.testlab.service.ExperimentService;
 import com.ascend.testlab.service.HealthCheckService;
@@ -95,11 +87,7 @@ public class ServiceModule extends DefaultModule {
   private void bindDAOs() {
     bind(HealthCheckDAO.class).to(HealthCheckDAOImpl.class);
     bind(ExperimentDAO.class).to(ExperimentDAOImpl.class);
-    bind(TagDAO.class).to(TagDAOImpl.class);
     bind(TagsDAO.class).to(TagsDAOImpl.class);
-    bind(OwnerDAO.class).to(OwnerDAOImpl.class);
-    bind(ExperimentUpdateLogDAO.class).to(ExperimentUpdateLogDAOImpl.class);
-    bind(ExperimentAnalysisDAO.class).to(ExperimentAnalysisDAOImpl.class);
   }
 
   /** Bind the service interfaces to their implementations. */

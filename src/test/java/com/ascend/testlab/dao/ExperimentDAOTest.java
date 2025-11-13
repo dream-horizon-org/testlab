@@ -37,10 +37,6 @@ public class ExperimentDAOTest {
 
   @Mock private PgWriterClient pgWriterClient;
   @Mock private PgReaderClient pgReaderClient;
-  @Mock private TagDAO tagDAO;
-  @Mock private OwnerDAO ownerDAO;
-  @Mock private ExperimentUpdateLogDAO experimentUpdateLogDAO;
-  @Mock private ExperimentAnalysisDAO experimentAnalysisDAO;
 
   private ExperimentDAO experimentDAO;
 
@@ -50,14 +46,7 @@ public class ExperimentDAOTest {
 
   @BeforeEach
   void setUp() {
-    experimentDAO =
-        new ExperimentDAOImpl(
-            pgWriterClient,
-            pgReaderClient,
-            tagDAO,
-            ownerDAO,
-            experimentUpdateLogDAO,
-            experimentAnalysisDAO);
+    experimentDAO = new ExperimentDAOImpl(pgWriterClient, pgReaderClient);
     testTenantId = UUID.randomUUID();
     testProjectKey = UUID.randomUUID();
     testExperimentId = UUID.randomUUID();
