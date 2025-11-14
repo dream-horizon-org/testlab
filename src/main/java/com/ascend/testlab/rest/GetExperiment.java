@@ -44,10 +44,10 @@ public class GetExperiment {
   /**
    * Handles GET request to retrieve experiment details by experiment ID.
    *
-   * <p>Fetches a single experiment based on the provided project ID and experiment ID. The project
-   * ID is passed as a header parameter, while the experiment ID is passed as a path parameter.
+   * <p>Fetches a single experiment based on the provided project Key and experiment ID. The project
+   * key is passed as a header parameter, while the experiment ID is passed as a path parameter.
    *
-   * @param projectId the project ID (required, passed as header parameter "x-project-id")
+   * @param projectKey the project Key (required, passed as header parameter "x-project-key")
    * @param experimentId the experiment ID (required, passed as path parameter)
    * @return a CompletionStage containing a successful response with the experiment data, or a
    *     failure response if the experiment ID is invalid or the experiment is not found
@@ -74,10 +74,10 @@ public class GetExperiment {
   public CompletionStage<ResponseEntity.Success<Experiment>> getExperimentHandler(
       @HeaderParam(WebConstants.PROJECT_KEY_HEADER)
           @NotBlank(message = ErrorMessages.PROJECT_KEY_MISSING)
-          String projectId,
+          String projectKey,
       @PathParam(WebConstants.EXPERIMENT_ID) String experimentId) {
     return experimentService
-        .getExperiment(projectId, experimentId)
+        .getExperiment(projectKey, experimentId)
         .map(ResponseEntity.Success::new)
         .toCompletionStage();
   }

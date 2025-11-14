@@ -4,6 +4,7 @@ import com.ascend.testlab.constants.enums.ExperimentStatus;
 import com.ascend.testlab.constants.enums.ExperimentType;
 import com.ascend.testlab.constants.web.WebConstants;
 import com.ascend.testlab.exception.ErrorMessages;
+import com.ascend.testlab.util.CommonUtil;
 import com.dream11.rest.exception.RestException;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.validation.constraints.AssertTrue;
@@ -11,6 +12,7 @@ import jakarta.validation.constraints.Positive;
 import jakarta.ws.rs.DefaultValue;
 import jakarta.ws.rs.QueryParam;
 import java.util.Arrays;
+import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -48,12 +50,12 @@ public class FilterExperimentsRequest {
   private String tag;
 
   @QueryParam(WebConstants.LIMIT)
-  @DefaultValue("20")
+  @DefaultValue(WebConstants.DEFAULT_LIMIT)
   @Positive(message = ErrorMessages.INVALID_LIMIT_VALUE)
   private Integer limit;
 
-  @QueryParam(WebConstants.OFFSET)
-  @DefaultValue("1")
+  @QueryParam(WebConstants.PAGE)
+  @DefaultValue(WebConstants.DEFAULT_PAGE)
   @Positive(message = ErrorMessages.INVALID_PAGE_VALUE)
   private Integer page;
 
@@ -114,11 +116,10 @@ public class FilterExperimentsRequest {
       return true; // Status is optional
     }
     try {
-      String[] statusValues = status.split(",");
+      List<String> statusValues = CommonUtil.separateCommaSeparatedString(status);
       for (String statusValue : statusValues) {
-        String trimmed = statusValue.trim();
-        if (!trimmed.isEmpty()) {
-          ExperimentStatus.valueOf(trimmed.toUpperCase());
+        if (!statusValue.isEmpty()) {
+          ExperimentStatus.valueOf(statusValue.toUpperCase());
         }
       }
       return true;
@@ -143,11 +144,10 @@ public class FilterExperimentsRequest {
       return true; // Type is optional
     }
     try {
-      String[] typeValues = type.split(",");
+      List<String> typeValues = CommonUtil.separateCommaSeparatedString(type);
       for (String typeValue : typeValues) {
-        String trimmed = typeValue.trim();
-        if (!trimmed.isEmpty()) {
-          ExperimentType.fromValue(trimmed);
+        if (!typeValue.isEmpty()) {
+          ExperimentType.fromValue(typeValue);
         }
       }
       return true;

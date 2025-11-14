@@ -55,7 +55,7 @@ public final class WebConstants {
   /** The name of the project key header. */
   public static final String PROJECT_KEY_HEADER = "x-project-key";
 
-  /** API Path */
+  /*API Path */
   /** The path for filtering experiments endpoint. */
   public static final String FILTER_EXPERIMENTS_PATH = "/v1/experiments";
 
@@ -65,7 +65,7 @@ public final class WebConstants {
   /** The path parameter name for experiment ID. */
   public static final String EXPERIMENT_ID = "experimentId";
 
-  /** Filter Query Parameters */
+  /* Filter Query Parameters */
   /** The query parameter name for experiment status filter. */
   public static final String EXPERIMENT_STATUS = "status";
 
@@ -81,10 +81,16 @@ public final class WebConstants {
   /** The query parameter name for name filter. */
   public static final String NAME = "name";
 
-  /** Pagination */
+  /* Pagination */
   /** The query parameter name for page number. */
-  public static final String OFFSET = "page";
+  public static final String PAGE = "page";
 
   /** The query parameter name for limit (page size). */
   public static final String LIMIT = "limit";
+
+  /** The default limit value for pagination. */
+  public static final String DEFAULT_LIMIT = "20";
+
+  /** The default page value for pagination. */
+  public static final String DEFAULT_PAGE = "1";
 }

@@ -145,7 +145,7 @@ class FilterExperimentsIT {
   @Test
   void testFilterExperiments_WithPagination() {
     Map<String, String> headers = Map.of(WebConstants.PROJECT_KEY_HEADER, PROJECT_KEY);
-    Map<String, String> queryParams = Map.of(WebConstants.LIMIT, "1", WebConstants.OFFSET, "1");
+    Map<String, String> queryParams = Map.of(WebConstants.LIMIT, "1", WebConstants.PAGE, "1");
 
     ValidatableResponse response =
         TestUtil.executeRequest(null, headers, queryParams, spec -> spec.get(this.route));
@@ -247,7 +247,9 @@ class FilterExperimentsIT {
   private static void seedFilterTestData() {
     // Create partitions for the test project_key (required for partitioned tables)
     // This must succeed before attempting to insert data
-    createPartitionsForProject(PROJECT_KEY);
+    TestUtil.createPartitionForProject("experiments", PROJECT_KEY);
+    TestUtil.createPartitionForProject("tags", PROJECT_KEY);
+    TestUtil.createPartitionForProject("owners", PROJECT_KEY);
 
     // Seed additional experiments with various attributes for comprehensive filter testing
     // Note: seed.sql already has data, but we add more here to ensure all filter scenarios work
@@ -284,15 +286,15 @@ class FilterExperimentsIT {
 
       String deleteExperiments =
           String.format(
-              "DELETE FROM experiments WHERE project_key = '%s' AND experiment_id IN ('%s', '%s');",
+              "DELETE FROM experiment.experiments WHERE project_key = '%s' AND experiment_id IN ('%s', '%s');",
               PROJECT_KEY, EXPERIMENT_ID_1, EXPERIMENT_ID_2);
       TestUtil.executeSQLStatement(TestUtil.getDatabaseConnection(), deleteExperiments);
 
       // Drop the partition we created
       try {
-        String partitionName = "experiments_p_" + PROJECT_KEY.replaceAll("-", "_");
-        String dropPartition = String.format("DROP TABLE IF EXISTS %s;", partitionName);
-        TestUtil.executeSQLStatement(TestUtil.getDatabaseConnection(), dropPartition);
+        TestUtil.dropTestPartition("experiments");
+        TestUtil.dropTestPartition("tags");
+        TestUtil.dropTestPartition("owners");
       } catch (Exception e) {
         log.debug("Failed to drop partition during cleanup (non-critical)", e);
       }
@@ -300,36 +302,6 @@ class FilterExperimentsIT {
       log.info("Cleanup completed for {}", FilterExperimentsIT.class.getSimpleName());
     } catch (Exception e) {
       log.warn("Failed to cleanup test data", e);
-    }
-  }
-
-  /**
-   * Creates partitions for all tables needed for the test project_key. This is required because the
-   * tables are partitioned by project_key.
-   *
-   * @param projectKey the project key to create partitions for
-   */
-  private static void createPartitionsForProject(String projectKey) {
-    try {
-      // Create partition for experiments table with unique name based on project key
-      // Using a hash of the project key to create a unique partition name
-      String partitionName = "experiments_p_" + projectKey.replaceAll("-", "_");
-      String experimentsPartition =
-          String.format(
-              "CREATE TABLE IF NOT EXISTS %s " + "PARTITION OF experiments FOR VALUES IN ('%s');",
-              partitionName, projectKey);
-      TestUtil.executeSQLStatement(TestUtil.getDatabaseConnection(), experimentsPartition);
-
-      // Create partition for tags table
-      TestUtil.createPartitionForProject("tags", projectKey);
-
-      // Create partition for owners table
-      TestUtil.createPartitionForProject("owners", projectKey);
-
-      log.debug("Created partitions for project: {}", projectKey);
-    } catch (Exception e) {
-      log.warn("Failed to create partitions for project: {}", projectKey, e);
-      throw new RuntimeException("Failed creating partitions for tests", e);
     }
   }
 
@@ -346,7 +318,7 @@ class FilterExperimentsIT {
       String projectKey, String experimentId, String name, String status, String type) {
     String insert =
         String.format(
-            "INSERT INTO experiments ("
+            "INSERT INTO experiment.experiments ("
                 + "project_key, experiment_id, name, description, hypothesis, status, type, "
                 + "guardrail_health_status, cohorts, variant_weights, assignment_strategy, "
                 + "overrides, rule_attributes, winning_variant, exposure, threshold, "
@@ -386,13 +358,6 @@ class FilterExperimentsIT {
       return;
     }
     try {
-      // Delete existing tags first to avoid duplicates
-      String delete =
-          String.format(
-              "DELETE FROM experiment.tags WHERE project_key = '%s' AND experiment_id = '%s';",
-              projectKey, experimentId);
-      TestUtil.executeSQLStatement(TestUtil.getDatabaseConnection(), delete);
-
       StringBuilder values = new StringBuilder();
       for (int i = 0; i < tags.length; i++) {
         if (i > 0) {
@@ -405,6 +370,7 @@ class FilterExperimentsIT {
           String.format(
               "INSERT INTO experiment.tags (experiment_id, project_key, tag, created_at, updated_at) VALUES %s;",
               values);
+
       TestUtil.executeSQLStatement(TestUtil.getDatabaseConnection(), insert);
     } catch (Exception e) {
       log.error("Failed to seed tags for experiment {}: {}", experimentId, e.getMessage(), e);
@@ -425,13 +391,6 @@ class FilterExperimentsIT {
       return;
     }
     try {
-      // Delete existing owners first to avoid duplicates
-      String delete =
-          String.format(
-              "DELETE FROM experiment.owners WHERE project_key = '%s' AND experiment_id = '%s';",
-              projectKey, experimentId);
-      TestUtil.executeSQLStatement(TestUtil.getDatabaseConnection(), delete);
-
       StringBuilder values = new StringBuilder();
       for (int i = 0; i < owners.length; i++) {
         if (i > 0) {

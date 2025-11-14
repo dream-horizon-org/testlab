@@ -8,6 +8,9 @@ package com.ascend.testlab.constants.enums;
  * @since 1.0
  */
 public enum AssignmentStrategy {
+  /** Random assignment strategy for variant assignment. */
   RANDOM,
+
+  /** Round-robin assignment strategy for variant assignment. */
   ROUND_ROBIN
 }

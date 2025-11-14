@@ -33,7 +33,7 @@ public final class ReadQuery {
              e.created_by, e.created_at, e.updated_at,
              string_agg(DISTINCT t.tag, ',') as tags,
              string_agg(DISTINCT o.owner, ',') as owners
-      FROM experiments e
+      FROM experiment.experiments e
       LEFT JOIN experiment.tags t ON e.project_key = t.project_key AND e.experiment_id = t.experiment_id
       LEFT JOIN experiment.owners o ON e.project_key = o.project_key AND e.experiment_id = o.experiment_id
       WHERE e.project_key = $1 AND e.experiment_id = $2
@@ -95,7 +95,7 @@ public final class ReadQuery {
              string_agg(DISTINCT t.tag, ',') as tags,
              string_agg(DISTINCT o.owner, ',') as owners,
              COUNT(*) OVER() as total_count
-      FROM experiments e
+      FROM experiment.experiments e
       LEFT JOIN experiment.tags t ON e.project_key = t.project_key AND e.experiment_id = t.experiment_id
       LEFT JOIN experiment.owners o ON e.project_key = o.project_key AND e.experiment_id = o.experiment_id
       WHERE e.project_key = $1

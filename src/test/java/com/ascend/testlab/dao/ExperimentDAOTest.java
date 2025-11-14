@@ -14,7 +14,6 @@ import com.ascend.testlab.dto.request.FilterExperimentsRequest;
 import com.ascend.testlab.dto.response.FilterExperimentsResponse;
 import io.reactivex.rxjava3.core.Single;
 import io.reactivex.rxjava3.observers.TestObserver;
-import io.vertx.core.Vertx;
 import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
 import io.vertx.rxjava3.sqlclient.Row;
@@ -50,7 +49,7 @@ class ExperimentDAOTest {
   private static final String EXPERIMENT_ID = UUID.randomUUID().toString();
 
   @BeforeEach
-  void setUp(Vertx vertx) {
+  void setUp() {
     this.experimentDAO = new ExperimentDAOImpl(pgReaderClient);
   }
 
@@ -518,6 +517,6 @@ class ExperimentDAOTest {
     // Add total_count for pagination
     when(mockRow.getInteger("total_count")).thenReturn(totalCount);
 
-    return Arrays.asList(mockRow);
+    return List.of(mockRow);
   }
 }

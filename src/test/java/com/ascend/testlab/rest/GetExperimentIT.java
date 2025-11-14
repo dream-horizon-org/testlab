@@ -17,9 +17,10 @@ import org.junit.jupiter.api.extension.ExtendWith;
 @Slf4j
 @ExtendWith(Setup.class)
 class GetExperimentIT {
-  private static final String PROJECT_KEY = "123e4567-e89b-12d3-a456-426614174000";
+  private static final String PROJECT_KEY = "get-experiment-key";
   private static final String EXPERIMENT_ID = "11111111-1111-1111-1111-111111111111";
   private static final String INVALID_EXPERIMENT_ID = "00000000-0000-0000-0000-000000000000";
+  private final String route = WebConstants.GET_EXPERIMENT_PATH;
 
   @BeforeAll
   public static void initialize() {
@@ -33,15 +34,14 @@ class GetExperimentIT {
 
   @Test
   void testGetExperiment_Success_WithSeededData() {
-    String route = "/v1/experiments/" + EXPERIMENT_ID;
     Map<String, String> headers = Map.of(WebConstants.PROJECT_KEY_HEADER, PROJECT_KEY);
 
     try {
-      createPartitionForProject(PROJECT_KEY);
+      createPartitionForProject();
       seedExperiment(PROJECT_KEY, EXPERIMENT_ID);
 
       ValidatableResponse response =
-          TestUtil.executeRequest(null, headers, null, spec -> spec.get(route));
+          TestUtil.executeRequest(null, headers, null, spec -> spec.get(route, EXPERIMENT_ID));
 
       response.statusCode(HttpStatus.SC_OK);
       response.contentType(WebConstants.APPLICATION_JSON);
@@ -55,32 +55,29 @@ class GetExperimentIT {
 
   @Test
   void testGetExperiment_NotFound() {
-    String route = "/v1/experiments/" + INVALID_EXPERIMENT_ID;
     Map<String, String> headers = Map.of(WebConstants.PROJECT_KEY_HEADER, PROJECT_KEY);
 
     ValidatableResponse response =
-        TestUtil.executeRequest(null, headers, null, spec -> spec.get(route));
+        TestUtil.executeRequest(
+            null, headers, null, spec -> spec.get(route, INVALID_EXPERIMENT_ID));
 
     response.statusCode(HttpStatus.SC_NOT_FOUND);
   }
 
   @Test
   void testGetExperiment_MissingHeader_BadRequest() {
-    String route = "/v1/experiments/" + EXPERIMENT_ID;
-
     ValidatableResponse response =
-        TestUtil.executeRequest(null, null, null, spec -> spec.get(route));
+        TestUtil.executeRequest(null, null, null, spec -> spec.get(route, EXPERIMENT_ID));
 
     response.statusCode(HttpStatus.SC_BAD_REQUEST);
   }
 
   @Test
   void testGetExperiment_BlankHeader_BadRequest() {
-    String route = "/v1/experiments/" + EXPERIMENT_ID;
     Map<String, String> headers = Map.of(WebConstants.PROJECT_KEY_HEADER, "   ");
 
     ValidatableResponse response =
-        TestUtil.executeRequest(null, headers, null, spec -> spec.get(route));
+        TestUtil.executeRequest(null, headers, null, spec -> spec.get(route, EXPERIMENT_ID));
 
     response.statusCode(HttpStatus.SC_BAD_REQUEST);
     response.body(Matchers.containsString(ErrorMessages.PROJECT_KEY_MISSING));
@@ -88,50 +85,28 @@ class GetExperimentIT {
 
   @Test
   void testGetExperiment_InvalidProjectKey_NotFound() {
-    String route = "/v1/experiments/" + EXPERIMENT_ID;
     Map<String, String> headers = Map.of(WebConstants.PROJECT_KEY_HEADER, "invalid-project-id");
 
     ValidatableResponse response =
-        TestUtil.executeRequest(null, headers, null, spec -> spec.get(route));
+        TestUtil.executeRequest(null, headers, null, spec -> spec.get(route, EXPERIMENT_ID));
 
     // Should return not found since experiment doesn't exist for this project
     response.statusCode(HttpStatus.SC_NOT_FOUND);
   }
 
-  private void createPartitionForProject(String projectKey) {
-    String ddl =
-        String.format(
-            "CREATE TABLE IF NOT EXISTS experiments_p_test "
-                + "PARTITION OF experiments FOR VALUES IN ('%s');",
-            projectKey);
+  private void createPartitionForProject() {
     try {
-      TestUtil.executeSQLStatement(TestUtil.getDatabaseConnection(), ddl);
+      TestUtil.createPartitionForProject("experiments", PROJECT_KEY);
     } catch (Exception e) {
       throw new RuntimeException(
           String.format("Failed creating partition for tests on table 'experiments'"), e);
     }
   }
 
-  private void dropTestPartition(String projectKey) {
-    try {
-      // Delete test data first
-      String delete =
-          String.format("DELETE FROM experiments WHERE project_key = '%s';", projectKey);
-      TestUtil.executeSQLStatement(TestUtil.getDatabaseConnection(), delete);
-
-      // Drop the partition
-      String ddl = "DROP TABLE IF EXISTS experiments_p_test;";
-      TestUtil.executeSQLStatement(TestUtil.getDatabaseConnection(), ddl);
-    } catch (Exception e) {
-      // best-effort cleanup
-      log.warn("Failed dropping test partition for table experiments", e);
-    }
-  }
-
   private void seedExperiment(String projectKey, String experimentId) {
     String insert =
         String.format(
-            "INSERT INTO experiments ("
+            "INSERT INTO experiment.experiments ("
                 + "project_key, experiment_id, name, description, hypothesis, status, type, "
                 + "guardrail_health_status, cohorts, variant_weights, assignment_strategy, "
                 + "overrides, rule_attributes, winning_variant, exposure, threshold, "

@@ -388,7 +388,7 @@ public class ExperimentServiceTest {
       FilterExperimentsResponse.PaginationMeta paginationMeta =
           new FilterExperimentsResponse.PaginationMeta(2, 10, 25);
       FilterExperimentsResponse expectedResponse =
-          new FilterExperimentsResponse(Arrays.asList(createMockExperiment()), paginationMeta);
+          new FilterExperimentsResponse(List.of(createMockExperiment()), paginationMeta);
       when(experimentDAO.filterExperiments(PROJECT_KEY, request))
           .thenReturn(Single.just(expectedResponse));
 
@@ -733,6 +733,6 @@ public class ExperimentServiceTest {
   private FilterExperimentsResponse createMockFilterResponse() {
     FilterExperimentsResponse.PaginationMeta paginationMeta =
         new FilterExperimentsResponse.PaginationMeta(1, 20, 1);
-    return new FilterExperimentsResponse(Arrays.asList(createMockExperiment()), paginationMeta);
+    return new FilterExperimentsResponse(List.of(createMockExperiment()), paginationMeta);
   }
 }

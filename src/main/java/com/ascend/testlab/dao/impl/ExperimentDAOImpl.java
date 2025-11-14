@@ -67,32 +67,22 @@ public class ExperimentDAOImpl implements ExperimentDAO {
       List<Row> rows, FilterExperimentsRequest req) {
     FilterExperimentsResponse response = new FilterExperimentsResponse();
 
-    if (rows.isEmpty()) {
-      response.setExperimentList(List.of());
-      FilterExperimentsResponse.PaginationMeta paginationMeta =
-          FilterExperimentsResponse.PaginationMeta.builder()
-              .totalCount(0)
-              .pageSize(req.getLimit())
-              .currentPage(req.getPage())
-              .build();
-
-      response.setPagination(paginationMeta);
-      return response;
-    }
-
     // Extract total count from the first row (all rows have the same total_count value)
-    int totalCount = rows.get(0).getInteger(Columns.TOTAL_COUNT);
+    int totalCount = (rows.isEmpty()) ? 0 : rows.get(0).getInteger(Columns.TOTAL_COUNT);
 
     // Map all rows to experiments
-    List<Experiment> experiments = rows.stream().map(ExperimentMapper::mapRowToExperiment).toList();
+    List<Experiment> experiments =
+        (rows.isEmpty())
+            ? List.of()
+            : rows.stream().map(ExperimentMapper::mapRowToExperiment).toList();
 
     response.setExperimentList(experiments);
 
-    // Build pagination metadata
-    FilterExperimentsResponse.PaginationMeta paginationMeta =
+    FilterExperimentsResponse.PaginationMeta paginationMeta;
+    paginationMeta =
         FilterExperimentsResponse.PaginationMeta.builder()
-            .currentPage(req.getPage())
             .pageSize(req.getLimit())
+            .currentPage(req.getPage())
             .totalCount(totalCount)
             .build();
 

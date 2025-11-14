@@ -59,15 +59,7 @@ public enum ErrorEnum implements RestError {
 
   /** The error code for validating experiment type failed. */
   INVALID_EXPERIMENT_TYPE(
-      "INVALID_EXPERIMENT_TYPE", "Experiment type is not valid", HttpStatus.SC_BAD_REQUEST),
-
-  /** The error code for invalid page limit. */
-  INVALID_PAGE_LIMIT(
-      "INVALID_PAGE_LIMIT", "Page limit must be greater than 0", HttpStatus.SC_BAD_REQUEST),
-
-  /** The error code for invalid page number. */
-  INVALID_PAGE_NUMBER(
-      "INVALID_PAGE_NUMBER", "Page number must be greater than 0", HttpStatus.SC_BAD_REQUEST);
+      "INVALID_EXPERIMENT_TYPE", "Experiment type is not valid", HttpStatus.SC_BAD_REQUEST);
 
   /** The error code. */
   private final String errorCode;
