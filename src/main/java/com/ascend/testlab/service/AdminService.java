@@ -1,5 +1,6 @@
 package com.ascend.testlab.service;
 
+import com.ascend.testlab.dto.response.GetExperimentHistoryResponse;
 import com.ascend.testlab.dto.response.NameAvailabilityResponse;
 import com.ascend.testlab.dto.response.TagsResponse;
 import io.reactivex.rxjava3.core.Single;
@@ -35,4 +36,14 @@ public interface AdminService {
    */
   Single<NameAvailabilityResponse> isExperimentNameAvailable(
       String projectKey, String experimentName);
+
+  /**
+   * Fetches the history of an experiment.
+   *
+   * @param projectKey the project key
+   * @param experimentId the experiment id
+   * @return a Single containing the get experiment history response
+   * @throws com.dream11.rest.exception.RestException if the operation fails
+   */
+  Single<GetExperimentHistoryResponse> getExperimentHistory(String projectKey, String experimentId);
 }

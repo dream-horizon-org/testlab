@@ -1,6 +1,7 @@
 package com.ascend.testlab.service.impl;
 
 import com.ascend.testlab.dao.AdminDAO;
+import com.ascend.testlab.dto.response.GetExperimentHistoryResponse;
 import com.ascend.testlab.dto.response.NameAvailabilityResponse;
 import com.ascend.testlab.dto.response.TagsResponse;
 import com.ascend.testlab.exception.ErrorEnum;
@@ -93,6 +94,42 @@ public class AdminServiceImpl implements AdminService {
                         ErrorEnum.REST_EXPERIMENT_NAME_CHECK_FAILED.getErrorCode(),
                         ErrorEnum.REST_EXPERIMENT_NAME_CHECK_FAILED.getErrorMessage(),
                         ErrorEnum.REST_EXPERIMENT_NAME_CHECK_FAILED.getHttpStatusCode(),
+                        error)));
+  }
+
+  /** {@inheritDoc} */
+  @Override
+  public Single<GetExperimentHistoryResponse> getExperimentHistory(
+      String projectKey, String experimentId) {
+    return adminDAO
+        .fetchExperimentHistory(projectKey, experimentId)
+        .map(
+            historyEntries ->
+                GetExperimentHistoryResponse.builder()
+                    .experimentId(experimentId)
+                    .history(historyEntries)
+                    .totalCount(historyEntries.size())
+                    .build())
+        .doOnSuccess(
+            res ->
+                log.info(
+                    "Received experiment history for projectKey={} and experimentId={}",
+                    projectKey,
+                    experimentId))
+        .doOnError(
+            err ->
+                log.error(
+                    "Error getting experiment history for projectKey={} and experimentId={}",
+                    projectKey,
+                    experimentId,
+                    err))
+        .onErrorResumeNext(
+            error ->
+                Single.error(
+                    new RestException(
+                        ErrorEnum.REST_FETCH_EXPERIMENT_HISTORY_FAILED.getErrorCode(),
+                        ErrorEnum.REST_FETCH_EXPERIMENT_HISTORY_FAILED.getErrorMessage(),
+                        ErrorEnum.REST_FETCH_EXPERIMENT_HISTORY_FAILED.getHttpStatusCode(),
                         error)));
   }
 }

@@ -1,10 +1,11 @@
 package com.ascend.testlab.dao;
 
+import com.ascend.testlab.dto.response.ExperimentHistoryEntry;
 import io.reactivex.rxjava3.core.Single;
 import java.util.List;
 
 /**
- * Data Access Object interface for admin operations including tags and name availability.
+ * Data Access Object interface for admin operations.
  *
  * @author Nithya sree
  * @version 1.0
@@ -28,4 +29,14 @@ public interface AdminDAO {
    * @return a Single that emits true if the experiment name is available, false otherwise
    */
   Single<Boolean> isExperimentNameAvailable(String projectKey, String experimentName);
+
+  /**
+   * Fetches the history of an experiment.
+   *
+   * @param projectKey the project key
+   * @param experimentId the experiment id
+   * @return a Single containing a list of experiment history entries
+   */
+  Single<List<ExperimentHistoryEntry>> fetchExperimentHistory(
+      String projectKey, String experimentId);
 }
