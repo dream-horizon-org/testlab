@@ -8,8 +8,10 @@ import com.ascend.testlab.client.postgresql.PgReaderClient;
 import com.ascend.testlab.client.postgresql.PgWriterClient;
 import com.ascend.testlab.client.webclient.WebClient;
 import com.ascend.testlab.config.HttpServerConfig;
+import com.ascend.testlab.dao.ExperimentDAO;
 import com.ascend.testlab.dao.HealthCheckDAO;
 import com.ascend.testlab.injection.GuiceInjector;
+import com.ascend.testlab.service.ExperimentService;
 import com.ascend.testlab.service.HealthCheckService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.inject.AbstractModule;
@@ -51,6 +53,8 @@ public class MainVerticleTest {
   @Mock private WebClient webClient;
   @Mock private HealthCheckDAO healthCheckDAO;
   @Mock private HealthCheckService healthCheckService;
+  @Mock private ExperimentService experimentService;
+  @Mock private ExperimentDAO experimentDAO;
 
   @BeforeEach
   void setUp() throws Exception {
@@ -79,6 +83,8 @@ public class MainVerticleTest {
                 bind(WebClient.class).toInstance(webClient);
                 bind(HealthCheckDAO.class).toInstance(healthCheckDAO);
                 bind(HealthCheckService.class).toInstance(healthCheckService);
+                bind(ExperimentService.class).toInstance(experimentService);
+                bind(ExperimentDAO.class).toInstance(experimentDAO);
                 // Don't bind RestVerticle as singleton - let it create new instances
                 bind(RestVerticle.class).toProvider(() -> new RestVerticle(httpServerConfig));
               }

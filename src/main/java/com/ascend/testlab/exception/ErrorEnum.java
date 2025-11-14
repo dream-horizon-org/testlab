@@ -33,9 +33,33 @@ public enum ErrorEnum implements RestError {
       "Tags Listing failed due to: %s",
       HttpStatus.SC_INTERNAL_SERVER_ERROR),
 
-/* Client Errors */
+  /** The error code for getting experiment by ID failed. */
+  REST_GET_EXPERIMENT_BY_ID_FAILED(
+      "testlab_REST_GET_EXPERIMENT_BY_ID_FAILED",
+      "Get Experiment by Id failed due to: %s",
+      HttpStatus.SC_INTERNAL_SERVER_ERROR),
 
-;
+  /** The error code for filtering experiments failed. */
+  REST_FILTER_EXPERIMENTS_FAILED(
+      "testlab_REST_FILTER_EXPERIMENTS_FAILED",
+      "Filter Experiments failed due to: %s",
+      HttpStatus.SC_INTERNAL_SERVER_ERROR),
+
+  /* Client Errors */
+
+  /** The error code when experiment is not found. */
+  EXPERIMENT_NOT_FOUND(
+      "EXPERIMENT_NOT_FOUND",
+      "Experiment not found for the given experimentId",
+      HttpStatus.SC_NOT_FOUND),
+
+  /** The error code for validating experiment status failed. */
+  INVALID_EXPERIMENT_STATUS(
+      "INVALID_EXPERIMENT_STATUS", "Experiment status is not valid", HttpStatus.SC_BAD_REQUEST),
+
+  /** The error code for validating experiment type failed. */
+  INVALID_EXPERIMENT_TYPE(
+      "INVALID_EXPERIMENT_TYPE", "Experiment type is not valid", HttpStatus.SC_BAD_REQUEST);
 
   /** The error code. */
   private final String errorCode;

@@ -5,23 +5,23 @@ CREATE DATABASE experiment;
 \c experiment;
 CREATE SCHEMA IF NOT EXISTS experiment;
 
-CREATE TYPE experiment_status AS ENUM ('LIVE','PAUSED','DRAFT','CONCLUDED','TERMINATED');
-CREATE TYPE experiment_type AS ENUM ('A/B');
-CREATE TYPE experiment_health AS ENUM ('WARNING','PASSING','NO_CHECKS_AVAILABLE','FAILED');
-CREATE TYPE experiment_strategy AS ENUM ('RANDOM', 'ROUND_ROBIN');
+CREATE TYPE experiment.experiment_status AS ENUM ('LIVE','PAUSED','DRAFT','CONCLUDED','TERMINATED');
+CREATE TYPE experiment.experiment_type AS ENUM ('A/B');
+CREATE TYPE experiment.experiment_health AS ENUM ('WARNING','PASSING','NO_CHECKS_AVAILABLE','FAILED');
+CREATE TYPE experiment.experiment_strategy AS ENUM ('RANDOM', 'ROUND_ROBIN');
 
-CREATE TABLE IF NOT EXISTS experiments (
+CREATE TABLE IF NOT EXISTS experiment.experiments (
     project_key          VARCHAR(255) NOT NULL,
     experiment_id       VARCHAR(36) NOT NULL,
     name                VARCHAR(64) NOT NULL,
     description         VARCHAR(255),
     hypothesis          TEXT,
-    status              experiment_status NOT NULL,
-    type                experiment_type,
-    guardrail_health_status experiment_health,
+    status              experiment.experiment_status NOT NULL,
+    type                experiment.experiment_type,
+    guardrail_health_status experiment.experiment_health,
     cohorts             VARCHAR(255) ARRAY,
     variant_weights     JSONB,
-    assignment_strategy experiment_strategy,
+    assignment_strategy experiment.experiment_strategy,
     overrides           JSONB,
     rule_attributes     JSONB,
     winning_variant     JSONB,
@@ -37,7 +37,7 @@ CREATE TABLE IF NOT EXISTS experiments (
     CONSTRAINT name_unique_check UNIQUE (project_key, name)
 ) PARTITION BY LIST (project_key);
 
-CREATE INDEX idx_name_tsvector ON experiments USING GIN (name_tsvector);
+CREATE INDEX idx_name_tsvector ON experiment.experiments USING GIN (name_tsvector);
 
 
 
