@@ -38,7 +38,7 @@ class GetExperimentIT {
 
     try {
       createPartitionForProject();
-      seedExperiment(PROJECT_KEY, EXPERIMENT_ID);
+      seedExperiment();
 
       ValidatableResponse response =
           TestUtil.executeRequest(null, headers, null, spec -> spec.get(route, EXPERIMENT_ID));
@@ -98,12 +98,11 @@ class GetExperimentIT {
     try {
       TestUtil.createPartitionForProject("experiments", PROJECT_KEY);
     } catch (Exception e) {
-      throw new RuntimeException(
-          String.format("Failed creating partition for tests on table 'experiments'"), e);
+      throw new RuntimeException("Failed creating partition for tests on table 'experiments'", e);
     }
   }
 
-  private void seedExperiment(String projectKey, String experimentId) {
+  private void seedExperiment() {
     String insert =
         String.format(
             "INSERT INTO experiment.experiments ("
@@ -122,7 +121,7 @@ class GetExperimentIT {
                 + "'test@example.com', NOW(), NOW(), "
                 + "to_tsvector('simple', 'Test Experiment')"
                 + ");",
-            projectKey, experimentId);
+            PROJECT_KEY, EXPERIMENT_ID);
     try {
       TestUtil.executeSQLStatement(TestUtil.getDatabaseConnection(), insert);
     } catch (Exception e) {
