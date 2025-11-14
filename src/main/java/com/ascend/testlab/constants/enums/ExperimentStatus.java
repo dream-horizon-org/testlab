@@ -7,10 +7,11 @@ package com.ascend.testlab.constants.enums;
  * @version 1.0
  * @since 1.0
  */
+// TODO: enhance documentation to show allowed state transitions
 public enum ExperimentStatus {
   LIVE,
   PAUSED,
   DRAFT,
   CONCLUDED,
-  TERMINATED;
+  TERMINATED
 }

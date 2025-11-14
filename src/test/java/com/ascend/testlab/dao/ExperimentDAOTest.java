@@ -46,7 +46,7 @@ class ExperimentDAOTest {
 
   private ExperimentDAO experimentDAO;
 
-  private static final String PROJECT_ID = UUID.randomUUID().toString();
+  private static final String PROJECT_KEY = "123e4567-e89b-12d3-a456-426614174000";
   private static final String EXPERIMENT_ID = UUID.randomUUID().toString();
 
   @BeforeEach
@@ -85,7 +85,7 @@ class ExperimentDAOTest {
 
       // Act
       TestObserver<Experiment> testObserver =
-          experimentDAO.getExperiment(PROJECT_ID, EXPERIMENT_ID).test();
+          experimentDAO.getExperiment(PROJECT_KEY, EXPERIMENT_ID).test();
 
       // Assert
       testObserver.assertComplete();
@@ -108,7 +108,7 @@ class ExperimentDAOTest {
 
       // Act
       TestObserver<Experiment> testObserver =
-          experimentDAO.getExperiment(PROJECT_ID, EXPERIMENT_ID).test();
+          experimentDAO.getExperiment(PROJECT_KEY, EXPERIMENT_ID).test();
 
       // Assert
       testObserver.assertError(RuntimeException.class);
@@ -128,7 +128,7 @@ class ExperimentDAOTest {
 
       // Act
       TestObserver<Experiment> testObserver =
-          experimentDAO.getExperiment(PROJECT_ID, EXPERIMENT_ID).test();
+          experimentDAO.getExperiment(PROJECT_KEY, EXPERIMENT_ID).test();
 
       // Assert
       testObserver.assertError(RuntimeException.class);
@@ -156,7 +156,7 @@ class ExperimentDAOTest {
 
       // Act
       TestObserver<FilterExperimentsResponse> testObserver =
-          experimentDAO.filterExperiments(PROJECT_ID, request).test();
+          experimentDAO.filterExperiments(PROJECT_KEY, request).test();
 
       // Assert
       testObserver.assertComplete();
@@ -183,7 +183,7 @@ class ExperimentDAOTest {
 
       // Act
       TestObserver<FilterExperimentsResponse> testObserver =
-          experimentDAO.filterExperiments(PROJECT_ID, request).test();
+          experimentDAO.filterExperiments(PROJECT_KEY, request).test();
 
       // Assert
       testObserver.assertComplete();
@@ -212,7 +212,7 @@ class ExperimentDAOTest {
 
       // Act
       TestObserver<FilterExperimentsResponse> testObserver =
-          experimentDAO.filterExperiments(PROJECT_ID, request).test();
+          experimentDAO.filterExperiments(PROJECT_KEY, request).test();
 
       // Assert
       testObserver.assertComplete();
@@ -239,7 +239,7 @@ class ExperimentDAOTest {
 
       // Act
       TestObserver<FilterExperimentsResponse> testObserver =
-          experimentDAO.filterExperiments(PROJECT_ID, request).test();
+          experimentDAO.filterExperiments(PROJECT_KEY, request).test();
 
       // Assert
       testObserver.assertComplete();
@@ -266,7 +266,7 @@ class ExperimentDAOTest {
 
       // Act
       TestObserver<FilterExperimentsResponse> testObserver =
-          experimentDAO.filterExperiments(PROJECT_ID, request).test();
+          experimentDAO.filterExperiments(PROJECT_KEY, request).test();
 
       // Assert
       testObserver.assertComplete();
@@ -293,7 +293,7 @@ class ExperimentDAOTest {
 
       // Act
       TestObserver<FilterExperimentsResponse> testObserver =
-          experimentDAO.filterExperiments(PROJECT_ID, request).test();
+          experimentDAO.filterExperiments(PROJECT_KEY, request).test();
 
       // Assert
       testObserver.assertComplete();
@@ -320,7 +320,7 @@ class ExperimentDAOTest {
 
       // Act
       TestObserver<FilterExperimentsResponse> testObserver =
-          experimentDAO.filterExperiments(PROJECT_ID, request).test();
+          experimentDAO.filterExperiments(PROJECT_KEY, request).test();
 
       // Assert
       testObserver.assertComplete();
@@ -353,7 +353,7 @@ class ExperimentDAOTest {
 
       // Act
       TestObserver<FilterExperimentsResponse> testObserver =
-          experimentDAO.filterExperiments(PROJECT_ID, request).test();
+          experimentDAO.filterExperiments(PROJECT_KEY, request).test();
 
       // Assert
       testObserver.assertComplete();
@@ -380,7 +380,7 @@ class ExperimentDAOTest {
 
       // Act
       TestObserver<FilterExperimentsResponse> testObserver =
-          experimentDAO.filterExperiments(PROJECT_ID, request).test();
+          experimentDAO.filterExperiments(PROJECT_KEY, request).test();
 
       // Assert
       testObserver.assertComplete();
@@ -399,13 +399,13 @@ class ExperimentDAOTest {
     void testFilterExperimentsError(VertxTestContext testContext) {
       // Arrange
       FilterExperimentsRequest request = new FilterExperimentsRequest();
-      RuntimeException expectedException = new RuntimeException("Database error");
+      RuntimeException expectedException = new RuntimeException("Unexpected error");
       when(pgReaderClient.fetchAll(anyString(), any(Tuple.class), any(Function.class)))
           .thenReturn(Single.error(expectedException));
 
       // Act
       TestObserver<FilterExperimentsResponse> testObserver =
-          experimentDAO.filterExperiments(PROJECT_ID, request).test();
+          experimentDAO.filterExperiments(PROJECT_KEY, request).test();
 
       // Assert
       testObserver.assertError(RuntimeException.class);
@@ -436,9 +436,9 @@ class ExperimentDAOTest {
 
       // Act
       TestObserver<Experiment> getObserver =
-          experimentDAO.getExperiment(PROJECT_ID, EXPERIMENT_ID).test();
+          experimentDAO.getExperiment(PROJECT_KEY, EXPERIMENT_ID).test();
       TestObserver<FilterExperimentsResponse> filterObserver =
-          experimentDAO.filterExperiments(PROJECT_ID, request).test();
+          experimentDAO.filterExperiments(PROJECT_KEY, request).test();
 
       // Assert
       getObserver.assertComplete().assertNoErrors();
@@ -459,7 +459,7 @@ class ExperimentDAOTest {
   private Experiment createMockExperiment() {
     return Experiment.builder()
         .experimentId(UUID.fromString(EXPERIMENT_ID))
-        .projectId(UUID.fromString(PROJECT_ID))
+        .projectKey(PROJECT_KEY)
         .name("Test Experiment")
         .description("Test Description")
         .hypothesis("Test Hypothesis")
@@ -490,7 +490,7 @@ class ExperimentDAOTest {
     LocalDateTime now = LocalDateTime.now();
 
     // Set up all the fields that ExperimentMapper expects
-    when(mockRow.getString("project_key")).thenReturn(experiment.getProjectId().toString());
+    when(mockRow.getString("project_key")).thenReturn(experiment.getProjectKey());
     when(mockRow.getString("experiment_id")).thenReturn(experiment.getExperimentId().toString());
     when(mockRow.getString("name")).thenReturn(experiment.getName());
     when(mockRow.getString("description")).thenReturn(experiment.getDescription());
@@ -501,11 +501,11 @@ class ExperimentDAOTest {
         .thenReturn(experiment.getType() != null ? experiment.getType().toJson() : null);
     when(mockRow.getString("guardrail_health_status")).thenReturn(null);
     when(mockRow.getArrayOfStrings("cohorts")).thenReturn(new String[0]);
-    when(mockRow.getJson("variant_weights")).thenReturn(null);
+    when(mockRow.getJsonObject("variant_weights")).thenReturn(null);
     when(mockRow.getString("assignment_strategy")).thenReturn(null);
-    when(mockRow.getJson("overrides")).thenReturn(null);
-    when(mockRow.getJson("rule_attributes")).thenReturn(null);
-    when(mockRow.getJson("winning_variant")).thenReturn(null);
+    when(mockRow.getJsonObject("overrides")).thenReturn(null);
+    when(mockRow.getJsonObject("rule_attributes")).thenReturn(null);
+    when(mockRow.getJsonObject("winning_variant")).thenReturn(null);
     when(mockRow.getInteger("exposure")).thenReturn(experiment.getExposure());
     when(mockRow.getLong("threshold")).thenReturn(experiment.getThreshold());
     when(mockRow.getLong("start_time")).thenReturn(experiment.getStartTime());

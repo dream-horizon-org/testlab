@@ -28,6 +28,11 @@ public class ExperimentServiceImpl implements ExperimentService {
 
   private final ExperimentDAO experimentDAO;
 
+  /**
+   * Constructor for ExperimentServiceImpl.
+   *
+   * @param experimentDAO the experiment DAO to use for data access
+   */
   @Inject
   public ExperimentServiceImpl(ExperimentDAO experimentDAO) {
     this.experimentDAO = experimentDAO;
@@ -40,27 +45,19 @@ public class ExperimentServiceImpl implements ExperimentService {
    *
    * <ul>
    *   <li>NoSuchElementException -> EXPERIMENT_NOT_FOUND
-   *   <li>RestException -> rethrown as-is
-   *   <li>Other exceptions -> DATABASE_ERROR
+   *   <li>Other exceptions -> REST_GET_EXPERIMENT_BY_ID_FAILED
    * </ul>
    */
   @Override
-  public Single<Experiment> getExperiment(String projectId, String experimentId) {
+  public Single<Experiment> getExperiment(String projectKey, String experimentId) {
     return experimentDAO
-        .getExperiment(projectId, experimentId)
-        .doOnError(
-            error ->
-                log.error(
-                    "Error fetching experiment for projectId: {}, experimentId: {}",
-                    projectId,
-                    experimentId,
-                    error))
+        .getExperiment(projectKey, experimentId)
         .onErrorResumeNext(
             err -> {
               if (err instanceof NoSuchElementException) {
                 log.warn(
-                    "Experiment not found for projectId: {}, experimentId: {}",
-                    projectId,
+                    "Experiment not found for project: {}, experimentId: {}",
+                    projectKey,
                     experimentId);
                 return Single.error(
                     ErrorEnum.handleException(
@@ -68,7 +65,7 @@ public class ExperimentServiceImpl implements ExperimentService {
               } else {
                 log.error(
                     "Error in get Experiments for project {} and experimentID {} : {}",
-                    projectId,
+                    projectKey,
                     experimentId,
                     err.getMessage());
                 return Single.error(
@@ -92,13 +89,13 @@ public class ExperimentServiceImpl implements ExperimentService {
    */
   @Override
   public Single<FilterExperimentsResponse> filterExperiments(
-      String projectId, FilterExperimentsRequest request) {
+      String projectKey, FilterExperimentsRequest request) {
     return experimentDAO
-        .filterExperiments(projectId, request)
+        .filterExperiments(projectKey, request)
         .onErrorResumeNext(
             err -> {
               log.error(
-                  "Error in filter Experiments for project {}: {}", projectId, err.getMessage());
+                  "Error in filter Experiments for project {}: {}", projectKey, err.getMessage());
               return Single.error(
                   ErrorEnum.handleException(
                       err, new RestException(ErrorEnum.REST_FILTER_EXPERIMENTS_FAILED, err)));

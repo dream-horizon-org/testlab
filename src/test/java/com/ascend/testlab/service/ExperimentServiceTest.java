@@ -42,7 +42,7 @@ public class ExperimentServiceTest {
 
   @Mock private ExperimentDAO experimentDAO;
 
-  private static final String PROJECT_ID = "123e4567-e89b-12d3-a456-426614174000";
+  private static final String PROJECT_KEY = "123e4567-e89b-12d3-a456-426614174000";
   private static final String EXPERIMENT_ID = "123e4567-e89b-12d3-a456-426614174000";
 
   @BeforeEach
@@ -84,12 +84,12 @@ public class ExperimentServiceTest {
     void testGetExperimentSuccess() {
       // Arrange
       Experiment expectedExperiment = createMockExperiment();
-      when(experimentDAO.getExperiment(PROJECT_ID, EXPERIMENT_ID))
+      when(experimentDAO.getExperiment(PROJECT_KEY, EXPERIMENT_ID))
           .thenReturn(Single.just(expectedExperiment));
 
       // Act
       TestObserver<Experiment> testObserver =
-          experimentService.getExperiment(PROJECT_ID, EXPERIMENT_ID).test();
+          experimentService.getExperiment(PROJECT_KEY, EXPERIMENT_ID).test();
 
       // Assert
       testObserver.assertComplete();
@@ -97,27 +97,27 @@ public class ExperimentServiceTest {
       testObserver.assertValueCount(1);
       testObserver.assertValue(
           experiment -> experiment.getExperimentId().equals(UUID.fromString(EXPERIMENT_ID)));
-      verify(experimentDAO, times(1)).getExperiment(PROJECT_ID, EXPERIMENT_ID);
+      verify(experimentDAO, times(1)).getExperiment(PROJECT_KEY, EXPERIMENT_ID);
     }
 
     @Test
-    @DisplayName("Should return experiment with correct project ID")
-    void testGetExperimentWithCorrectProjectId() {
+    @DisplayName("Should return experiment with correct project Key")
+    void testGetExperimentWithCorrectProjectKey() {
       // Arrange
       Experiment expectedExperiment = createMockExperiment();
-      when(experimentDAO.getExperiment(PROJECT_ID, EXPERIMENT_ID))
+      when(experimentDAO.getExperiment(PROJECT_KEY, EXPERIMENT_ID))
           .thenReturn(Single.just(expectedExperiment));
 
       // Act
       TestObserver<Experiment> testObserver =
-          experimentService.getExperiment(PROJECT_ID, EXPERIMENT_ID).test();
+          experimentService.getExperiment(PROJECT_KEY, EXPERIMENT_ID).test();
 
       // Assert
       testObserver.assertComplete();
       testObserver.assertNoErrors();
       Experiment result = testObserver.values().get(0);
-      assertEquals(UUID.fromString(PROJECT_ID), result.getProjectId());
-      verify(experimentDAO, times(1)).getExperiment(PROJECT_ID, EXPERIMENT_ID);
+      assertEquals(PROJECT_KEY, result.getProjectKey());
+      verify(experimentDAO, times(1)).getExperiment(PROJECT_KEY, EXPERIMENT_ID);
     }
   }
 
@@ -130,12 +130,12 @@ public class ExperimentServiceTest {
     void testGetExperimentNotFound() {
       // Arrange
       NoSuchElementException notFoundException = new NoSuchElementException("Experiment not found");
-      when(experimentDAO.getExperiment(PROJECT_ID, EXPERIMENT_ID))
+      when(experimentDAO.getExperiment(PROJECT_KEY, EXPERIMENT_ID))
           .thenReturn(Single.error(notFoundException));
 
       // Act
       TestObserver<Experiment> testObserver =
-          experimentService.getExperiment(PROJECT_ID, EXPERIMENT_ID).test();
+          experimentService.getExperiment(PROJECT_KEY, EXPERIMENT_ID).test();
 
       // Assert
       testObserver.assertError(RestException.class);
@@ -150,7 +150,7 @@ public class ExperimentServiceTest {
             }
             return false;
           });
-      verify(experimentDAO, times(1)).getExperiment(PROJECT_ID, EXPERIMENT_ID);
+      verify(experimentDAO, times(1)).getExperiment(PROJECT_KEY, EXPERIMENT_ID);
     }
 
     @Test
@@ -158,12 +158,12 @@ public class ExperimentServiceTest {
     void testGetExperimentRestException() {
       // Arrange
       RestException restException = new RestException(ErrorEnum.INVALID_EXPERIMENT_STATUS);
-      when(experimentDAO.getExperiment(PROJECT_ID, EXPERIMENT_ID))
+      when(experimentDAO.getExperiment(PROJECT_KEY, EXPERIMENT_ID))
           .thenReturn(Single.error(restException));
 
       // Act
       TestObserver<Experiment> testObserver =
-          experimentService.getExperiment(PROJECT_ID, EXPERIMENT_ID).test();
+          experimentService.getExperiment(PROJECT_KEY, EXPERIMENT_ID).test();
 
       // Assert
       testObserver.assertError(RestException.class);
@@ -175,7 +175,7 @@ public class ExperimentServiceTest {
                   && ((RestException) error)
                       .getErrorCode()
                       .equals(ErrorEnum.INVALID_EXPERIMENT_STATUS.getErrorCode()));
-      verify(experimentDAO, times(1)).getExperiment(PROJECT_ID, EXPERIMENT_ID);
+      verify(experimentDAO, times(1)).getExperiment(PROJECT_KEY, EXPERIMENT_ID);
     }
 
     @Test
@@ -183,18 +183,18 @@ public class ExperimentServiceTest {
     void testGetExperimentRuntimeException() {
       // Arrange
       RuntimeException runtimeException = new RuntimeException("Database connection failed");
-      when(experimentDAO.getExperiment(PROJECT_ID, EXPERIMENT_ID))
+      when(experimentDAO.getExperiment(PROJECT_KEY, EXPERIMENT_ID))
           .thenReturn(Single.error(runtimeException));
 
       // Act
       TestObserver<Experiment> testObserver =
-          experimentService.getExperiment(PROJECT_ID, EXPERIMENT_ID).test();
+          experimentService.getExperiment(PROJECT_KEY, EXPERIMENT_ID).test();
 
       // Assert
       testObserver.assertError(RuntimeException.class);
       testObserver.assertNotComplete();
       testObserver.assertValueCount(0);
-      verify(experimentDAO, times(1)).getExperiment(PROJECT_ID, EXPERIMENT_ID);
+      verify(experimentDAO, times(1)).getExperiment(PROJECT_KEY, EXPERIMENT_ID);
     }
   }
 
@@ -208,19 +208,19 @@ public class ExperimentServiceTest {
       // Arrange
       FilterExperimentsRequest request = new FilterExperimentsRequest();
       FilterExperimentsResponse expectedResponse = createMockFilterResponse();
-      when(experimentDAO.filterExperiments(PROJECT_ID, request))
+      when(experimentDAO.filterExperiments(PROJECT_KEY, request))
           .thenReturn(Single.just(expectedResponse));
 
       // Act
       TestObserver<FilterExperimentsResponse> testObserver =
-          experimentService.filterExperiments(PROJECT_ID, request).test();
+          experimentService.filterExperiments(PROJECT_KEY, request).test();
 
       // Assert
       testObserver.assertComplete();
       testObserver.assertNoErrors();
       testObserver.assertValueCount(1);
       testObserver.assertValue(response -> response.getExperimentList().size() == 1);
-      verify(experimentDAO, times(1)).filterExperiments(PROJECT_ID, request);
+      verify(experimentDAO, times(1)).filterExperiments(PROJECT_KEY, request);
     }
 
     @Test
@@ -230,18 +230,18 @@ public class ExperimentServiceTest {
       FilterExperimentsRequest request =
           FilterExperimentsRequest.builder().status("LIVE,PAUSED").build();
       FilterExperimentsResponse expectedResponse = createMockFilterResponse();
-      when(experimentDAO.filterExperiments(PROJECT_ID, request))
+      when(experimentDAO.filterExperiments(PROJECT_KEY, request))
           .thenReturn(Single.just(expectedResponse));
 
       // Act
       TestObserver<FilterExperimentsResponse> testObserver =
-          experimentService.filterExperiments(PROJECT_ID, request).test();
+          experimentService.filterExperiments(PROJECT_KEY, request).test();
 
       // Assert
       testObserver.assertComplete();
       testObserver.assertNoErrors();
       testObserver.assertValueCount(1);
-      verify(experimentDAO, times(1)).filterExperiments(PROJECT_ID, request);
+      verify(experimentDAO, times(1)).filterExperiments(PROJECT_KEY, request);
     }
 
     @Test
@@ -251,18 +251,18 @@ public class ExperimentServiceTest {
       FilterExperimentsRequest request =
           FilterExperimentsRequest.builder().type("A_B,MULTI_VARIANT").build();
       FilterExperimentsResponse expectedResponse = createMockFilterResponse();
-      when(experimentDAO.filterExperiments(PROJECT_ID, request))
+      when(experimentDAO.filterExperiments(PROJECT_KEY, request))
           .thenReturn(Single.just(expectedResponse));
 
       // Act
       TestObserver<FilterExperimentsResponse> testObserver =
-          experimentService.filterExperiments(PROJECT_ID, request).test();
+          experimentService.filterExperiments(PROJECT_KEY, request).test();
 
       // Assert
       testObserver.assertComplete();
       testObserver.assertNoErrors();
       testObserver.assertValueCount(1);
-      verify(experimentDAO, times(1)).filterExperiments(PROJECT_ID, request);
+      verify(experimentDAO, times(1)).filterExperiments(PROJECT_KEY, request);
     }
 
     @Test
@@ -272,18 +272,18 @@ public class ExperimentServiceTest {
       FilterExperimentsRequest request =
           FilterExperimentsRequest.builder().name("test experiment").build();
       FilterExperimentsResponse expectedResponse = createMockFilterResponse();
-      when(experimentDAO.filterExperiments(PROJECT_ID, request))
+      when(experimentDAO.filterExperiments(PROJECT_KEY, request))
           .thenReturn(Single.just(expectedResponse));
 
       // Act
       TestObserver<FilterExperimentsResponse> testObserver =
-          experimentService.filterExperiments(PROJECT_ID, request).test();
+          experimentService.filterExperiments(PROJECT_KEY, request).test();
 
       // Assert
       testObserver.assertComplete();
       testObserver.assertNoErrors();
       testObserver.assertValueCount(1);
-      verify(experimentDAO, times(1)).filterExperiments(PROJECT_ID, request);
+      verify(experimentDAO, times(1)).filterExperiments(PROJECT_KEY, request);
     }
 
     @Test
@@ -293,18 +293,18 @@ public class ExperimentServiceTest {
       FilterExperimentsRequest request =
           FilterExperimentsRequest.builder().tag("tag1,tag2").build();
       FilterExperimentsResponse expectedResponse = createMockFilterResponse();
-      when(experimentDAO.filterExperiments(PROJECT_ID, request))
+      when(experimentDAO.filterExperiments(PROJECT_KEY, request))
           .thenReturn(Single.just(expectedResponse));
 
       // Act
       TestObserver<FilterExperimentsResponse> testObserver =
-          experimentService.filterExperiments(PROJECT_ID, request).test();
+          experimentService.filterExperiments(PROJECT_KEY, request).test();
 
       // Assert
       testObserver.assertComplete();
       testObserver.assertNoErrors();
       testObserver.assertValueCount(1);
-      verify(experimentDAO, times(1)).filterExperiments(PROJECT_ID, request);
+      verify(experimentDAO, times(1)).filterExperiments(PROJECT_KEY, request);
     }
 
     @Test
@@ -314,18 +314,18 @@ public class ExperimentServiceTest {
       FilterExperimentsRequest request =
           FilterExperimentsRequest.builder().owner("owner1,owner2").build();
       FilterExperimentsResponse expectedResponse = createMockFilterResponse();
-      when(experimentDAO.filterExperiments(PROJECT_ID, request))
+      when(experimentDAO.filterExperiments(PROJECT_KEY, request))
           .thenReturn(Single.just(expectedResponse));
 
       // Act
       TestObserver<FilterExperimentsResponse> testObserver =
-          experimentService.filterExperiments(PROJECT_ID, request).test();
+          experimentService.filterExperiments(PROJECT_KEY, request).test();
 
       // Assert
       testObserver.assertComplete();
       testObserver.assertNoErrors();
       testObserver.assertValueCount(1);
-      verify(experimentDAO, times(1)).filterExperiments(PROJECT_ID, request);
+      verify(experimentDAO, times(1)).filterExperiments(PROJECT_KEY, request);
     }
 
     @Test
@@ -343,18 +343,18 @@ public class ExperimentServiceTest {
               .page(1)
               .build();
       FilterExperimentsResponse expectedResponse = createMockFilterResponse();
-      when(experimentDAO.filterExperiments(PROJECT_ID, request))
+      when(experimentDAO.filterExperiments(PROJECT_KEY, request))
           .thenReturn(Single.just(expectedResponse));
 
       // Act
       TestObserver<FilterExperimentsResponse> testObserver =
-          experimentService.filterExperiments(PROJECT_ID, request).test();
+          experimentService.filterExperiments(PROJECT_KEY, request).test();
 
       // Assert
       testObserver.assertComplete();
       testObserver.assertNoErrors();
       testObserver.assertValueCount(1);
-      verify(experimentDAO, times(1)).filterExperiments(PROJECT_ID, request);
+      verify(experimentDAO, times(1)).filterExperiments(PROJECT_KEY, request);
     }
 
     @Test
@@ -365,18 +365,18 @@ public class ExperimentServiceTest {
       FilterExperimentsResponse emptyResponse =
           new FilterExperimentsResponse(
               Collections.emptyList(), new FilterExperimentsResponse.PaginationMeta(1, 20, 0));
-      when(experimentDAO.filterExperiments(PROJECT_ID, request))
+      when(experimentDAO.filterExperiments(PROJECT_KEY, request))
           .thenReturn(Single.just(emptyResponse));
 
       // Act
       TestObserver<FilterExperimentsResponse> testObserver =
-          experimentService.filterExperiments(PROJECT_ID, request).test();
+          experimentService.filterExperiments(PROJECT_KEY, request).test();
 
       // Assert
       testObserver.assertComplete();
       testObserver.assertNoErrors();
       testObserver.assertValue(response -> response.getExperimentList().isEmpty());
-      verify(experimentDAO, times(1)).filterExperiments(PROJECT_ID, request);
+      verify(experimentDAO, times(1)).filterExperiments(PROJECT_KEY, request);
     }
 
     @Test
@@ -389,12 +389,12 @@ public class ExperimentServiceTest {
           new FilterExperimentsResponse.PaginationMeta(2, 10, 25);
       FilterExperimentsResponse expectedResponse =
           new FilterExperimentsResponse(Arrays.asList(createMockExperiment()), paginationMeta);
-      when(experimentDAO.filterExperiments(PROJECT_ID, request))
+      when(experimentDAO.filterExperiments(PROJECT_KEY, request))
           .thenReturn(Single.just(expectedResponse));
 
       // Act
       TestObserver<FilterExperimentsResponse> testObserver =
-          experimentService.filterExperiments(PROJECT_ID, request).test();
+          experimentService.filterExperiments(PROJECT_KEY, request).test();
 
       // Assert
       testObserver.assertComplete();
@@ -406,7 +406,7 @@ public class ExperimentServiceTest {
                 && meta.getPageSize() == 10
                 && meta.getTotalCount() == 25;
           });
-      verify(experimentDAO, times(1)).filterExperiments(PROJECT_ID, request);
+      verify(experimentDAO, times(1)).filterExperiments(PROJECT_KEY, request);
     }
   }
 
@@ -420,18 +420,18 @@ public class ExperimentServiceTest {
       // Arrange
       FilterExperimentsRequest request = new FilterExperimentsRequest();
       RestException restException = new RestException(ErrorEnum.INVALID_EXPERIMENT_STATUS);
-      when(experimentDAO.filterExperiments(PROJECT_ID, request))
+      when(experimentDAO.filterExperiments(PROJECT_KEY, request))
           .thenReturn(Single.error(restException));
 
       // Act
       TestObserver<FilterExperimentsResponse> testObserver =
-          experimentService.filterExperiments(PROJECT_ID, request).test();
+          experimentService.filterExperiments(PROJECT_KEY, request).test();
 
       // Assert
       testObserver.assertError(RestException.class);
       testObserver.assertNotComplete();
       testObserver.assertValueCount(0);
-      verify(experimentDAO, times(1)).filterExperiments(PROJECT_ID, request);
+      verify(experimentDAO, times(1)).filterExperiments(PROJECT_KEY, request);
     }
 
     @Test
@@ -440,18 +440,18 @@ public class ExperimentServiceTest {
       // Arrange
       FilterExperimentsRequest request = new FilterExperimentsRequest();
       RuntimeException runtimeException = new RuntimeException("Database error");
-      when(experimentDAO.filterExperiments(PROJECT_ID, request))
+      when(experimentDAO.filterExperiments(PROJECT_KEY, request))
           .thenReturn(Single.error(runtimeException));
 
       // Act
       TestObserver<FilterExperimentsResponse> testObserver =
-          experimentService.filterExperiments(PROJECT_ID, request).test();
+          experimentService.filterExperiments(PROJECT_KEY, request).test();
 
       // Assert
       testObserver.assertError(RuntimeException.class);
       testObserver.assertNotComplete();
       testObserver.assertValueCount(0);
-      verify(experimentDAO, times(1)).filterExperiments(PROJECT_ID, request);
+      verify(experimentDAO, times(1)).filterExperiments(PROJECT_KEY, request);
     }
   }
 
@@ -464,16 +464,16 @@ public class ExperimentServiceTest {
     void testGetExperimentDAOCalledOnce() {
       // Arrange
       Experiment expectedExperiment = createMockExperiment();
-      when(experimentDAO.getExperiment(PROJECT_ID, EXPERIMENT_ID))
+      when(experimentDAO.getExperiment(PROJECT_KEY, EXPERIMENT_ID))
           .thenReturn(Single.just(expectedExperiment));
 
       // Act
       TestObserver<Experiment> testObserver =
-          experimentService.getExperiment(PROJECT_ID, EXPERIMENT_ID).test();
+          experimentService.getExperiment(PROJECT_KEY, EXPERIMENT_ID).test();
 
       // Assert
       testObserver.assertComplete();
-      verify(experimentDAO, times(1)).getExperiment(PROJECT_ID, EXPERIMENT_ID);
+      verify(experimentDAO, times(1)).getExperiment(PROJECT_KEY, EXPERIMENT_ID);
     }
 
     @Test
@@ -482,16 +482,16 @@ public class ExperimentServiceTest {
       // Arrange
       FilterExperimentsRequest request = new FilterExperimentsRequest();
       FilterExperimentsResponse expectedResponse = createMockFilterResponse();
-      when(experimentDAO.filterExperiments(PROJECT_ID, request))
+      when(experimentDAO.filterExperiments(PROJECT_KEY, request))
           .thenReturn(Single.just(expectedResponse));
 
       // Act
       TestObserver<FilterExperimentsResponse> testObserver =
-          experimentService.filterExperiments(PROJECT_ID, request).test();
+          experimentService.filterExperiments(PROJECT_KEY, request).test();
 
       // Assert
       testObserver.assertComplete();
-      verify(experimentDAO, times(1)).filterExperiments(PROJECT_ID, request);
+      verify(experimentDAO, times(1)).filterExperiments(PROJECT_KEY, request);
     }
 
     @Test
@@ -499,21 +499,21 @@ public class ExperimentServiceTest {
     void testGetExperimentMultipleSubscriptions() {
       // Arrange
       Experiment expectedExperiment = createMockExperiment();
-      when(experimentDAO.getExperiment(PROJECT_ID, EXPERIMENT_ID))
+      when(experimentDAO.getExperiment(PROJECT_KEY, EXPERIMENT_ID))
           .thenReturn(Single.just(expectedExperiment));
 
       // Act - Each subscription triggers the Single chain again
       TestObserver<Experiment> testObserver1 =
-          experimentService.getExperiment(PROJECT_ID, EXPERIMENT_ID).test();
+          experimentService.getExperiment(PROJECT_KEY, EXPERIMENT_ID).test();
       TestObserver<Experiment> testObserver2 =
-          experimentService.getExperiment(PROJECT_ID, EXPERIMENT_ID).test();
+          experimentService.getExperiment(PROJECT_KEY, EXPERIMENT_ID).test();
 
       // Assert
       testObserver1.assertComplete();
       testObserver2.assertComplete();
 
       // Verify called exactly twice (once per subscription)
-      verify(experimentDAO, times(2)).getExperiment(PROJECT_ID, EXPERIMENT_ID);
+      verify(experimentDAO, times(2)).getExperiment(PROJECT_KEY, EXPERIMENT_ID);
     }
 
     @Test
@@ -522,21 +522,21 @@ public class ExperimentServiceTest {
       // Arrange
       FilterExperimentsRequest request = new FilterExperimentsRequest();
       FilterExperimentsResponse expectedResponse = createMockFilterResponse();
-      when(experimentDAO.filterExperiments(PROJECT_ID, request))
+      when(experimentDAO.filterExperiments(PROJECT_KEY, request))
           .thenReturn(Single.just(expectedResponse));
 
       // Act - Each subscription triggers the Single chain again
       TestObserver<FilterExperimentsResponse> testObserver1 =
-          experimentService.filterExperiments(PROJECT_ID, request).test();
+          experimentService.filterExperiments(PROJECT_KEY, request).test();
       TestObserver<FilterExperimentsResponse> testObserver2 =
-          experimentService.filterExperiments(PROJECT_ID, request).test();
+          experimentService.filterExperiments(PROJECT_KEY, request).test();
 
       // Assert
       testObserver1.assertComplete();
       testObserver2.assertComplete();
 
       // Verify called exactly twice (once per subscription)
-      verify(experimentDAO, times(2)).filterExperiments(PROJECT_ID, request);
+      verify(experimentDAO, times(2)).filterExperiments(PROJECT_KEY, request);
     }
   }
 
@@ -549,12 +549,12 @@ public class ExperimentServiceTest {
     void testGetExperimentDelayedResponse() {
       // Arrange
       Experiment expectedExperiment = createMockExperiment();
-      when(experimentDAO.getExperiment(PROJECT_ID, EXPERIMENT_ID))
+      when(experimentDAO.getExperiment(PROJECT_KEY, EXPERIMENT_ID))
           .thenReturn(Single.just(expectedExperiment).delay(100, TimeUnit.MILLISECONDS));
 
       // Act
       TestObserver<Experiment> testObserver =
-          experimentService.getExperiment(PROJECT_ID, EXPERIMENT_ID).test();
+          experimentService.getExperiment(PROJECT_KEY, EXPERIMENT_ID).test();
 
       // Wait for completion
       testObserver.awaitDone(1, TimeUnit.SECONDS);
@@ -570,12 +570,12 @@ public class ExperimentServiceTest {
       // Arrange
       FilterExperimentsRequest request = new FilterExperimentsRequest();
       FilterExperimentsResponse expectedResponse = createMockFilterResponse();
-      when(experimentDAO.filterExperiments(PROJECT_ID, request))
+      when(experimentDAO.filterExperiments(PROJECT_KEY, request))
           .thenReturn(Single.just(expectedResponse).delay(100, TimeUnit.MILLISECONDS));
 
       // Act
       TestObserver<FilterExperimentsResponse> testObserver =
-          experimentService.filterExperiments(PROJECT_ID, request).test();
+          experimentService.filterExperiments(PROJECT_KEY, request).test();
 
       // Wait for completion
       testObserver.awaitDone(1, TimeUnit.SECONDS);
@@ -586,8 +586,8 @@ public class ExperimentServiceTest {
     }
 
     @Test
-    @DisplayName("Should handle null project ID")
-    void testGetExperimentWithNullProjectId() {
+    @DisplayName("Should handle null project Key")
+    void testGetExperimentWithNullProjectKey() {
       // Arrange
       Experiment expectedExperiment = createMockExperiment();
       when(experimentDAO.getExperiment(null, EXPERIMENT_ID))
@@ -608,17 +608,17 @@ public class ExperimentServiceTest {
     void testGetExperimentWithNullExperimentId() {
       // Arrange
       Experiment expectedExperiment = createMockExperiment();
-      when(experimentDAO.getExperiment(PROJECT_ID, null))
+      when(experimentDAO.getExperiment(PROJECT_KEY, null))
           .thenReturn(Single.just(expectedExperiment));
 
       // Act
       TestObserver<Experiment> testObserver =
-          experimentService.getExperiment(PROJECT_ID, null).test();
+          experimentService.getExperiment(PROJECT_KEY, null).test();
 
       // Assert
       testObserver.assertComplete();
       testObserver.assertNoErrors();
-      verify(experimentDAO, times(1)).getExperiment(PROJECT_ID, null);
+      verify(experimentDAO, times(1)).getExperiment(PROJECT_KEY, null);
     }
 
     @Test
@@ -626,17 +626,17 @@ public class ExperimentServiceTest {
     void testFilterExperimentsWithNullRequest() {
       // Arrange
       FilterExperimentsResponse expectedResponse = createMockFilterResponse();
-      when(experimentDAO.filterExperiments(PROJECT_ID, null))
+      when(experimentDAO.filterExperiments(PROJECT_KEY, null))
           .thenReturn(Single.just(expectedResponse));
 
       // Act
       TestObserver<FilterExperimentsResponse> testObserver =
-          experimentService.filterExperiments(PROJECT_ID, null).test();
+          experimentService.filterExperiments(PROJECT_KEY, null).test();
 
       // Assert
       testObserver.assertComplete();
       testObserver.assertNoErrors();
-      verify(experimentDAO, times(1)).filterExperiments(PROJECT_ID, null);
+      verify(experimentDAO, times(1)).filterExperiments(PROJECT_KEY, null);
     }
   }
 
@@ -652,23 +652,23 @@ public class ExperimentServiceTest {
       FilterExperimentsRequest request = new FilterExperimentsRequest();
       FilterExperimentsResponse filterResponse = createMockFilterResponse();
 
-      when(experimentDAO.getExperiment(PROJECT_ID, EXPERIMENT_ID))
+      when(experimentDAO.getExperiment(PROJECT_KEY, EXPERIMENT_ID))
           .thenReturn(Single.just(experiment));
-      when(experimentDAO.filterExperiments(PROJECT_ID, request))
+      when(experimentDAO.filterExperiments(PROJECT_KEY, request))
           .thenReturn(Single.just(filterResponse));
 
       // Act
       TestObserver<Experiment> getObserver =
-          experimentService.getExperiment(PROJECT_ID, EXPERIMENT_ID).test();
+          experimentService.getExperiment(PROJECT_KEY, EXPERIMENT_ID).test();
       TestObserver<FilterExperimentsResponse> filterObserver =
-          experimentService.filterExperiments(PROJECT_ID, request).test();
+          experimentService.filterExperiments(PROJECT_KEY, request).test();
 
       // Assert
       getObserver.assertComplete().assertNoErrors();
       filterObserver.assertComplete().assertNoErrors();
 
-      verify(experimentDAO, times(1)).getExperiment(PROJECT_ID, EXPERIMENT_ID);
-      verify(experimentDAO, times(1)).filterExperiments(PROJECT_ID, request);
+      verify(experimentDAO, times(1)).getExperiment(PROJECT_KEY, EXPERIMENT_ID);
+      verify(experimentDAO, times(1)).filterExperiments(PROJECT_KEY, request);
     }
 
     @Test
@@ -679,18 +679,18 @@ public class ExperimentServiceTest {
       FilterExperimentsRequest request = new FilterExperimentsRequest();
       FilterExperimentsResponse filterResponse = createMockFilterResponse();
 
-      when(experimentDAO.getExperiment(PROJECT_ID, EXPERIMENT_ID))
+      when(experimentDAO.getExperiment(PROJECT_KEY, EXPERIMENT_ID))
           .thenReturn(Single.just(experiment));
-      when(experimentDAO.filterExperiments(PROJECT_ID, request))
+      when(experimentDAO.filterExperiments(PROJECT_KEY, request))
           .thenReturn(Single.just(filterResponse));
 
       // Act
       TestObserver<Experiment> testObserver1 =
-          experimentService.getExperiment(PROJECT_ID, EXPERIMENT_ID).test();
+          experimentService.getExperiment(PROJECT_KEY, EXPERIMENT_ID).test();
       TestObserver<Experiment> testObserver2 =
-          experimentService.getExperiment(PROJECT_ID, EXPERIMENT_ID).test();
+          experimentService.getExperiment(PROJECT_KEY, EXPERIMENT_ID).test();
       TestObserver<FilterExperimentsResponse> testObserver3 =
-          experimentService.filterExperiments(PROJECT_ID, request).test();
+          experimentService.filterExperiments(PROJECT_KEY, request).test();
 
       // Assert
       testObserver1.assertComplete();
@@ -707,7 +707,7 @@ public class ExperimentServiceTest {
   private Experiment createMockExperiment() {
     return Experiment.builder()
         .experimentId(UUID.fromString(EXPERIMENT_ID))
-        .projectId(UUID.fromString(PROJECT_ID))
+        .projectKey(PROJECT_KEY)
         .name("Test Experiment")
         .description("Test Description")
         .hypothesis("Test Hypothesis")

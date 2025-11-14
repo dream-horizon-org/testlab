@@ -17,14 +17,14 @@ import io.reactivex.rxjava3.core.Single;
  */
 public interface ExperimentService {
   /**
-   * Retrieves a single experiment by project ID and experiment ID.
+   * Retrieves a single experiment by project Key and experiment ID.
    *
-   * @param projectId the project ID that contains the experiment
+   * @param projectKey the project Key that contains the experiment
    * @param experimentId the unique identifier of the experiment to retrieve
    * @return a Single containing the Experiment object if found, or an error if not found or on
    *     failure
    */
-  Single<Experiment> getExperiment(String projectId, String experimentId);
+  Single<Experiment> getExperiment(String projectKey, String experimentId);
 
   /**
    * Filters experiments based on the provided criteria and returns paginated results.
@@ -36,12 +36,12 @@ public interface ExperimentService {
    *
    * <p>Pagination defaults to limit=20 and page=1 if not specified. Page numbers start at 1.
    *
-   * @param projectId the project ID to filter experiments within
+   * @param projectKey the project Key to filter experiments within
    * @param request the filter criteria including status, type, name, tags, owners, and pagination
    *     parameters (limit and page)
    * @return a Single containing FilterExperimentsResponse with filtered and paginated experiments
    *     along with pagination metadata
    */
   Single<FilterExperimentsResponse> filterExperiments(
-      String projectId, FilterExperimentsRequest request);
+      String projectKey, FilterExperimentsRequest request);
 }

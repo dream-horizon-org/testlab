@@ -53,7 +53,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Success'
         "400":
-          description: Project id is not present
+          description: Project Key is missing
           content:
             application/json:
               schema:
@@ -87,18 +87,6 @@ paths:
                 $ref: '#/components/schemas/Success'
         "400":
           description: Experiment Id is not valid
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Failure'
-        "404":
-          description: Experiment not found
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Failure'
-        "500":
-          description: Internal Server Error
           content:
             application/json:
               schema:
@@ -158,9 +146,8 @@ components:
         experimentId:
           type: string
           format: uuid
-        projectId:
+        projectKey:
           type: string
-          format: uuid
         name:
           type: string
         description:

@@ -18,7 +18,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 @Slf4j
 @ExtendWith(Setup.class)
 class FilterExperimentsIT {
-  private static final String PROJECT_ID = UUID.randomUUID().toString();
+  private static final String PROJECT_KEY = "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa";
   private static final String EXPERIMENT_ID_1 = "11111111-1111-1111-1111-111111111111";
   private static final String EXPERIMENT_ID_2 = "123e4567-e89b-12d3-a456-426614174000";
   private final String route = WebConstants.FILTER_EXPERIMENTS_PATH;
@@ -37,7 +37,7 @@ class FilterExperimentsIT {
 
   @Test
   void testFilterExperiments_Success() {
-    Map<String, String> headers = Map.of(WebConstants.PROJECT_KEY_HEADER, PROJECT_ID);
+    Map<String, String> headers = Map.of(WebConstants.PROJECT_KEY_HEADER, PROJECT_KEY);
 
     ValidatableResponse response =
         TestUtil.executeRequest(null, headers, null, spec -> spec.get(this.route));
@@ -55,7 +55,7 @@ class FilterExperimentsIT {
 
   @Test
   void testFilterExperiments_ByStatus() {
-    Map<String, String> headers = Map.of(WebConstants.PROJECT_KEY_HEADER, PROJECT_ID);
+    Map<String, String> headers = Map.of(WebConstants.PROJECT_KEY_HEADER, PROJECT_KEY);
     Map<String, String> queryParams = Map.of(WebConstants.EXPERIMENT_STATUS, "LIVE");
 
     ValidatableResponse response =
@@ -71,7 +71,7 @@ class FilterExperimentsIT {
 
   @Test
   void testFilterExperiments_ByMultipleStatuses() {
-    Map<String, String> headers = Map.of(WebConstants.PROJECT_KEY_HEADER, PROJECT_ID);
+    Map<String, String> headers = Map.of(WebConstants.PROJECT_KEY_HEADER, PROJECT_KEY);
     Map<String, String> queryParams = Map.of(WebConstants.EXPERIMENT_STATUS, "LIVE,DRAFT");
 
     ValidatableResponse response =
@@ -85,7 +85,7 @@ class FilterExperimentsIT {
 
   @Test
   void testFilterExperiments_ByName() {
-    Map<String, String> headers = Map.of(WebConstants.PROJECT_KEY_HEADER, PROJECT_ID);
+    Map<String, String> headers = Map.of(WebConstants.PROJECT_KEY_HEADER, PROJECT_KEY);
     Map<String, String> queryParams = Map.of(WebConstants.NAME, "Filter");
 
     ValidatableResponse response =
@@ -100,7 +100,7 @@ class FilterExperimentsIT {
 
   @Test
   void testFilterExperiments_ByTag() {
-    Map<String, String> headers = Map.of(WebConstants.PROJECT_KEY_HEADER, PROJECT_ID);
+    Map<String, String> headers = Map.of(WebConstants.PROJECT_KEY_HEADER, PROJECT_KEY);
     Map<String, String> queryParams = Map.of(WebConstants.TAG, "test-tag-1");
 
     ValidatableResponse response =
@@ -116,7 +116,7 @@ class FilterExperimentsIT {
 
   @Test
   void testFilterExperiments_ByOwner() {
-    Map<String, String> headers = Map.of(WebConstants.PROJECT_KEY_HEADER, PROJECT_ID);
+    Map<String, String> headers = Map.of(WebConstants.PROJECT_KEY_HEADER, PROJECT_KEY);
     Map<String, String> queryParams = Map.of(WebConstants.OWNER, "filter-test@example.com");
 
     ValidatableResponse response =
@@ -130,7 +130,7 @@ class FilterExperimentsIT {
 
   @Test
   void testFilterExperiments_ByType() {
-    Map<String, String> headers = Map.of(WebConstants.PROJECT_KEY_HEADER, PROJECT_ID);
+    Map<String, String> headers = Map.of(WebConstants.PROJECT_KEY_HEADER, PROJECT_KEY);
     Map<String, String> queryParams = Map.of(WebConstants.EXPERIMENT_TYPE, "A/B");
 
     ValidatableResponse response =
@@ -144,7 +144,7 @@ class FilterExperimentsIT {
 
   @Test
   void testFilterExperiments_WithPagination() {
-    Map<String, String> headers = Map.of(WebConstants.PROJECT_KEY_HEADER, PROJECT_ID);
+    Map<String, String> headers = Map.of(WebConstants.PROJECT_KEY_HEADER, PROJECT_KEY);
     Map<String, String> queryParams = Map.of(WebConstants.LIMIT, "1", WebConstants.OFFSET, "1");
 
     ValidatableResponse response =
@@ -161,7 +161,7 @@ class FilterExperimentsIT {
 
   @Test
   void testFilterExperiments_WithMultipleFilters() {
-    Map<String, String> headers = Map.of(WebConstants.PROJECT_KEY_HEADER, PROJECT_ID);
+    Map<String, String> headers = Map.of(WebConstants.PROJECT_KEY_HEADER, PROJECT_KEY);
     Map<String, String> queryParams =
         Map.of(
             WebConstants.EXPERIMENT_STATUS,
@@ -204,7 +204,7 @@ class FilterExperimentsIT {
 
   @Test
   void testFilterExperiments_InvalidStatus_BadRequest() {
-    Map<String, String> headers = Map.of(WebConstants.PROJECT_KEY_HEADER, PROJECT_ID);
+    Map<String, String> headers = Map.of(WebConstants.PROJECT_KEY_HEADER, PROJECT_KEY);
     Map<String, String> queryParams = Map.of(WebConstants.EXPERIMENT_STATUS, "INVALID_STATUS");
 
     ValidatableResponse response =
@@ -215,7 +215,7 @@ class FilterExperimentsIT {
 
   @Test
   void testFilterExperiments_InvalidPagination_BadRequest() {
-    Map<String, String> headers = Map.of(WebConstants.PROJECT_KEY_HEADER, PROJECT_ID);
+    Map<String, String> headers = Map.of(WebConstants.PROJECT_KEY_HEADER, PROJECT_KEY);
     Map<String, String> queryParams = Map.of(WebConstants.LIMIT, "0");
 
     ValidatableResponse response =
@@ -245,26 +245,22 @@ class FilterExperimentsIT {
    * to ensure comprehensive test coverage.
    */
   private static void seedFilterTestData() {
-    try {
-      // Create partitions for the test project_key (required for partitioned tables)
-      createPartitionsForProject(PROJECT_ID);
+    // Create partitions for the test project_key (required for partitioned tables)
+    // This must succeed before attempting to insert data
+    createPartitionsForProject(PROJECT_KEY);
 
-      // Seed additional experiments with various attributes for comprehensive filter testing
-      // Note: seed.sql already has data, but we add more here to ensure all filter scenarios work
-      seedExperiment(PROJECT_ID, EXPERIMENT_ID_1, "Filter Test Experiment 1", "LIVE", "A/B");
-      seedTags(PROJECT_ID, EXPERIMENT_ID_1, "test-tag-1", "test-tag-2");
-      seedOwners(PROJECT_ID, EXPERIMENT_ID_1, "filter-test@example.com");
+    // Seed additional experiments with various attributes for comprehensive filter testing
+    // Note: seed.sql already has data, but we add more here to ensure all filter scenarios work
+    seedExperiment(PROJECT_KEY, EXPERIMENT_ID_1, "Filter Test Experiment 1", "LIVE", "A/B");
+    seedTags(PROJECT_KEY, EXPERIMENT_ID_1, "test-tag-1", "test-tag-2");
+    seedOwners(PROJECT_KEY, EXPERIMENT_ID_1, "filter-test@example.com");
 
-      seedExperiment(PROJECT_ID, EXPERIMENT_ID_2, "Filter Test Experiment 2", "DRAFT", "A/B");
-      seedTags(PROJECT_ID, EXPERIMENT_ID_2, "test-tag-2", "test-tag-3");
-      seedOwners(
-          PROJECT_ID, EXPERIMENT_ID_2, "filter-test@example.com", "another-owner@example.com");
+    seedExperiment(PROJECT_KEY, EXPERIMENT_ID_2, "Filter Test Experiment 2", "DRAFT", "A/B");
+    seedTags(PROJECT_KEY, EXPERIMENT_ID_2, "test-tag-2", "test-tag-3");
+    seedOwners(
+        PROJECT_KEY, EXPERIMENT_ID_2, "filter-test@example.com", "another-owner@example.com");
 
-      log.info("Seeded filter test data for project: {}", PROJECT_ID);
-    } catch (Exception e) {
-      // If data already exists (from seed.sql or previous runs), that's okay
-      log.warn("Test data seeding error (may have skipped duplicates): {}", e.getMessage(), e);
-    }
+    log.info("Seeded filter test data for project: {}", PROJECT_KEY);
   }
 
   /**
@@ -277,20 +273,29 @@ class FilterExperimentsIT {
       String deleteTags =
           String.format(
               "DELETE FROM experiment.tags WHERE project_key = '%s' AND experiment_id IN ('%s', '%s');",
-              PROJECT_ID, EXPERIMENT_ID_1, EXPERIMENT_ID_2);
+              PROJECT_KEY, EXPERIMENT_ID_1, EXPERIMENT_ID_2);
       TestUtil.executeSQLStatement(TestUtil.getDatabaseConnection(), deleteTags);
 
       String deleteOwners =
           String.format(
               "DELETE FROM experiment.owners WHERE project_key = '%s' AND experiment_id IN ('%s', '%s');",
-              PROJECT_ID, EXPERIMENT_ID_1, EXPERIMENT_ID_2);
+              PROJECT_KEY, EXPERIMENT_ID_1, EXPERIMENT_ID_2);
       TestUtil.executeSQLStatement(TestUtil.getDatabaseConnection(), deleteOwners);
 
       String deleteExperiments =
           String.format(
               "DELETE FROM experiments WHERE project_key = '%s' AND experiment_id IN ('%s', '%s');",
-              PROJECT_ID, EXPERIMENT_ID_1, EXPERIMENT_ID_2);
+              PROJECT_KEY, EXPERIMENT_ID_1, EXPERIMENT_ID_2);
       TestUtil.executeSQLStatement(TestUtil.getDatabaseConnection(), deleteExperiments);
+
+      // Drop the partition we created
+      try {
+        String partitionName = "experiments_p_" + PROJECT_KEY.replaceAll("-", "_");
+        String dropPartition = String.format("DROP TABLE IF EXISTS %s;", partitionName);
+        TestUtil.executeSQLStatement(TestUtil.getDatabaseConnection(), dropPartition);
+      } catch (Exception e) {
+        log.debug("Failed to drop partition during cleanup (non-critical)", e);
+      }
 
       log.info("Cleanup completed for {}", FilterExperimentsIT.class.getSimpleName());
     } catch (Exception e) {
@@ -306,12 +311,13 @@ class FilterExperimentsIT {
    */
   private static void createPartitionsForProject(String projectKey) {
     try {
-      // Create partition for experiments table
+      // Create partition for experiments table with unique name based on project key
+      // Using a hash of the project key to create a unique partition name
+      String partitionName = "experiments_p_" + projectKey.replaceAll("-", "_");
       String experimentsPartition =
           String.format(
-              "CREATE TABLE IF NOT EXISTS experiments_p_test "
-                  + "PARTITION OF experiments FOR VALUES IN ('%s');",
-              projectKey);
+              "CREATE TABLE IF NOT EXISTS %s " + "PARTITION OF experiments FOR VALUES IN ('%s');",
+              partitionName, projectKey);
       TestUtil.executeSQLStatement(TestUtil.getDatabaseConnection(), experimentsPartition);
 
       // Create partition for tags table
@@ -360,8 +366,11 @@ class FilterExperimentsIT {
     try {
       TestUtil.executeSQLStatement(TestUtil.getDatabaseConnection(), insert);
     } catch (Exception e) {
-      // If insert fails, data might already exist - that's okay
-      log.debug("Experiment may already exist: {}", experimentId);
+      // Log the error and rethrow - we need to know if data insertion fails
+      log.error("Failed to seed experiment {}: {}", experimentId, e.getMessage(), e);
+      throw new RuntimeException(
+          String.format("Failed to seed experiment %s for project %s", experimentId, projectKey),
+          e);
     }
   }
 
@@ -395,10 +404,12 @@ class FilterExperimentsIT {
       String insert =
           String.format(
               "INSERT INTO experiment.tags (experiment_id, project_key, tag, created_at, updated_at) VALUES %s;",
-              values.toString());
+              values);
       TestUtil.executeSQLStatement(TestUtil.getDatabaseConnection(), insert);
     } catch (Exception e) {
-      log.debug("Tags may already exist for experiment: {}", experimentId);
+      log.error("Failed to seed tags for experiment {}: {}", experimentId, e.getMessage(), e);
+      throw new RuntimeException(
+          String.format("Failed to seed tags for experiment %s", experimentId), e);
     }
   }
 
@@ -432,10 +443,12 @@ class FilterExperimentsIT {
       String insert =
           String.format(
               "INSERT INTO experiment.owners (experiment_id, project_key, owner, created_at, updated_at) VALUES %s;",
-              values.toString());
+              values);
       TestUtil.executeSQLStatement(TestUtil.getDatabaseConnection(), insert);
     } catch (Exception e) {
-      log.debug("Owners may already exist for experiment: {}", experimentId);
+      log.error("Failed to seed owners for experiment {}: {}", experimentId, e.getMessage(), e);
+      throw new RuntimeException(
+          String.format("Failed to seed owners for experiment %s", experimentId), e);
     }
   }
 }

@@ -1,6 +1,7 @@
 package com.ascend.testlab.dao.impl;
 
 import com.ascend.testlab.client.postgresql.PgReaderClient;
+import com.ascend.testlab.constants.postgresql.Columns;
 import com.ascend.testlab.constants.postgresql.ReadQuery;
 import com.ascend.testlab.dao.ExperimentDAO;
 import com.ascend.testlab.dao.mapper.ExperimentMapper;
@@ -40,21 +41,21 @@ public class ExperimentDAOImpl implements ExperimentDAO {
 
   /** {@inheritDoc} */
   @Override
-  public Single<Experiment> getExperiment(String projectId, String experimentId) {
+  public Single<Experiment> getExperiment(String projectKey, String experimentId) {
     return pgReaderClient.fetchOne(
         ReadQuery.GET_EXPERIMENT,
-        Tuple.of(projectId, experimentId),
+        Tuple.of(projectKey, experimentId),
         ExperimentMapper::mapRowToExperiment);
   }
 
   /** {@inheritDoc} */
   @Override
   public Single<FilterExperimentsResponse> filterExperiments(
-      String projectId, FilterExperimentsRequest req) {
+      String projectKey, FilterExperimentsRequest req) {
     String query = FilterExperimentsQueryFactory.buildQuery(req);
 
     return pgReaderClient
-        .fetchAll(query, Tuple.of(projectId), row -> row)
+        .fetchAll(query, Tuple.of(projectKey), row -> row)
         .map(rows -> mapRowsToFilteredExperiment(rows, req));
   }
 
@@ -69,16 +70,18 @@ public class ExperimentDAOImpl implements ExperimentDAO {
     if (rows.isEmpty()) {
       response.setExperimentList(List.of());
       FilterExperimentsResponse.PaginationMeta paginationMeta =
-          new FilterExperimentsResponse.PaginationMeta();
-      paginationMeta.setTotalCount(0);
-      paginationMeta.setPageSize(req.getLimit());
-      paginationMeta.setCurrentPage(req.getPage());
+          FilterExperimentsResponse.PaginationMeta.builder()
+              .totalCount(0)
+              .pageSize(req.getLimit())
+              .currentPage(req.getPage())
+              .build();
+
       response.setPagination(paginationMeta);
       return response;
     }
 
     // Extract total count from the first row (all rows have the same total_count value)
-    int totalCount = rows.get(0).getInteger("total_count");
+    int totalCount = rows.get(0).getInteger(Columns.TOTAL_COUNT);
 
     // Map all rows to experiments
     List<Experiment> experiments = rows.stream().map(ExperimentMapper::mapRowToExperiment).toList();
@@ -87,10 +90,12 @@ public class ExperimentDAOImpl implements ExperimentDAO {
 
     // Build pagination metadata
     FilterExperimentsResponse.PaginationMeta paginationMeta =
-        new FilterExperimentsResponse.PaginationMeta();
-    paginationMeta.setTotalCount(totalCount);
-    paginationMeta.setPageSize(req.getLimit());
-    paginationMeta.setCurrentPage(req.getPage());
+        FilterExperimentsResponse.PaginationMeta.builder()
+            .currentPage(req.getPage())
+            .pageSize(req.getLimit())
+            .totalCount(totalCount)
+            .build();
+
     response.setPagination(paginationMeta);
 
     return response;

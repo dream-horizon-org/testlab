@@ -33,6 +33,11 @@ public class FilterExperiments {
 
   private final ExperimentService experimentService;
 
+  /**
+   * Constructor for FilterExperiments.
+   *
+   * @param experimentService the experiment service to use for filtering experiments
+   */
   @Inject
   public FilterExperiments(ExperimentService experimentService) {
     this.experimentService = experimentService;
@@ -49,7 +54,7 @@ public class FilterExperiments {
    *
    * <p>Pagination defaults to limit=20 and page=1 if not specified. Page numbers start at 1.
    *
-   * @param projectId the project ID (required, passed as header parameter "x-project-id")
+   * @param projectKey the project Key (required, passed as header parameter "x-project-key")
    * @param request the filter request containing optional query parameters for status, tag, owner,
    *     name, type, limit, and page
    * @return a CompletionStage containing a successful response with paginated experiment data
@@ -64,7 +69,7 @@ public class FilterExperiments {
   @ApiResponse(
       content = @Content(schema = @Schema(implementation = ResponseEntity.Failure.class)),
       responseCode = "400",
-      description = "Project id is not present")
+      description = "Project Key is missing")
   @ApiResponse(
       content = @Content(schema = @Schema(implementation = ResponseEntity.Failure.class)),
       responseCode = "500",
@@ -72,13 +77,11 @@ public class FilterExperiments {
   public CompletionStage<ResponseEntity.Success<FilterExperimentsResponse>> handle(
       @HeaderParam(WebConstants.PROJECT_KEY_HEADER)
           @NotBlank(message = ErrorMessages.PROJECT_KEY_MISSING)
-          String projectId,
+          String projectKey,
       @BeanParam @Valid FilterExperimentsRequest request) {
-    // Validate and process all filter parameters
-    request.validate();
 
     return experimentService
-        .filterExperiments(projectId, request)
+        .filterExperiments(projectKey, request)
         .map(ResponseEntity.Success::new)
         .toCompletionStage();
   }

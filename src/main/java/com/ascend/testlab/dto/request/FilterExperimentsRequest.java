@@ -3,9 +3,10 @@ package com.ascend.testlab.dto.request;
 import com.ascend.testlab.constants.enums.ExperimentStatus;
 import com.ascend.testlab.constants.enums.ExperimentType;
 import com.ascend.testlab.constants.web.WebConstants;
-import com.ascend.testlab.exception.ErrorEnum;
+import com.ascend.testlab.exception.ErrorMessages;
 import com.dream11.rest.exception.RestException;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import jakarta.validation.constraints.AssertTrue;
 import jakarta.validation.constraints.Positive;
 import jakarta.ws.rs.DefaultValue;
 import jakarta.ws.rs.QueryParam;
@@ -48,24 +49,13 @@ public class FilterExperimentsRequest {
 
   @QueryParam(WebConstants.LIMIT)
   @DefaultValue("20")
-  @Positive(message = "Limit must be greater than zero")
+  @Positive(message = ErrorMessages.INVALID_LIMIT_VALUE)
   private Integer limit;
 
   @QueryParam(WebConstants.OFFSET)
   @DefaultValue("1")
-  @Positive(message = "Page value must be greater than zero")
+  @Positive(message = ErrorMessages.INVALID_PAGE_VALUE)
   private Integer page;
-
-  /**
-   * Validates all filter parameters. This method should be called before using the request to
-   * ensure all parameters are valid.
-   *
-   * @throws RestException if any validation fails
-   */
-  public void validate() {
-    validateStatus(status);
-    validateType(type);
-  }
 
   /**
    * Checks if status filter is present in the request.
@@ -112,43 +102,61 @@ public class FilterExperimentsRequest {
     return this.tag != null && !this.tag.trim().isEmpty();
   }
 
-  private void validateStatus(String status) {
-    if (status != null && !status.trim().isEmpty()) {
-      try {
-        String[] statusValues = status.split(",");
-        for (String statusValue : statusValues) {
-          String trimmed = statusValue.trim();
-          if (!trimmed.isEmpty()) {
-            ExperimentStatus.valueOf(trimmed.toUpperCase());
-          }
+  /**
+   * Validates the status field using Bean Validation. Returns true if status is null, empty, or
+   * contains valid comma-separated ExperimentStatus enum values.
+   *
+   * @return true if status is valid, false otherwise
+   */
+  @AssertTrue(message = ErrorMessages.INVALID_EXPERIMENT_STATUS)
+  public boolean isValidStatus() {
+    if (status == null || status.trim().isEmpty()) {
+      return true; // Status is optional
+    }
+    try {
+      String[] statusValues = status.split(",");
+      for (String statusValue : statusValues) {
+        String trimmed = statusValue.trim();
+        if (!trimmed.isEmpty()) {
+          ExperimentStatus.valueOf(trimmed.toUpperCase());
         }
-      } catch (IllegalArgumentException e) {
-        log.warn(
-            "Invalid status value provided: {}. Valid values are: {}",
-            status,
-            Arrays.toString(ExperimentStatus.values()));
-        throw new RestException(ErrorEnum.INVALID_EXPERIMENT_STATUS);
       }
+      return true;
+    } catch (IllegalArgumentException e) {
+      log.warn(
+          "Invalid status value provided: {}. Valid values are: {}",
+          status,
+          Arrays.toString(ExperimentStatus.values()));
+      return false;
     }
   }
 
-  private void validateType(String type) {
-    if (type != null && !type.trim().isEmpty()) {
-      try {
-        String[] typeValues = type.split(",");
-        for (String typeValue : typeValues) {
-          String trimmed = typeValue.trim();
-          if (!trimmed.isEmpty()) {
-            ExperimentType.fromValue(trimmed);
-          }
+  /**
+   * Validates the type field using Bean Validation. Returns true if type is null, empty, or
+   * contains valid comma-separated ExperimentType enum values.
+   *
+   * @return true if type is valid, false otherwise
+   */
+  @AssertTrue(message = ErrorMessages.INVALID_EXPERIMENT_TYPE)
+  public boolean isValidType() {
+    if (type == null || type.trim().isEmpty()) {
+      return true; // Type is optional
+    }
+    try {
+      String[] typeValues = type.split(",");
+      for (String typeValue : typeValues) {
+        String trimmed = typeValue.trim();
+        if (!trimmed.isEmpty()) {
+          ExperimentType.fromValue(trimmed);
         }
-      } catch (RestException e) {
-        log.warn(
-            "Invalid type value provided: {}. Valid values are: {}",
-            type,
-            Arrays.toString(ExperimentType.values()));
-        throw new RestException(ErrorEnum.INVALID_EXPERIMENT_TYPE);
       }
+      return true;
+    } catch (RestException e) {
+      log.warn(
+          "Invalid type value provided: {}. Valid values are: {}",
+          type,
+          Arrays.toString(ExperimentType.values()));
+      return false;
     }
   }
 }

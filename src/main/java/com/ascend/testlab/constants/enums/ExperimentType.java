@@ -12,6 +12,7 @@ import com.fasterxml.jackson.annotation.JsonValue;
  * @since 1.0
  */
 public enum ExperimentType {
+  /** A/B testing experiment type. */
   A_B("A/B");
 
   private final String value;

@@ -10,13 +10,20 @@ import java.util.List;
 import java.util.UUID;
 import lombok.*;
 
+/**
+ * Entity class representing an experiment in the system.
+ *
+ * @author Yashita Bansal
+ * @version 1.0
+ * @since 1.0
+ */
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
 public class Experiment {
   private UUID experimentId;
-  private UUID projectId;
+  private String projectKey;
   private String name;
   private String description;
   private String hypothesis;

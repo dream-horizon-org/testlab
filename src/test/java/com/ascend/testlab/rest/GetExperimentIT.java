@@ -17,7 +17,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 @Slf4j
 @ExtendWith(Setup.class)
 class GetExperimentIT {
-  private static final String PROJECT_ID = "123e4567-e89b-12d3-a456-426614174000";
+  private static final String PROJECT_KEY = "123e4567-e89b-12d3-a456-426614174000";
   private static final String EXPERIMENT_ID = "11111111-1111-1111-1111-111111111111";
   private static final String INVALID_EXPERIMENT_ID = "00000000-0000-0000-0000-000000000000";
 
@@ -34,11 +34,11 @@ class GetExperimentIT {
   @Test
   void testGetExperiment_Success_WithSeededData() {
     String route = "/v1/experiments/" + EXPERIMENT_ID;
-    Map<String, String> headers = Map.of(WebConstants.PROJECT_KEY_HEADER, PROJECT_ID);
+    Map<String, String> headers = Map.of(WebConstants.PROJECT_KEY_HEADER, PROJECT_KEY);
 
     try {
-      createPartitionForProject(PROJECT_ID);
-      seedExperiment(PROJECT_ID, EXPERIMENT_ID);
+      createPartitionForProject(PROJECT_KEY);
+      seedExperiment(PROJECT_KEY, EXPERIMENT_ID);
 
       ValidatableResponse response =
           TestUtil.executeRequest(null, headers, null, spec -> spec.get(route));
@@ -47,7 +47,7 @@ class GetExperimentIT {
       response.contentType(WebConstants.APPLICATION_JSON);
       response.body("data", Matchers.notNullValue());
       response.body("data.experimentId", Matchers.equalTo(EXPERIMENT_ID));
-      response.body("data.projectId", Matchers.equalTo(PROJECT_ID));
+      response.body("data.projectKey", Matchers.equalTo(PROJECT_KEY));
     } finally {
       TestUtil.dropTestPartition("experiments");
     }
@@ -56,7 +56,7 @@ class GetExperimentIT {
   @Test
   void testGetExperiment_NotFound() {
     String route = "/v1/experiments/" + INVALID_EXPERIMENT_ID;
-    Map<String, String> headers = Map.of(WebConstants.PROJECT_KEY_HEADER, PROJECT_ID);
+    Map<String, String> headers = Map.of(WebConstants.PROJECT_KEY_HEADER, PROJECT_KEY);
 
     ValidatableResponse response =
         TestUtil.executeRequest(null, headers, null, spec -> spec.get(route));
@@ -87,7 +87,7 @@ class GetExperimentIT {
   }
 
   @Test
-  void testGetExperiment_InvalidProjectId_NotFound() {
+  void testGetExperiment_InvalidProjectKey_NotFound() {
     String route = "/v1/experiments/" + EXPERIMENT_ID;
     Map<String, String> headers = Map.of(WebConstants.PROJECT_KEY_HEADER, "invalid-project-id");
 

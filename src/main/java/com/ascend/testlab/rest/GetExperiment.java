@@ -31,6 +31,11 @@ public class GetExperiment {
   /** The experiment service for retrieving experiment data. */
   private final ExperimentService experimentService;
 
+  /**
+   * Constructor for GetExperiment.
+   *
+   * @param experimentService the experiment service to use for retrieving experiment data
+   */
   @Inject
   public GetExperiment(ExperimentService experimentService) {
     this.experimentService = experimentService;

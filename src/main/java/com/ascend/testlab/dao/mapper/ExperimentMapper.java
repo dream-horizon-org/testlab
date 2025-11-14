@@ -4,8 +4,8 @@ import com.ascend.testlab.constants.enums.AssignmentStrategy;
 import com.ascend.testlab.constants.enums.ExperimentStatus;
 import com.ascend.testlab.constants.enums.ExperimentType;
 import com.ascend.testlab.constants.enums.HealthStatus;
+import com.ascend.testlab.constants.postgresql.Columns;
 import com.ascend.testlab.dto.entity.Experiment;
-import io.vertx.core.json.JsonObject;
 import io.vertx.rxjava3.sqlclient.Row;
 import java.sql.Timestamp;
 import java.util.List;
@@ -38,41 +38,41 @@ public class ExperimentMapper {
   public static Experiment mapRowToExperiment(Row row) {
     Experiment.ExperimentBuilder builder =
         Experiment.builder()
-            .projectId(UUID.fromString(row.getString("project_key")))
-            .experimentId(UUID.fromString(row.getString("experiment_id")))
-            .name(row.getString("name"))
-            .description(row.getString("description"))
-            .hypothesis(row.getString("hypothesis"))
+            .projectKey(row.getString(Columns.PROJECT_KEY))
+            .experimentId(UUID.fromString(row.getString(Columns.EXPERIMENT_ID)))
+            .name(row.getString(Columns.NAME))
+            .description(row.getString(Columns.DESCRIPTION))
+            .hypothesis(row.getString(Columns.HYPOTHESIS))
             .status(
-                row.getString("status") != null
-                    ? ExperimentStatus.valueOf(row.getString("status"))
+                row.getString(Columns.STATUS) != null
+                    ? ExperimentStatus.valueOf(row.getString(Columns.STATUS))
                     : null)
             .type(
-                row.getString("type") != null
-                    ? ExperimentType.fromValue(row.getString("type"))
+                row.getString(Columns.TYPE) != null
+                    ? ExperimentType.fromValue(row.getString(Columns.TYPE))
                     : null)
             .guardrailHealthStatus(
-                row.getString("guardrail_health_status") != null
-                    ? HealthStatus.valueOf(row.getString("guardrail_health_status"))
+                row.getString(Columns.GUARDRAIL_HEALTH_STATUS) != null
+                    ? HealthStatus.valueOf(row.getString(Columns.GUARDRAIL_HEALTH_STATUS))
                     : null)
-            .cohorts(List.of(row.getArrayOfStrings("cohorts")))
-            .variantWeights((JsonObject) row.getJson("variant_weights"))
+            .cohorts(List.of(row.getArrayOfStrings(Columns.COHORTS)))
+            .variantWeights(row.getJsonObject(Columns.VARIANT_WEIGHTS))
             .assignmentStrategy(
-                row.getString("assignment_strategy") != null
-                    ? AssignmentStrategy.valueOf(row.getString("assignment_strategy"))
+                row.getString(Columns.ASSIGNMENT_STRATEGY) != null
+                    ? AssignmentStrategy.valueOf(row.getString(Columns.ASSIGNMENT_STRATEGY))
                     : null)
-            .overrides((JsonObject) row.getJson("overrides"))
-            .ruleAttributes((JsonObject) row.getJson("rule_attributes"))
-            .winningVariant((JsonObject) row.getJson("winning_variant"))
-            .exposure(row.getInteger("exposure"))
-            .threshold(row.getLong("threshold"))
-            .startTime(row.getLong("start_time"))
-            .endTime(row.getLong("end_time"))
-            .createdBy(row.getString("created_by"))
-            .createdAt(Timestamp.valueOf(row.getLocalDateTime("created_at")))
-            .updatedAt(Timestamp.valueOf(row.getLocalDateTime("updated_at")))
-            .tags(row.getString("tags"))
-            .owner(row.getString("owners"));
+            .overrides(row.getJsonObject(Columns.OVERRIDES))
+            .ruleAttributes(row.getJsonObject(Columns.RULE_ATTRIBUTES))
+            .winningVariant(row.getJsonObject(Columns.WINNING_VARIANT))
+            .exposure(row.getInteger(Columns.EXPOSURE))
+            .threshold(row.getLong(Columns.THRESHOLD))
+            .startTime(row.getLong(Columns.START_TIME))
+            .endTime(row.getLong(Columns.END_TIME))
+            .createdBy(row.getString(Columns.CREATED_BY))
+            .createdAt(Timestamp.valueOf(row.getLocalDateTime(Columns.CREATED_AT)))
+            .updatedAt(Timestamp.valueOf(row.getLocalDateTime(Columns.UPDATED_AT)))
+            .tags(row.getString(Columns.TAGS))
+            .owner(row.getString(Columns.OWNERS));
 
     return builder.build();
   }
