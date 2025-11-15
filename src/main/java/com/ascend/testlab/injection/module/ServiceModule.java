@@ -10,17 +10,21 @@ import com.ascend.testlab.client.webclient.WebClient;
 import com.ascend.testlab.client.webclient.impl.WebClientImpl;
 import com.ascend.testlab.config.*;
 import com.ascend.testlab.dao.AllocationDAO;
+import com.ascend.testlab.dao.ExperimentDAO;
 import com.ascend.testlab.dao.HealthCheckDAO;
 import com.ascend.testlab.dao.TagsDAO;
 import com.ascend.testlab.dao.impl.AssignmentDAOImpl;
+import com.ascend.testlab.dao.impl.ExperimentDAOImpl;
 import com.ascend.testlab.dao.impl.HealthCheckDAOImpl;
 import com.ascend.testlab.dao.impl.TagsDAOImpl;
 import com.ascend.testlab.service.AllocationService;
 import com.ascend.testlab.service.CohortService;
+import com.ascend.testlab.service.ExperimentService;
 import com.ascend.testlab.service.HealthCheckService;
 import com.ascend.testlab.service.TagsService;
 import com.ascend.testlab.service.impl.AllocationServiceImpl;
 import com.ascend.testlab.service.impl.CohortServiceImpl;
+import com.ascend.testlab.service.impl.ExperimentServiceImpl;
 import com.ascend.testlab.service.impl.HealthCheckServiceImpl;
 import com.ascend.testlab.service.impl.TagsServiceImpl;
 import com.ascend.testlab.util.CircuitBreakerFactory;
@@ -88,6 +92,7 @@ public class ServiceModule extends DefaultModule {
   /** Bind the DAO interfaces to their implementations. */
   private void bindDAOs() {
     bind(HealthCheckDAO.class).to(HealthCheckDAOImpl.class);
+    bind(ExperimentDAO.class).to(ExperimentDAOImpl.class);
     bind(TagsDAO.class).to(TagsDAOImpl.class);
     bind(AllocationDAO.class).to(AssignmentDAOImpl.class);
   }
@@ -97,6 +102,7 @@ public class ServiceModule extends DefaultModule {
     bind(HealthCheckService.class).to(HealthCheckServiceImpl.class);
     bind(AllocationService.class).to(AllocationServiceImpl.class);
     bind(CohortService.class).to(CohortServiceImpl.class);
+    bind(ExperimentService.class).to(ExperimentServiceImpl.class);
     bind(TagsService.class).to(TagsServiceImpl.class);
   }
 }

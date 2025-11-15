@@ -5,11 +5,11 @@ CREATE DATABASE experiment;
 \c experiment;
 CREATE SCHEMA IF NOT EXISTS experiment;
 
-CREATE TYPE experiment_status AS ENUM ('LIVE','PAUSED','DRAFT','CONCLUDED','TERMINATED');
-CREATE TYPE experiment_type AS ENUM ('A/B');
-CREATE TYPE experiment_health AS ENUM ('WARNING','PASSING','NO_CHECKS_AVAILABLE','FAILED');
-CREATE TYPE experiment_strategy AS ENUM ('RANDOM', 'ROUND_ROBIN');
-CREATE TYPE assignment_domain AS ENUM ('MANUAL', 'COHORT', 'DEFAULT');
+CREATE TYPE experiment.experiment_status AS ENUM ('LIVE','PAUSED','DRAFT','CONCLUDED','TERMINATED');
+CREATE TYPE experiment.experiment_type AS ENUM ('A/B');
+CREATE TYPE experiment.experiment_health AS ENUM ('WARNING','PASSING','NO_CHECKS_AVAILABLE','FAILED');
+CREATE TYPE experiment.experiment_strategy AS ENUM ('RANDOM', 'ROUND_ROBIN');
+CREATE TYPE experiment.assignment_domain AS ENUM ('MANUAL', 'COHORT', 'DEFAULT');
 
 CREATE TABLE IF NOT EXISTS experiment.experiments (
     project_key          VARCHAR(255) NOT NULL,
@@ -17,14 +17,14 @@ CREATE TABLE IF NOT EXISTS experiment.experiments (
     name                VARCHAR(64) NOT NULL,
     description         VARCHAR(255),
     hypothesis          TEXT,
-    status              experiment_status NOT NULL,
-    type                experiment_type,
-    guardrail_health_status experiment_health,
+    status              experiment.experiment_status NOT NULL,
+    type                experiment.experiment_type,
+    guardrail_health_status experiment.experiment_health,
     cohorts             VARCHAR(255) ARRAY,
     variant_weights     JSONB,
     variants            JSONB,
-    distribution_strategy experiment_strategy NOT NULL,
-    assignment_domain   assignment_domain NOT NULL,
+    distribution_strategy experiment.experiment_strategy NOT NULL,
+    assignment_domain   experiment.assignment_domain NOT NULL,
     overrides           TEXT,
     rule_attributes     JSONB,
     winning_variant     JSONB,

@@ -37,6 +37,9 @@ public final class Constants {
   /** The delimiter for space. */
   public static final String SPACE = " ";
 
+  /** The delimiter for apostrophe. */
+  public static final String APOSTROPHE = "'";
+
   public static final String EMPTY_STRING = "";
 
   public static final String GET_TYPE = "getType";

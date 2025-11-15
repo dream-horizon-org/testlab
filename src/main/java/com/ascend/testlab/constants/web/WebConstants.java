@@ -60,4 +60,43 @@ public final class WebConstants {
   public static final String PROJECT_KEY_HEADER = "x-project-key";
 
   public static final String DEFAULT_PROJECT_KEY = "abc";
+
+  /*API Path */
+  /** The path for filtering experiments endpoint. */
+  public static final String FILTER_EXPERIMENTS_PATH = "/v1/experiments";
+
+  /** The path for getting a single experiment by ID endpoint. */
+  public static final String GET_EXPERIMENT_PATH = "/v1/experiments/{experimentId}";
+
+  /** The path parameter name for experiment ID. */
+  public static final String EXPERIMENT_ID = "experimentId";
+
+  /* Filter Query Parameters */
+  /** The query parameter name for experiment status filter. */
+  public static final String EXPERIMENT_STATUS = "status";
+
+  /** The query parameter name for experiment type filter. */
+  public static final String EXPERIMENT_TYPE = "type";
+
+  /** The query parameter name for tag filter. */
+  public static final String TAG = "tag";
+
+  /** The query parameter name for owner filter. */
+  public static final String OWNER = "owner";
+
+  /** The query parameter name for name filter. */
+  public static final String NAME = "name";
+
+  /* Pagination */
+  /** The query parameter name for page number. */
+  public static final String PAGE = "page";
+
+  /** The query parameter name for limit (page size). */
+  public static final String LIMIT = "limit";
+
+  /** The default limit value for pagination. */
+  public static final String DEFAULT_LIMIT = "20";
+
+  /** The default page value for pagination. */
+  public static final String DEFAULT_PAGE = "1";
 }
