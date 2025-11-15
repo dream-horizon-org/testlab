@@ -23,18 +23,18 @@ import org.junit.jupiter.api.extension.ExtendWith;
  */
 @Slf4j
 @ExtendWith(Setup.class)
-class AssignmentIT {
+class AllocationIT {
 
   private final String allocationRoute = "/v1/allocation";
 
   @BeforeAll
   public static void initialize() {
-    log.info("Starting tests for {}", AssignmentIT.class.getSimpleName());
+    log.info("Starting tests for {}", AllocationIT.class.getSimpleName());
   }
 
   @AfterAll
   public static void cleanup() {
-    log.info("Cleaning up {} resources", AssignmentIT.class.getSimpleName());
+    log.info("Cleaning up {} resources", AllocationIT.class.getSimpleName());
   }
 
   @Test
