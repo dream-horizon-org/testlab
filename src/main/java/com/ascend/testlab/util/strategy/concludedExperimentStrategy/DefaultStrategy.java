@@ -1,4 +1,4 @@
-package com.ascend.testlab.util.strategy.ConcludedExperimentStrategy;
+package com.ascend.testlab.util.strategy.concludedExperimentStrategy;
 
 import com.ascend.testlab.dto.response.UserExperimentMap;
 import com.ascend.testlab.entity.Experiment;
@@ -16,7 +16,7 @@ import lombok.extern.slf4j.Slf4j;
  * @since 1.0
  */
 @Slf4j
-public class BothStrategy implements ConcludedStrategy {
+public class DefaultStrategy implements ConcludedStrategy {
 
   @Override
   public boolean shouldOverride(

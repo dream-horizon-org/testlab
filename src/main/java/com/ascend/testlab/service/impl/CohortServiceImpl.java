@@ -13,6 +13,7 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.rxjava3.core.MultiMap;
 import java.util.*;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 
 /**
  * Implementation of the CohortService interface. Fetches user cohorts from external cohort service
@@ -32,41 +33,37 @@ public class CohortServiceImpl implements CohortService {
 
   @Inject
   public CohortServiceImpl(
-      WebClient webClient,
-      ApplicationConfig.ServiceConfig cohortsConfig,
-      ObjectMapper objectMapper) {
+      WebClient webClient, ApplicationConfig applicationConfig, ObjectMapper objectMapper) {
     this.webClient = webClient;
-    this.cohortsConfig = cohortsConfig;
+    this.cohortsConfig = applicationConfig.getCohortsConfig();
     this.objectMapper = objectMapper;
   }
 
   @Override
-  public Maybe<List<String>> getUserCohorts(String userId, UUID tenantId) {
+  public Maybe<List<String>> getUserCohorts(String userId, String projectKey) {
 
-    return Maybe.just(new ArrayList<>());
-    //    if (userIdStringUtils.isBlank(()) {
-    //      log.debug("No userId provided, returning empty cohorts");
-    //      return Maybe.just(Collections.emptyList());
-    //    }
-    //
-    //    log.debug("Fetching cohorts for user {} from cohort service", userId);
-    //
-    //    return Maybe.fromSingle(
-    //        fetchCohortsFromService(userId, tenantId)
-    //            .doOnSuccess(
-    //                cohorts -> log.info("Fetched {} cohorts for user {}", cohorts.size(), userId))
-    //            .doOnError(
-    //                error ->
-    //                    log.warn("Failed to fetch cohorts for user {}: {}", userId,
-    // error.getMessage()))
-    //            .onErrorReturnItem(Collections.emptyList()));
+    if (StringUtils.isBlank(userId)) {
+      log.debug("No userId provided, returning empty cohorts");
+      return Maybe.just(Collections.emptyList());
+    }
+
+    log.debug("Fetching cohorts for user {} from cohort service", userId);
+
+    return Maybe.fromSingle(
+        fetchCohortsFromService(userId, projectKey)
+            .doOnSuccess(
+                cohorts -> log.info("Fetched {} cohorts for user {}", cohorts.size(), userId))
+            .doOnError(
+                error ->
+                    log.warn("Failed to fetch cohorts for user {}: {}", userId, error.getMessage()))
+            .onErrorReturnItem(Collections.emptyList()));
   }
 
-  private Single<List<String>> fetchCohortsFromService(String userId, UUID tenantId) {
+  private Single<List<String>> fetchCohortsFromService(String userId, String projectKey) {
 
     Map<String, String> queryParams = new HashMap<>();
     MultiMap headers = MultiMap.caseInsensitiveMultiMap();
-    headers.add("X-Tenant-Id", tenantId.toString());
+    headers.add("X-Tenant-Id", projectKey);
     headers.add("X-user-Id", userId);
     headers.add("Content-Type", "application/json");
 

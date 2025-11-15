@@ -1,6 +1,6 @@
 package com.ascend.testlab.util.filter;
 
-import com.ascend.testlab.dto.request.AssignmentRequest;
+import com.ascend.testlab.dto.request.AllocationRequest;
 import com.ascend.testlab.dto.request.Attributes;
 import com.ascend.testlab.dto.response.UserExperimentMap;
 import com.ascend.testlab.util.filter.experimentFilter.CohortFilter;
@@ -48,7 +48,7 @@ public class ExperimentFilterChainBuilder {
   }
 
   public static ExperimentFilter buildFromRequest(
-      AssignmentRequest request, List<UserExperimentMap> userAssignments, List<String> cohorts) {
+      AllocationRequest request, List<UserExperimentMap> userAssignments, List<String> cohorts) {
 
     ExperimentFilterChainBuilder builder = new ExperimentFilterChainBuilder();
 

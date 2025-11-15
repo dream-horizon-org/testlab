@@ -53,13 +53,13 @@ public class AerospikeConfig {
   /** The namespace in which the data is stored. */
   private String namespace;
 
-  private String userAssignmentsSet;
+  private String userAllocationsSet;
   private String variantCountSet;
   private String userLockSet;
 
   private String countBin;
   private String lockBin;
-  private String assignmentMapBin;
+  private String allocationMapBin;
 
   /**
    * Get the provider for the Aerospike config.

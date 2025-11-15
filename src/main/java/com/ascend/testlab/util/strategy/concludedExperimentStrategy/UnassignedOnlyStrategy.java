@@ -1,4 +1,4 @@
-package com.ascend.testlab.util.strategy.ConcludedExperimentStrategy;
+package com.ascend.testlab.util.strategy.concludedExperimentStrategy;
 
 import com.ascend.testlab.dto.response.UserExperimentMap;
 import com.ascend.testlab.entity.Experiment;
@@ -6,44 +6,44 @@ import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * Strategy that only overrides variants for users who were already assigned to the experiment. Does
- * not add winning variant for users who were not part of the experiment.
+ * Strategy that only adds winning variant for users who were NOT assigned to the experiment. Does
+ * not override existing assignments.
  *
- * <p>Use Case: Update experiment participants with winning variant without affecting users who
- * never participated.
+ * <p>Use Case: Gradual rollout of winning variant to users who didn't participate in the original
+ * experiment.
  *
  * @author anudeepreddy20
  * @version 1.0
  * @since 1.0
  */
 @Slf4j
-public class AssignedOnlyStrategy implements ConcludedExperimentOverrideStrategy {
+public class UnassignedOnlyStrategy implements ConcludedStrategy {
 
   @Override
   public boolean shouldOverride(
       Experiment concludedExperiment, List<UserExperimentMap> existingAssignments) {
 
-    boolean wasAssigned =
+    boolean wasNotAssigned =
         existingAssignments.stream()
-            .anyMatch(
+            .noneMatch(
                 assignment ->
                     assignment.getExperimentId().equals(concludedExperiment.getExperimentId()));
 
-    if (wasAssigned) {
+    if (wasNotAssigned) {
       log.debug(
-          "User was assigned to experiment {}, will override with winning variant",
+          "User was not assigned to experiment {}, will add winning variant",
           concludedExperiment.getExperimentId());
     } else {
       log.debug(
-          "User was not assigned to experiment {}, skipping override",
+          "User was already assigned to experiment {}, skipping",
           concludedExperiment.getExperimentId());
     }
 
-    return wasAssigned;
+    return wasNotAssigned;
   }
 
   @Override
   public String getStrategyName() {
-    return "ASSIGNED_ONLY";
+    return "UNASSIGNED_ONLY";
   }
 }

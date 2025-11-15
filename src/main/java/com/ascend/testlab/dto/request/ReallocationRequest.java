@@ -5,7 +5,7 @@ import jakarta.validation.constraints.NotNull;
 import lombok.*;
 
 /**
- * Request object for experiment variant reassignment. Used when changing a user's variant for an
+ * Request object for experiment variant reallocation. Used when changing a user's variant for an
  * already assigned experiment.
  *
  * @author anudeepreddy20
@@ -16,7 +16,7 @@ import lombok.*;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class ReassignmentRequest {
+public class ReallocationRequest {
 
   @NotBlank(message = "Experiment ID is required")
   @NotNull

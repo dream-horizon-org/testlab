@@ -58,4 +58,6 @@ public final class WebConstants {
 
   /** The name of the project key header. */
   public static final String PROJECT_KEY_HEADER = "x-project-key";
+
+  public static final String DEFAULT_PROJECT_KEY = "abc";
 }

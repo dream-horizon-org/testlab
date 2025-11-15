@@ -79,7 +79,6 @@ public class CustomAttributesFilter extends AbstractExperimentFilter {
         return false;
       }
 
-      // All conditions within a rule must be true (AND logic)
       boolean allConditionsMatch =
           ruleAttributes.getConditions().stream()
               .allMatch(condition -> evaluateCondition(condition, ruleAttributes.getName()));

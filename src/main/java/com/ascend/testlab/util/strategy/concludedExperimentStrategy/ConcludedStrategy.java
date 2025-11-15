@@ -1,4 +1,4 @@
-package com.ascend.testlab.util.strategy.ConcludedExperimentStrategy;
+package com.ascend.testlab.util.strategy.concludedExperimentStrategy;
 
 import com.ascend.testlab.dto.response.UserExperimentMap;
 import com.ascend.testlab.entity.Experiment;
@@ -12,7 +12,7 @@ import java.util.List;
  * @version 1.0
  * @since 1.0
  */
-public interface ConcludedExperimentOverrideStrategy {
+public interface ConcludedStrategy {
 
   /**
    * Determines whether a concluded experiment's winning variant should override existing user

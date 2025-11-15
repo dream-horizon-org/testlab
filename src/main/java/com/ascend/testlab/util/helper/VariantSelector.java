@@ -28,17 +28,6 @@ public class VariantSelector {
     STRATEGIES.add(new CohortVariantSelectionStrategy());
   }
 
-  //  /**
-  //   * Selects a variant for the given experiment and user (without cohort information)
-  //   *
-  //   * @param experiment the experiment to assign
-  //   * @param userId user identifier
-  //   * @return selected variant or null if none available
-  //   */
-  //  public static Variant selectVariant(Experiment experiment, String userId) {
-  //    return selectVariant(experiment, userId);
-  //  }
-
   /**
    * Selects a variant for the given experiment and user with cohort information. Uses the
    * appropriate strategy based on assignment domain.
@@ -68,7 +57,7 @@ public class VariantSelector {
 
     for (VariantSelectionStrategy strategy : STRATEGIES) {
       if (strategy.canHandle(experiment)) {
-        log.debug(
+        log.info(
             "Using {} strategy for experiment {}",
             strategy.getClass().getSimpleName(),
             experiment.getExperimentId());
@@ -93,41 +82,4 @@ public class VariantSelector {
         experiment.getAssignmentDomain());
     return null;
   }
-
-  //  /**
-  //   * Gets a list of all available variants for an experiment
-  //   *
-  //   * @param experiment the experiment
-  //   * @return list of variants
-  //   */
-  //  public static List<Variant> getVariantsList(Experiment experiment) {
-  //    if (experiment == null || experiment.getVariant() == null) {
-  //      return new ArrayList<>();
-  //    }
-  //    return new ArrayList<>(experiment.getVariant().values());
-  //  }
-
-  //  /**
-  //   * Validates if an experiment has proper variant configuration
-  //   *
-  //   * @param experiment the experiment to validate
-  //   * @return true if experiment has valid variant configuration
-  //   */
-  //  public static boolean hasValidVariantConfiguration(Experiment experiment) {
-  //    if (experiment == null) {
-  //      return false;
-  //    }
-  //
-  //    if (experiment.getVariant() == null || experiment.getVariant().isEmpty()) {
-  //      log.debug("Experiment {} has no variants defined", experiment.getExperimentId());
-  //      return false;
-  //    }
-  //
-  //    if (experiment.getVariantWeights() == null) {
-  //      log.debug("Experiment {} has no variant weights defined", experiment.getExperimentId());
-  //      return false;
-  //    }
-  //
-  //    return true;
-  //  }
 }

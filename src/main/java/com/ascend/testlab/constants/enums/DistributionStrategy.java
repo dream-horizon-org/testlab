@@ -1,7 +1,7 @@
 package com.ascend.testlab.constants.enums;
 
 /**
- * Enum representing the distribution strategy for variant assignment.
+ * Enum representing the distribution strategy for variant allocation.
  *
  * @author anudeepreddy20
  * @version 1.0

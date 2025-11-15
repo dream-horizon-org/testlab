@@ -23,7 +23,7 @@ public final class CommonUtil {
     return CpuCoreSensor.availableProcessors();
   }
 
-  public static String getSetName(String set, String tenantId) {
-    return set + Constants.COLON + tenantId;
+  public static String getSetName(String set, String projectKey) {
+    return set + Constants.COLON + projectKey;
   }
 }

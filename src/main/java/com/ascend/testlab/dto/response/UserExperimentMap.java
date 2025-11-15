@@ -8,7 +8,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 /**
- * Response object representing a user's experiment assignment mapping.
+ * Response object representing a user's experiment allocation mapping.
  *
  * @author anudeepreddy20
  * @version 1.0

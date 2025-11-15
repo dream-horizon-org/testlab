@@ -11,7 +11,7 @@ CREATE TYPE experiment_health AS ENUM ('WARNING','PASSING','NO_CHECKS_AVAILABLE'
 CREATE TYPE experiment_strategy AS ENUM ('RANDOM', 'ROUND_ROBIN');
 CREATE TYPE assignment_domain AS ENUM ('MANUAL', 'COHORT', 'DEFAULT');
 
-CREATE TABLE IF NOT EXISTS experiments (
+CREATE TABLE IF NOT EXISTS experiment.experiments (
     project_key          VARCHAR(255) NOT NULL,
     experiment_id       VARCHAR(36) NOT NULL,
     name                VARCHAR(64) NOT NULL,
@@ -23,15 +23,16 @@ CREATE TABLE IF NOT EXISTS experiments (
     cohorts             VARCHAR(255) ARRAY,
     variant_weights     JSONB,
     variants            JSONB,
-    distribution_strategy experiment_strategy,
-    assignment_domain   assignment_domain,
-    overrides           VARCHAR(255),
+    distribution_strategy experiment_strategy NOT NULL,
+    assignment_domain   assignment_domain NOT NULL,
+    overrides           TEXT,
     rule_attributes     JSONB,
     winning_variant     JSONB,
     exposure            INTEGER,
     threshold           bigint,
     start_time          bigint,
     end_time            bigint,
+    experiment_key      VARCHAR(255) NOT NULL,
     created_by          VARCHAR(255),
     created_at  TIMESTAMPTZ   NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at  TIMESTAMPTZ   NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -40,7 +41,7 @@ CREATE TABLE IF NOT EXISTS experiments (
     CONSTRAINT name_unique_check UNIQUE (project_key, name)
 ) PARTITION BY LIST (project_key);
 
-CREATE INDEX idx_name_tsvector ON experiments USING GIN (name_tsvector);
+CREATE INDEX idx_name_tsvector ON experiment.experiments USING GIN (name_tsvector);
 
 
 

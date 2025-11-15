@@ -19,5 +19,6 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class Variant {
   private String displayName;
+  private String variantName;
   private List<Variables> variables;
 }

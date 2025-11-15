@@ -1,4 +1,4 @@
-package com.ascend.testlab.util.strategy.ConcludedExperimentStrategy;
+package com.ascend.testlab.util.strategy.concludedExperimentStrategy;
 
 import lombok.experimental.UtilityClass;
 import lombok.extern.slf4j.Slf4j;
@@ -35,10 +35,10 @@ public class ConcludedStrategyFactory {
       case UNASSIGNED_ONLY:
         return new UnassignedOnlyStrategy();
       case DEFAULT:
-        return new BothStrategy();
+        return new DefaultStrategy();
       default:
         log.warn("Unknown strategy type {}, defaulting to BOTH", strategyType);
-        return new BothStrategy();
+        return new DefaultStrategy();
     }
   }
 
@@ -55,7 +55,7 @@ public class ConcludedStrategyFactory {
       return getStrategy(type);
     } catch (IllegalArgumentException e) {
       log.warn("Invalid strategy name '{}', defaulting to BOTH", strategyName);
-      return new BothStrategy();
+      return new DefaultStrategy();
     }
   }
 
@@ -65,6 +65,6 @@ public class ConcludedStrategyFactory {
    * @return the default strategy implementation
    */
   public static ConcludedStrategy getDefaultStrategy() {
-    return new BothStrategy();
+    return new DefaultStrategy();
   }
 }

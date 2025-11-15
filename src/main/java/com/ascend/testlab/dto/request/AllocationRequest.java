@@ -1,5 +1,7 @@
 package com.ascend.testlab.dto.request;
 
+import com.ascend.testlab.exception.ErrorEnum;
+import com.dream11.rest.util.ExceptionUtil;
 import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -8,7 +10,7 @@ import lombok.NoArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
 
 /**
- * Request object for experiment assignment.
+ * Request object for experiment allocation.
  *
  * @author anudeepreddy20
  * @version 1.0
@@ -18,7 +20,7 @@ import org.apache.commons.lang3.StringUtils;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class AssignmentRequest {
+public class AllocationRequest {
   private List<String> experiments;
   private Attributes attributes;
   private String guestId;
@@ -26,7 +28,10 @@ public class AssignmentRequest {
 
   public void validate() {
     if (StringUtils.isBlank(guestId) || StringUtils.isBlank(userId)) {
-      throw new IllegalArgumentException("guestId and userId cannot be blank");
+      throw ExceptionUtil.getException(ErrorEnum.MISSING_USER_IDENTIFIER);
+    }
+    if (experiments.isEmpty()) {
+      throw ExceptionUtil.getException(ErrorEnum.INVALID_REQUEST_BODY);
     }
   }
 }

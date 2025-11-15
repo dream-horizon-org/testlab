@@ -1,7 +1,7 @@
 package com.ascend.testlab.entity;
 
 /**
- * Enum representing the assignment domain for experiments. Defines how variant assignment is
+ * Enum representing the allocation domain for experiments. Defines how variant allocation is
  * determined.
  *
  * @author anudeepreddy20
@@ -10,9 +10,9 @@ package com.ascend.testlab.entity;
  */
 public enum AssignmentDomain {
   // todo: change these names
-  /** Manual variant assignment - specific users mapped to specific variants */
+  /** Manual variant allocation - specific users mapped to specific variants */
   MANUAL,
 
-  /** Variant assignment based on cohort mapping */
+  /** Variant allocation based on cohort mapping */
   COHORT
 }

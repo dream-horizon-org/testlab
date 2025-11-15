@@ -21,12 +21,12 @@ public final class ReadQuery {
 
   /** Query to fetch active experiments for a tenant within a time range */
   public static final String GET_EXPERIMENTS =
-      "SELECT * " + "FROM experiments " + "WHERE project_key = $1 AND status = 'LIVE'";
+      "SELECT * FROM experiment.experiments WHERE project_key = $1 AND status = 'LIVE' AND experiment_key = ANY($2::text[])";
 
   /** Query to fetch concluded experiments for a tenant with winning variants */
   public static final String GET_CONCLUDED_EXPERIMENTS =
       "SELECT * "
-          + "FROM experiments "
+          + "FROM experiment.experiments "
           + "WHERE project_key = $1 "
           + "AND status = 'CONCLUDED' "
           + "AND winning_variant IS NOT NULL";

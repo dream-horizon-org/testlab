@@ -4,6 +4,87 @@ info:
   description: testlab Service
   version: "1.0"
 paths:
+  /v1/allocation:
+    get:
+      operationId: handle_1
+      parameters:
+      - name: x-project-key
+        in: header
+        schema:
+          type: string
+          default: abc
+      - name: x-user-Id
+        in: header
+        schema:
+          type: string
+      responses:
+        "200":
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Success'
+        "304":
+          description: Successful Not Modified Response
+        "400":
+          description: Bad Request due to invalid/missing body params / header
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Failure'
+        "401":
+          description: Bad Request due to invalid api-key
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Failure'
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Failure'
+    post:
+      operationId: handle
+      parameters:
+      - name: x-project-key
+        in: header
+        schema:
+          type: string
+          default: abc
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AllocationRequest'
+        required: true
+      responses:
+        "200":
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Success'
+        "304":
+          description: Successful Not Modified Response
+        "400":
+          description: Bad Request due to invalid/missing body params / header
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Failure'
+        "401":
+          description: Bad Request due to invalid api-key
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Failure'
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Failure'
   /v1/experiments/tags:
     get:
       operationId: getTagsHandle
@@ -32,87 +113,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Failure'
-  /v1/allocation:
-    put:
-      operationId: handle_1
-      parameters:
-        - name: x-user-Id
-          in: header
-          schema:
-            type: string
-        - name: x-tenant-Id
-          in: header
-          schema:
-            type: string
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/ReassignmentRequest'
-      responses:
-        "200":
-          description: Successful Reassignment
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Success'
-        "400":
-          description: Bad Request due to invalid/missing body params / header
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Failure'
-        "404":
-          description: Experiment or user assignment not found
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Failure'
-        "500":
-          description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Failure'
-    post:
-      operationId: handle
-      parameters:
-        - name: x-tenant-Id
-          in: header
-          schema:
-            type: string
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/AssignmentRequest'
-      responses:
-        "200":
-          description: Successful Response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Success'
-        "304":
-          description: Successful Not Modified Response
-        "400":
-          description: Bad Request due to invalid/missing body params / header
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Failure'
-        "401":
-          description: Bad Request due to invalid api-key
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Failure'
-        "500":
-          description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Failure'
 components:
   schemas:
     Success:
@@ -134,7 +134,7 @@ components:
       properties:
         error:
           $ref: '#/components/schemas/ErrorEntity'
-    AssignmentRequest:
+    AllocationRequest:
       type: object
       properties:
         experiments:
@@ -150,29 +150,21 @@ components:
     Attributes:
       type: object
       properties:
-        appVersion:
+        model:
           type: string
-        buildVersion:
+        device:
           type: string
-        customAttributes:
-          type: object
-          additionalProperties:
-            type: object
-    ReassignmentRequest:
-      required:
-      - experimentId
-      - userId
-      type: object
-      properties:
-        experimentId:
+        platform:
           type: string
-        variantName:
+        build_version:
           type: string
-        reason:
+        app_name:
           type: string
-        forceReassign:
-          type: boolean
-        userId:
+        os_version:
+          type: string
+        app_version:
+          type: string
+        build_number:
           type: string
     SuccessTagsResponse:
       type: object

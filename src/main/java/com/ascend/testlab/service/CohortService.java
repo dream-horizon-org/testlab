@@ -2,7 +2,6 @@ package com.ascend.testlab.service;
 
 import io.reactivex.rxjava3.core.Maybe;
 import java.util.List;
-import java.util.UUID;
 
 /**
  * Interface for the cohort service. Contains methods to fetch user cohorts from external cohort
@@ -19,8 +18,8 @@ public interface CohortService {
    * service is down or user has no cohorts.
    *
    * @param userId user identifier
-   * @param tenantId tenant identifier
+   * @param projectKey project identifier
    * @return Maybe containing list of cohort names, empty if service is down
    */
-  Maybe<List<String>> getUserCohorts(String userId, UUID tenantId);
+  Maybe<List<String>> getUserCohorts(String userId, String projectKey);
 }
