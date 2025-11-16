@@ -1,4 +1,7 @@
-package com.ascend.testlab.dao.querybuilder;
+package com.ascend.testlab.dao.querybuilder.decorator;
+
+import com.ascend.testlab.dao.querybuilder.core.FilterQueryBuilder;
+import com.ascend.testlab.dao.querybuilder.core.ParameterizedQuery;
 
 /**
  * Base decorator class that implements the FilterQueryBuilder interface. This class follows the
@@ -24,10 +27,10 @@ public class FilterQueryDecorator implements FilterQueryBuilder {
   /**
    * Delegates the query building to the wrapped FilterQueryBuilder.
    *
-   * @return the SQL query string from the wrapped builder
+   * @return the ParameterizedQuery from the wrapped builder
    */
   @Override
-  public String buildQuery() {
+  public ParameterizedQuery buildQuery() {
     return wrappedFilterQuery.buildQuery();
   }
 }

@@ -5,7 +5,8 @@ import com.ascend.testlab.constants.postgresql.Columns;
 import com.ascend.testlab.constants.postgresql.ReadQuery;
 import com.ascend.testlab.dao.ExperimentDAO;
 import com.ascend.testlab.dao.mapper.ExperimentMapper;
-import com.ascend.testlab.dao.querybuilder.FilterExperimentsQueryFactory;
+import com.ascend.testlab.dao.querybuilder.core.ParameterizedQuery;
+import com.ascend.testlab.dao.querybuilder.factory.FilterExperimentsQueryFactory;
 import com.ascend.testlab.dto.entity.Experiment;
 import com.ascend.testlab.dto.request.FilterExperimentsRequest;
 import com.ascend.testlab.dto.response.FilterExperimentsResponse;
@@ -53,10 +54,11 @@ public class ExperimentDAOImpl implements ExperimentDAO {
   @Override
   public Single<FilterExperimentsResponse> filterExperiments(
       String projectKey, FilterExperimentsRequest req) {
-    String query = FilterExperimentsQueryFactory.buildQuery(req);
+    ParameterizedQuery parameterizedQuery =
+        FilterExperimentsQueryFactory.buildQuery(projectKey, req);
 
     return pgReaderClient
-        .fetchAll(query, Tuple.of(projectKey), row -> row)
+        .fetchAll(parameterizedQuery.query(), parameterizedQuery.tuple(), row -> row)
         .map(rows -> mapRowsToFilteredExperiment(rows, req));
   }
 

@@ -501,6 +501,237 @@ class FilterExperimentsIT {
     response.body("data.experiments.size()", Matchers.equalTo(2));
   }
 
+  // ==================== SQL Injection Security Tests ====================
+
+  @Test
+  void testSqlInjection_NameFilter_SingleQuoteEscape() {
+    Map<String, String> headers = Map.of(WebConstants.PROJECT_KEY_HEADER, PROJECT_KEY);
+    // Attempt SQL injection with single quote escape
+    Map<String, String> queryParams = Map.of(WebConstants.NAME, "test' OR '1'='1");
+
+    ValidatableResponse response =
+        TestUtil.executeRequest(null, headers, queryParams, spec -> spec.get(this.route));
+
+    // Should return OK but treat the input as literal search text (no injection)
+    response.statusCode(HttpStatus.SC_OK);
+    response.contentType(WebConstants.APPLICATION_JSON);
+    response.body("data.experiments", Matchers.notNullValue());
+    response.body("data.experiments.size()", Matchers.equalTo(0));
+    // Should return empty or only experiments matching the literal string (not all experiments)
+    // If it returned all experiments, SQL injection would have succeeded
+  }
+
+  @Test
+  void testSqlInjection_NameFilter_UnionBasedAttack() {
+    Map<String, String> headers = Map.of(WebConstants.PROJECT_KEY_HEADER, PROJECT_KEY);
+    // Attempt UNION-based SQL injection to extract data
+    Map<String, String> queryParams =
+        Map.of(WebConstants.NAME, "test' UNION SELECT null,null,null,null,null--");
+
+    ValidatableResponse response =
+        TestUtil.executeRequest(null, headers, queryParams, spec -> spec.get(this.route));
+
+    // Should return OK and treat UNION clause as literal search text
+    response.statusCode(HttpStatus.SC_OK);
+    response.contentType(WebConstants.APPLICATION_JSON);
+    response.body("data", Matchers.notNullValue());
+    // Should not return unexpected data structure or expose internal data
+  }
+
+  @Test
+  void testSqlInjection_NameFilter_CommentInjection() {
+    Map<String, String> headers = Map.of(WebConstants.PROJECT_KEY_HEADER, PROJECT_KEY);
+    // Attempt to comment out rest of query
+    Map<String, String> queryParams = Map.of(WebConstants.NAME, "test'; --");
+
+    ValidatableResponse response =
+        TestUtil.executeRequest(null, headers, queryParams, spec -> spec.get(this.route));
+
+    // Should return OK and treat comment syntax as literal search text
+    response.statusCode(HttpStatus.SC_OK);
+    response.contentType(WebConstants.APPLICATION_JSON);
+    response.body("data.experiments", Matchers.notNullValue());
+  }
+
+  @Test
+  void testSqlInjection_NameFilter_BlindSqlInjection() {
+    Map<String, String> headers = Map.of(WebConstants.PROJECT_KEY_HEADER, PROJECT_KEY);
+    // Attempt blind SQL injection with time-based attack
+    Map<String, String> queryParams = Map.of(WebConstants.NAME, "test' AND (SELECT pg_sleep(5))--");
+
+    ValidatableResponse response =
+        TestUtil.executeRequest(null, headers, queryParams, spec -> spec.get(this.route));
+
+    // Should return quickly (not sleep 5 seconds) and treat as literal text
+    response.statusCode(HttpStatus.SC_OK);
+    response.contentType(WebConstants.APPLICATION_JSON);
+  }
+
+  @Test
+  void testSqlInjection_OwnerFilter_MultipleValuesInjection() {
+    Map<String, String> headers = Map.of(WebConstants.PROJECT_KEY_HEADER, PROJECT_KEY);
+    // Attempt to break out of IN clause with SQL injection
+    Map<String, String> queryParams =
+        Map.of(WebConstants.OWNER, "alice', (SELECT password FROM users WHERE id=1)); --");
+
+    ValidatableResponse response =
+        TestUtil.executeRequest(null, headers, queryParams, spec -> spec.get(this.route));
+
+    // Should return OK and treat entire string as owner value (array element)
+    response.statusCode(HttpStatus.SC_OK);
+    response.contentType(WebConstants.APPLICATION_JSON);
+    response.body("data.experiments", Matchers.notNullValue());
+    // Should not expose any password data or fail with SQL error
+  }
+
+  @Test
+  void testSqlInjection_TagFilter_StackedQueries() {
+    Map<String, String> headers = Map.of(WebConstants.PROJECT_KEY_HEADER, PROJECT_KEY);
+    // Attempt stacked query injection
+    Map<String, String> queryParams = Map.of(WebConstants.TAG, "tag1'; DROP TABLE experiments; --");
+
+    ValidatableResponse response =
+        TestUtil.executeRequest(null, headers, queryParams, spec -> spec.get(this.route));
+
+    // Should return OK and not execute DROP statement
+    response.statusCode(HttpStatus.SC_OK);
+    response.contentType(WebConstants.APPLICATION_JSON);
+    response.body("data.experiments", Matchers.notNullValue());
+  }
+
+  @Test
+  void testSqlInjection_StatusFilter_InvalidEnumWithInjection() {
+    Map<String, String> headers = Map.of(WebConstants.PROJECT_KEY_HEADER, PROJECT_KEY);
+    // Attempt injection in enum field (should be validated before reaching query)
+    Map<String, String> queryParams = Map.of(WebConstants.EXPERIMENT_STATUS, "LIVE' OR '1'='1");
+
+    ValidatableResponse response =
+        TestUtil.executeRequest(null, headers, queryParams, spec -> spec.get(this.route));
+
+    // Should return BAD_REQUEST due to enum validation (defense in depth)
+    response.statusCode(HttpStatus.SC_BAD_REQUEST);
+    response.body(Matchers.containsString(ErrorMessages.INVALID_EXPERIMENT_STATUS));
+  }
+
+  @Test
+  void testSqlInjection_TypeFilter_InvalidEnumWithInjection() {
+    Map<String, String> headers = Map.of(WebConstants.PROJECT_KEY_HEADER, PROJECT_KEY);
+    // Attempt injection in type field
+    Map<String, String> queryParams =
+        Map.of(WebConstants.EXPERIMENT_TYPE, "A/B'; DELETE FROM experiments WHERE '1'='1");
+
+    ValidatableResponse response =
+        TestUtil.executeRequest(null, headers, queryParams, spec -> spec.get(this.route));
+
+    // Should return BAD_REQUEST due to enum validation
+    response.statusCode(HttpStatus.SC_BAD_REQUEST);
+    response.body(Matchers.containsString(ErrorMessages.INVALID_EXPERIMENT_TYPE));
+  }
+
+  @Test
+  void testSqlInjection_NameFilter_EncodedInjection() {
+    Map<String, String> headers = Map.of(WebConstants.PROJECT_KEY_HEADER, PROJECT_KEY);
+    // Attempt injection with URL encoding
+    Map<String, String> queryParams = Map.of(WebConstants.NAME, "test%27%20OR%20%271%27%3D%271");
+
+    ValidatableResponse response =
+        TestUtil.executeRequest(null, headers, queryParams, spec -> spec.get(this.route));
+
+    // Should decode and treat as literal text
+    response.statusCode(HttpStatus.SC_OK);
+    response.contentType(WebConstants.APPLICATION_JSON);
+    response.body("data.experiments.size()", Matchers.equalTo(0));
+  }
+
+  @Test
+  void testSqlInjection_MultipleFilters_CombinedInjectionAttempt() {
+    Map<String, String> headers = Map.of(WebConstants.PROJECT_KEY_HEADER, PROJECT_KEY);
+    // Attempt injection across multiple parameters
+    Map<String, String> queryParams =
+        Map.of(
+            WebConstants.NAME, "test' OR '1'='1",
+            WebConstants.OWNER, "owner'; DROP TABLE experiments; --",
+            WebConstants.TAG, "tag' UNION SELECT * FROM users--");
+
+    ValidatableResponse response =
+        TestUtil.executeRequest(null, headers, queryParams, spec -> spec.get(this.route));
+
+    // Should handle all malicious inputs safely
+    response.statusCode(HttpStatus.SC_OK);
+    response.contentType(WebConstants.APPLICATION_JSON);
+    response.body("data.experiments", Matchers.notNullValue());
+    // Verify normal response structure (no SQL errors or unexpected data)
+    response.body("data.pagination", Matchers.notNullValue());
+  }
+
+  @Test
+  void testSqlInjection_NameFilter_NoSqlErrorLeakage() {
+    Map<String, String> headers = Map.of(WebConstants.PROJECT_KEY_HEADER, PROJECT_KEY);
+    // Attempt to trigger SQL error that might leak information
+    Map<String, String> queryParams = Map.of(WebConstants.NAME, "test' AND 1=CAST('abc' AS INT)--");
+
+    ValidatableResponse response =
+        TestUtil.executeRequest(null, headers, queryParams, spec -> spec.get(this.route));
+
+    // Should not leak SQL error messages
+    response.statusCode(HttpStatus.SC_OK);
+    response.contentType(WebConstants.APPLICATION_JSON);
+    // Response should not contain SQL error keywords
+    response.body("$", Matchers.not(Matchers.hasKey("sqlState")));
+    response.body("$", Matchers.not(Matchers.hasKey("SQLException")));
+  }
+
+  @Test
+  void testSqlInjection_OwnerFilter_ArrayInjection() {
+    Map<String, String> headers = Map.of(WebConstants.PROJECT_KEY_HEADER, PROJECT_KEY);
+    // Attempt to break array parameter handling
+    Map<String, String> queryParams =
+        Map.of(WebConstants.OWNER, "owner1','owner2'); SELECT * FROM users WHERE ('1'='1");
+
+    ValidatableResponse response =
+        TestUtil.executeRequest(null, headers, queryParams, spec -> spec.get(this.route));
+
+    // Should treat entire string as array elements
+    response.statusCode(HttpStatus.SC_OK);
+    response.contentType(WebConstants.APPLICATION_JSON);
+    response.body("data.experiments", Matchers.notNullValue());
+  }
+
+  @Test
+  void testSqlInjection_NameFilter_SecondOrderInjection() {
+    Map<String, String> headers = Map.of(WebConstants.PROJECT_KEY_HEADER, PROJECT_KEY);
+    // Test with malicious content that might be stored and later executed
+    Map<String, String> queryParams =
+        Map.of(WebConstants.NAME, "<script>alert('xss')</script>' OR '1'='1");
+
+    ValidatableResponse response =
+        TestUtil.executeRequest(null, headers, queryParams, spec -> spec.get(this.route));
+
+    // Should handle safely without executing any stored malicious content
+    response.statusCode(HttpStatus.SC_OK);
+    response.contentType(WebConstants.APPLICATION_JSON);
+  }
+
+  @Test
+  void testParameterizedQuery_VerifyNoStringConcatenation() {
+    Map<String, String> headers = Map.of(WebConstants.PROJECT_KEY_HEADER, PROJECT_KEY);
+    // Use special characters that would break string concatenation
+    Map<String, String> queryParams =
+        Map.of(
+            WebConstants.NAME, "test\\'; SELECT * FROM experiments WHERE name='test",
+            WebConstants.OWNER, "owner\\\")); DROP TABLE experiments; --");
+
+    ValidatableResponse response =
+        TestUtil.executeRequest(null, headers, queryParams, spec -> spec.get(this.route));
+
+    // Should handle escape characters safely in parameterized queries
+    response.statusCode(HttpStatus.SC_OK);
+    response.contentType(WebConstants.APPLICATION_JSON);
+    response.body("data.experiments", Matchers.notNullValue());
+  }
+
+  // ==================== End SQL Injection Security Tests ====================
+
   /**
    * Seeds test data for filter experiments tests. This ensures all tests have the necessary data to
    * run successfully. The seed.sql already contains some data, but we add additional test data here

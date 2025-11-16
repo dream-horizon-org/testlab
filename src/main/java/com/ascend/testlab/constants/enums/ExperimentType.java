@@ -13,7 +13,7 @@ import com.fasterxml.jackson.annotation.JsonValue;
  */
 public enum ExperimentType {
 
-  /** A/A testing experiment type. Also called Null Hypothesis */
+  /** A/A testing experiment type. Also used in testing Null Hypothesis */
   A_A("A/A"),
 
   /** A/B testing experiment type. */
