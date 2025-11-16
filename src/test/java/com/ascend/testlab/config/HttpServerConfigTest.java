@@ -103,9 +103,10 @@ public class HttpServerConfigTest {
       config.setPort(null);
 
       // Act & Assert
-      // The getPort() method will throw NPE when port is null due to: 0 < this.port
-      // This tests the actual behavior of the code
-      assertThrows(NullPointerException.class, () -> config.getPort());
+      Integer port = config.getPort();
+
+      // Assert
+      assertEquals(8080, port);
     }
 
     @Test

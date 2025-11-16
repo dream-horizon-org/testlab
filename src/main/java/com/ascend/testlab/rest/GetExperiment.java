@@ -75,7 +75,9 @@ public class GetExperiment {
       @HeaderParam(WebConstants.PROJECT_KEY_HEADER)
           @NotBlank(message = ErrorMessages.PROJECT_KEY_MISSING)
           String projectKey,
-      @PathParam(WebConstants.EXPERIMENT_ID) String experimentId) {
+      @PathParam(WebConstants.EXPERIMENT_ID)
+          @NotBlank(message = ErrorMessages.EXPERIMENT_ID_MISSING)
+          String experimentId) {
     return experimentService
         .getExperiment(projectKey, experimentId)
         .map(ResponseEntity.Success::new)

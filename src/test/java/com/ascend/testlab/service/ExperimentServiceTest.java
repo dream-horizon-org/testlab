@@ -246,8 +246,7 @@ public class ExperimentServiceTest {
     @DisplayName("Should return filtered experiments with type filter")
     void testFilterExperimentsWithTypeFilter() {
       // Arrange
-      FilterExperimentsRequest request =
-          FilterExperimentsRequest.builder().type("A_B,MULTI_VARIANT").build();
+      FilterExperimentsRequest request = FilterExperimentsRequest.builder().type("A/B,A/A").build();
       FilterExperimentsResponse expectedResponse = createMockFilterResponse();
       when(experimentDAO.filterExperiments(PROJECT_KEY, request))
           .thenReturn(Single.just(expectedResponse));
@@ -333,7 +332,7 @@ public class ExperimentServiceTest {
       FilterExperimentsRequest request =
           FilterExperimentsRequest.builder()
               .status("LIVE")
-              .type("A_B")
+              .type("A/B")
               .name("test")
               .tag("tag1")
               .owner("owner1")
@@ -587,36 +586,45 @@ public class ExperimentServiceTest {
     @DisplayName("Should handle null project Key")
     void testGetExperimentWithNullProjectKey() {
       // Arrange
-      Experiment expectedExperiment = createMockExperiment();
-      when(experimentDAO.getExperiment(null, EXPERIMENT_ID))
-          .thenReturn(Maybe.just(expectedExperiment));
+      when(experimentDAO.getExperiment(null, EXPERIMENT_ID)).thenReturn(Maybe.empty());
 
       // Act
       TestObserver<Experiment> testObserver =
           experimentService.getExperiment(null, EXPERIMENT_ID).test();
 
       // Assert
-      testObserver.assertComplete();
-      testObserver.assertNoErrors();
+      testObserver.assertError(RestException.class);
+      testObserver.assertNotComplete();
+      testObserver.assertValueCount(0);
+      testObserver.assertError(
+          error ->
+              error instanceof RestException
+                  && ((RestException) error)
+                      .getErrorCode()
+                      .equals(ErrorEnum.EXPERIMENT_NOT_FOUND.getErrorCode()));
       verify(experimentDAO, times(1)).getExperiment(null, EXPERIMENT_ID);
     }
 
-    // TODO: this test is not correct
     @Test
     @DisplayName("Should handle null experiment ID")
     void testGetExperimentWithNullExperimentId() {
       // Arrange
-      Experiment expectedExperiment = createMockExperiment();
-      when(experimentDAO.getExperiment(PROJECT_KEY, null))
-          .thenReturn(Maybe.just(expectedExperiment));
+      when(experimentDAO.getExperiment(PROJECT_KEY, null)).thenReturn(Maybe.empty());
 
       // Act
       TestObserver<Experiment> testObserver =
           experimentService.getExperiment(PROJECT_KEY, null).test();
 
       // Assert
-      testObserver.assertComplete();
-      testObserver.assertNoErrors();
+      testObserver.assertError(RestException.class);
+      testObserver.assertNotComplete();
+      testObserver.assertValueCount(0);
+      testObserver.assertError(
+          error ->
+              error instanceof RestException
+                  && ((RestException) error)
+                      .getErrorCode()
+                      .equals(ErrorEnum.EXPERIMENT_NOT_FOUND.getErrorCode()));
       verify(experimentDAO, times(1)).getExperiment(PROJECT_KEY, null);
     }
 

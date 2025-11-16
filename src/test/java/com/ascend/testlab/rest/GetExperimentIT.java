@@ -94,7 +94,16 @@ class GetExperimentIT {
     response.statusCode(HttpStatus.SC_NOT_FOUND);
   }
 
-  // TODO: add checks for experimentId path param null/empty
+  @Test
+  void testGetExperiment_BlankExperimentId_BadRequest() {
+    Map<String, String> headers = Map.of(WebConstants.PROJECT_KEY_HEADER, PROJECT_KEY);
+
+    ValidatableResponse response =
+        TestUtil.executeRequest(null, headers, null, spec -> spec.get(route, "   "));
+
+    response.statusCode(HttpStatus.SC_BAD_REQUEST);
+    response.body(Matchers.containsString(ErrorMessages.EXPERIMENT_ID_MISSING));
+  }
 
   private void createPartitionForProject() {
     try {

@@ -27,11 +27,11 @@ public final class FilterExperimentsQueryFactory {
     }
 
     if (request.hasTypeFilter()) {
-      baseQuery = new TypeFilterQueryDecorator(baseQuery, request.getType());
+      baseQuery = new TypeFilterQueryDecorator(baseQuery, request.getTypeFilters());
     }
 
     if (request.hasStatusFilter()) {
-      baseQuery = new StatusFilterQueryDecorator(baseQuery, request.getStatus());
+      baseQuery = new StatusFilterQueryDecorator(baseQuery, request.getStatusFilters());
     }
 
     if (request.hasTagFilter()) {

@@ -37,7 +37,8 @@ public class OwnerFilterQueryDecorator extends FilterQueryDecorator {
   @Override
   public String buildQuery() {
     try {
-      String formattedOwner = CommonUtil.formatValuesForInClause(owner);
+      String formattedOwner =
+          CommonUtil.formatValuesForInClause(CommonUtil.separateCommaSeparatedString(owner));
       String query = ReadQuery.OWNER_FILTER.apply(formattedOwner);
       return wrappedFilterQuery.buildQuery() + query;
     } catch (Throwable e) {

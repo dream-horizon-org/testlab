@@ -1,9 +1,11 @@
 package com.ascend.testlab.dao.querybuilder;
 
+import com.ascend.testlab.constants.enums.ExperimentStatus;
 import com.ascend.testlab.constants.postgresql.ReadQuery;
 import com.ascend.testlab.exception.ErrorEnum;
 import com.ascend.testlab.util.CommonUtil;
 import com.dream11.rest.exception.RestException;
+import java.util.List;
 
 /**
  * Decorator that adds a status filter to the query. Supports multiple statuses as a comma-separated
@@ -15,7 +17,7 @@ import com.dream11.rest.exception.RestException;
  */
 public class StatusFilterQueryDecorator extends FilterQueryDecorator {
   /** The status value(s) to filter by (comma-separated). */
-  private final String status;
+  private final List<ExperimentStatus> status;
 
   /**
    * Constructs a new StatusFilterQueryDecorator with the given wrapped query builder and status.
@@ -23,7 +25,8 @@ public class StatusFilterQueryDecorator extends FilterQueryDecorator {
    * @param wrappedFilterQuery the FilterQueryBuilder to wrap
    * @param status the status value(s) to filter by (comma-separated)
    */
-  public StatusFilterQueryDecorator(FilterQueryBuilder wrappedFilterQuery, String status) {
+  public StatusFilterQueryDecorator(
+      FilterQueryBuilder wrappedFilterQuery, List<ExperimentStatus> status) {
     super(wrappedFilterQuery);
     this.status = status;
   }

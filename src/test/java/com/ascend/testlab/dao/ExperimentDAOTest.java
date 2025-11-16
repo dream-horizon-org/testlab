@@ -341,7 +341,7 @@ class ExperimentDAOTest {
           FilterExperimentsRequest.builder()
               .name("test")
               .status("LIVE")
-              .type("A_B")
+              .type("A/B")
               .limit(20)
               .page(1)
               .build();
@@ -497,7 +497,7 @@ class ExperimentDAOTest {
     when(mockRow.getString("status"))
         .thenReturn(experiment.getStatus() != null ? experiment.getStatus().name() : null);
     when(mockRow.getString("type"))
-        .thenReturn(experiment.getType() != null ? experiment.getType().toJson() : null);
+        .thenReturn(experiment.getType() != null ? experiment.getType().toString() : null);
     when(mockRow.getString("guardrail_health_status")).thenReturn(null);
     when(mockRow.getArrayOfStrings("cohorts")).thenReturn(new String[0]);
     when(mockRow.getJsonObject("variant_weights")).thenReturn(null);

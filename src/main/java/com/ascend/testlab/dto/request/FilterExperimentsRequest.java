@@ -53,11 +53,13 @@ public class FilterExperimentsRequest {
   @QueryParam(WebConstants.LIMIT)
   @DefaultValue(WebConstants.DEFAULT_LIMIT)
   @Positive(message = ErrorMessages.INVALID_LIMIT_VALUE)
+  @Builder.Default
   private Integer limit = Integer.valueOf(WebConstants.DEFAULT_LIMIT);
 
   @QueryParam(WebConstants.PAGE)
   @DefaultValue(WebConstants.DEFAULT_PAGE)
   @Positive(message = ErrorMessages.INVALID_PAGE_VALUE)
+  @Builder.Default
   private Integer page = Integer.valueOf(WebConstants.DEFAULT_PAGE);
 
   /**
@@ -103,6 +105,30 @@ public class FilterExperimentsRequest {
    */
   public boolean hasTagFilter() {
     return this.tag != null && !this.tag.isBlank();
+  }
+
+  /**
+   * Returns the list of ExperimentStatus enum values from the status filter.
+   *
+   * @return list of ExperimentStatus enum values
+   */
+  public List<ExperimentStatus> getStatusFilters() {
+    if (!hasStatusFilter()) return List.of();
+    return CommonUtil.separateCommaSeparatedString(status).stream()
+        .map(s -> ExperimentStatus.valueOf(s.toUpperCase()))
+        .toList();
+  }
+
+  /**
+   * Returns the list of ExperimentType enum values from the type filter.
+   *
+   * @return list of ExperimentType enum values
+   */
+  public List<ExperimentType> getTypeFilters() {
+    if (!hasTypeFilter()) return List.of();
+    return CommonUtil.separateCommaSeparatedString(type).stream()
+        .map(s -> ExperimentType.fromValue(s.toUpperCase()))
+        .toList();
   }
 
   /**

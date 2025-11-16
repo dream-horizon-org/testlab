@@ -15,7 +15,6 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
-// TODO: add more tests
 @Slf4j
 @ExtendWith(Setup.class)
 class FilterExperimentsIT {
@@ -240,6 +239,268 @@ class FilterExperimentsIT {
     response.body("data.pagination.totalCount", Matchers.equalTo(0));
   }
 
+  @Test
+  void testFilterExperiments_InvalidType_BadRequest() {
+    Map<String, String> headers = Map.of(WebConstants.PROJECT_KEY_HEADER, PROJECT_KEY);
+    Map<String, String> queryParams = Map.of(WebConstants.EXPERIMENT_TYPE, "INVALID_TYPE");
+
+    ValidatableResponse response =
+        TestUtil.executeRequest(null, headers, queryParams, spec -> spec.get(this.route));
+
+    response.statusCode(HttpStatus.SC_BAD_REQUEST);
+    response.body(Matchers.containsString(ErrorMessages.INVALID_EXPERIMENT_TYPE));
+  }
+
+  @Test
+  void testFilterExperiments_NegativeLimit_BadRequest() {
+    Map<String, String> headers = Map.of(WebConstants.PROJECT_KEY_HEADER, PROJECT_KEY);
+    Map<String, String> queryParams = Map.of(WebConstants.LIMIT, "-1");
+
+    ValidatableResponse response =
+        TestUtil.executeRequest(null, headers, queryParams, spec -> spec.get(this.route));
+
+    response.statusCode(HttpStatus.SC_BAD_REQUEST);
+    response.body(Matchers.containsString(ErrorMessages.INVALID_LIMIT_VALUE));
+  }
+
+  @Test
+  void testFilterExperiments_NegativePage_BadRequest() {
+    Map<String, String> headers = Map.of(WebConstants.PROJECT_KEY_HEADER, PROJECT_KEY);
+    Map<String, String> queryParams = Map.of(WebConstants.PAGE, "-1");
+
+    ValidatableResponse response =
+        TestUtil.executeRequest(null, headers, queryParams, spec -> spec.get(this.route));
+
+    response.statusCode(HttpStatus.SC_BAD_REQUEST);
+    response.body(Matchers.containsString(ErrorMessages.INVALID_PAGE_VALUE));
+  }
+
+  @Test
+  void testFilterExperiments_ZeroPage_BadRequest() {
+    Map<String, String> headers = Map.of(WebConstants.PROJECT_KEY_HEADER, PROJECT_KEY);
+    Map<String, String> queryParams = Map.of(WebConstants.PAGE, "0");
+
+    ValidatableResponse response =
+        TestUtil.executeRequest(null, headers, queryParams, spec -> spec.get(this.route));
+
+    response.statusCode(HttpStatus.SC_BAD_REQUEST);
+    response.body(Matchers.containsString(ErrorMessages.INVALID_PAGE_VALUE));
+  }
+
+  @Test
+  void testFilterExperiments_PageBeyondAvailable_EmptyResults() {
+    Map<String, String> headers = Map.of(WebConstants.PROJECT_KEY_HEADER, PROJECT_KEY);
+    Map<String, String> queryParams = Map.of(WebConstants.PAGE, "1000");
+
+    ValidatableResponse response =
+        TestUtil.executeRequest(null, headers, queryParams, spec -> spec.get(this.route));
+
+    response.statusCode(HttpStatus.SC_OK);
+    response.body("data.experiments.size()", Matchers.equalTo(0));
+    response.body("data.pagination.currentPage", Matchers.equalTo(1000));
+    response.body("data.pagination.totalCount", Matchers.equalTo(0));
+    // totalCount is implementation specific, and for `count(*) over ()` it returns 0 when no rows
+  }
+
+  @Test
+  void testFilterExperiments_LargeLimit() {
+    Map<String, String> headers = Map.of(WebConstants.PROJECT_KEY_HEADER, PROJECT_KEY);
+    Map<String, String> queryParams = Map.of(WebConstants.LIMIT, "100");
+
+    ValidatableResponse response =
+        TestUtil.executeRequest(null, headers, queryParams, spec -> spec.get(this.route));
+
+    response.statusCode(HttpStatus.SC_OK);
+    response.body("data.experiments", Matchers.notNullValue());
+    response.body("data.experiments.size()", Matchers.equalTo(2));
+    response.body("data.pagination.pageSize", Matchers.equalTo(100));
+  }
+
+  @Test
+  void testFilterExperiments_MultipleTypes() {
+    Map<String, String> headers = Map.of(WebConstants.PROJECT_KEY_HEADER, PROJECT_KEY);
+    Map<String, String> queryParams = Map.of(WebConstants.EXPERIMENT_TYPE, "A/B,A/A");
+
+    ValidatableResponse response =
+        TestUtil.executeRequest(null, headers, queryParams, spec -> spec.get(this.route));
+
+    response.statusCode(HttpStatus.SC_OK);
+    response.body("data.experiments", Matchers.notNullValue());
+    response.body("data.experiments.size()", Matchers.greaterThanOrEqualTo(2));
+  }
+
+  @Test
+  void testFilterExperiments_MultipleTags() {
+    Map<String, String> headers = Map.of(WebConstants.PROJECT_KEY_HEADER, PROJECT_KEY);
+    Map<String, String> queryParams = Map.of(WebConstants.TAG, "test-tag-1,test-tag-2");
+
+    ValidatableResponse response =
+        TestUtil.executeRequest(null, headers, queryParams, spec -> spec.get(this.route));
+
+    response.statusCode(HttpStatus.SC_OK);
+    response.body("data.experiments", Matchers.notNullValue());
+    response.body("data.experiments.size()", Matchers.greaterThanOrEqualTo(1));
+  }
+
+  @Test
+  void testFilterExperiments_MultipleOwners() {
+    Map<String, String> headers = Map.of(WebConstants.PROJECT_KEY_HEADER, PROJECT_KEY);
+    Map<String, String> queryParams =
+        Map.of(WebConstants.OWNER, "filter-test@example.com,another-owner@example.com");
+
+    ValidatableResponse response =
+        TestUtil.executeRequest(null, headers, queryParams, spec -> spec.get(this.route));
+
+    response.statusCode(HttpStatus.SC_OK);
+    response.body("data.experiments", Matchers.notNullValue());
+    response.body("data.experiments.size()", Matchers.greaterThanOrEqualTo(1));
+  }
+
+  @Test
+  void testFilterExperiments_NonExistentTag_NoResults() {
+    Map<String, String> headers = Map.of(WebConstants.PROJECT_KEY_HEADER, PROJECT_KEY);
+    Map<String, String> queryParams = Map.of(WebConstants.TAG, "non-existent-tag-12345");
+
+    ValidatableResponse response =
+        TestUtil.executeRequest(null, headers, queryParams, spec -> spec.get(this.route));
+
+    response.statusCode(HttpStatus.SC_OK);
+    response.body("data.experiments.size()", Matchers.equalTo(0));
+  }
+
+  @Test
+  void testFilterExperiments_NonExistentOwner_NoResults() {
+    Map<String, String> headers = Map.of(WebConstants.PROJECT_KEY_HEADER, PROJECT_KEY);
+    Map<String, String> queryParams = Map.of(WebConstants.OWNER, "nonexistent@example.com");
+
+    ValidatableResponse response =
+        TestUtil.executeRequest(null, headers, queryParams, spec -> spec.get(this.route));
+
+    response.statusCode(HttpStatus.SC_OK);
+    response.body("data.experiments.size()", Matchers.equalTo(0));
+  }
+
+  @Test
+  void testFilterExperiments_NameSearchPartialMatch() {
+    Map<String, String> headers = Map.of(WebConstants.PROJECT_KEY_HEADER, PROJECT_KEY);
+    Map<String, String> queryParams = Map.of(WebConstants.NAME, "Test");
+
+    ValidatableResponse response =
+        TestUtil.executeRequest(null, headers, queryParams, spec -> spec.get(this.route));
+
+    response.statusCode(HttpStatus.SC_OK);
+    response.body("data.experiments", Matchers.notNullValue());
+    response.body("data.experiments.size()", Matchers.greaterThanOrEqualTo(1));
+  }
+
+  @Test
+  void testFilterExperiments_EmptyName_ReturnsAll() {
+    Map<String, String> headers = Map.of(WebConstants.PROJECT_KEY_HEADER, PROJECT_KEY);
+    Map<String, String> queryParams = Map.of(WebConstants.NAME, "");
+
+    ValidatableResponse response =
+        TestUtil.executeRequest(null, headers, queryParams, spec -> spec.get(this.route));
+
+    response.statusCode(HttpStatus.SC_OK);
+    response.body("data.experiments.size()", Matchers.equalTo(2));
+  }
+
+  @Test
+  void testFilterExperiments_CombineFiltersWithPagination() {
+    Map<String, String> headers = Map.of(WebConstants.PROJECT_KEY_HEADER, PROJECT_KEY);
+    Map<String, String> queryParams =
+        Map.of(
+            WebConstants.EXPERIMENT_TYPE, "A/B", WebConstants.LIMIT, "1", WebConstants.PAGE, "1");
+
+    ValidatableResponse response =
+        TestUtil.executeRequest(null, headers, queryParams, spec -> spec.get(this.route));
+
+    response.statusCode(HttpStatus.SC_OK);
+    response.body("data.experiments.size()", Matchers.equalTo(1));
+    response.body("data.pagination.pageSize", Matchers.equalTo(1));
+    response.body("data.pagination.currentPage", Matchers.equalTo(1));
+  }
+
+  @Test
+  void testFilterExperiments_SecondPage() {
+    Map<String, String> headers = Map.of(WebConstants.PROJECT_KEY_HEADER, PROJECT_KEY);
+    Map<String, String> queryParams = Map.of(WebConstants.LIMIT, "1", WebConstants.PAGE, "2");
+
+    ValidatableResponse response =
+        TestUtil.executeRequest(null, headers, queryParams, spec -> spec.get(this.route));
+
+    response.statusCode(HttpStatus.SC_OK);
+    response.body("data.experiments.size()", Matchers.equalTo(1));
+    response.body("data.pagination.currentPage", Matchers.equalTo(2));
+    response.body("data.pagination.pageSize", Matchers.equalTo(1));
+  }
+
+  @Test
+  void testFilterExperiments_DefaultPagination() {
+    Map<String, String> headers = Map.of(WebConstants.PROJECT_KEY_HEADER, PROJECT_KEY);
+
+    ValidatableResponse response =
+        TestUtil.executeRequest(null, headers, null, spec -> spec.get(this.route));
+
+    response.statusCode(HttpStatus.SC_OK);
+    response.body("data.pagination.currentPage", Matchers.equalTo(1));
+    response.body("data.pagination.pageSize", Matchers.equalTo(20));
+  }
+
+  @Test
+  void testFilterExperiments_InvalidStatusAndType_BadRequest() {
+    Map<String, String> headers = Map.of(WebConstants.PROJECT_KEY_HEADER, PROJECT_KEY);
+    Map<String, String> queryParams =
+        Map.of(
+            WebConstants.EXPERIMENT_STATUS,
+            "INVALID_STATUS",
+            WebConstants.EXPERIMENT_TYPE,
+            "INVALID_TYPE");
+
+    ValidatableResponse response =
+        TestUtil.executeRequest(null, headers, queryParams, spec -> spec.get(this.route));
+
+    response.statusCode(HttpStatus.SC_BAD_REQUEST);
+  }
+
+  @Test
+  void testFilterExperiments_MixedValidAndInvalidStatus_BadRequest() {
+    Map<String, String> headers = Map.of(WebConstants.PROJECT_KEY_HEADER, PROJECT_KEY);
+    Map<String, String> queryParams = Map.of(WebConstants.EXPERIMENT_STATUS, "LIVE,INVALID");
+
+    ValidatableResponse response =
+        TestUtil.executeRequest(null, headers, queryParams, spec -> spec.get(this.route));
+
+    response.statusCode(HttpStatus.SC_BAD_REQUEST);
+    response.body(Matchers.containsString(ErrorMessages.INVALID_EXPERIMENT_STATUS));
+  }
+
+  @Test
+  void testFilterExperiments_StatusCaseInsensitive() {
+    Map<String, String> headers = Map.of(WebConstants.PROJECT_KEY_HEADER, PROJECT_KEY);
+    Map<String, String> queryParams = Map.of(WebConstants.EXPERIMENT_STATUS, "live");
+
+    ValidatableResponse response =
+        TestUtil.executeRequest(null, headers, queryParams, spec -> spec.get(this.route));
+
+    response.statusCode(HttpStatus.SC_OK);
+    response.body("data.experiments", Matchers.notNullValue());
+    response.body("data.experiments.size()", Matchers.equalTo(1));
+  }
+
+  @Test
+  void testFilterExperiments_CommonTagAcrossExperiments() {
+    Map<String, String> headers = Map.of(WebConstants.PROJECT_KEY_HEADER, PROJECT_KEY);
+    Map<String, String> queryParams = Map.of(WebConstants.TAG, "test-tag-2");
+
+    ValidatableResponse response =
+        TestUtil.executeRequest(null, headers, queryParams, spec -> spec.get(this.route));
+
+    response.statusCode(HttpStatus.SC_OK);
+    response.body("data.experiments", Matchers.notNullValue());
+    response.body("data.experiments.size()", Matchers.equalTo(2));
+  }
+
   /**
    * Seeds test data for filter experiments tests. This ensures all tests have the necessary data to
    * run successfully. The seed.sql already contains some data, but we add additional test data here
@@ -271,39 +532,15 @@ class FilterExperimentsIT {
    * seed.sql data which is shared across test classes.
    */
   private static void cleanupTestData() {
+    // Drop the partition we created
     try {
-      // Clean up only the test-specific data we added
-      String deleteTags =
-          String.format(
-              "DELETE FROM experiment.tags WHERE project_key = '%s' AND experiment_id IN ('%s', '%s');",
-              PROJECT_KEY, EXPERIMENT_ID_1, EXPERIMENT_ID_2);
-      TestUtil.executeSQLStatement(TestUtil.getDatabaseConnection(), deleteTags);
-
-      String deleteOwners =
-          String.format(
-              "DELETE FROM experiment.owners WHERE project_key = '%s' AND experiment_id IN ('%s', '%s');",
-              PROJECT_KEY, EXPERIMENT_ID_1, EXPERIMENT_ID_2);
-      TestUtil.executeSQLStatement(TestUtil.getDatabaseConnection(), deleteOwners);
-
-      String deleteExperiments =
-          String.format(
-              "DELETE FROM experiment.experiments WHERE project_key = '%s' AND experiment_id IN ('%s', '%s');",
-              PROJECT_KEY, EXPERIMENT_ID_1, EXPERIMENT_ID_2);
-      TestUtil.executeSQLStatement(TestUtil.getDatabaseConnection(), deleteExperiments);
-
-      // Drop the partition we created
-      try {
-        TestUtil.dropTestPartition("experiments", PROJECT_KEY);
-        TestUtil.dropTestPartition("tags", PROJECT_KEY);
-        TestUtil.dropTestPartition("owners", PROJECT_KEY);
-      } catch (Exception e) {
-        log.debug("Failed to drop partition during cleanup (non-critical)", e);
-      }
-
-      log.info("Cleanup completed for {}", FilterExperimentsIT.class.getSimpleName());
+      TestUtil.dropTestPartition("experiments", PROJECT_KEY);
+      TestUtil.dropTestPartition("tags", PROJECT_KEY);
+      TestUtil.dropTestPartition("owners", PROJECT_KEY);
     } catch (Exception e) {
-      log.warn("Failed to cleanup test data", e);
+      log.debug("Failed to drop partition during cleanup (non-critical)", e);
     }
+    log.info("Cleanup completed for {}", FilterExperimentsIT.class.getSimpleName());
   }
 
   /**

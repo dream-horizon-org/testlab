@@ -36,7 +36,8 @@ public class TagFilterQueryDecorator extends FilterQueryDecorator {
   @Override
   public String buildQuery() {
     try {
-      String formattedTag = CommonUtil.formatValuesForInClause(tag);
+      String formattedTag =
+          CommonUtil.formatValuesForInClause(CommonUtil.separateCommaSeparatedString(tag));
       String tagQuery = ReadQuery.TAGS_FILTER.apply(formattedTag);
 
       return wrappedFilterQuery.buildQuery() + tagQuery;

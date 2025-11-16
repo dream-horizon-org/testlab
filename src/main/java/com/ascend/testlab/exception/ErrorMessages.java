@@ -19,4 +19,7 @@ public final class ErrorMessages {
 
   /** The error message for invalid experiment type. */
   public static final String INVALID_EXPERIMENT_TYPE = "Experiment type is not valid";
+
+  /** The error message for the experiment ID missing. */
+  public static final String EXPERIMENT_ID_MISSING = "Experiment ID is missing or blank";
 }
