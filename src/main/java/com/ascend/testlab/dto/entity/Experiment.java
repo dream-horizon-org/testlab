@@ -5,7 +5,7 @@ import com.ascend.testlab.constants.enums.ExperimentStatus;
 import com.ascend.testlab.constants.enums.ExperimentType;
 import com.ascend.testlab.constants.enums.HealthStatus;
 import io.vertx.core.json.JsonObject;
-import java.sql.Timestamp;
+import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 import lombok.*;
@@ -41,8 +41,8 @@ public class Experiment {
   private Long startTime;
   private Long endTime;
   private String createdBy;
-  private Timestamp createdAt;
-  private Timestamp updatedAt;
+  private Instant createdAt;
+  private Instant updatedAt;
   private String tags;
   private String owner;
 }

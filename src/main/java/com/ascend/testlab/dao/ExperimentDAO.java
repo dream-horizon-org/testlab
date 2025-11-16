@@ -3,6 +3,7 @@ package com.ascend.testlab.dao;
 import com.ascend.testlab.dto.entity.Experiment;
 import com.ascend.testlab.dto.request.FilterExperimentsRequest;
 import com.ascend.testlab.dto.response.FilterExperimentsResponse;
+import io.reactivex.rxjava3.core.Maybe;
 import io.reactivex.rxjava3.core.Single;
 
 /** Interface for experiment-related database operations. */
@@ -12,9 +13,9 @@ public interface ExperimentDAO {
    *
    * @param projectKey the project key to fetch experiment
    * @param experimentId the unique identifier of the experiment
-   * @return a Single that emits the Experiment if found, or an error if not found
+   * @return a Maybe that emits the Experiment if found, or else empty
    */
-  Single<Experiment> getExperiment(String projectKey, String experimentId);
+  Maybe<Experiment> getExperiment(String projectKey, String experimentId);
 
   /**
    * Filters experiments based on the provided criteria and returns paginated results. Supports

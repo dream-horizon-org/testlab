@@ -113,15 +113,17 @@ public final class TestUtil {
   /**
    * Create a partition for the given table and project key for test purposes.
    *
+   * <p><i>Requires projectKey to not contain any '-' </i>
+   *
    * @param tableName the name of the table to partition
    * @param projectKey the project key
    */
   public static void createPartitionForProject(String tableName, String projectKey) {
     String ddl =
         String.format(
-            "CREATE TABLE IF NOT EXISTS experiment.%s_p_test "
+            "CREATE TABLE IF NOT EXISTS experiment.%s_p_%s "
                 + "PARTITION OF experiment.%s FOR VALUES IN ('%s');",
-            tableName, tableName, projectKey);
+            tableName, projectKey, tableName, projectKey);
     try {
       TestUtil.executeSQLStatement(TestUtil.getDatabaseConnection(), ddl);
     } catch (Exception e) {
@@ -135,8 +137,8 @@ public final class TestUtil {
    *
    * @param tableName the name of the table whose test partition should be dropped
    */
-  public static void dropTestPartition(String tableName) {
-    String ddl = String.format("DROP TABLE IF EXISTS experiment.%s_p_test;", tableName);
+  public static void dropTestPartition(String tableName, String projectKey) {
+    String ddl = String.format("DROP TABLE IF EXISTS experiment.%s_p_%s;", tableName, projectKey);
     try {
       TestUtil.executeSQLStatement(TestUtil.getDatabaseConnection(), ddl);
     } catch (Exception e) {

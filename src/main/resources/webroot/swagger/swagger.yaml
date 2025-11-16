@@ -182,7 +182,7 @@ components:
           type: string
           enum:
           - WARNING
-          - PASSING
+          - PASSED
           - NO_CHECKS_AVAILABLE
           - FAILED
         cohorts:
@@ -229,7 +229,7 @@ components:
     FilterExperimentsResponse:
       type: object
       properties:
-        experimentList:
+        experiments:
           type: array
           items:
             $ref: '#/components/schemas/Experiment'

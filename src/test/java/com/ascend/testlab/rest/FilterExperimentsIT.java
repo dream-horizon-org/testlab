@@ -15,10 +15,11 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
+// TODO: add more tests
 @Slf4j
 @ExtendWith(Setup.class)
 class FilterExperimentsIT {
-  private static final String PROJECT_KEY = "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa";
+  private static final String PROJECT_KEY = "filter_exp_it";
   private static final String EXPERIMENT_ID_1 = "11111111-1111-1111-1111-111111111111";
   private static final String EXPERIMENT_ID_2 = "123e4567-e89b-12d3-a456-426614174000";
   private final String route = WebConstants.FILTER_EXPERIMENTS_PATH;
@@ -45,8 +46,8 @@ class FilterExperimentsIT {
     response.statusCode(HttpStatus.SC_OK);
     response.contentType(WebConstants.APPLICATION_JSON);
     response.body("data", Matchers.notNullValue());
-    response.body("data.experimentList", Matchers.notNullValue());
-    response.body("data.experimentList.size()", Matchers.equalTo(2));
+    response.body("data.experiments", Matchers.notNullValue());
+    response.body("data.experiments.size()", Matchers.equalTo(2));
     response.body("data.pagination", Matchers.notNullValue());
     response.body("data.pagination.currentPage", Matchers.notNullValue());
     response.body("data.pagination.pageSize", Matchers.notNullValue());
@@ -63,10 +64,10 @@ class FilterExperimentsIT {
 
     response.statusCode(HttpStatus.SC_OK);
     response.contentType(WebConstants.APPLICATION_JSON);
-    response.body("data.experimentList", Matchers.notNullValue());
-    response.body("data.experimentList.size()", Matchers.equalTo(1));
-    response.body("data.experimentList[0].status", Matchers.equalTo("LIVE"));
-    response.body("data.experimentList[0].experimentId", Matchers.equalTo(EXPERIMENT_ID_1));
+    response.body("data.experiments", Matchers.notNullValue());
+    response.body("data.experiments.size()", Matchers.equalTo(1));
+    response.body("data.experiments[0].status", Matchers.equalTo("LIVE"));
+    response.body("data.experiments[0].experimentId", Matchers.equalTo(EXPERIMENT_ID_1));
   }
 
   @Test
@@ -79,8 +80,8 @@ class FilterExperimentsIT {
 
     response.statusCode(HttpStatus.SC_OK);
     response.contentType(WebConstants.APPLICATION_JSON);
-    response.body("data.experimentList", Matchers.notNullValue());
-    response.body("data.experimentList.size()", Matchers.equalTo(2));
+    response.body("data.experiments", Matchers.notNullValue());
+    response.body("data.experiments.size()", Matchers.equalTo(2));
   }
 
   @Test
@@ -93,9 +94,9 @@ class FilterExperimentsIT {
 
     response.statusCode(HttpStatus.SC_OK);
     response.contentType(WebConstants.APPLICATION_JSON);
-    response.body("data.experimentList", Matchers.notNullValue());
-    response.body("data.experimentList.size()", Matchers.greaterThanOrEqualTo(1));
-    response.body("data.experimentList[0].name", Matchers.containsString("Filter Test Experiment"));
+    response.body("data.experiments", Matchers.notNullValue());
+    response.body("data.experiments.size()", Matchers.greaterThanOrEqualTo(1));
+    response.body("data.experiments[0].name", Matchers.containsString("Filter Test Experiment"));
   }
 
   @Test
@@ -108,10 +109,10 @@ class FilterExperimentsIT {
 
     response.statusCode(HttpStatus.SC_OK);
     response.contentType(WebConstants.APPLICATION_JSON);
-    response.body("data.experimentList", Matchers.notNullValue());
-    response.body("data.experimentList.size()", Matchers.equalTo(1));
-    response.body("data.experimentList[0].tags", Matchers.notNullValue());
-    response.body("data.experimentList[0].experimentId", Matchers.equalTo(EXPERIMENT_ID_1));
+    response.body("data.experiments", Matchers.notNullValue());
+    response.body("data.experiments.size()", Matchers.equalTo(1));
+    response.body("data.experiments[0].tags", Matchers.notNullValue());
+    response.body("data.experiments[0].experimentId", Matchers.equalTo(EXPERIMENT_ID_1));
   }
 
   @Test
@@ -124,8 +125,8 @@ class FilterExperimentsIT {
 
     response.statusCode(HttpStatus.SC_OK);
     response.contentType(WebConstants.APPLICATION_JSON);
-    response.body("data.experimentList", Matchers.notNullValue());
-    response.body("data.experimentList.size()", Matchers.equalTo(2));
+    response.body("data.experiments", Matchers.notNullValue());
+    response.body("data.experiments.size()", Matchers.equalTo(2));
   }
 
   @Test
@@ -138,8 +139,8 @@ class FilterExperimentsIT {
 
     response.statusCode(HttpStatus.SC_OK);
     response.contentType(WebConstants.APPLICATION_JSON);
-    response.body("data.experimentList", Matchers.notNullValue());
-    response.body("data.experimentList.size()", Matchers.equalTo(2));
+    response.body("data.experiments", Matchers.notNullValue());
+    response.body("data.experiments.size()", Matchers.equalTo(2));
   }
 
   @Test
@@ -152,8 +153,8 @@ class FilterExperimentsIT {
 
     response.statusCode(HttpStatus.SC_OK);
     response.contentType(WebConstants.APPLICATION_JSON);
-    response.body("data.experimentList", Matchers.notNullValue());
-    response.body("data.experimentList.size()", Matchers.equalTo(1));
+    response.body("data.experiments", Matchers.notNullValue());
+    response.body("data.experiments.size()", Matchers.equalTo(1));
     response.body("data.pagination.pageSize", Matchers.equalTo(1));
     response.body("data.pagination.currentPage", Matchers.equalTo(1));
     response.body("data.pagination.totalCount", Matchers.equalTo(2));
@@ -176,11 +177,11 @@ class FilterExperimentsIT {
 
     response.statusCode(HttpStatus.SC_OK);
     response.contentType(WebConstants.APPLICATION_JSON);
-    response.body("data.experimentList", Matchers.notNullValue());
-    response.body("data.experimentList.size()", Matchers.equalTo(1));
-    response.body("data.experimentList[0].status", Matchers.equalTo("LIVE"));
-    response.body("data.experimentList[0].name", Matchers.equalTo("Filter Test Experiment 1"));
-    response.body("data.experimentList[0].experimentId", Matchers.equalTo(EXPERIMENT_ID_1));
+    response.body("data.experiments", Matchers.notNullValue());
+    response.body("data.experiments.size()", Matchers.equalTo(1));
+    response.body("data.experiments[0].status", Matchers.equalTo("LIVE"));
+    response.body("data.experiments[0].name", Matchers.equalTo("Filter Test Experiment 1"));
+    response.body("data.experiments[0].experimentId", Matchers.equalTo(EXPERIMENT_ID_1));
   }
 
   @Test
@@ -234,8 +235,8 @@ class FilterExperimentsIT {
 
     response.statusCode(HttpStatus.SC_OK);
     response.contentType(WebConstants.APPLICATION_JSON);
-    response.body("data.experimentList", Matchers.notNullValue());
-    response.body("data.experimentList.size()", Matchers.equalTo(0));
+    response.body("data.experiments", Matchers.notNullValue());
+    response.body("data.experiments.size()", Matchers.equalTo(0));
     response.body("data.pagination.totalCount", Matchers.equalTo(0));
   }
 
@@ -292,9 +293,9 @@ class FilterExperimentsIT {
 
       // Drop the partition we created
       try {
-        TestUtil.dropTestPartition("experiments");
-        TestUtil.dropTestPartition("tags");
-        TestUtil.dropTestPartition("owners");
+        TestUtil.dropTestPartition("experiments", PROJECT_KEY);
+        TestUtil.dropTestPartition("tags", PROJECT_KEY);
+        TestUtil.dropTestPartition("owners", PROJECT_KEY);
       } catch (Exception e) {
         log.debug("Failed to drop partition during cleanup (non-critical)", e);
       }
@@ -325,7 +326,7 @@ class FilterExperimentsIT {
                 + "start_time, end_time, created_by, created_at, updated_at, name_tsvector"
                 + ") VALUES ("
                 + "'%s', '%s', '%s', 'Test Description', 'Test Hypothesis', "
-                + "'%s', '%s', 'PASSING', "
+                + "'%s', '%s', 'PASSED', "
                 + "ARRAY['all_users'], '{\"control\": 50, \"variant_a\": 50}'::jsonb, "
                 + "'RANDOM', NULL::jsonb, NULL::jsonb, NULL::jsonb, "
                 + "100, 1000, "

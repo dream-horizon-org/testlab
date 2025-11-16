@@ -34,6 +34,7 @@ import lombok.extern.slf4j.Slf4j;
 @JsonIgnoreProperties(ignoreUnknown = true)
 @Slf4j
 public class FilterExperimentsRequest {
+  // TODO: use @ValidEnum annotation
   @QueryParam(WebConstants.EXPERIMENT_STATUS)
   private String status;
 
@@ -52,12 +53,12 @@ public class FilterExperimentsRequest {
   @QueryParam(WebConstants.LIMIT)
   @DefaultValue(WebConstants.DEFAULT_LIMIT)
   @Positive(message = ErrorMessages.INVALID_LIMIT_VALUE)
-  private Integer limit;
+  private Integer limit = Integer.valueOf(WebConstants.DEFAULT_LIMIT);
 
   @QueryParam(WebConstants.PAGE)
   @DefaultValue(WebConstants.DEFAULT_PAGE)
   @Positive(message = ErrorMessages.INVALID_PAGE_VALUE)
-  private Integer page;
+  private Integer page = Integer.valueOf(WebConstants.DEFAULT_PAGE);
 
   /**
    * Checks if status filter is present in the request.
@@ -65,7 +66,7 @@ public class FilterExperimentsRequest {
    * @return true if status filter is present and not empty, false otherwise
    */
   public boolean hasStatusFilter() {
-    return this.status != null && !this.status.trim().isEmpty();
+    return this.status != null && !this.status.isBlank();
   }
 
   /**
@@ -74,7 +75,7 @@ public class FilterExperimentsRequest {
    * @return true if owner filter is present and not empty, false otherwise
    */
   public boolean hasOwnerFilter() {
-    return this.owner != null && !this.owner.trim().isEmpty();
+    return this.owner != null && !this.owner.isBlank();
   }
 
   /**
@@ -83,7 +84,7 @@ public class FilterExperimentsRequest {
    * @return true if name filter is present and not empty (after trimming), false otherwise
    */
   public boolean hasNameFilter() {
-    return this.name != null && !this.name.trim().isEmpty();
+    return this.name != null && !this.name.isBlank();
   }
 
   /**
@@ -92,7 +93,7 @@ public class FilterExperimentsRequest {
    * @return true if type filter is present and not empty, false otherwise
    */
   public boolean hasTypeFilter() {
-    return this.type != null && !this.type.trim().isEmpty();
+    return this.type != null && !this.type.isBlank();
   }
 
   /**
@@ -101,7 +102,7 @@ public class FilterExperimentsRequest {
    * @return true if tag filter is present and not empty, false otherwise
    */
   public boolean hasTagFilter() {
-    return this.tag != null && !this.tag.trim().isEmpty();
+    return this.tag != null && !this.tag.isBlank();
   }
 
   /**

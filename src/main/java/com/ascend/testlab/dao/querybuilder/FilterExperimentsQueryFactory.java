@@ -10,7 +10,7 @@ import com.ascend.testlab.dto.request.FilterExperimentsRequest;
  * @version 1.0
  * @since 1.0
  */
-public class FilterExperimentsQueryFactory {
+public final class FilterExperimentsQueryFactory {
 
   /**
    * Builds a SQL query based on the filter criteria in the request. Applies decorators for name,
@@ -42,11 +42,10 @@ public class FilterExperimentsQueryFactory {
       baseQuery = new OwnerFilterQueryDecorator(baseQuery, request.getOwner());
     }
     baseQuery = new GroupAndOrderQueryDecorator(baseQuery);
+
     // Apply pagination at the end
-    int limit = request.getLimit() != null ? request.getLimit() : 20;
-    int page = request.getPage() != null && request.getPage() > 0 ? request.getPage() : 1;
-    int offset = (page - 1) * limit;
-    baseQuery = new PaginationQueryDecorator(baseQuery, limit, offset);
+    int offset = (request.getPage() - 1) * request.getLimit();
+    baseQuery = new PaginationQueryDecorator(baseQuery, request.getLimit(), offset);
 
     return baseQuery.buildQuery();
   }

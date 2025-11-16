@@ -10,6 +10,7 @@ import com.ascend.testlab.dto.entity.Experiment;
 import com.ascend.testlab.dto.request.FilterExperimentsRequest;
 import com.ascend.testlab.dto.response.FilterExperimentsResponse;
 import com.google.inject.Inject;
+import io.reactivex.rxjava3.core.Maybe;
 import io.reactivex.rxjava3.core.Single;
 import io.vertx.rxjava3.sqlclient.Row;
 import io.vertx.rxjava3.sqlclient.Tuple;
@@ -41,7 +42,7 @@ public class ExperimentDAOImpl implements ExperimentDAO {
 
   /** {@inheritDoc} */
   @Override
-  public Single<Experiment> getExperiment(String projectKey, String experimentId) {
+  public Maybe<Experiment> getExperiment(String projectKey, String experimentId) {
     return pgReaderClient.fetchOne(
         ReadQuery.GET_EXPERIMENT,
         Tuple.of(projectKey, experimentId),
@@ -76,7 +77,7 @@ public class ExperimentDAOImpl implements ExperimentDAO {
             ? List.of()
             : rows.stream().map(ExperimentMapper::mapRowToExperiment).toList();
 
-    response.setExperimentList(experiments);
+    response.setExperiments(experiments);
 
     FilterExperimentsResponse.PaginationMeta paginationMeta;
     paginationMeta =

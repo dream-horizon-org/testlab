@@ -12,11 +12,11 @@ import com.ascend.testlab.dto.response.FilterExperimentsResponse;
 import com.ascend.testlab.exception.ErrorEnum;
 import com.ascend.testlab.service.impl.ExperimentServiceImpl;
 import com.dream11.rest.exception.RestException;
+import io.reactivex.rxjava3.core.Maybe;
 import io.reactivex.rxjava3.core.Single;
 import io.reactivex.rxjava3.observers.TestObserver;
 import io.vertx.junit5.VertxExtension;
-import java.sql.Timestamp;
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.BeforeEach;
@@ -85,7 +85,7 @@ public class ExperimentServiceTest {
       // Arrange
       Experiment expectedExperiment = createMockExperiment();
       when(experimentDAO.getExperiment(PROJECT_KEY, EXPERIMENT_ID))
-          .thenReturn(Single.just(expectedExperiment));
+          .thenReturn(Maybe.just(expectedExperiment));
 
       // Act
       TestObserver<Experiment> testObserver =
@@ -106,7 +106,7 @@ public class ExperimentServiceTest {
       // Arrange
       Experiment expectedExperiment = createMockExperiment();
       when(experimentDAO.getExperiment(PROJECT_KEY, EXPERIMENT_ID))
-          .thenReturn(Single.just(expectedExperiment));
+          .thenReturn(Maybe.just(expectedExperiment));
 
       // Act
       TestObserver<Experiment> testObserver =
@@ -129,9 +129,7 @@ public class ExperimentServiceTest {
     @DisplayName("Should return EXPERIMENT_NOT_FOUND when experiment not found")
     void testGetExperimentNotFound() {
       // Arrange
-      NoSuchElementException notFoundException = new NoSuchElementException("Experiment not found");
-      when(experimentDAO.getExperiment(PROJECT_KEY, EXPERIMENT_ID))
-          .thenReturn(Single.error(notFoundException));
+      when(experimentDAO.getExperiment(PROJECT_KEY, EXPERIMENT_ID)).thenReturn(Maybe.empty());
 
       // Act
       TestObserver<Experiment> testObserver =
@@ -157,9 +155,9 @@ public class ExperimentServiceTest {
     @DisplayName("Should propagate RestException as-is")
     void testGetExperimentRestException() {
       // Arrange
-      RestException restException = new RestException(ErrorEnum.INVALID_EXPERIMENT_STATUS);
+      RestException restException = new RestException(ErrorEnum.REST_GET_EXPERIMENT_BY_ID_FAILED);
       when(experimentDAO.getExperiment(PROJECT_KEY, EXPERIMENT_ID))
-          .thenReturn(Single.error(restException));
+          .thenReturn(Maybe.error(restException));
 
       // Act
       TestObserver<Experiment> testObserver =
@@ -174,7 +172,7 @@ public class ExperimentServiceTest {
               error instanceof RestException
                   && ((RestException) error)
                       .getErrorCode()
-                      .equals(ErrorEnum.INVALID_EXPERIMENT_STATUS.getErrorCode()));
+                      .equals(ErrorEnum.REST_GET_EXPERIMENT_BY_ID_FAILED.getErrorCode()));
       verify(experimentDAO, times(1)).getExperiment(PROJECT_KEY, EXPERIMENT_ID);
     }
 
@@ -184,7 +182,7 @@ public class ExperimentServiceTest {
       // Arrange
       RuntimeException runtimeException = new RuntimeException("Database connection failed");
       when(experimentDAO.getExperiment(PROJECT_KEY, EXPERIMENT_ID))
-          .thenReturn(Single.error(runtimeException));
+          .thenReturn(Maybe.error(runtimeException));
 
       // Act
       TestObserver<Experiment> testObserver =
@@ -219,7 +217,7 @@ public class ExperimentServiceTest {
       testObserver.assertComplete();
       testObserver.assertNoErrors();
       testObserver.assertValueCount(1);
-      testObserver.assertValue(response -> response.getExperimentList().size() == 1);
+      testObserver.assertValue(response -> response.getExperiments().size() == 1);
       verify(experimentDAO, times(1)).filterExperiments(PROJECT_KEY, request);
     }
 
@@ -375,7 +373,7 @@ public class ExperimentServiceTest {
       // Assert
       testObserver.assertComplete();
       testObserver.assertNoErrors();
-      testObserver.assertValue(response -> response.getExperimentList().isEmpty());
+      testObserver.assertValue(response -> response.getExperiments().isEmpty());
       verify(experimentDAO, times(1)).filterExperiments(PROJECT_KEY, request);
     }
 
@@ -465,7 +463,7 @@ public class ExperimentServiceTest {
       // Arrange
       Experiment expectedExperiment = createMockExperiment();
       when(experimentDAO.getExperiment(PROJECT_KEY, EXPERIMENT_ID))
-          .thenReturn(Single.just(expectedExperiment));
+          .thenReturn(Maybe.just(expectedExperiment));
 
       // Act
       TestObserver<Experiment> testObserver =
@@ -500,7 +498,7 @@ public class ExperimentServiceTest {
       // Arrange
       Experiment expectedExperiment = createMockExperiment();
       when(experimentDAO.getExperiment(PROJECT_KEY, EXPERIMENT_ID))
-          .thenReturn(Single.just(expectedExperiment));
+          .thenReturn(Maybe.just(expectedExperiment));
 
       // Act - Each subscription triggers the Single chain again
       TestObserver<Experiment> testObserver1 =
@@ -550,7 +548,7 @@ public class ExperimentServiceTest {
       // Arrange
       Experiment expectedExperiment = createMockExperiment();
       when(experimentDAO.getExperiment(PROJECT_KEY, EXPERIMENT_ID))
-          .thenReturn(Single.just(expectedExperiment).delay(100, TimeUnit.MILLISECONDS));
+          .thenReturn(Maybe.just(expectedExperiment).delay(100, TimeUnit.MILLISECONDS));
 
       // Act
       TestObserver<Experiment> testObserver =
@@ -591,7 +589,7 @@ public class ExperimentServiceTest {
       // Arrange
       Experiment expectedExperiment = createMockExperiment();
       when(experimentDAO.getExperiment(null, EXPERIMENT_ID))
-          .thenReturn(Single.just(expectedExperiment));
+          .thenReturn(Maybe.just(expectedExperiment));
 
       // Act
       TestObserver<Experiment> testObserver =
@@ -603,13 +601,14 @@ public class ExperimentServiceTest {
       verify(experimentDAO, times(1)).getExperiment(null, EXPERIMENT_ID);
     }
 
+    // TODO: this test is not correct
     @Test
     @DisplayName("Should handle null experiment ID")
     void testGetExperimentWithNullExperimentId() {
       // Arrange
       Experiment expectedExperiment = createMockExperiment();
       when(experimentDAO.getExperiment(PROJECT_KEY, null))
-          .thenReturn(Single.just(expectedExperiment));
+          .thenReturn(Maybe.just(expectedExperiment));
 
       // Act
       TestObserver<Experiment> testObserver =
@@ -653,7 +652,7 @@ public class ExperimentServiceTest {
       FilterExperimentsResponse filterResponse = createMockFilterResponse();
 
       when(experimentDAO.getExperiment(PROJECT_KEY, EXPERIMENT_ID))
-          .thenReturn(Single.just(experiment));
+          .thenReturn(Maybe.just(experiment));
       when(experimentDAO.filterExperiments(PROJECT_KEY, request))
           .thenReturn(Single.just(filterResponse));
 
@@ -680,7 +679,7 @@ public class ExperimentServiceTest {
       FilterExperimentsResponse filterResponse = createMockFilterResponse();
 
       when(experimentDAO.getExperiment(PROJECT_KEY, EXPERIMENT_ID))
-          .thenReturn(Single.just(experiment));
+          .thenReturn(Maybe.just(experiment));
       when(experimentDAO.filterExperiments(PROJECT_KEY, request))
           .thenReturn(Single.just(filterResponse));
 
@@ -718,8 +717,8 @@ public class ExperimentServiceTest {
         .startTime(System.currentTimeMillis())
         .endTime(System.currentTimeMillis() + 86400000L)
         .createdBy("test-user")
-        .createdAt(Timestamp.valueOf(LocalDateTime.now()))
-        .updatedAt(Timestamp.valueOf(LocalDateTime.now()))
+        .createdAt(Instant.now())
+        .updatedAt(Instant.now())
         .tags("tag1,tag2")
         .owner("owner1")
         .build();

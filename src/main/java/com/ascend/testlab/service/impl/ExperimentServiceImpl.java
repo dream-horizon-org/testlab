@@ -9,7 +9,6 @@ import com.ascend.testlab.service.ExperimentService;
 import com.dream11.rest.exception.RestException;
 import com.google.inject.Inject;
 import io.reactivex.rxjava3.core.Single;
-import java.util.NoSuchElementException;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -44,34 +43,26 @@ public class ExperimentServiceImpl implements ExperimentService {
    * <p>Delegates to the DAO layer to fetch the experiment. Handles error translation:
    *
    * <ul>
-   *   <li>NoSuchElementException -> EXPERIMENT_NOT_FOUND
-   *   <li>Other exceptions -> REST_GET_EXPERIMENT_BY_ID_FAILED
+   *   <li>EXPERIMENT_NOT_FOUND: If no experiment is found with the given project Key and experiment
+   *       ID.
+   *   <li>REST_GET_EXPERIMENT_BY_ID_FAILED: For any other errors encountered during retrieval.
    * </ul>
    */
   @Override
   public Single<Experiment> getExperiment(String projectKey, String experimentId) {
     return experimentDAO
         .getExperiment(projectKey, experimentId)
+        .switchIfEmpty(Single.error(new RestException(ErrorEnum.EXPERIMENT_NOT_FOUND)))
         .onErrorResumeNext(
             err -> {
-              if (err instanceof NoSuchElementException) {
-                log.warn(
-                    "Experiment not found for project: {}, experimentId: {}",
-                    projectKey,
-                    experimentId);
-                return Single.error(
-                    ErrorEnum.handleException(
-                        err, new RestException(ErrorEnum.EXPERIMENT_NOT_FOUND)));
-              } else {
-                log.error(
-                    "Error in get Experiments for project {} and experimentID {} : {}",
-                    projectKey,
-                    experimentId,
-                    err.getMessage());
-                return Single.error(
-                    ErrorEnum.handleException(
-                        err, new RestException(ErrorEnum.REST_GET_EXPERIMENT_BY_ID_FAILED, err)));
-              }
+              log.error(
+                  "Error in get Experiments for project {} and experimentID {} : {}",
+                  projectKey,
+                  experimentId,
+                  err.getMessage());
+              return Single.error(
+                  ErrorEnum.handleException(
+                      err, new RestException(ErrorEnum.REST_GET_EXPERIMENT_BY_ID_FAILED, err)));
             });
   }
 

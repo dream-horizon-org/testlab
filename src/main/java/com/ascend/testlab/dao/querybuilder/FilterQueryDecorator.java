@@ -10,7 +10,7 @@ package com.ascend.testlab.dao.querybuilder;
  */
 public class FilterQueryDecorator implements FilterQueryBuilder {
   /** The wrapped FilterQueryBuilder instance. */
-  protected FilterQueryBuilder wrappedFilterQuery;
+  protected final FilterQueryBuilder wrappedFilterQuery;
 
   /**
    * Constructs a new FilterQueryDecorator with the given wrapped query builder.
