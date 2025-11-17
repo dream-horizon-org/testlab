@@ -84,4 +84,13 @@ public final class Columns {
 
   /** Column name for total_count (window function result). */
   public static final String TOTAL_COUNT = "total_count";
+
+  /** Column name for assignment_domain. */
+  public static final String ASSIGNMENT_DOMAIN = "assignment_domain";
+
+  /** Column name for distribution_strategy. */
+  public static final String DISTRIBUTION_STRATEGY = "distribution_strategy";
+
+  /** Column name for variants. */
+  public static final String VARIANT = "variants";
 }

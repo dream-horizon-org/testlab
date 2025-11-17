@@ -17,7 +17,7 @@ import com.ascend.testlab.client.postgresql.PgReaderClient;
 import com.ascend.testlab.config.AerospikeConfig;
 import com.ascend.testlab.constants.Constants;
 import com.ascend.testlab.constants.enums.DistributionStrategy;
-import com.ascend.testlab.constants.postgresql.PostgresColumn;
+import com.ascend.testlab.constants.postgresql.Columns;
 import com.ascend.testlab.constants.postgresql.ReadQuery;
 import com.ascend.testlab.dao.AllocationDAO;
 import com.ascend.testlab.dto.response.UserExperimentMap;
@@ -463,54 +463,53 @@ public class AllocationDAOImpl implements AllocationDAO {
 
   private Experiment mapRowToExperiment(Row row) {
     try {
-      UUID experimentId = UUID.fromString(row.getString(PostgresColumn.EXPERIMENT_ID.getColumn()));
-      String projectKey = row.getString(PostgresColumn.PROJECT_KEY.getColumn());
+      UUID experimentId = UUID.fromString(row.getString(Columns.EXPERIMENT_ID));
+      String projectKey = row.getString(Columns.PROJECT_KEY);
 
-      String assignmentDomainStr = row.getString(PostgresColumn.ASSIGNMENT_DOMAIN.getColumn());
+      String assignmentDomainStr = row.getString(Columns.ASSIGNMENT_DOMAIN);
       AssignmentDomain assignmentDomain = AssignmentDomain.valueOf(assignmentDomainStr);
 
-      JsonObject variantWeightsJson = row.getJsonObject(PostgresColumn.VARIANT_WEIGHTS.getColumn());
+      JsonObject variantWeightsJson = row.getJsonObject(Columns.VARIANT_WEIGHTS);
       VariantWeights variantWeights =
           deserializeVariantWeights(variantWeightsJson, assignmentDomain, experimentId);
 
       String ruleAttributesJson =
-          Objects.isNull(row.getJson(PostgresColumn.RULE_ATTRIBUTES.getColumn()))
+          Objects.isNull(row.getJson(Columns.RULE_ATTRIBUTES))
               ? null
-              : row.getJson(PostgresColumn.RULE_ATTRIBUTES.getColumn()).toString();
+              : row.getJson(Columns.RULE_ATTRIBUTES).toString();
       List<RuleAttributes> ruleAttributes =
           ruleAttributesJson != null
               ? objectMapper.readValue(ruleAttributesJson, new TypeReference<>() {})
               : null;
 
-      String overridesJson = row.getString(PostgresColumn.OVERRIDES.getColumn());
+      String overridesJson = row.getString(Columns.OVERRIDES);
       List<String> overrides = Arrays.asList(overridesJson.split(","));
 
-      String distributionStrategyStr =
-          row.getString(PostgresColumn.DISTRIBUTION_STRATEGY.getColumn());
+      String distributionStrategyStr = row.getString(Columns.DISTRIBUTION_STRATEGY);
       DistributionStrategy distributionStrategy =
           distributionStrategyStr != null
               ? DistributionStrategy.valueOf(distributionStrategyStr)
               : DistributionStrategy.RANDOM;
 
-      JsonObject variantJson = row.getJsonObject(PostgresColumn.VARIANT.getColumn());
+      JsonObject variantJson = row.getJsonObject(Columns.VARIANT);
       TypeReference<Map<String, Variant>> typeRef = new TypeReference<>() {};
       Map<String, Variant> variants = objectMapper.readValue(variantJson.toString(), typeRef);
 
       return Experiment.builder()
           .experimentId(experimentId)
           .projectKey(projectKey)
-          .name(row.getString(PostgresColumn.NAME.getColumn()))
-          .description(row.getString(PostgresColumn.DESCRIPTION.getColumn()))
-          .status(row.getString(PostgresColumn.STATUS.getColumn()))
-          .cohorts(Arrays.asList(row.getArrayOfStrings(PostgresColumn.COHORTS.getColumn())))
+          .name(row.getString(Columns.NAME))
+          .description(row.getString(Columns.DESCRIPTION))
+          .status(row.getString(Columns.STATUS))
+          .cohorts(Arrays.asList(row.getArrayOfStrings(Columns.COHORTS)))
           .variantWeights(variantWeights)
           .variant(variants)
           .ruleAttributes(ruleAttributes)
-          .startTime(row.getLong(PostgresColumn.START_TIME.getColumn()))
+          .startTime(row.getLong(Columns.START_TIME))
           .overrides(overrides)
-          .endTime(row.getLong(PostgresColumn.END_TIME.getColumn()))
-          .exposure(row.getInteger(PostgresColumn.EXPOSURE.getColumn()))
-          .threshold(row.getLong(PostgresColumn.THRESHOLD.getColumn()))
+          .endTime(row.getLong(Columns.END_TIME))
+          .exposure(row.getInteger(Columns.EXPOSURE))
+          .threshold(row.getLong(Columns.THRESHOLD))
           .distributionStrategy(distributionStrategy)
           .assignmentDomain(assignmentDomain)
           .build();
