@@ -1,4 +1,4 @@
-package com.ascend.testlab.util.strategy.assignmentStrategy;
+package com.ascend.testlab.allocation.strategy.assignmentStrategy;
 
 import com.ascend.testlab.constants.enums.DistributionStrategy;
 import lombok.extern.slf4j.Slf4j;

@@ -1,5 +1,9 @@
 package com.ascend.testlab.service.impl;
 
+import com.ascend.testlab.allocation.builder.AssignmentBuilder;
+import com.ascend.testlab.allocation.filter.ExperimentFilterChainBuilder;
+import com.ascend.testlab.allocation.filter.experimentFilter.ExperimentFilter;
+import com.ascend.testlab.allocation.helper.VariantSelector;
 import com.ascend.testlab.constants.Constants;
 import com.ascend.testlab.constants.enums.AllocationStatus;
 import com.ascend.testlab.dao.AllocationDAO;
@@ -10,10 +14,6 @@ import com.ascend.testlab.dto.response.UserExperimentMap;
 import com.ascend.testlab.entity.Experiment;
 import com.ascend.testlab.service.AllocationService;
 import com.ascend.testlab.service.CohortService;
-import com.ascend.testlab.util.builder.AssignmentBuilder;
-import com.ascend.testlab.util.filter.ExperimentFilterChainBuilder;
-import com.ascend.testlab.util.filter.experimentFilter.ExperimentFilter;
-import com.ascend.testlab.util.helper.VariantSelector;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.inject.Inject;
@@ -22,6 +22,7 @@ import io.reactivex.rxjava3.core.Observable;
 import io.reactivex.rxjava3.core.Single;
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -53,13 +54,18 @@ public class AllocationServiceImpl implements AllocationService {
   public Single<AllocationResponse> allotExperiments(
       String projectKey, AllocationRequest allocationRequest) {
 
-    String guestId = allocationRequest != null ? allocationRequest.getGuestId() : null;
+    String guestId = allocationRequest != null ? allocationRequest.getStableId() : null;
     String userId = allocationRequest != null ? allocationRequest.getUserId() : null;
+    String effectiveId = getEffectiveIdentifier(userId, guestId);
 
     log.info(
-        "Allocation request for user: {}, guestId: {}, project: {}", userId, guestId, projectKey);
+        "Allocation request for user: {}, guestId: {}, effectiveId: {}, project: {}",
+        userId,
+        guestId,
+        effectiveId,
+        projectKey);
     return Single.zip(
-            fetchCohortsForUser(userId, projectKey),
+            fetchCohortsForUser(effectiveId, projectKey),
             fetchExperimentsAndAllocation(projectKey, userId, guestId, allocationRequest),
             (cohorts, data) -> {
               List<Experiment> activeExperiments =
@@ -69,19 +75,24 @@ public class AllocationServiceImpl implements AllocationService {
               List<UserExperimentMap> guestAllocations =
                   objectMapper.convertValue(data.get("guestAllocations"), new TypeReference<>() {});
 
+              // Use user allocations if logged in, otherwise use guest allocations
+              List<UserExperimentMap> currentAllocations =
+                  shouldApplyGuestCarryover(userId) ? userAllocations : guestAllocations;
+
               List<UserExperimentMap> activeAllocations =
-                  filterActiveAllocations(userAllocations, activeExperiments);
+                  filterActiveAllocations(currentAllocations, activeExperiments);
 
               List<Experiment> filteredExperiments =
                   applyFilters(activeExperiments, activeAllocations, allocationRequest, cohorts);
 
               if (filteredExperiments.isEmpty()) {
-                log.debug("No experiments passed filters for user {}", userId);
+                log.debug("No experiments passed filters for identifier {}", effectiveId);
                 return buildResponse(activeAllocations);
               }
 
               return assignWithLock(
                   userId,
+                  guestId,
                   projectKey,
                   activeExperiments,
                   filteredExperiments,
@@ -167,11 +178,13 @@ public class AllocationServiceImpl implements AllocationService {
   private Single<Map<String, List<?>>> fetchExperimentsAndAllocation(
       String projectKey, String userId, String guestId, AllocationRequest allocationRequest) {
 
+    List<String> userIds = Stream.of(userId, guestId).filter(Objects::nonNull).toList();
+
     Single<List<Experiment>> experimentsSingle =
-        allocationDAO.fetchActiveExperiments(projectKey, allocationRequest.getExperiments());
+        allocationDAO.fetchActiveExperiments(projectKey, allocationRequest.getExperimentKeys());
 
     Single<Map<String, List<UserExperimentMap>>> userAllocationsSingle =
-        allocationDAO.getAllocations(List.of(userId, guestId), projectKey);
+        allocationDAO.getAllocations(userIds, projectKey);
 
     return Single.zip(
             experimentsSingle,
@@ -184,7 +197,8 @@ public class AllocationServiceImpl implements AllocationService {
 
               Map<String, List<?>> result = new HashMap<>();
               result.put("experiments", experiments);
-              result.put("userAllocations", userAllocations.get(userId));
+              result.put(
+                  "userAllocations", userAllocations.getOrDefault(userId, new ArrayList<>()));
               result.put(
                   "guestAllocations", userAllocations.getOrDefault(guestId, new ArrayList<>()));
               return result;
@@ -245,28 +259,35 @@ public class AllocationServiceImpl implements AllocationService {
 
   private Single<AllocationResponse> assignWithLock(
       String userId,
+      String stableId,
       String projectKey,
       List<Experiment> allExperiments,
       List<Experiment> filteredExperiments,
       List<UserExperimentMap> currentAllocations,
       List<UserExperimentMap> guestAllocations) {
 
-    log.debug("Attempting to assign {} experiments to user {}", filteredExperiments.size(), userId);
+    String effectiveId = getEffectiveIdentifier(userId, stableId);
+    log.debug(
+        "Attempting to assign {} experiments to identifier {}",
+        filteredExperiments.size(),
+        effectiveId);
 
     return allocationDAO
-        .acquireUserLock(userId, projectKey)
+        .acquireUserLock(effectiveId, projectKey)
         .flatMap(
             lockAcquired -> {
               if (!lockAcquired) {
                 log.warn(
-                    "Failed to acquire lock for user {}, returning current allocations", userId);
+                    "Failed to acquire lock for identifier {}, returning current allocations",
+                    effectiveId);
                 return buildResponse(currentAllocations);
               }
 
-              log.debug("Lock acquired for user {}", userId);
+              log.debug("Lock acquired for identifier {}", effectiveId);
 
               return performAssignments(
                       userId,
+                      stableId,
                       projectKey,
                       allExperiments,
                       filteredExperiments,
@@ -279,13 +300,13 @@ public class AllocationServiceImpl implements AllocationService {
 
                         allAssignments.addAll(newAssignments);
 
-                        return releaseUserLock(userId, projectKey)
+                        return releaseUserLock(effectiveId, projectKey)
                             .flatMap(released -> buildResponse(allAssignments));
                       })
                   .onErrorResumeNext(
                       error -> {
                         log.error("Error during allocation, releasing lock", error);
-                        return releaseUserLock(userId, projectKey)
+                        return releaseUserLock(effectiveId, projectKey)
                             .flatMap(released -> Single.error(error));
                       });
             });
@@ -293,16 +314,29 @@ public class AllocationServiceImpl implements AllocationService {
 
   private Single<List<UserExperimentMap>> performAssignments(
       String userId,
+      String stableId,
       String projectKey,
       List<Experiment> allExperiments,
       List<Experiment> filteredExperiments,
       List<UserExperimentMap> latestAssignments,
       List<UserExperimentMap> guestAssignments) {
 
+    String effectiveId = getEffectiveIdentifier(userId, stableId);
     Set<UUID> assignedIds = new HashSet<>();
     latestAssignments.forEach(a -> assignedIds.add(a.getExperimentId()));
 
-    return applyGuestCarryover(userId, projectKey, allExperiments, guestAssignments, assignedIds)
+    // Apply guest carryover only for logged-in users
+    Single<List<UserExperimentMap>> carryoverSingle;
+    if (shouldApplyGuestCarryover(userId)) {
+      carryoverSingle =
+          applyGuestCarryover(
+              effectiveId, projectKey, allExperiments, guestAssignments, assignedIds);
+    } else {
+      log.debug("Skipping guest carryover for identifier {}", effectiveId);
+      carryoverSingle = Single.just(Collections.emptyList());
+    }
+
+    return carryoverSingle
         .flatMap(
             carryoverAssignments -> {
               carryoverAssignments.forEach(a -> assignedIds.add(a.getExperimentId()));
@@ -313,19 +347,21 @@ public class AllocationServiceImpl implements AllocationService {
                       .toList();
 
               if (stillUnassigned.isEmpty()) {
-                log.debug("No unassigned experiments after guest carryover for user {}", userId);
+                log.debug(
+                    "No unassigned experiments after processing for identifier {}", effectiveId);
                 return Single.just(carryoverAssignments);
               }
 
               return Observable.fromIterable(stillUnassigned)
                   .flatMap(
                       experiment ->
-                          assignSingleExperiment(experiment, userId, projectKey).toObservable())
+                          assignSingleExperiment(experiment, userId, stableId, projectKey)
+                              .toObservable())
                   .toList()
                   .flatMap(
                       newAssignments -> {
                         if (newAssignments.isEmpty()) {
-                          log.debug("No new allocations created for user {}", userId);
+                          log.debug("No new allocations created for identifier {}", effectiveId);
                           return Single.just(carryoverAssignments);
                         }
 
@@ -340,16 +376,18 @@ public class AllocationServiceImpl implements AllocationService {
 
                         return allocationDAO
                             .insertAllocationsAndIncrementCounts(
-                                userId, projectKey, newAssignments, variantCountMap)
+                                effectiveId, projectKey, newAssignments, variantCountMap)
                             .map(
                                 saved -> {
                                   if (saved) {
                                     log.info(
-                                        "Transactionally saved {} new allocations for user {}",
+                                        "Transactionally saved {} new allocations for identifier {}",
                                         newAssignments.size(),
-                                        userId);
+                                        effectiveId);
                                   } else {
-                                    log.warn("Failed to save some allocations for user {}", userId);
+                                    log.warn(
+                                        "Failed to save some allocations for identifier {}",
+                                        effectiveId);
                                   }
 
                                   List<UserExperimentMap> allNewAssignments =
@@ -366,7 +404,9 @@ public class AllocationServiceImpl implements AllocationService {
   }
 
   private Maybe<UserExperimentMap> assignSingleExperiment(
-      Experiment experiment, String userId, String projectKey) {
+      Experiment experiment, String userId, String stableId, String projectKey) {
+
+    String identifierForVariantSelection = getEffectiveIdentifier(userId, stableId);
 
     return allocationDAO
         .checkThreshold(projectKey, experiment)
@@ -378,7 +418,8 @@ public class AllocationServiceImpl implements AllocationService {
                 return Maybe.empty();
               }
 
-              String selectedVariant = VariantSelector.selectVariant(experiment, userId);
+              String selectedVariant =
+                  VariantSelector.selectVariant(experiment, identifierForVariantSelection);
 
               if (Objects.isNull(selectedVariant)) {
                 log.warn("No variant selected for experiment {}", experiment.getExperimentId());
@@ -386,9 +427,9 @@ public class AllocationServiceImpl implements AllocationService {
               }
 
               log.debug(
-                  "Selected variant {} for user {} for experiment {}",
+                  "Selected variant {} for identifier {} for experiment {}",
                   selectedVariant,
-                  userId,
+                  identifierForVariantSelection,
                   experiment.getExperimentId());
 
               return Maybe.just(
@@ -499,5 +540,28 @@ public class AllocationServiceImpl implements AllocationService {
 
   private Single<AllocationResponse> buildResponse(List<UserExperimentMap> allocations) {
     return Single.just(AllocationResponse.builder().experimentMap(allocations).build());
+  }
+
+  /**
+   * Returns the effective identifier to use for allocation operations. Uses userId if present,
+   * otherwise falls back to stableId.
+   *
+   * @param userId the user ID (may be null)
+   * @param stableId the stable/guest ID (may be null)
+   * @return the effective identifier for operations
+   */
+  private String getEffectiveIdentifier(String userId, String stableId) {
+    return Objects.nonNull(userId) ? userId : stableId;
+  }
+
+  /**
+   * Determines if guest carryover should be applied. Guest carryover only applies when userId is
+   * NOT null (user has logged in).
+   *
+   * @param userId the user ID
+   * @return true if guest carryover should be applied
+   */
+  private boolean shouldApplyGuestCarryover(String userId) {
+    return Objects.nonNull(userId);
   }
 }

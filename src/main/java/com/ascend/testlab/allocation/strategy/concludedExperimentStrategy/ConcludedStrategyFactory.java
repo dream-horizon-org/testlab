@@ -1,4 +1,4 @@
-package com.ascend.testlab.util.strategy.concludedExperimentStrategy;
+package com.ascend.testlab.allocation.strategy.concludedExperimentStrategy;
 
 import lombok.experimental.UtilityClass;
 import lombok.extern.slf4j.Slf4j;

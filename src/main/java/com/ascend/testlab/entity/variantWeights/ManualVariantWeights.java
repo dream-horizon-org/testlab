@@ -32,7 +32,7 @@ public class ManualVariantWeights extends VariantWeights {
 
   @Override
   public AssignmentDomain getType() {
-    return AssignmentDomain.MANUAL;
+    return AssignmentDomain.STRATIFIED;
   }
 
   /**

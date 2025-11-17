@@ -1,4 +1,4 @@
-package com.ascend.testlab.util.strategy.variantStrategy;
+package com.ascend.testlab.allocation.strategy.variantStrategy;
 
 import com.ascend.testlab.entity.Experiment;
 

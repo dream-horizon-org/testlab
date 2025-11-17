@@ -773,7 +773,7 @@ public class AllocationDAOImpl implements AllocationDAO {
       String jsonString = variantWeightsJson.toString();
 
       switch (assignmentDomain) {
-        case MANUAL:
+        case STRATIFIED:
           ManualVariantWeights manualWeights =
               objectMapper.readValue(jsonString, ManualVariantWeights.class);
           log.debug(

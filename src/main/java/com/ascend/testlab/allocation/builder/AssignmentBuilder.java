@@ -1,4 +1,4 @@
-package com.ascend.testlab.util.builder;
+package com.ascend.testlab.allocation.builder;
 
 import com.ascend.testlab.constants.enums.AllocationStatus;
 import com.ascend.testlab.dto.response.UserExperimentMap;

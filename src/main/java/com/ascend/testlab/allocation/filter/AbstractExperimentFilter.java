@@ -1,7 +1,7 @@
-package com.ascend.testlab.util.filter;
+package com.ascend.testlab.allocation.filter;
 
+import com.ascend.testlab.allocation.filter.experimentFilter.ExperimentFilter;
 import com.ascend.testlab.entity.Experiment;
-import com.ascend.testlab.util.filter.experimentFilter.ExperimentFilter;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 

@@ -1,9 +1,9 @@
-package com.ascend.testlab.util.helper;
+package com.ascend.testlab.allocation.helper;
 
+import com.ascend.testlab.allocation.strategy.variantStrategy.CohortVariantSelectionStrategy;
+import com.ascend.testlab.allocation.strategy.variantStrategy.StratifiedVariantSelectionStrategy;
+import com.ascend.testlab.allocation.strategy.variantStrategy.VariantSelectionStrategy;
 import com.ascend.testlab.entity.Experiment;
-import com.ascend.testlab.util.strategy.variantStrategy.CohortVariantSelectionStrategy;
-import com.ascend.testlab.util.strategy.variantStrategy.ManualVariantSelectionStrategy;
-import com.ascend.testlab.util.strategy.variantStrategy.VariantSelectionStrategy;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -24,7 +24,7 @@ public class VariantSelector {
   private static final List<VariantSelectionStrategy> STRATEGIES = new ArrayList<>();
 
   static {
-    STRATEGIES.add(new ManualVariantSelectionStrategy());
+    STRATEGIES.add(new StratifiedVariantSelectionStrategy());
     STRATEGIES.add(new CohortVariantSelectionStrategy());
   }
 

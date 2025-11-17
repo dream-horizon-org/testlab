@@ -1,5 +1,6 @@
 package com.ascend.testlab.dto.response;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -18,5 +19,6 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class AllocationResponse {
+  @JsonProperty(value = "experiment_map")
   private List<UserExperimentMap> experimentMap;
 }

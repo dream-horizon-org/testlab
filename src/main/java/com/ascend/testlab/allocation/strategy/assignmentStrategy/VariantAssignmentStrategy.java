@@ -1,4 +1,4 @@
-package com.ascend.testlab.util.strategy.assignmentStrategy;
+package com.ascend.testlab.allocation.strategy.assignmentStrategy;
 
 import com.ascend.testlab.entity.Variant;
 import java.util.List;

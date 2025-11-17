@@ -1,13 +1,13 @@
-package com.ascend.testlab.util.filter;
+package com.ascend.testlab.allocation.filter;
 
+import com.ascend.testlab.allocation.filter.experimentFilter.CohortFilter;
+import com.ascend.testlab.allocation.filter.experimentFilter.CustomAttributesFilter;
+import com.ascend.testlab.allocation.filter.experimentFilter.ExperimentFilter;
+import com.ascend.testlab.allocation.filter.experimentFilter.ExposureFilter;
+import com.ascend.testlab.allocation.filter.experimentFilter.UnassignedExperimentFilter;
 import com.ascend.testlab.dto.request.AllocationRequest;
 import com.ascend.testlab.dto.request.Attributes;
 import com.ascend.testlab.dto.response.UserExperimentMap;
-import com.ascend.testlab.util.filter.experimentFilter.CohortFilter;
-import com.ascend.testlab.util.filter.experimentFilter.CustomAttributesFilter;
-import com.ascend.testlab.util.filter.experimentFilter.ExperimentFilter;
-import com.ascend.testlab.util.filter.experimentFilter.ExposureFilter;
-import com.ascend.testlab.util.filter.experimentFilter.UnassignedExperimentFilter;
 import java.util.*;
 import lombok.extern.slf4j.Slf4j;
 

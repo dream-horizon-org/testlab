@@ -2,6 +2,7 @@ package com.ascend.testlab.dto.request;
 
 import com.ascend.testlab.exception.ErrorEnum;
 import com.dream11.rest.util.ExceptionUtil;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -21,16 +22,22 @@ import org.apache.commons.lang3.StringUtils;
 @NoArgsConstructor
 @AllArgsConstructor
 public class AllocationRequest {
-  private List<String> experiments;
+  @JsonProperty(value = "experiment_keys")
+  private List<String> experimentKeys;
+
   private Attributes attributes;
-  private String guestId;
+
+  @JsonProperty(value = "stable_id")
+  private String stableId;
+
+  @JsonProperty(value = "user_id")
   private String userId;
 
   public void validate() {
-    if (StringUtils.isBlank(guestId) || StringUtils.isBlank(userId)) {
+    if (StringUtils.isBlank(stableId) && StringUtils.isBlank(userId)) {
       throw ExceptionUtil.getException(ErrorEnum.MISSING_USER_IDENTIFIER);
     }
-    if (experiments.isEmpty()) {
+    if (experimentKeys.isEmpty()) {
       throw ExceptionUtil.getException(ErrorEnum.INVALID_REQUEST_BODY);
     }
   }

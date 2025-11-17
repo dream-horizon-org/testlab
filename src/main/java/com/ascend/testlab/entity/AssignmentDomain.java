@@ -11,7 +11,7 @@ package com.ascend.testlab.entity;
 public enum AssignmentDomain {
   // todo: change these names
   /** Manual variant allocation - specific users mapped to specific variants */
-  MANUAL,
+  STRATIFIED,
 
   /** Variant allocation based on cohort mapping */
   COHORT

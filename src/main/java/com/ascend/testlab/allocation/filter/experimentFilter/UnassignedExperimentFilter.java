@@ -1,8 +1,8 @@
-package com.ascend.testlab.util.filter.experimentFilter;
+package com.ascend.testlab.allocation.filter.experimentFilter;
 
+import com.ascend.testlab.allocation.filter.AbstractExperimentFilter;
 import com.ascend.testlab.dto.response.UserExperimentMap;
 import com.ascend.testlab.entity.Experiment;
-import com.ascend.testlab.util.filter.AbstractExperimentFilter;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;

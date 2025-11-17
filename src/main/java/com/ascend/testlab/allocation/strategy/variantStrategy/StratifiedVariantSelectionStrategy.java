@@ -1,4 +1,4 @@
-package com.ascend.testlab.util.strategy.variantStrategy;
+package com.ascend.testlab.allocation.strategy.variantStrategy;
 
 import com.ascend.testlab.entity.AssignmentDomain;
 import com.ascend.testlab.entity.Experiment;
@@ -14,7 +14,7 @@ import lombok.extern.slf4j.Slf4j;
  * @since 1.0
  */
 @Slf4j
-public class ManualVariantSelectionStrategy implements VariantSelectionStrategy {
+public class StratifiedVariantSelectionStrategy implements VariantSelectionStrategy {
 
   @Override
   public String selectVariant(Experiment experiment, String userId) {
@@ -33,7 +33,7 @@ public class ManualVariantSelectionStrategy implements VariantSelectionStrategy 
   @Override
   public boolean canHandle(Experiment experiment) {
     return experiment != null
-        && experiment.getAssignmentDomain() == AssignmentDomain.MANUAL
+        && experiment.getAssignmentDomain() == AssignmentDomain.STRATIFIED
         && experiment.getVariantWeights() instanceof ManualVariantWeights;
   }
 }

@@ -1,4 +1,4 @@
-package com.ascend.testlab.util.filter.experimentFilter;
+package com.ascend.testlab.allocation.filter.experimentFilter;
 
 import com.ascend.testlab.entity.Experiment;
 import java.util.List;

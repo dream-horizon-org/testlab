@@ -1,10 +1,10 @@
-package com.ascend.testlab.util.strategy.variantStrategy;
+package com.ascend.testlab.allocation.strategy.variantStrategy;
 
+import com.ascend.testlab.allocation.strategy.assignmentStrategy.VariantAssignmentStrategy;
+import com.ascend.testlab.allocation.strategy.assignmentStrategy.VariantAssignmentStrategyFactory;
 import com.ascend.testlab.constants.enums.DistributionStrategy;
 import com.ascend.testlab.entity.*;
 import com.ascend.testlab.entity.variantWeights.CohortVariantWeights;
-import com.ascend.testlab.util.strategy.assignmentStrategy.VariantAssignmentStrategy;
-import com.ascend.testlab.util.strategy.assignmentStrategy.VariantAssignmentStrategyFactory;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;

@@ -1,11 +1,11 @@
-package com.ascend.testlab.util.filter.experimentFilter;
+package com.ascend.testlab.allocation.filter.experimentFilter;
 
+import com.ascend.testlab.allocation.filter.AbstractExperimentFilter;
 import com.ascend.testlab.constants.attributes.RelationalOperator;
 import com.ascend.testlab.constants.enums.DataTypeEnum;
 import com.ascend.testlab.dto.request.Attributes;
 import com.ascend.testlab.entity.Experiment;
 import com.ascend.testlab.entity.RuleAttributes;
-import com.ascend.testlab.util.filter.AbstractExperimentFilter;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;

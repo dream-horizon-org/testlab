@@ -1,4 +1,4 @@
-package com.ascend.testlab.util.strategy.concludedExperimentStrategy;
+package com.ascend.testlab.allocation.strategy.concludedExperimentStrategy;
 
 import com.ascend.testlab.dto.response.UserExperimentMap;
 import com.ascend.testlab.entity.Experiment;
