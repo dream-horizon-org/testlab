@@ -63,5 +63,5 @@ public final class WebConstants {
   /* Path Parameter Constants */
 
   /** The name of the experiment id path parameter. */
-  public static final String EXPERIMENT_ID = "experiment_id";
+  public static final String EXPERIMENT_ID = "experimentId";
 }

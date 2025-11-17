@@ -27,6 +27,6 @@ public final class ReadQuery {
   public static final String FETCH_EXPERIMENT_HISTORY =
       "SELECT previous_data, current_data, updated_by, updated_at, created_at "
           + "FROM experiment.experiment_update_log "
-          + "WHERE project_key=$1 AND experiment_id=$2"
+          + "WHERE project_key=$1 AND experiment_id=$2 "
           + "ORDER BY created_at DESC;";
 }

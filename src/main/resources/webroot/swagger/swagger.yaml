@@ -4,9 +4,42 @@ info:
   description: testlab Service
   version: "1.0"
 paths:
-  /v1/experiments/name-availability:
+  /v1/experiments/{experimentId}/history:
     get:
       operationId: handle
+      parameters:
+      - name: x-project-key
+        in: header
+        required: true
+        schema:
+          type: string
+      - name: experimentId
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          description: Successfully fetched experiment history
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessGetExperimentHistoryResponse'
+        "400":
+          description: Invalid project key or experiment id
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Failure'
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Failure'
+  /v1/experiments/name-availability:
+    get:
+      operationId: handle_1
       parameters:
       - name: x-project-key
         in: header
@@ -81,6 +114,38 @@ components:
       properties:
         error:
           $ref: '#/components/schemas/ErrorEntity'
+    ExperimentHistoryEntry:
+      type: object
+      properties:
+        updatedBy:
+          type: string
+        previousData:
+          type: object
+        currentData:
+          type: object
+        createdAt:
+          type: integer
+          format: int64
+        updatedAt:
+          type: integer
+          format: int64
+    GetExperimentHistoryResponse:
+      type: object
+      properties:
+        experimentId:
+          type: string
+        history:
+          type: array
+          items:
+            $ref: '#/components/schemas/ExperimentHistoryEntry'
+        totalCount:
+          type: integer
+          format: int32
+    SuccessGetExperimentHistoryResponse:
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/GetExperimentHistoryResponse'
     NameAvailabilityResponse:
       type: object
       properties:

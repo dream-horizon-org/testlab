@@ -4,6 +4,8 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 import com.ascend.testlab.dao.AdminDAO;
+import com.ascend.testlab.dto.response.ExperimentHistoryEntry;
+import com.ascend.testlab.dto.response.GetExperimentHistoryResponse;
 import com.ascend.testlab.dto.response.NameAvailabilityResponse;
 import com.ascend.testlab.dto.response.TagsResponse;
 import com.ascend.testlab.service.impl.AdminServiceImpl;
@@ -36,6 +38,7 @@ class AdminServiceTest {
   private AdminService adminService;
   private final String testProjectKey = "123e4567-e89b-12d3-a456-426614174000";
   private final String testExperimentName = "test-experiment";
+  private final String testExperimentId = "123e4567-e89b-12d3-a456-426614174001";
 
   @BeforeEach
   void setUp() {
@@ -178,6 +181,96 @@ class AdminServiceTest {
       // Assert
       testObserver.assertError(RestException.class);
       verify(adminDAO, times(1)).isExperimentNameAvailable(testProjectKey, testExperimentName);
+    }
+  }
+
+  @Nested
+  @DisplayName("Experiment History Tests")
+  class ExperimentHistoryTests {
+    @Test
+    @DisplayName(
+        "Should return correct experiment history for a valid project key and experiment id")
+    void testGetExperimentHistory_Success() {
+      // Arrange
+      ExperimentHistoryEntry entry1 =
+          ExperimentHistoryEntry.builder()
+              .updatedBy("user1")
+              .previousData("{\"status\":\"DRAFT\"}")
+              .currentData("{\"status\":\"LIVE\"}")
+              .createdAt(System.currentTimeMillis())
+              .updatedAt(System.currentTimeMillis())
+              .build();
+      ExperimentHistoryEntry entry2 =
+          ExperimentHistoryEntry.builder()
+              .updatedBy("user2")
+              .previousData("{\"status\":\"LIVE\"}")
+              .currentData("{\"status\":\"PAUSED\"}")
+              .createdAt(System.currentTimeMillis())
+              .updatedAt(System.currentTimeMillis())
+              .build();
+      List<ExperimentHistoryEntry> mockHistory = Arrays.asList(entry1, entry2);
+      when(adminDAO.fetchExperimentHistory(testProjectKey, testExperimentId))
+          .thenReturn(Single.just(mockHistory));
+
+      // Act
+      TestObserver<GetExperimentHistoryResponse> testObserver =
+          adminService.getExperimentHistory(testProjectKey, testExperimentId).test();
+
+      // Assert
+      testObserver.assertComplete();
+      testObserver.assertNoErrors();
+      testObserver.assertValueCount(1);
+      GetExperimentHistoryResponse response = testObserver.values().get(0);
+      assertNotNull(response);
+      assertEquals(testExperimentId, response.experimentId());
+      assertNotNull(response.history());
+      assertEquals(2, response.history().size());
+      assertEquals(2, response.totalCount());
+      assertEquals("user1", response.history().get(0).updatedBy());
+      assertEquals("user2", response.history().get(1).updatedBy());
+      verify(adminDAO, times(1)).fetchExperimentHistory(testProjectKey, testExperimentId);
+    }
+
+    @Test
+    @DisplayName("Should return empty history list if experiment has no history")
+    void testGetExperimentHistory_EmptyResult() {
+      // Arrange
+      when(adminDAO.fetchExperimentHistory(testProjectKey, testExperimentId))
+          .thenReturn(Single.just(List.of()));
+
+      // Act
+      TestObserver<GetExperimentHistoryResponse> testObserver =
+          adminService.getExperimentHistory(testProjectKey, testExperimentId).test();
+
+      // Assert
+      testObserver.assertComplete();
+      testObserver.assertNoErrors();
+      testObserver.assertValueCount(1);
+      GetExperimentHistoryResponse response = testObserver.values().get(0);
+      assertNotNull(response);
+      assertEquals(testExperimentId, response.experimentId());
+      assertNotNull(response.history());
+      assertTrue(response.history().isEmpty());
+      assertEquals(0, response.totalCount());
+      verify(adminDAO, times(1)).fetchExperimentHistory(testProjectKey, testExperimentId);
+    }
+
+    @Test
+    @DisplayName("Should throw RestException when experiment history fetching fails in DAO")
+    void testGetExperimentHistory_DAOError() {
+      // Arrange
+      RuntimeException dbException = new RuntimeException("Database error");
+      when(adminDAO.fetchExperimentHistory(testProjectKey, testExperimentId))
+          .thenReturn(Single.error(dbException));
+
+      // Act
+      Single<GetExperimentHistoryResponse> result =
+          adminService.getExperimentHistory(testProjectKey, testExperimentId);
+      TestObserver<GetExperimentHistoryResponse> testObserver = result.test();
+
+      // Assert
+      testObserver.assertError(RestException.class);
+      verify(adminDAO, times(1)).fetchExperimentHistory(testProjectKey, testExperimentId);
     }
   }
 }

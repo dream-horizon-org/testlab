@@ -54,6 +54,7 @@ class TagsIT {
 
     String[] expectedTags = new String[] {"ui-test", "feature-flag", "performance"};
     try {
+      dropSeedPartition("tags", projectKey);
       TestUtil.createPartitionForProject("tags", projectKey);
       seedTags(projectKey, expectedTags);
 
@@ -102,6 +103,16 @@ class TagsIT {
       TestUtil.executeSQLStatement(TestUtil.getDatabaseConnection(), insert);
     } catch (Exception e) {
       throw new RuntimeException("Failed seeding tags for tests", e);
+    }
+  }
+
+  private void dropSeedPartition(String tableName, String projectKey) {
+    String partitionName = tableName + "_" + projectKey.replace("-", "");
+    String drop = String.format("DROP TABLE IF EXISTS experiment.%s;", partitionName);
+    try {
+      TestUtil.executeSQLStatement(TestUtil.getDatabaseConnection(), drop);
+    } catch (Exception e) {
+      log.warn("Failed dropping seed partition for table {}", tableName, e);
     }
   }
 }
