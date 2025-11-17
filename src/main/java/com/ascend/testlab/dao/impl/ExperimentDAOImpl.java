@@ -76,47 +76,40 @@ public class ExperimentDAOImpl implements ExperimentDAO {
         request.getExperimentId(),
         request.getName());
 
-    try {
-      // Convert cohorts list to array
-      String[] cohortsArray = null;
-      if (request.getCohorts() != null && !request.getCohorts().isEmpty()) {
-        cohortsArray = request.getCohorts().toArray(new String[0]);
-        log.debug("Converted cohorts to array: {}", (Object) cohortsArray);
-      }
+    return Single.fromCallable(
+            () -> {
+              // Convert cohorts list to array
+              String[] cohortsArray = null;
+              if (request.getCohorts() != null && !request.getCohorts().isEmpty()) {
+                cohortsArray = request.getCohorts().toArray(new String[0]);
+                log.debug("Converted cohorts to array: {}", (Object) cohortsArray);
+              }
 
-      // Convert JSONB fields to JSON strings
-      String variantWeightsJson = null;
-      String variantsJson = null;
-      String ruleAttributesJson = null;
-      String winningVariantJson = null;
+              // Convert JSONB fields to JSON strings
+              String variantWeightsJson = null;
+              String variantsJson = null;
+              String ruleAttributesJson = null;
+              String winningVariantJson = null;
 
-      try {
-        if (request.getVariantWeights() != null) {
-          variantWeightsJson = MAPPER.writeValueAsString(request.getVariantWeights());
-        }
-        if (request.getVariants() != null) {
-          variantsJson = MAPPER.writeValueAsString(request.getVariants());
-        }
-        if (request.getRuleAttributes() != null) {
-          ruleAttributesJson = MAPPER.writeValueAsString(request.getRuleAttributes());
-        }
-        if (request.getWinningVariant() != null) {
-          winningVariantJson = MAPPER.writeValueAsString(request.getWinningVariant());
-        }
-      } catch (Exception e) {
-        log.error("Failed to serialize JSONB fields: {}", e.getMessage());
-        throw new RuntimeException("Failed to serialize JSONB fields", e);
-      }
+              if (request.getVariant_weights() != null) {
+                variantWeightsJson = MAPPER.writeValueAsString(request.getVariant_weights());
+              }
+              if (request.getVariants() != null) {
+                variantsJson = MAPPER.writeValueAsString(request.getVariants());
+              }
+              if (request.getRuleAttributes() != null) {
+                ruleAttributesJson = MAPPER.writeValueAsString(request.getRuleAttributes());
+              }
+              if (request.getWinningVariant() != null) {
+                winningVariantJson = MAPPER.writeValueAsString(request.getWinningVariant());
+              }
 
-      log.debug(
-          "Executing INSERT query for experiment: {}, projectKey: {}",
-          request.getName(),
-          request.getProjectKey());
+              log.debug(
+                  "Executing INSERT query for experiment: {}, projectKey: {}",
+                  request.getName(),
+                  request.getProjectKey());
 
-      return pgWriterClient
-          .execute(
-              WriteQuery.INSERT_EXPERIMENT,
-              Tuple.tuple()
+              return Tuple.tuple()
                   .addValue(request.getProjectKey().toString()) // $1 project_key
                   .addValue(request.getExperimentId().toString()) // $2 experiment_id
                   .addValue(request.getName()) // $3 name
@@ -149,51 +142,36 @@ public class ExperimentDAOImpl implements ExperimentDAO {
                   .addValue(request.getThreshold()) // $19 threshold
                   .addValue(request.getStartTime()) // $20 start_time
                   .addValue(request.getEndTime()) // $21 end_time
-                  .addValue(request.getCreatedBy())) // $22 created_by
-          .doOnSuccess(
-              success ->
-                  log.info(
-                      "DAO: Successfully inserted experiment, projectKey: {}, experimentId: {}, rowsAffected: {}",
-                      request.getProjectKey(),
-                      request.getExperimentId(),
-                      success))
-          .doOnError(
-              error ->
-                  log.error(
-                      "DAO: Failed to insert experiment, projectKey: {}, experimentId: {}, error: {}",
-                      request.getProjectKey(),
-                      request.getExperimentId(),
-                      error.getMessage(),
-                      error))
-          .flatMap(
-              success -> {
-                if (success) {
-                  log.info("DAO: Experiment inserted successfully, returning success indicator");
-                  return Single.just(1L);
-                } else {
-                  log.error("DAO: Insert returned false, no rows affected");
-                  return Single.error(
-                      new RuntimeException("Failed to insert experiment - no rows affected"));
-                }
-              })
-          .onErrorReturn(
-              error -> {
-                log.error(
-                    "DAO: Error during experiment creation, projectKey: {}, experimentId: {}, error: {}",
+                  .addValue(request.getCreatedBy()); // $22 created_by
+            })
+        .flatMap(params -> pgWriterClient.execute(WriteQuery.INSERT_EXPERIMENT, params))
+        .doOnSuccess(
+            success ->
+                log.info(
+                    "DAO: Successfully inserted experiment, projectKey: {}, experimentId: {}, rowsAffected: {}",
                     request.getProjectKey(),
                     request.getExperimentId(),
-                    error.getMessage());
-                return 0L;
-              });
-    } catch (Exception e) {
-      log.error(
-          "DAO: Exception in create experiment, projectKey: {}, experimentId: {}, error: {}",
-          request.getProjectKey(),
-          request.getExperimentId(),
-          e.getMessage(),
-          e);
-      return Single.just(0L);
-    }
+                    success))
+        .flatMap(
+            success -> {
+              if (success) {
+                log.info("DAO: Experiment inserted successfully, returning success indicator");
+                return Single.just(1L);
+              } else {
+                log.error("DAO: Insert returned false, no rows affected");
+                return Single.error(
+                    new RuntimeException("Failed to insert experiment - no rows affected"));
+              }
+            })
+        .onErrorReturn(
+            error -> {
+              log.error(
+                  "DAO: Error during experiment creation, projectKey: {}, experimentId: {}, error: {}",
+                  request.getProjectKey(),
+                  request.getExperimentId(),
+                  error.getMessage());
+              return 0L;
+            });
   }
 
   /**
@@ -311,13 +289,6 @@ public class ExperimentDAOImpl implements ExperimentDAO {
                     "DAO: Successfully retrieved experiment data for experimentId: {}, fields: {}",
                     experimentId,
                     data.keySet()))
-        .doOnError(
-            error ->
-                log.error(
-                    "DAO: Failed to get experiment data for experimentId: {}, error: {}",
-                    experimentId,
-                    error.getMessage(),
-                    error))
         .onErrorReturn(
             error -> {
               log.error(
@@ -471,7 +442,7 @@ public class ExperimentDAOImpl implements ExperimentDAO {
    * @return set of allowed column names
    */
   private Set<String> getAllowedUpdateColumns() {
-    return Constants.ALLOWED_UPDATE_FIELDS;
+    return Constants.UPDATABLE_FIELDS;
   }
 
   /**
@@ -656,14 +627,6 @@ public class ExperimentDAOImpl implements ExperimentDAO {
                     projectKey,
                     experimentId,
                     success))
-        .doOnError(
-            error ->
-                log.error(
-                    "DAO: Failed to update experiment, projectKey: {}, experimentId: {}, error: {}",
-                    projectKey,
-                    experimentId,
-                    error.getMessage(),
-                    error))
         .onErrorReturn(
             error -> {
               log.error(
@@ -748,7 +711,7 @@ public class ExperimentDAOImpl implements ExperimentDAO {
       return Single.just(true);
     }
 
-    return getActiveTags(connection, projectKey, experimentId)
+    return getTags(connection, projectKey, experimentId)
         .flatMap(
             existingTags -> {
               List<String> tagsToRemove =
@@ -761,20 +724,20 @@ public class ExperimentDAOImpl implements ExperimentDAO {
                       .filter(tag -> !existingTags.contains(tag))
                       .collect(java.util.stream.Collectors.toList());
 
-              Single<Boolean> markInactive =
+              Single<Boolean> deleteTags =
                   tagsToRemove.isEmpty()
                       ? Single.just(true)
-                      : markTagsInactive(connection, projectKey, experimentId, tagsToRemove);
+                      : deleteTags(connection, projectKey, experimentId, tagsToRemove);
 
               Single<Boolean> insertNew =
                   tagsToAdd.isEmpty()
                       ? Single.just(true)
                       : batchInsertTags(connection, projectKey, experimentId, tagsToAdd);
 
-              return markInactive.flatMap(
-                  markSuccess -> {
-                    if (!markSuccess) {
-                      return Single.error(new RuntimeException("Failed to mark tags as inactive"));
+              return deleteTags.flatMap(
+                  deleteSuccess -> {
+                    if (!deleteSuccess) {
+                      return Single.error(new RuntimeException("Failed to delete tags"));
                     }
                     return insertNew;
                   });
@@ -880,14 +843,6 @@ public class ExperimentDAOImpl implements ExperimentDAO {
                     tags.size(),
                     experimentId,
                     projectKey))
-        .doOnError(
-            error ->
-                log.error(
-                    "DAO: Failed to batch insert {} tags for experimentId: {}, error: {}",
-                    tags.size(),
-                    experimentId,
-                    error.getMessage(),
-                    error))
         .onErrorReturn(
             error -> {
               log.error(
@@ -899,7 +854,7 @@ public class ExperimentDAOImpl implements ExperimentDAO {
   }
 
   /**
-   * Gets active tags for an experiment.
+   * Gets tags for an experiment.
    *
    * @param connection SQL connection for transaction
    * @param projectKey project identifier for partitioning
@@ -907,34 +862,26 @@ public class ExperimentDAOImpl implements ExperimentDAO {
    * @return Single emitting list of active tag names
    */
   @Override
-  public Single<List<String>> getActiveTags(
+  public Single<List<String>> getTags(
       SqlConnection connection, UUID projectKey, UUID experimentId) {
-    log.debug(
-        "DAO: Getting active tags for experimentId: {}, projectKey: {}", experimentId, projectKey);
+    log.debug("DAO: Getting tags for experimentId: {}, projectKey: {}", experimentId, projectKey);
 
     Tuple params =
         Tuple.tuple().addString(projectKey.toString()).addString(experimentId.toString());
 
     return pgReaderClient
-        .fetchAll(WriteQuery.GET_ACTIVE_TAGS, params, row -> row.getString("tag"))
+        .fetchAll(WriteQuery.GET_TAGS, params, row -> row.getString("tag"))
         .doOnSuccess(
             tags ->
                 log.info(
-                    "DAO: Retrieved {} active tags for experimentId: {}, projectKey: {}",
+                    "DAO: Retrieved {} tags for experimentId: {}, projectKey: {}",
                     tags.size(),
                     experimentId,
                     projectKey))
-        .doOnError(
-            error ->
-                log.error(
-                    "DAO: Failed to get active tags for experimentId: {}, error: {}",
-                    experimentId,
-                    error.getMessage(),
-                    error))
         .onErrorReturn(
             error -> {
               log.error(
-                  "DAO: Returning empty list for get active tags, experimentId: {}, error: {}",
+                  "DAO: Returning empty list for get tags, experimentId: {}, error: {}",
                   experimentId,
                   error.getMessage());
               return new ArrayList<>();
@@ -947,19 +894,19 @@ public class ExperimentDAOImpl implements ExperimentDAO {
    * @param connection SQL connection for transaction
    * @param projectKey project identifier for partitioning
    * @param experimentId experiment identifier
-   * @param tags list of tags to mark as inactive
+   * @param tags list of tags to delete
    * @return Single emitting true on success, false on failure
    */
   @Override
-  public Single<Boolean> markTagsInactive(
+  public Single<Boolean> deleteTags(
       SqlConnection connection, UUID projectKey, UUID experimentId, List<String> tags) {
     if (tags == null || tags.isEmpty()) {
-      log.debug("DAO: No tags to mark as inactive for experimentId: {}", experimentId);
+      log.debug("DAO: No tags to delete for experimentId: {}", experimentId);
       return Single.just(true);
     }
 
     log.debug(
-        "DAO: Marking {} tags as inactive for experimentId: {}, projectKey: {}",
+        "DAO: Deleting {} tags for experimentId: {}, projectKey: {}",
         tags.size(),
         experimentId,
         projectKey);
@@ -972,21 +919,14 @@ public class ExperimentDAOImpl implements ExperimentDAO {
             .addValue(tagsArray);
 
     return pgWriterClient
-        .execute(connection, WriteQuery.MARK_TAGS_INACTIVE, params)
+        .execute(connection, WriteQuery.DELETE_TAGS, params)
         .doOnSuccess(
             success ->
                 log.info(
-                    "DAO: Successfully marked {} tags as inactive for experimentId: {}, projectKey: {}",
+                    "DAO: Successfully deleted {} tags for experimentId: {}, projectKey: {}",
                     tags.size(),
                     experimentId,
                     projectKey))
-        .doOnError(
-            error ->
-                log.error(
-                    "DAO: Failed to mark tags as inactive for experimentId: {}, error: {}",
-                    experimentId,
-                    error.getMessage(),
-                    error))
         .onErrorReturn(
             error -> {
               log.error(
@@ -1020,13 +960,6 @@ public class ExperimentDAOImpl implements ExperimentDAO {
                     "DAO: Successfully deleted tags for experimentId: {}, projectKey: {}",
                     experimentId,
                     projectKey))
-        .doOnError(
-            error ->
-                log.error(
-                    "DAO: Failed to delete tags for experimentId: {}, error: {}",
-                    experimentId,
-                    error.getMessage(),
-                    error))
         .onErrorReturn(
             error -> {
               log.error(
@@ -1077,14 +1010,6 @@ public class ExperimentDAOImpl implements ExperimentDAO {
                     owner,
                     experimentId,
                     projectKey))
-        .doOnError(
-            error ->
-                log.error(
-                    "DAO: Failed to insert owner: {} for experimentId: {}, error: {}",
-                    owner,
-                    experimentId,
-                    error.getMessage(),
-                    error))
         .onErrorReturn(
             error -> {
               log.error(
@@ -1121,13 +1046,6 @@ public class ExperimentDAOImpl implements ExperimentDAO {
                     "DAO: Successfully deleted owners for experimentId: {}, projectKey: {}",
                     experimentId,
                     projectKey))
-        .doOnError(
-            error ->
-                log.error(
-                    "DAO: Failed to delete owners for experimentId: {}, error: {}",
-                    experimentId,
-                    error.getMessage(),
-                    error))
         .onErrorReturn(
             error -> {
               log.error(
@@ -1165,52 +1083,42 @@ public class ExperimentDAOImpl implements ExperimentDAO {
         projectKey,
         updatedBy);
 
-    try {
-      // Convert maps to JsonObject for JSONB columns
-      JsonObject previousDataJson =
-          previousData != null ? new JsonObject(MAPPER.writeValueAsString(previousData)) : null;
-      JsonObject currentDataJson =
-          currentData != null ? new JsonObject(MAPPER.writeValueAsString(currentData)) : null;
+    return Single.fromCallable(
+            () -> {
+              // Convert maps to JsonObject for JSONB columns
+              JsonObject previousDataJson =
+                  previousData != null
+                      ? new JsonObject(MAPPER.writeValueAsString(previousData))
+                      : null;
+              JsonObject currentDataJson =
+                  currentData != null
+                      ? new JsonObject(MAPPER.writeValueAsString(currentData))
+                      : null;
 
-      Tuple params =
-          Tuple.tuple()
-              .addString(projectKey.toString())
-              .addString(experimentId.toString())
-              .addValue(previousDataJson)
-              .addValue(currentDataJson)
-              .addString(updatedBy);
-
-      return pgWriterClient
-          .execute(connection, WriteQuery.INSERT_EXPERIMENT_UPDATE_LOG, params)
-          .doOnSuccess(
-              success ->
-                  log.info(
-                      "DAO: Successfully inserted update log for experimentId: {}, projectKey: {}",
-                      experimentId,
-                      projectKey))
-          .doOnError(
-              error ->
-                  log.error(
-                      "DAO: Failed to insert update log for experimentId: {}, error: {}",
-                      experimentId,
-                      error.getMessage(),
-                      error))
-          .onErrorReturn(
-              error -> {
-                log.error(
-                    "DAO: Returning false for update log insert, experimentId: {}, error: {}",
+              return Tuple.tuple()
+                  .addString(projectKey.toString())
+                  .addString(experimentId.toString())
+                  .addValue(previousDataJson)
+                  .addValue(currentDataJson)
+                  .addString(updatedBy);
+            })
+        .flatMap(
+            params ->
+                pgWriterClient.execute(connection, WriteQuery.INSERT_EXPERIMENT_UPDATE_LOG, params))
+        .doOnSuccess(
+            success ->
+                log.info(
+                    "DAO: Successfully inserted update log for experimentId: {}, projectKey: {}",
                     experimentId,
-                    error.getMessage());
-                return false;
-              });
-    } catch (Exception e) {
-      log.error(
-          "DAO: Exception while preparing update log data for experimentId: {}, error: {}",
-          experimentId,
-          e.getMessage(),
-          e);
-      return Single.just(false);
-    }
+                    projectKey))
+        .onErrorReturn(
+            error -> {
+              log.error(
+                  "DAO: Returning false for update log insert, experimentId: {}, error: {}",
+                  experimentId,
+                  error.getMessage());
+              return false;
+            });
   }
 
   // ==================== Analysis Operations ====================
@@ -1294,13 +1202,6 @@ public class ExperimentDAOImpl implements ExperimentDAO {
                     "DAO: Successfully inserted analysis for experimentId: {}, projectKey: {}",
                     experimentId,
                     projectKey))
-        .doOnError(
-            error ->
-                log.error(
-                    "DAO: Failed to insert analysis for experimentId: {}, error: {}",
-                    experimentId,
-                    error.getMessage(),
-                    error))
         .onErrorReturn(
             error -> {
               log.error(

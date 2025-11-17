@@ -107,7 +107,7 @@ public class CreateExperimentRequest {
   @NotNull(message = "Variant weights are required")
   @Valid
   @ValidVariantWeights
-  private VariantWeights variantWeights;
+  private VariantWeights variant_weights;
 
   @JsonProperty("rule_attributes")
   @Valid

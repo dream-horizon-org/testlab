@@ -124,7 +124,6 @@ public class UpdateExperimentRequest {
 
   @JsonProperty("winning_variant")
   @Valid
-  @NotNull(message = "Winning Variant is required")
   @ValidVariantKeys
   @Size(max = 50, message = "Maximum 50 variants allowed")
   private Map<String, @Valid Variant> winningVariant;

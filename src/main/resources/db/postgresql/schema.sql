@@ -58,7 +58,6 @@ CREATE TABLE IF NOT EXISTS experiment.tags (
     experiment_id  VARCHAR(36) NOT NULL,
     project_key     VARCHAR(255) NOT NULL,
     tag            VARCHAR(255) NOT NULL,
-    status         INTEGER NOT NULL DEFAULT 1,
     created_at     TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at     TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY ( project_key, experiment_id, tag)

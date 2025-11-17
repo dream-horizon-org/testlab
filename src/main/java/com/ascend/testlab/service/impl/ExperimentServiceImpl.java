@@ -4,13 +4,14 @@ import com.ascend.testlab.client.postgresql.PgWriterClient;
 import com.ascend.testlab.constants.enums.ExperimentStatus;
 import com.ascend.testlab.dao.ExperimentDAO;
 import com.ascend.testlab.dto.request.CreateExperimentRequest;
+import com.ascend.testlab.dto.request.UpdateExperimentRequest;
 import com.ascend.testlab.dto.response.CreateExperimentResponse;
 import com.ascend.testlab.dto.response.UpdateExperimentResponse;
 import com.ascend.testlab.service.ExperimentService;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.inject.Inject;
 import io.reactivex.rxjava3.core.Single;
 import io.vertx.rxjava3.sqlclient.SqlConnection;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -87,15 +88,7 @@ public class ExperimentServiceImpl implements ExperimentService {
     return experimentDAO
         .createWithRelatedData(
             tenantId, projectKey, experimentId, request, request.getTags(), request.getOwner())
-        .map(id -> new CreateExperimentResponse(experimentId, true, "created"))
-        .doOnError(
-            error ->
-                log.error(
-                    "Transaction failed during experiment creation, tenantId: {}, projectKey: {}, error: {}",
-                    tenantId,
-                    projectKey,
-                    error.getMessage(),
-                    error));
+        .map(id -> new CreateExperimentResponse(experimentId, true, "created"));
   }
 
   /**
@@ -108,18 +101,17 @@ public class ExperimentServiceImpl implements ExperimentService {
    * @param tenantId tenant identifier for multi-tenancy
    * @param projectKey project identifier from header
    * @param experimentId experiment identifier
-   * @param request map of field names to values for update
-   * @return Single emitting true on success, false on failure
+   * @param request validated update experiment request DTO
+   * @return Single emitting UpdateExperimentResponse with status and message
    */
   @Override
   public Single<UpdateExperimentResponse> update(
-      UUID tenantId, UUID projectKey, UUID experimentId, Map<String, Object> request) {
+      UUID tenantId, UUID projectKey, UUID experimentId, UpdateExperimentRequest request) {
     log.info(
-        "Updating experiment for tenantId: {}, projectKey: {}, experimentId: {}, fields: {}",
+        "Updating experiment for tenantId: {}, projectKey: {}, experimentId: {}",
         tenantId,
         projectKey,
-        experimentId,
-        request != null ? request.keySet() : "null");
+        experimentId);
 
     UpdateContext context = extractUpdateContext(request, experimentId);
 
@@ -134,19 +126,18 @@ public class ExperimentServiceImpl implements ExperimentService {
                 new UpdateExperimentResponse(
                     experimentId, success, success ? "updated" : "Update failed"))
         .doOnSuccess(
-            response -> logSuccess(tenantId, projectKey, experimentId, response.isStatus()))
-        .doOnError(error -> logError(tenantId, projectKey, experimentId, error));
+            response -> logSuccess(tenantId, projectKey, experimentId, response.isStatus()));
   }
 
   /**
-   * Extracts update context from request, separating experiment fields, tags, and metadata.
+   * Extracts update context from DTO, separating experiment fields, tags, and metadata.
    *
-   * @param request raw update request
+   * @param request validated update experiment request DTO
    * @param experimentId experiment identifier for logging
    * @return UpdateContext containing separated fields
    */
-  private UpdateContext extractUpdateContext(Map<String, Object> request, UUID experimentId) {
-    Map<String, Object> experimentFields = new HashMap<>(request);
+  private UpdateContext extractUpdateContext(UpdateExperimentRequest request, UUID experimentId) {
+    Map<String, Object> experimentFields = convertDtoToMap(request);
 
     List<String> tags = extractField(experimentFields, "tags", List.class);
     if (tags != null) {
@@ -325,7 +316,7 @@ public class ExperimentServiceImpl implements ExperimentService {
     }
 
     return experimentDAO
-        .getActiveTags(connection, projectKey, experimentId)
+        .getTags(connection, projectKey, experimentId)
         .flatMap(
             existingTags -> {
               List<String> tagsToRemove =
@@ -341,7 +332,7 @@ public class ExperimentServiceImpl implements ExperimentService {
               Single<Boolean> markInactive =
                   tagsToRemove.isEmpty()
                       ? Single.just(true)
-                      : experimentDAO.markTagsInactive(
+                      : experimentDAO.deleteTags(
                           connection, projectKey, experimentId, tagsToRemove);
 
               Single<Boolean> insertNew =
@@ -510,6 +501,34 @@ public class ExperimentServiceImpl implements ExperimentService {
         experimentId,
         currentStatus,
         newStatus);
+  }
+
+  /**
+   * Converts UpdateExperimentRequest DTO to Map for DAO layer.
+   *
+   * <p>Serializes the DTO to JSON string and then deserializes to Map to preserve @JsonProperty
+   * annotations and remove null values.
+   *
+   * @param request update experiment request DTO
+   * @return map of field names to values (excluding null values)
+   */
+  private Map<String, Object> convertDtoToMap(UpdateExperimentRequest request) {
+    ObjectMapper mapper = new ObjectMapper();
+    try {
+      // Serialize to JSON string to respect @JsonProperty annotations
+      String jsonString = mapper.writeValueAsString(request);
+      // Deserialize back to Map
+      @SuppressWarnings("unchecked")
+      Map<String, Object> map = mapper.readValue(jsonString, Map.class);
+
+      // Remove null values
+      map.values().removeIf(value -> value == null);
+
+      return map;
+    } catch (Exception e) {
+      log.error("Failed to convert DTO to Map: {}", e.getMessage(), e);
+      throw new RuntimeException("Failed to convert DTO to Map", e);
+    }
   }
 
   private static class UpdateContext {

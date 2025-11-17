@@ -4,6 +4,8 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import jakarta.annotation.Priority;
+import jakarta.ws.rs.Priorities;
 import jakarta.ws.rs.ext.ContextResolver;
 import jakarta.ws.rs.ext.Provider;
 
@@ -18,6 +20,7 @@ import jakarta.ws.rs.ext.Provider;
  * @since 1.0
  */
 @Provider
+@Priority(Priorities.USER - 100)
 public class CustomObjectMapperProvider implements ContextResolver<ObjectMapper> {
 
   private final ObjectMapper objectMapper;

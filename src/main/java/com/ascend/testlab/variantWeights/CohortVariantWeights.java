@@ -1,7 +1,6 @@
 package com.ascend.testlab.variantWeights;
 
 import com.ascend.testlab.entity.AssignmentDomain;
-import com.ascend.testlab.validation.annotations.ValidVariantWeightKeys;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import java.util.Map;
@@ -32,7 +31,6 @@ public class CohortVariantWeights extends VariantWeights {
 
   @NotNull(message = "Weights map is required for cohort variant weights")
   @NotEmpty(message = "At least one cohort weight must be specified")
-  @ValidVariantWeightKeys
   private Map<String, Double> weights;
 
   @Override

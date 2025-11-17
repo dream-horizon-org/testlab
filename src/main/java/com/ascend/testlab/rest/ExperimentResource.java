@@ -6,7 +6,6 @@ import com.ascend.testlab.dto.request.UpdateExperimentRequest;
 import com.ascend.testlab.dto.response.CreateExperimentResponse;
 import com.ascend.testlab.dto.response.UpdateExperimentResponse;
 import com.ascend.testlab.service.ExperimentService;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.inject.Inject;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -21,8 +20,6 @@ import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
-import java.util.List;
-import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.CompletionStage;
 import lombok.extern.slf4j.Slf4j;
@@ -121,66 +118,9 @@ public class ExperimentResource {
       @PathParam("experiment_id") UUID experimentId,
       @Valid UpdateExperimentRequest request) {
 
-    // Convert DTO to Map for service layer
-    Map<String, Object> requestMap = convertDtoToMap(request);
-
-    // Validate that non-updatable fields are not present in the request
-    validateNonUpdatableFields(requestMap);
-
     return experimentService
-        .update(tenantId, projectKey, experimentId, requestMap)
+        .update(tenantId, projectKey, experimentId, request)
         .map(ResponseEntity.Success::new)
         .toCompletionStage();
-  }
-
-  /**
-   * Converts UpdateExperimentRequest DTO to Map for service layer.
-   *
-   * <p>Serializes the DTO to JSON string and then deserializes to Map to preserve @JsonProperty
-   * annotations.
-   *
-   * @param request update experiment request DTO
-   * @return map of field names to values
-   */
-  private Map<String, Object> convertDtoToMap(UpdateExperimentRequest request) {
-    ObjectMapper mapper = new ObjectMapper();
-    try {
-      // Serialize to JSON string to respect @JsonProperty annotations
-      String jsonString = mapper.writeValueAsString(request);
-      // Deserialize back to Map
-      @SuppressWarnings("unchecked")
-      Map<String, Object> map = mapper.readValue(jsonString, Map.class);
-
-      // Remove null values and fields that shouldn't be passed to service
-      map.values().removeIf(value -> value == null);
-
-      return map;
-    } catch (Exception e) {
-      throw new RuntimeException("Failed to convert DTO to Map", e);
-    }
-  }
-
-  /**
-   * Validates that non-updatable fields are not present in the request.
-   *
-   * <p>Fields like name, experiment_key, project_key, experiment_id, created_by, created_at,
-   * updated_at, and metrics cannot be updated.
-   *
-   * @param requestMap map of field names to values from the update request
-   * @throws jakarta.validation.ValidationException if non-updatable fields are present
-   */
-  private void validateNonUpdatableFields(Map<String, Object> requestMap) {
-    List<String> foundNonUpdatableFields =
-        requestMap.keySet().stream()
-            .filter(com.ascend.testlab.constants.Constants.NON_UPDATABLE_FIELDS::contains)
-            .collect(java.util.stream.Collectors.toList());
-
-    if (!foundNonUpdatableFields.isEmpty()) {
-      String errorMessage =
-          String.format(
-              "The following fields cannot be updated: %s",
-              String.join(", ", foundNonUpdatableFields));
-      throw new jakarta.validation.ValidationException(errorMessage);
-    }
   }
 }

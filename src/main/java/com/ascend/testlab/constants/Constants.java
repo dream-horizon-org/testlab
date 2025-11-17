@@ -51,7 +51,7 @@ public final class Constants {
    *
    * <p>Excludes primary keys, auto-managed fields, and immutable fields.
    */
-  public static final Set<String> ALLOWED_UPDATE_FIELDS =
+  public static final Set<String> UPDATABLE_FIELDS =
       Set.of(
           "description",
           "hypothesis",

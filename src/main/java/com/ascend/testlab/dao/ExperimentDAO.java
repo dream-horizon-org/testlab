@@ -101,25 +101,25 @@ public interface ExperimentDAO {
       SqlConnection connection, UUID projectKey, UUID experimentId, List<String> tags);
 
   /**
-   * Gets active tags for an experiment.
+   * Gets all tags for an experiment.
    *
    * @param connection SQL connection for transaction
    * @param projectKey project identifier for partitioning
    * @param experimentId experiment identifier
-   * @return Single emitting list of active tag names
+   * @return Single emitting list of tag names
    */
-  Single<List<String>> getActiveTags(SqlConnection connection, UUID projectKey, UUID experimentId);
+  Single<List<String>> getTags(SqlConnection connection, UUID projectKey, UUID experimentId);
 
   /**
-   * Marks tags as inactive (status = 0).
+   * Deletes tags (hard delete).
    *
    * @param connection SQL connection for transaction
    * @param projectKey project identifier for partitioning
    * @param experimentId experiment identifier
-   * @param tags list of tags to mark as inactive
+   * @param tags list of tags to delete
    * @return Single emitting true on success, false on failure
    */
-  Single<Boolean> markTagsInactive(
+  Single<Boolean> deleteTags(
       SqlConnection connection, UUID projectKey, UUID experimentId, List<String> tags);
 
   /**
