@@ -6,6 +6,7 @@ import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.net.NetServerOptions;
 import io.vertx.core.net.NetworkOptions;
 import io.vertx.core.net.TCPSSLOptions;
+import java.util.Objects;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
@@ -66,7 +67,7 @@ public class HttpServerConfig {
    * @return the port for the HTTP server
    */
   public Integer getPort() {
-    return 0 < this.port
+    return Objects.nonNull(this.port) && 0 < this.port
         ? this.port
         : Integer.parseInt(System.getProperty("http.default.port", DEFAULT_PORT));
   }

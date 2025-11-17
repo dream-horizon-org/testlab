@@ -1,7 +1,7 @@
 package com.ascend.testlab.constants.postgresql;
 
-import io.reactivex.rxjava3.functions.BiFunction;
-import io.reactivex.rxjava3.functions.Function;
+import java.util.function.BiFunction;
+import java.util.function.IntFunction;
 import lombok.experimental.UtilityClass;
 
 /**
@@ -48,12 +48,15 @@ public final class ReadQuery {
       LEFT JOIN experiment.tags t ON e.project_key = t.project_key AND e.experiment_id = t.experiment_id
       LEFT JOIN experiment.owners o ON e.project_key = o.project_key AND e.experiment_id = o.experiment_id
       WHERE e.project_key = $1 AND e.experiment_id = $2
-      GROUP BY e.project_key, e.experiment_id
+      GROUP BY e.project_key, e.experiment_id;
       """;
 
-  /** Filter clause for searching experiments by name using PostgreSQL full-text search. */
-  public static final Function<String, String> NAME_FILTER =
-      " AND e.name_tsvector @@ plainto_tsquery('simple', '%s')"::formatted;
+  /**
+   * Filter clause for searching experiments by name using PostgreSQL full-text search. Accepts the
+   * parameter index and returns the parameterized query fragment.
+   */
+  public static final IntFunction<String> NAME_FILTER =
+      " AND e.name_tsvector @@ plainto_tsquery('simple', $%d)"::formatted;
 
   /** GROUP BY clause for experiment queries. Groups results by project_key and experiment_id */
   public static final String GROUP_BY = " GROUP BY e.project_key, e.experiment_id";
@@ -62,35 +65,35 @@ public final class ReadQuery {
   public static final String ORDER_BY_CREATED_AT = " ORDER BY e.created_at DESC";
 
   /**
-   * LIMIT and OFFSET clause for pagination. Uses format placeholders %d for limit and offset
-   * values.
+   * LIMIT and OFFSET clause for pagination. Accepts limit and offset parameter indices and returns
+   * the parameterized query fragment.
    */
   public static final BiFunction<Integer, Integer, String> PAGINATION =
-      " LIMIT %d OFFSET %d"::formatted;
+      " LIMIT $%d OFFSET $%d"::formatted;
 
   /**
-   * Filter clause for filtering experiments by status. Uses format placeholder %s for a
-   * comma-separated list of status values.
+   * Filter clause for filtering experiments by status. Accepts the parameter index and returns the
+   * parameterized query fragment using ANY array syntax.
    */
-  public static final Function<String, String> STATUS_FILTER = " AND e.status IN (%s)"::formatted;
+  public static final IntFunction<String> STATUS_FILTER = " AND e.status = ANY($%d)"::formatted;
 
   /**
-   * Filter clause for filtering experiments by type. Uses format placeholder %s for a
-   * comma-separated list of type values.
+   * Filter clause for filtering experiments by type. Accepts the parameter index and returns the
+   * parameterized query fragment using ANY array syntax.
    */
-  public static final Function<String, String> TYPE_FILTER = " AND e.type in (%s)"::formatted;
+  public static final IntFunction<String> TYPE_FILTER = " AND e.type = ANY($%d)"::formatted;
 
   /**
-   * Filter clause for filtering experiments by tags. Uses format placeholder %s for a
-   * comma-separated list of tag values.
+   * Filter clause for filtering experiments by tags. Accepts the parameter index and returns the
+   * parameterized query fragment using ANY array syntax.
    */
-  public static final Function<String, String> TAGS_FILTER = " AND t.tag in (%s)"::formatted;
+  public static final IntFunction<String> TAGS_FILTER = " AND t.tag = ANY($%d)"::formatted;
 
   /**
-   * Filter clause for filtering experiments by owners. Uses format placeholder %s for a
-   * comma-separated list of owner values.
+   * Filter clause for filtering experiments by owners. Accepts the parameter index and returns the
+   * parameterized query fragment using ANY array syntax.
    */
-  public static final Function<String, String> OWNER_FILTER = " AND o.owner in (%s)"::formatted;
+  public static final IntFunction<String> OWNER_FILTER = " AND o.owner = ANY($%d)"::formatted;
 
   /**
    * Base query for filtering experiments by project_key. Returns experiment details including tags

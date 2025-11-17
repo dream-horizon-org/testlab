@@ -71,11 +71,13 @@ public class GetExperiment {
       content = @Content(schema = @Schema(implementation = ResponseEntity.Failure.class)),
       responseCode = "500",
       description = "Internal Server Error")
-  public CompletionStage<ResponseEntity.Success<Experiment>> getExperimentHandler(
+  public CompletionStage<ResponseEntity.Success<Experiment>> getExperimentHandle(
       @HeaderParam(WebConstants.PROJECT_KEY_HEADER)
           @NotBlank(message = ErrorMessages.PROJECT_KEY_MISSING)
           String projectKey,
-      @PathParam(WebConstants.EXPERIMENT_ID) String experimentId) {
+      @PathParam(WebConstants.EXPERIMENT_ID)
+          @NotBlank(message = ErrorMessages.EXPERIMENT_ID_MISSING)
+          String experimentId) {
     return experimentService
         .getExperiment(projectKey, experimentId)
         .map(ResponseEntity.Success::new)

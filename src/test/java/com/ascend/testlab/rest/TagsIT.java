@@ -20,6 +20,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 @ExtendWith(Setup.class)
 class TagsIT {
 
+  private static final String PROJECT_KEY = "tags_it";
   private final String route = "/v1/experiments/tags";
 
   @BeforeAll
@@ -34,34 +35,26 @@ class TagsIT {
 
   @Test
   void testGetTags_Success() {
-    String projectKey = "123e4567-e89b-12d3-a456-426614174000";
-    Map<String, String> headers = Map.of(WebConstants.PROJECT_KEY_HEADER, projectKey);
+    Map<String, String> headers = Map.of(WebConstants.PROJECT_KEY_HEADER, PROJECT_KEY);
 
-    try {
-      TestUtil.createPartitionForProject("tags", projectKey);
+    ValidatableResponse response =
+        TestUtil.executeRequest(null, headers, null, spec -> spec.get(this.route));
 
-      ValidatableResponse response =
-          TestUtil.executeRequest(null, headers, null, spec -> spec.get(this.route));
-
-      response.statusCode(HttpStatus.SC_OK);
-      response.contentType(WebConstants.APPLICATION_JSON);
-      response.body("data", Matchers.notNullValue());
-      response.body("data.tags", Matchers.notNullValue());
-      response.body("data.tags.size()", Matchers.greaterThanOrEqualTo(0));
-    } finally {
-      TestUtil.dropTestPartition("tags");
-    }
+    response.statusCode(HttpStatus.SC_OK);
+    response.contentType(WebConstants.APPLICATION_JSON);
+    response.body("data", Matchers.notNullValue());
+    response.body("data.tags", Matchers.notNullValue());
+    response.body("data.tags.size()", Matchers.greaterThanOrEqualTo(0));
   }
 
   @Test
   void testGetTags_Success_ResponseBody() {
-    String projectKey = "123e4567-e89b-12d3-a456-426614174000";
-    Map<String, String> headers = Map.of(WebConstants.PROJECT_KEY_HEADER, projectKey);
+    Map<String, String> headers = Map.of(WebConstants.PROJECT_KEY_HEADER, PROJECT_KEY);
 
     String[] expectedTags = new String[] {"ui-test", "feature-flag", "performance"};
     try {
-      TestUtil.createPartitionForProject("tags", projectKey);
-      seedTags(projectKey, expectedTags);
+      TestUtil.createPartitionForProject("tags", PROJECT_KEY);
+      seedTags(PROJECT_KEY, expectedTags);
 
       ValidatableResponse response =
           TestUtil.executeRequest(null, headers, null, spec -> spec.get(this.route));
@@ -74,7 +67,7 @@ class TagsIT {
         response.body("data.tags", Matchers.hasItem(tag));
       }
     } finally {
-      TestUtil.dropTestPartition("tags");
+      TestUtil.dropTestPartition("tags", PROJECT_KEY);
     }
   }
 

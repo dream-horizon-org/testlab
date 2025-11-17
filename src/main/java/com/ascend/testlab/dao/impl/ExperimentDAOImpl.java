@@ -5,11 +5,13 @@ import com.ascend.testlab.constants.postgresql.Columns;
 import com.ascend.testlab.constants.postgresql.ReadQuery;
 import com.ascend.testlab.dao.ExperimentDAO;
 import com.ascend.testlab.dao.mapper.ExperimentMapper;
-import com.ascend.testlab.dao.querybuilder.FilterExperimentsQueryFactory;
+import com.ascend.testlab.dao.querybuilder.core.ParameterizedQuery;
+import com.ascend.testlab.dao.querybuilder.factory.FilterExperimentsQueryFactory;
 import com.ascend.testlab.dto.entity.Experiment;
 import com.ascend.testlab.dto.request.FilterExperimentsRequest;
 import com.ascend.testlab.dto.response.FilterExperimentsResponse;
 import com.google.inject.Inject;
+import io.reactivex.rxjava3.core.Maybe;
 import io.reactivex.rxjava3.core.Single;
 import io.vertx.rxjava3.sqlclient.Row;
 import io.vertx.rxjava3.sqlclient.Tuple;
@@ -41,7 +43,7 @@ public class ExperimentDAOImpl implements ExperimentDAO {
 
   /** {@inheritDoc} */
   @Override
-  public Single<Experiment> getExperiment(String projectKey, String experimentId) {
+  public Maybe<Experiment> getExperiment(String projectKey, String experimentId) {
     return pgReaderClient.fetchOne(
         ReadQuery.GET_EXPERIMENT,
         Tuple.of(projectKey, experimentId),
@@ -52,10 +54,11 @@ public class ExperimentDAOImpl implements ExperimentDAO {
   @Override
   public Single<FilterExperimentsResponse> filterExperiments(
       String projectKey, FilterExperimentsRequest req) {
-    String query = FilterExperimentsQueryFactory.buildQuery(req);
+    ParameterizedQuery parameterizedQuery =
+        FilterExperimentsQueryFactory.buildQuery(projectKey, req);
 
     return pgReaderClient
-        .fetchAll(query, Tuple.of(projectKey), row -> row)
+        .fetchAll(parameterizedQuery.query(), parameterizedQuery.tuple(), row -> row)
         .map(rows -> mapRowsToFilteredExperiment(rows, req));
   }
 
@@ -76,7 +79,7 @@ public class ExperimentDAOImpl implements ExperimentDAO {
             ? List.of()
             : rows.stream().map(ExperimentMapper::mapRowToExperiment).toList();
 
-    response.setExperimentList(experiments);
+    response.setExperiments(experiments);
 
     FilterExperimentsResponse.PaginationMeta paginationMeta;
     paginationMeta =

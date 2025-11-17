@@ -7,7 +7,6 @@ import com.ascend.testlab.constants.enums.HealthStatus;
 import com.ascend.testlab.constants.postgresql.Columns;
 import com.ascend.testlab.dto.entity.Experiment;
 import io.vertx.rxjava3.sqlclient.Row;
-import java.sql.Timestamp;
 import java.util.List;
 import java.util.UUID;
 import lombok.extern.slf4j.Slf4j;
@@ -69,8 +68,8 @@ public class ExperimentMapper {
             .startTime(row.getLong(Columns.START_TIME))
             .endTime(row.getLong(Columns.END_TIME))
             .createdBy(row.getString(Columns.CREATED_BY))
-            .createdAt(Timestamp.valueOf(row.getLocalDateTime(Columns.CREATED_AT)))
-            .updatedAt(Timestamp.valueOf(row.getLocalDateTime(Columns.UPDATED_AT)))
+            .createdAt(row.getOffsetDateTime(Columns.CREATED_AT).toInstant())
+            .updatedAt(row.getOffsetDateTime(Columns.UPDATED_AT).toInstant())
             .tags(row.getString(Columns.TAGS))
             .owner(row.getString(Columns.OWNERS));
 

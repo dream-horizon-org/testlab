@@ -74,7 +74,7 @@ public class FilterExperiments {
       content = @Content(schema = @Schema(implementation = ResponseEntity.Failure.class)),
       responseCode = "500",
       description = "Internal Server Error")
-  public CompletionStage<ResponseEntity.Success<FilterExperimentsResponse>> handle(
+  public CompletionStage<ResponseEntity.Success<FilterExperimentsResponse>> filterExperimentsHandle(
       @HeaderParam(WebConstants.PROJECT_KEY_HEADER)
           @NotBlank(message = ErrorMessages.PROJECT_KEY_MISSING)
           String projectKey,

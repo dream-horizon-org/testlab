@@ -36,7 +36,7 @@ class GetExperimentHistoryIT {
   void testGetExperimentHistory_Success_WithHistory() throws SQLException {
     try {
       // Ensure partition exists for test project key
-      TestUtil.dropTestPartition("experiment_update_log");
+      TestUtil.dropTestPartition("experiment_update_log", testProjectKey);
       TestUtil.createPartitionForProject("experiment_update_log", testProjectKey);
 
       // Seed history data
@@ -57,7 +57,7 @@ class GetExperimentHistoryIT {
       response.body("data.totalCount", Matchers.greaterThanOrEqualTo(1));
       response.body("data.history[0].updatedBy", Matchers.notNullValue());
     } finally {
-      TestUtil.dropTestPartition("experiment_update_log");
+      TestUtil.dropTestPartition("experiment_update_log", testProjectKey);
     }
   }
 
@@ -65,7 +65,7 @@ class GetExperimentHistoryIT {
   void testGetExperimentHistory_Success_EmptyHistory() {
     try {
       // Ensure partition exists for test project key
-      TestUtil.dropTestPartition("experiment_update_log");
+      TestUtil.dropTestPartition("experiment_update_log", testProjectKey);
       TestUtil.createPartitionForProject("experiment_update_log", testProjectKey);
 
       String route = String.format("/v1/experiments/%s/history", testExperimentId);
@@ -82,7 +82,7 @@ class GetExperimentHistoryIT {
       response.body("data.history.size()", Matchers.equalTo(0));
       response.body("data.totalCount", Matchers.equalTo(0));
     } finally {
-      TestUtil.dropTestPartition("experiment_update_log");
+      TestUtil.dropTestPartition("experiment_update_log", testProjectKey);
     }
   }
 

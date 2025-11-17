@@ -6,13 +6,13 @@ import com.ascend.testlab.config.PostgreSQLConfig;
 import com.ascend.testlab.constants.postgresql.ReadQuery;
 import com.google.inject.Inject;
 import io.reactivex.rxjava3.core.Completable;
+import io.reactivex.rxjava3.core.Maybe;
 import io.reactivex.rxjava3.core.Single;
 import io.vertx.rxjava3.core.Vertx;
 import io.vertx.rxjava3.sqlclient.Row;
 import io.vertx.rxjava3.sqlclient.Tuple;
 import java.util.List;
 import java.util.Map;
-import java.util.NoSuchElementException;
 import java.util.function.Function;
 
 /**
@@ -65,14 +65,12 @@ public class PgReaderClientImpl extends AbstractPostgreSQLClient implements PgRe
 
   /** {@inheritDoc} */
   @Override
-  public <T> Single<T> fetchOne(String preparedQuery, Tuple tuple, Function<Row, T> rowMapper) {
+  public <T> Maybe<T> fetchOne(String preparedQuery, Tuple tuple, Function<Row, T> rowMapper) {
     return rxExecute(preparedQuery, tuple)
-        .map(
+        .flatMapMaybe(
             rows -> {
-              if (rows.size() == 0) {
-                throw new NoSuchElementException("No rows fetched for the query");
-              }
-              return rowMapper.apply(rows.iterator().next());
+              if (rows.size() == 0) return Maybe.empty();
+              else return Maybe.just(rowMapper.apply(rows.iterator().next()));
             });
   }
 

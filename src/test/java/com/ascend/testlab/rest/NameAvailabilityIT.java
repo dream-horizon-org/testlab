@@ -34,8 +34,7 @@ class NameAvailabilityIT {
 
   @Test
   void testNameAvailability_Success_Available() {
-    // Ensure partition exists for test project key
-    TestUtil.dropTestPartition("experiments");
+    TestUtil.dropTestPartition("experiments", testProjectKey);
     TestUtil.createPartitionForProject("experiments", testProjectKey);
 
     Map<String, String> headers = Map.of(WebConstants.PROJECT_KEY_HEADER, testProjectKey);
@@ -56,7 +55,7 @@ class NameAvailabilityIT {
     String experimentName = "existing-experiment";
     try {
       // Drop existing partition if it exists, then create new one
-      TestUtil.dropTestPartition("experiments");
+      TestUtil.dropTestPartition("experiments", testProjectKey);
       TestUtil.createPartitionForProject("experiments", projectKey);
       seedExperiment(projectKey, experimentName);
 
@@ -74,7 +73,7 @@ class NameAvailabilityIT {
       // If partition creation fails, skip this test
       log.warn("Skipping test due to partition creation failure: {}", e.getMessage());
     } finally {
-      TestUtil.dropTestPartition("experiments");
+      TestUtil.dropTestPartition("experiments", testProjectKey);
     }
   }
 

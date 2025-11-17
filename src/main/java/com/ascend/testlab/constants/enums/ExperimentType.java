@@ -12,6 +12,10 @@ import com.fasterxml.jackson.annotation.JsonValue;
  * @since 1.0
  */
 public enum ExperimentType {
+
+  /** A/A testing experiment type. Also used in testing Null Hypothesis */
+  A_A("A/A"),
+
   /** A/B testing experiment type. */
   A_B("A/B");
 
@@ -22,12 +26,13 @@ public enum ExperimentType {
   }
 
   /**
-   * Returns the JSON representation of the experiment type.
+   * Returns the String representation of the experiment type.
    *
    * @return the string value of the experiment type
    */
+  @Override
   @JsonValue
-  public String toJson() {
+  public String toString() {
     return value;
   }
 

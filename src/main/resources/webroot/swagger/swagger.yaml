@@ -6,7 +6,7 @@ info:
 paths:
   /v1/experiments:
     get:
-      operationId: handle
+      operationId: filterExperimentsHandle
       parameters:
       - name: x-project-key
         in: header
@@ -66,7 +66,7 @@ paths:
                 $ref: '#/components/schemas/Failure'
   /v1/experiments/{experimentId}:
     get:
-      operationId: getExperimentHandler
+      operationId: getExperimentHandle
       parameters:
       - name: x-project-key
         in: header
@@ -105,7 +105,7 @@ paths:
                 $ref: '#/components/schemas/Failure'
   /v1/experiments/{experimentId}/history:
     get:
-      operationId: handle_1
+      operationId: handle
       parameters:
       - name: x-project-key
         in: header
@@ -138,7 +138,7 @@ paths:
                 $ref: '#/components/schemas/Failure'
   /v1/experiments/name-availability:
     get:
-      operationId: handle_2
+      operationId: handle_1
       parameters:
       - name: x-project-key
         in: header
@@ -243,12 +243,13 @@ components:
         type:
           type: string
           enum:
+          - A/A
           - A/B
         guardrailHealthStatus:
           type: string
           enum:
           - WARNING
-          - PASSING
+          - PASSED
           - NO_CHECKS_AVAILABLE
           - FAILED
         cohorts:
@@ -295,7 +296,7 @@ components:
     FilterExperimentsResponse:
       type: object
       properties:
-        experimentList:
+        experiments:
           type: array
           items:
             $ref: '#/components/schemas/Experiment'

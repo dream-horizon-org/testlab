@@ -42,19 +42,6 @@ public class RestVerticleTest {
 
     // Create test config
     httpServerConfig = new HttpServerConfig();
-    httpServerConfig.setHost("localhost");
-    httpServerConfig.setPort(8080);
-    httpServerConfig.setCompressionLevel(6);
-    httpServerConfig.setCompressionSupported(true);
-    httpServerConfig.setIdleTimeout(120);
-    httpServerConfig.setLogActivity(false);
-    httpServerConfig.setReusePort(true);
-    httpServerConfig.setReuseAddress(true);
-    httpServerConfig.setTcpFastOpen(true);
-    httpServerConfig.setTcpNoDelay(true);
-    httpServerConfig.setTcpQuickAck(true);
-    httpServerConfig.setTcpKeepAlive(true);
-    httpServerConfig.setUseAlpn(false);
 
     // Initialize Guice
     Vertx vertx = Vertx.vertx();

@@ -17,7 +17,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 @Slf4j
 @ExtendWith(Setup.class)
 class GetExperimentIT {
-  private static final String PROJECT_KEY = "get-experiment-key";
+  private static final String PROJECT_KEY = "get_exp_it";
   private static final String EXPERIMENT_ID = "11111111-1111-1111-1111-111111111111";
   private static final String INVALID_EXPERIMENT_ID = "00000000-0000-0000-0000-000000000000";
   private final String route = WebConstants.GET_EXPERIMENT_PATH;
@@ -49,7 +49,7 @@ class GetExperimentIT {
       response.body("data.experimentId", Matchers.equalTo(EXPERIMENT_ID));
       response.body("data.projectKey", Matchers.equalTo(PROJECT_KEY));
     } finally {
-      TestUtil.dropTestPartition("experiments");
+      TestUtil.dropTestPartition("experiments", PROJECT_KEY);
     }
   }
 
@@ -94,6 +94,17 @@ class GetExperimentIT {
     response.statusCode(HttpStatus.SC_NOT_FOUND);
   }
 
+  @Test
+  void testGetExperiment_BlankExperimentId_BadRequest() {
+    Map<String, String> headers = Map.of(WebConstants.PROJECT_KEY_HEADER, PROJECT_KEY);
+
+    ValidatableResponse response =
+        TestUtil.executeRequest(null, headers, null, spec -> spec.get(route, "   "));
+
+    response.statusCode(HttpStatus.SC_BAD_REQUEST);
+    response.body(Matchers.containsString(ErrorMessages.EXPERIMENT_ID_MISSING));
+  }
+
   private void createPartitionForProject() {
     try {
       TestUtil.createPartitionForProject("experiments", PROJECT_KEY);
@@ -112,7 +123,7 @@ class GetExperimentIT {
                 + "start_time, end_time, created_by, created_at, updated_at, name_tsvector"
                 + ") VALUES ("
                 + "'%s', '%s', 'Test Experiment', 'Test Description', 'Test Hypothesis', "
-                + "'LIVE', 'A/B', 'PASSING', "
+                + "'LIVE', 'A/B', 'NO_CHECKS_AVAILABLE', "
                 + "ARRAY['all_users'], '{\"control\": 50, \"variant_a\": 50}'::jsonb, "
                 + "'RANDOM', NULL::jsonb, NULL::jsonb, NULL::jsonb, "
                 + "100, 1000, "
