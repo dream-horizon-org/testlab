@@ -1,6 +1,7 @@
 package com.ascend.testlab.client.postgresql;
 
 import io.reactivex.rxjava3.core.Completable;
+import io.reactivex.rxjava3.core.Maybe;
 import io.reactivex.rxjava3.core.Single;
 import io.vertx.rxjava3.sqlclient.Row;
 import io.vertx.rxjava3.sqlclient.Tuple;
@@ -60,9 +61,9 @@ public interface PgReaderClient {
    * @param tuple the tuple to execute the query with
    * @param rowMapper the function to map the row to the result type
    * @param <T> the type of the result
-   * @return a Single that emits the row
+   * @return a Maybe that emits the row if it exists, or completes if no row is found
    */
-  <T> Single<T> fetchOne(String preparedQuery, Tuple tuple, Function<Row, T> rowMapper);
+  <T> Maybe<T> fetchOne(String preparedQuery, Tuple tuple, Function<Row, T> rowMapper);
 
   /**
    * Fetch a map from the database.

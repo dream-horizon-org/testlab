@@ -4,9 +4,88 @@ info:
   description: testlab Service
   version: "1.0"
 paths:
+  /v1/allocation:
+    get:
+      operationId: getAllocationHandle
+      parameters:
+      - name: x-project-key
+        in: header
+        schema:
+          type: string
+      - name: x-user-Id
+        in: header
+        schema:
+          type: string
+      responses:
+        "200":
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Success'
+        "304":
+          description: Successful Not Modified Response
+        "400":
+          description: Bad Request due to invalid/missing body params / header
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Failure'
+        "401":
+          description: Bad Request due to invalid api-key
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Failure'
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Failure'
+    post:
+      operationId: allocationHandle
+      parameters:
+      - name: x-project-key
+        in: header
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AllocationRequest'
+        required: true
+      responses:
+        "200":
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Success'
+        "304":
+          description: Successful Not Modified Response
+        "400":
+          description: Bad Request due to invalid/missing body params / header
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Failure'
+        "401":
+          description: Bad Request due to invalid api-key
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Failure'
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Failure'
   /v1/experiments:
     get:
-      operationId: handle
+      operationId: filterExperimentsHandle
       parameters:
       - name: x-project-key
         in: header
@@ -66,7 +145,7 @@ paths:
                 $ref: '#/components/schemas/Failure'
   /v1/experiments/{experimentId}:
     get:
-      operationId: getExperimentHandler
+      operationId: getExperimentHandle
       parameters:
       - name: x-project-key
         in: header
@@ -93,87 +172,6 @@ paths:
                 $ref: '#/components/schemas/Failure'
         "404":
           description: Experiment not found
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Failure'
-        "500":
-          description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Failure'
-  /v1/allocation:
-    get:
-      operationId: handle_1
-      parameters:
-      - name: x-project-key
-        in: header
-        schema:
-          type: string
-          default: abc
-      - name: x-user-Id
-        in: header
-        schema:
-          type: string
-      responses:
-        "200":
-          description: Successful Response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Success'
-        "304":
-          description: Successful Not Modified Response
-        "400":
-          description: Bad Request due to invalid/missing body params / header
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Failure'
-        "401":
-          description: Bad Request due to invalid api-key
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Failure'
-        "500":
-          description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Failure'
-    post:
-      operationId: handle
-      parameters:
-      - name: x-project-key
-        in: header
-        schema:
-          type: string
-          default: abc
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/AllocationRequest'
-        required: true
-      responses:
-        "200":
-          description: Successful Response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Success'
-        "304":
-          description: Successful Not Modified Response
-        "400":
-          description: Bad Request due to invalid/missing body params / header
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Failure'
-        "401":
-          description: Bad Request due to invalid api-key
           content:
             application/json:
               schema:
@@ -290,12 +288,13 @@ components:
         type:
           type: string
           enum:
+          - A/A
           - A/B
         guardrailHealthStatus:
           type: string
           enum:
           - WARNING
-          - PASSING
+          - PASSED
           - NO_CHECKS_AVAILABLE
           - FAILED
         cohorts:
@@ -342,7 +341,7 @@ components:
     FilterExperimentsResponse:
       type: object
       properties:
-        experimentList:
+        experiments:
           type: array
           items:
             $ref: '#/components/schemas/Experiment'

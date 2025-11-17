@@ -6,9 +6,9 @@ CREATE DATABASE experiment;
 CREATE SCHEMA IF NOT EXISTS experiment;
 
 CREATE TYPE experiment.experiment_status AS ENUM ('LIVE','PAUSED','DRAFT','CONCLUDED','TERMINATED');
-CREATE TYPE experiment.experiment_type AS ENUM ('A/B');
-CREATE TYPE experiment.experiment_health AS ENUM ('WARNING','PASSING','NO_CHECKS_AVAILABLE','FAILED');
-CREATE TYPE experiment.experiment_strategy AS ENUM ('RANDOM', 'ROUND_ROBIN');
+CREATE TYPE experiment.experiment_type AS ENUM ('A/A','A/B');
+CREATE TYPE experiment.experiment_health AS ENUM ('WARNING','PASSED','NO_CHECKS_AVAILABLE','FAILED');
+CREATE TYPE experiment.experiment_strategy AS ENUM ('RANDOM','ROUND_ROBIN');
 CREATE TYPE experiment.assignment_domain AS ENUM ('MANUAL', 'COHORT', 'DEFAULT');
 
 CREATE TABLE IF NOT EXISTS experiment.experiments (

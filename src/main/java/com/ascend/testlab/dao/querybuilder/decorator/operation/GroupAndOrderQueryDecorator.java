@@ -1,6 +1,9 @@
-package com.ascend.testlab.dao.querybuilder;
+package com.ascend.testlab.dao.querybuilder.decorator.operation;
 
 import com.ascend.testlab.constants.postgresql.ReadQuery;
+import com.ascend.testlab.dao.querybuilder.core.FilterQueryBuilder;
+import com.ascend.testlab.dao.querybuilder.core.ParameterizedQuery;
+import com.ascend.testlab.dao.querybuilder.decorator.FilterQueryDecorator;
 
 /**
  * Decorator that adds GROUP BY and ORDER BY clauses to the query. Groups results and orders them by
@@ -23,10 +26,12 @@ public class GroupAndOrderQueryDecorator extends FilterQueryDecorator {
   /**
    * Appends GROUP BY and ORDER BY clauses to the wrapped query.
    *
-   * @return the SQL query string with GROUP BY and ORDER BY clauses
+   * @return the ParameterizedQuery with GROUP BY and ORDER BY clauses
    */
   @Override
-  public String buildQuery() {
-    return wrappedFilterQuery.buildQuery() + ReadQuery.GROUP_BY + ReadQuery.ORDER_BY_CREATED_AT;
+  public ParameterizedQuery buildQuery() {
+    ParameterizedQuery wrappedResult = wrappedFilterQuery.buildQuery();
+    String queryFragment = ReadQuery.GROUP_BY + ReadQuery.ORDER_BY_CREATED_AT;
+    return wrappedResult.append(queryFragment);
   }
 }

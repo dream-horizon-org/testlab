@@ -18,7 +18,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 @Slf4j
 @ExtendWith(Setup.class)
 class FilterExperimentsIT {
-  private static final String PROJECT_KEY = "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa";
+  private static final String PROJECT_KEY = "filter_exp_it";
   private static final String EXPERIMENT_ID_1 = "11111111-1111-1111-1111-111111111111";
   private static final String EXPERIMENT_ID_2 = "123e4567-e89b-12d3-a456-426614174000";
   private final String route = WebConstants.FILTER_EXPERIMENTS_PATH;
@@ -45,8 +45,8 @@ class FilterExperimentsIT {
     response.statusCode(HttpStatus.SC_OK);
     response.contentType(WebConstants.APPLICATION_JSON);
     response.body("data", Matchers.notNullValue());
-    response.body("data.experimentList", Matchers.notNullValue());
-    response.body("data.experimentList.size()", Matchers.equalTo(2));
+    response.body("data.experiments", Matchers.notNullValue());
+    response.body("data.experiments.size()", Matchers.equalTo(2));
     response.body("data.pagination", Matchers.notNullValue());
     response.body("data.pagination.currentPage", Matchers.notNullValue());
     response.body("data.pagination.pageSize", Matchers.notNullValue());
@@ -63,10 +63,10 @@ class FilterExperimentsIT {
 
     response.statusCode(HttpStatus.SC_OK);
     response.contentType(WebConstants.APPLICATION_JSON);
-    response.body("data.experimentList", Matchers.notNullValue());
-    response.body("data.experimentList.size()", Matchers.equalTo(1));
-    response.body("data.experimentList[0].status", Matchers.equalTo("LIVE"));
-    response.body("data.experimentList[0].experimentId", Matchers.equalTo(EXPERIMENT_ID_1));
+    response.body("data.experiments", Matchers.notNullValue());
+    response.body("data.experiments.size()", Matchers.equalTo(1));
+    response.body("data.experiments[0].status", Matchers.equalTo("LIVE"));
+    response.body("data.experiments[0].experimentId", Matchers.equalTo(EXPERIMENT_ID_1));
   }
 
   @Test
@@ -79,8 +79,8 @@ class FilterExperimentsIT {
 
     response.statusCode(HttpStatus.SC_OK);
     response.contentType(WebConstants.APPLICATION_JSON);
-    response.body("data.experimentList", Matchers.notNullValue());
-    response.body("data.experimentList.size()", Matchers.equalTo(2));
+    response.body("data.experiments", Matchers.notNullValue());
+    response.body("data.experiments.size()", Matchers.equalTo(2));
   }
 
   @Test
@@ -93,9 +93,9 @@ class FilterExperimentsIT {
 
     response.statusCode(HttpStatus.SC_OK);
     response.contentType(WebConstants.APPLICATION_JSON);
-    response.body("data.experimentList", Matchers.notNullValue());
-    response.body("data.experimentList.size()", Matchers.greaterThanOrEqualTo(1));
-    response.body("data.experimentList[0].name", Matchers.containsString("Filter Test Experiment"));
+    response.body("data.experiments", Matchers.notNullValue());
+    response.body("data.experiments.size()", Matchers.greaterThanOrEqualTo(1));
+    response.body("data.experiments[0].name", Matchers.containsString("Filter Test Experiment"));
   }
 
   @Test
@@ -108,10 +108,10 @@ class FilterExperimentsIT {
 
     response.statusCode(HttpStatus.SC_OK);
     response.contentType(WebConstants.APPLICATION_JSON);
-    response.body("data.experimentList", Matchers.notNullValue());
-    response.body("data.experimentList.size()", Matchers.equalTo(1));
-    response.body("data.experimentList[0].tags", Matchers.notNullValue());
-    response.body("data.experimentList[0].experimentId", Matchers.equalTo(EXPERIMENT_ID_1));
+    response.body("data.experiments", Matchers.notNullValue());
+    response.body("data.experiments.size()", Matchers.equalTo(1));
+    response.body("data.experiments[0].tags", Matchers.notNullValue());
+    response.body("data.experiments[0].experimentId", Matchers.equalTo(EXPERIMENT_ID_1));
   }
 
   @Test
@@ -124,8 +124,8 @@ class FilterExperimentsIT {
 
     response.statusCode(HttpStatus.SC_OK);
     response.contentType(WebConstants.APPLICATION_JSON);
-    response.body("data.experimentList", Matchers.notNullValue());
-    response.body("data.experimentList.size()", Matchers.equalTo(2));
+    response.body("data.experiments", Matchers.notNullValue());
+    response.body("data.experiments.size()", Matchers.equalTo(2));
   }
 
   @Test
@@ -138,8 +138,8 @@ class FilterExperimentsIT {
 
     response.statusCode(HttpStatus.SC_OK);
     response.contentType(WebConstants.APPLICATION_JSON);
-    response.body("data.experimentList", Matchers.notNullValue());
-    response.body("data.experimentList.size()", Matchers.equalTo(2));
+    response.body("data.experiments", Matchers.notNullValue());
+    response.body("data.experiments.size()", Matchers.equalTo(2));
   }
 
   @Test
@@ -152,8 +152,8 @@ class FilterExperimentsIT {
 
     response.statusCode(HttpStatus.SC_OK);
     response.contentType(WebConstants.APPLICATION_JSON);
-    response.body("data.experimentList", Matchers.notNullValue());
-    response.body("data.experimentList.size()", Matchers.equalTo(1));
+    response.body("data.experiments", Matchers.notNullValue());
+    response.body("data.experiments.size()", Matchers.equalTo(1));
     response.body("data.pagination.pageSize", Matchers.equalTo(1));
     response.body("data.pagination.currentPage", Matchers.equalTo(1));
     response.body("data.pagination.totalCount", Matchers.equalTo(2));
@@ -176,11 +176,11 @@ class FilterExperimentsIT {
 
     response.statusCode(HttpStatus.SC_OK);
     response.contentType(WebConstants.APPLICATION_JSON);
-    response.body("data.experimentList", Matchers.notNullValue());
-    response.body("data.experimentList.size()", Matchers.equalTo(1));
-    response.body("data.experimentList[0].status", Matchers.equalTo("LIVE"));
-    response.body("data.experimentList[0].name", Matchers.equalTo("Filter Test Experiment 1"));
-    response.body("data.experimentList[0].experimentId", Matchers.equalTo(EXPERIMENT_ID_1));
+    response.body("data.experiments", Matchers.notNullValue());
+    response.body("data.experiments.size()", Matchers.equalTo(1));
+    response.body("data.experiments[0].status", Matchers.equalTo("LIVE"));
+    response.body("data.experiments[0].name", Matchers.equalTo("Filter Test Experiment 1"));
+    response.body("data.experiments[0].experimentId", Matchers.equalTo(EXPERIMENT_ID_1));
   }
 
   @Test
@@ -234,10 +234,503 @@ class FilterExperimentsIT {
 
     response.statusCode(HttpStatus.SC_OK);
     response.contentType(WebConstants.APPLICATION_JSON);
-    response.body("data.experimentList", Matchers.notNullValue());
-    response.body("data.experimentList.size()", Matchers.equalTo(0));
+    response.body("data.experiments", Matchers.notNullValue());
+    response.body("data.experiments.size()", Matchers.equalTo(0));
     response.body("data.pagination.totalCount", Matchers.equalTo(0));
   }
+
+  @Test
+  void testFilterExperiments_InvalidType_BadRequest() {
+    Map<String, String> headers = Map.of(WebConstants.PROJECT_KEY_HEADER, PROJECT_KEY);
+    Map<String, String> queryParams = Map.of(WebConstants.EXPERIMENT_TYPE, "INVALID_TYPE");
+
+    ValidatableResponse response =
+        TestUtil.executeRequest(null, headers, queryParams, spec -> spec.get(this.route));
+
+    response.statusCode(HttpStatus.SC_BAD_REQUEST);
+    response.body(Matchers.containsString(ErrorMessages.INVALID_EXPERIMENT_TYPE));
+  }
+
+  @Test
+  void testFilterExperiments_NegativeLimit_BadRequest() {
+    Map<String, String> headers = Map.of(WebConstants.PROJECT_KEY_HEADER, PROJECT_KEY);
+    Map<String, String> queryParams = Map.of(WebConstants.LIMIT, "-1");
+
+    ValidatableResponse response =
+        TestUtil.executeRequest(null, headers, queryParams, spec -> spec.get(this.route));
+
+    response.statusCode(HttpStatus.SC_BAD_REQUEST);
+    response.body(Matchers.containsString(ErrorMessages.INVALID_LIMIT_VALUE));
+  }
+
+  @Test
+  void testFilterExperiments_NegativePage_BadRequest() {
+    Map<String, String> headers = Map.of(WebConstants.PROJECT_KEY_HEADER, PROJECT_KEY);
+    Map<String, String> queryParams = Map.of(WebConstants.PAGE, "-1");
+
+    ValidatableResponse response =
+        TestUtil.executeRequest(null, headers, queryParams, spec -> spec.get(this.route));
+
+    response.statusCode(HttpStatus.SC_BAD_REQUEST);
+    response.body(Matchers.containsString(ErrorMessages.INVALID_PAGE_VALUE));
+  }
+
+  @Test
+  void testFilterExperiments_ZeroPage_BadRequest() {
+    Map<String, String> headers = Map.of(WebConstants.PROJECT_KEY_HEADER, PROJECT_KEY);
+    Map<String, String> queryParams = Map.of(WebConstants.PAGE, "0");
+
+    ValidatableResponse response =
+        TestUtil.executeRequest(null, headers, queryParams, spec -> spec.get(this.route));
+
+    response.statusCode(HttpStatus.SC_BAD_REQUEST);
+    response.body(Matchers.containsString(ErrorMessages.INVALID_PAGE_VALUE));
+  }
+
+  @Test
+  void testFilterExperiments_PageBeyondAvailable_EmptyResults() {
+    Map<String, String> headers = Map.of(WebConstants.PROJECT_KEY_HEADER, PROJECT_KEY);
+    Map<String, String> queryParams = Map.of(WebConstants.PAGE, "1000");
+
+    ValidatableResponse response =
+        TestUtil.executeRequest(null, headers, queryParams, spec -> spec.get(this.route));
+
+    response.statusCode(HttpStatus.SC_OK);
+    response.body("data.experiments.size()", Matchers.equalTo(0));
+    response.body("data.pagination.currentPage", Matchers.equalTo(1000));
+    response.body("data.pagination.totalCount", Matchers.equalTo(0));
+    // totalCount is implementation specific, and for `count(*) over ()` it returns 0 when no rows
+  }
+
+  @Test
+  void testFilterExperiments_LargeLimit() {
+    Map<String, String> headers = Map.of(WebConstants.PROJECT_KEY_HEADER, PROJECT_KEY);
+    Map<String, String> queryParams = Map.of(WebConstants.LIMIT, "100");
+
+    ValidatableResponse response =
+        TestUtil.executeRequest(null, headers, queryParams, spec -> spec.get(this.route));
+
+    response.statusCode(HttpStatus.SC_OK);
+    response.body("data.experiments", Matchers.notNullValue());
+    response.body("data.experiments.size()", Matchers.equalTo(2));
+    response.body("data.pagination.pageSize", Matchers.equalTo(100));
+  }
+
+  @Test
+  void testFilterExperiments_MultipleTypes() {
+    Map<String, String> headers = Map.of(WebConstants.PROJECT_KEY_HEADER, PROJECT_KEY);
+    Map<String, String> queryParams = Map.of(WebConstants.EXPERIMENT_TYPE, "A/B,A/A");
+
+    ValidatableResponse response =
+        TestUtil.executeRequest(null, headers, queryParams, spec -> spec.get(this.route));
+
+    response.statusCode(HttpStatus.SC_OK);
+    response.body("data.experiments", Matchers.notNullValue());
+    response.body("data.experiments.size()", Matchers.greaterThanOrEqualTo(2));
+  }
+
+  @Test
+  void testFilterExperiments_MultipleTags() {
+    Map<String, String> headers = Map.of(WebConstants.PROJECT_KEY_HEADER, PROJECT_KEY);
+    Map<String, String> queryParams = Map.of(WebConstants.TAG, "test-tag-1,test-tag-2");
+
+    ValidatableResponse response =
+        TestUtil.executeRequest(null, headers, queryParams, spec -> spec.get(this.route));
+
+    response.statusCode(HttpStatus.SC_OK);
+    response.body("data.experiments", Matchers.notNullValue());
+    response.body("data.experiments.size()", Matchers.greaterThanOrEqualTo(1));
+  }
+
+  @Test
+  void testFilterExperiments_MultipleOwners() {
+    Map<String, String> headers = Map.of(WebConstants.PROJECT_KEY_HEADER, PROJECT_KEY);
+    Map<String, String> queryParams =
+        Map.of(WebConstants.OWNER, "filter-test@example.com,another-owner@example.com");
+
+    ValidatableResponse response =
+        TestUtil.executeRequest(null, headers, queryParams, spec -> spec.get(this.route));
+
+    response.statusCode(HttpStatus.SC_OK);
+    response.body("data.experiments", Matchers.notNullValue());
+    response.body("data.experiments.size()", Matchers.greaterThanOrEqualTo(1));
+  }
+
+  @Test
+  void testFilterExperiments_NonExistentTag_NoResults() {
+    Map<String, String> headers = Map.of(WebConstants.PROJECT_KEY_HEADER, PROJECT_KEY);
+    Map<String, String> queryParams = Map.of(WebConstants.TAG, "non-existent-tag-12345");
+
+    ValidatableResponse response =
+        TestUtil.executeRequest(null, headers, queryParams, spec -> spec.get(this.route));
+
+    response.statusCode(HttpStatus.SC_OK);
+    response.body("data.experiments.size()", Matchers.equalTo(0));
+  }
+
+  @Test
+  void testFilterExperiments_NonExistentOwner_NoResults() {
+    Map<String, String> headers = Map.of(WebConstants.PROJECT_KEY_HEADER, PROJECT_KEY);
+    Map<String, String> queryParams = Map.of(WebConstants.OWNER, "nonexistent@example.com");
+
+    ValidatableResponse response =
+        TestUtil.executeRequest(null, headers, queryParams, spec -> spec.get(this.route));
+
+    response.statusCode(HttpStatus.SC_OK);
+    response.body("data.experiments.size()", Matchers.equalTo(0));
+  }
+
+  @Test
+  void testFilterExperiments_NameSearchPartialMatch() {
+    Map<String, String> headers = Map.of(WebConstants.PROJECT_KEY_HEADER, PROJECT_KEY);
+    Map<String, String> queryParams = Map.of(WebConstants.NAME, "Test");
+
+    ValidatableResponse response =
+        TestUtil.executeRequest(null, headers, queryParams, spec -> spec.get(this.route));
+
+    response.statusCode(HttpStatus.SC_OK);
+    response.body("data.experiments", Matchers.notNullValue());
+    response.body("data.experiments.size()", Matchers.greaterThanOrEqualTo(1));
+  }
+
+  @Test
+  void testFilterExperiments_EmptyName_ReturnsAll() {
+    Map<String, String> headers = Map.of(WebConstants.PROJECT_KEY_HEADER, PROJECT_KEY);
+    Map<String, String> queryParams = Map.of(WebConstants.NAME, "");
+
+    ValidatableResponse response =
+        TestUtil.executeRequest(null, headers, queryParams, spec -> spec.get(this.route));
+
+    response.statusCode(HttpStatus.SC_OK);
+    response.body("data.experiments.size()", Matchers.equalTo(2));
+  }
+
+  @Test
+  void testFilterExperiments_CombineFiltersWithPagination() {
+    Map<String, String> headers = Map.of(WebConstants.PROJECT_KEY_HEADER, PROJECT_KEY);
+    Map<String, String> queryParams =
+        Map.of(
+            WebConstants.EXPERIMENT_TYPE, "A/B", WebConstants.LIMIT, "1", WebConstants.PAGE, "1");
+
+    ValidatableResponse response =
+        TestUtil.executeRequest(null, headers, queryParams, spec -> spec.get(this.route));
+
+    response.statusCode(HttpStatus.SC_OK);
+    response.body("data.experiments.size()", Matchers.equalTo(1));
+    response.body("data.pagination.pageSize", Matchers.equalTo(1));
+    response.body("data.pagination.currentPage", Matchers.equalTo(1));
+  }
+
+  @Test
+  void testFilterExperiments_SecondPage() {
+    Map<String, String> headers = Map.of(WebConstants.PROJECT_KEY_HEADER, PROJECT_KEY);
+    Map<String, String> queryParams = Map.of(WebConstants.LIMIT, "1", WebConstants.PAGE, "2");
+
+    ValidatableResponse response =
+        TestUtil.executeRequest(null, headers, queryParams, spec -> spec.get(this.route));
+
+    response.statusCode(HttpStatus.SC_OK);
+    response.body("data.experiments.size()", Matchers.equalTo(1));
+    response.body("data.pagination.currentPage", Matchers.equalTo(2));
+    response.body("data.pagination.pageSize", Matchers.equalTo(1));
+  }
+
+  @Test
+  void testFilterExperiments_DefaultPagination() {
+    Map<String, String> headers = Map.of(WebConstants.PROJECT_KEY_HEADER, PROJECT_KEY);
+
+    ValidatableResponse response =
+        TestUtil.executeRequest(null, headers, null, spec -> spec.get(this.route));
+
+    response.statusCode(HttpStatus.SC_OK);
+    response.body("data.pagination.currentPage", Matchers.equalTo(1));
+    response.body("data.pagination.pageSize", Matchers.equalTo(20));
+  }
+
+  @Test
+  void testFilterExperiments_InvalidStatusAndType_BadRequest() {
+    Map<String, String> headers = Map.of(WebConstants.PROJECT_KEY_HEADER, PROJECT_KEY);
+    Map<String, String> queryParams =
+        Map.of(
+            WebConstants.EXPERIMENT_STATUS,
+            "INVALID_STATUS",
+            WebConstants.EXPERIMENT_TYPE,
+            "INVALID_TYPE");
+
+    ValidatableResponse response =
+        TestUtil.executeRequest(null, headers, queryParams, spec -> spec.get(this.route));
+
+    response.statusCode(HttpStatus.SC_BAD_REQUEST);
+  }
+
+  @Test
+  void testFilterExperiments_MixedValidAndInvalidStatus_BadRequest() {
+    Map<String, String> headers = Map.of(WebConstants.PROJECT_KEY_HEADER, PROJECT_KEY);
+    Map<String, String> queryParams = Map.of(WebConstants.EXPERIMENT_STATUS, "LIVE,INVALID");
+
+    ValidatableResponse response =
+        TestUtil.executeRequest(null, headers, queryParams, spec -> spec.get(this.route));
+
+    response.statusCode(HttpStatus.SC_BAD_REQUEST);
+    response.body(Matchers.containsString(ErrorMessages.INVALID_EXPERIMENT_STATUS));
+  }
+
+  @Test
+  void testFilterExperiments_StatusCaseInsensitive() {
+    Map<String, String> headers = Map.of(WebConstants.PROJECT_KEY_HEADER, PROJECT_KEY);
+    Map<String, String> queryParams = Map.of(WebConstants.EXPERIMENT_STATUS, "live");
+
+    ValidatableResponse response =
+        TestUtil.executeRequest(null, headers, queryParams, spec -> spec.get(this.route));
+
+    response.statusCode(HttpStatus.SC_OK);
+    response.body("data.experiments", Matchers.notNullValue());
+    response.body("data.experiments.size()", Matchers.equalTo(1));
+  }
+
+  @Test
+  void testFilterExperiments_CommonTagAcrossExperiments() {
+    Map<String, String> headers = Map.of(WebConstants.PROJECT_KEY_HEADER, PROJECT_KEY);
+    Map<String, String> queryParams = Map.of(WebConstants.TAG, "test-tag-2");
+
+    ValidatableResponse response =
+        TestUtil.executeRequest(null, headers, queryParams, spec -> spec.get(this.route));
+
+    response.statusCode(HttpStatus.SC_OK);
+    response.body("data.experiments", Matchers.notNullValue());
+    response.body("data.experiments.size()", Matchers.equalTo(2));
+  }
+
+  // ==================== SQL Injection Security Tests ====================
+
+  @Test
+  void testSqlInjection_NameFilter_SingleQuoteEscape() {
+    Map<String, String> headers = Map.of(WebConstants.PROJECT_KEY_HEADER, PROJECT_KEY);
+    // Attempt SQL injection with single quote escape
+    Map<String, String> queryParams = Map.of(WebConstants.NAME, "test' OR '1'='1");
+
+    ValidatableResponse response =
+        TestUtil.executeRequest(null, headers, queryParams, spec -> spec.get(this.route));
+
+    // Should return OK but treat the input as literal search text (no injection)
+    response.statusCode(HttpStatus.SC_OK);
+    response.contentType(WebConstants.APPLICATION_JSON);
+    response.body("data.experiments", Matchers.notNullValue());
+    response.body("data.experiments.size()", Matchers.equalTo(0));
+    // Should return empty or only experiments matching the literal string (not all experiments)
+    // If it returned all experiments, SQL injection would have succeeded
+  }
+
+  @Test
+  void testSqlInjection_NameFilter_UnionBasedAttack() {
+    Map<String, String> headers = Map.of(WebConstants.PROJECT_KEY_HEADER, PROJECT_KEY);
+    // Attempt UNION-based SQL injection to extract data
+    Map<String, String> queryParams =
+        Map.of(WebConstants.NAME, "test' UNION SELECT null,null,null,null,null--");
+
+    ValidatableResponse response =
+        TestUtil.executeRequest(null, headers, queryParams, spec -> spec.get(this.route));
+
+    // Should return OK and treat UNION clause as literal search text
+    response.statusCode(HttpStatus.SC_OK);
+    response.contentType(WebConstants.APPLICATION_JSON);
+    response.body("data", Matchers.notNullValue());
+    // Should not return unexpected data structure or expose internal data
+  }
+
+  @Test
+  void testSqlInjection_NameFilter_CommentInjection() {
+    Map<String, String> headers = Map.of(WebConstants.PROJECT_KEY_HEADER, PROJECT_KEY);
+    // Attempt to comment out rest of query
+    Map<String, String> queryParams = Map.of(WebConstants.NAME, "test'; --");
+
+    ValidatableResponse response =
+        TestUtil.executeRequest(null, headers, queryParams, spec -> spec.get(this.route));
+
+    // Should return OK and treat comment syntax as literal search text
+    response.statusCode(HttpStatus.SC_OK);
+    response.contentType(WebConstants.APPLICATION_JSON);
+    response.body("data.experiments", Matchers.notNullValue());
+  }
+
+  @Test
+  void testSqlInjection_NameFilter_BlindSqlInjection() {
+    Map<String, String> headers = Map.of(WebConstants.PROJECT_KEY_HEADER, PROJECT_KEY);
+    // Attempt blind SQL injection with time-based attack
+    Map<String, String> queryParams = Map.of(WebConstants.NAME, "test' AND (SELECT pg_sleep(5))--");
+
+    ValidatableResponse response =
+        TestUtil.executeRequest(null, headers, queryParams, spec -> spec.get(this.route));
+
+    // Should return quickly (not sleep 5 seconds) and treat as literal text
+    response.statusCode(HttpStatus.SC_OK);
+    response.contentType(WebConstants.APPLICATION_JSON);
+  }
+
+  @Test
+  void testSqlInjection_OwnerFilter_MultipleValuesInjection() {
+    Map<String, String> headers = Map.of(WebConstants.PROJECT_KEY_HEADER, PROJECT_KEY);
+    // Attempt to break out of IN clause with SQL injection
+    Map<String, String> queryParams =
+        Map.of(WebConstants.OWNER, "alice', (SELECT password FROM users WHERE id=1)); --");
+
+    ValidatableResponse response =
+        TestUtil.executeRequest(null, headers, queryParams, spec -> spec.get(this.route));
+
+    // Should return OK and treat entire string as owner value (array element)
+    response.statusCode(HttpStatus.SC_OK);
+    response.contentType(WebConstants.APPLICATION_JSON);
+    response.body("data.experiments", Matchers.notNullValue());
+    // Should not expose any password data or fail with SQL error
+  }
+
+  @Test
+  void testSqlInjection_TagFilter_StackedQueries() {
+    Map<String, String> headers = Map.of(WebConstants.PROJECT_KEY_HEADER, PROJECT_KEY);
+    // Attempt stacked query injection
+    Map<String, String> queryParams = Map.of(WebConstants.TAG, "tag1'; DROP TABLE experiments; --");
+
+    ValidatableResponse response =
+        TestUtil.executeRequest(null, headers, queryParams, spec -> spec.get(this.route));
+
+    // Should return OK and not execute DROP statement
+    response.statusCode(HttpStatus.SC_OK);
+    response.contentType(WebConstants.APPLICATION_JSON);
+    response.body("data.experiments", Matchers.notNullValue());
+  }
+
+  @Test
+  void testSqlInjection_StatusFilter_InvalidEnumWithInjection() {
+    Map<String, String> headers = Map.of(WebConstants.PROJECT_KEY_HEADER, PROJECT_KEY);
+    // Attempt injection in enum field (should be validated before reaching query)
+    Map<String, String> queryParams = Map.of(WebConstants.EXPERIMENT_STATUS, "LIVE' OR '1'='1");
+
+    ValidatableResponse response =
+        TestUtil.executeRequest(null, headers, queryParams, spec -> spec.get(this.route));
+
+    // Should return BAD_REQUEST due to enum validation (defense in depth)
+    response.statusCode(HttpStatus.SC_BAD_REQUEST);
+    response.body(Matchers.containsString(ErrorMessages.INVALID_EXPERIMENT_STATUS));
+  }
+
+  @Test
+  void testSqlInjection_TypeFilter_InvalidEnumWithInjection() {
+    Map<String, String> headers = Map.of(WebConstants.PROJECT_KEY_HEADER, PROJECT_KEY);
+    // Attempt injection in type field
+    Map<String, String> queryParams =
+        Map.of(WebConstants.EXPERIMENT_TYPE, "A/B'; DELETE FROM experiments WHERE '1'='1");
+
+    ValidatableResponse response =
+        TestUtil.executeRequest(null, headers, queryParams, spec -> spec.get(this.route));
+
+    // Should return BAD_REQUEST due to enum validation
+    response.statusCode(HttpStatus.SC_BAD_REQUEST);
+    response.body(Matchers.containsString(ErrorMessages.INVALID_EXPERIMENT_TYPE));
+  }
+
+  @Test
+  void testSqlInjection_NameFilter_EncodedInjection() {
+    Map<String, String> headers = Map.of(WebConstants.PROJECT_KEY_HEADER, PROJECT_KEY);
+    // Attempt injection with URL encoding
+    Map<String, String> queryParams = Map.of(WebConstants.NAME, "test%27%20OR%20%271%27%3D%271");
+
+    ValidatableResponse response =
+        TestUtil.executeRequest(null, headers, queryParams, spec -> spec.get(this.route));
+
+    // Should decode and treat as literal text
+    response.statusCode(HttpStatus.SC_OK);
+    response.contentType(WebConstants.APPLICATION_JSON);
+    response.body("data.experiments.size()", Matchers.equalTo(0));
+  }
+
+  @Test
+  void testSqlInjection_MultipleFilters_CombinedInjectionAttempt() {
+    Map<String, String> headers = Map.of(WebConstants.PROJECT_KEY_HEADER, PROJECT_KEY);
+    // Attempt injection across multiple parameters
+    Map<String, String> queryParams =
+        Map.of(
+            WebConstants.NAME, "test' OR '1'='1",
+            WebConstants.OWNER, "owner'; DROP TABLE experiments; --",
+            WebConstants.TAG, "tag' UNION SELECT * FROM users--");
+
+    ValidatableResponse response =
+        TestUtil.executeRequest(null, headers, queryParams, spec -> spec.get(this.route));
+
+    // Should handle all malicious inputs safely
+    response.statusCode(HttpStatus.SC_OK);
+    response.contentType(WebConstants.APPLICATION_JSON);
+    response.body("data.experiments", Matchers.notNullValue());
+    // Verify normal response structure (no SQL errors or unexpected data)
+    response.body("data.pagination", Matchers.notNullValue());
+  }
+
+  @Test
+  void testSqlInjection_NameFilter_NoSqlErrorLeakage() {
+    Map<String, String> headers = Map.of(WebConstants.PROJECT_KEY_HEADER, PROJECT_KEY);
+    // Attempt to trigger SQL error that might leak information
+    Map<String, String> queryParams = Map.of(WebConstants.NAME, "test' AND 1=CAST('abc' AS INT)--");
+
+    ValidatableResponse response =
+        TestUtil.executeRequest(null, headers, queryParams, spec -> spec.get(this.route));
+
+    // Should not leak SQL error messages
+    response.statusCode(HttpStatus.SC_OK);
+    response.contentType(WebConstants.APPLICATION_JSON);
+    // Response should not contain SQL error keywords
+    response.body("$", Matchers.not(Matchers.hasKey("sqlState")));
+    response.body("$", Matchers.not(Matchers.hasKey("SQLException")));
+  }
+
+  @Test
+  void testSqlInjection_OwnerFilter_ArrayInjection() {
+    Map<String, String> headers = Map.of(WebConstants.PROJECT_KEY_HEADER, PROJECT_KEY);
+    // Attempt to break array parameter handling
+    Map<String, String> queryParams =
+        Map.of(WebConstants.OWNER, "owner1','owner2'); SELECT * FROM users WHERE ('1'='1");
+
+    ValidatableResponse response =
+        TestUtil.executeRequest(null, headers, queryParams, spec -> spec.get(this.route));
+
+    // Should treat entire string as array elements
+    response.statusCode(HttpStatus.SC_OK);
+    response.contentType(WebConstants.APPLICATION_JSON);
+    response.body("data.experiments", Matchers.notNullValue());
+  }
+
+  @Test
+  void testSqlInjection_NameFilter_SecondOrderInjection() {
+    Map<String, String> headers = Map.of(WebConstants.PROJECT_KEY_HEADER, PROJECT_KEY);
+    // Test with malicious content that might be stored and later executed
+    Map<String, String> queryParams =
+        Map.of(WebConstants.NAME, "<script>alert('xss')</script>' OR '1'='1");
+
+    ValidatableResponse response =
+        TestUtil.executeRequest(null, headers, queryParams, spec -> spec.get(this.route));
+
+    // Should handle safely without executing any stored malicious content
+    response.statusCode(HttpStatus.SC_OK);
+    response.contentType(WebConstants.APPLICATION_JSON);
+  }
+
+  @Test
+  void testParameterizedQuery_VerifyNoStringConcatenation() {
+    Map<String, String> headers = Map.of(WebConstants.PROJECT_KEY_HEADER, PROJECT_KEY);
+    // Use special characters that would break string concatenation
+    Map<String, String> queryParams =
+        Map.of(
+            WebConstants.NAME, "test\\'; SELECT * FROM experiments WHERE name='test",
+            WebConstants.OWNER, "owner\\\")); DROP TABLE experiments; --");
+
+    ValidatableResponse response =
+        TestUtil.executeRequest(null, headers, queryParams, spec -> spec.get(this.route));
+
+    // Should handle escape characters safely in parameterized queries
+    response.statusCode(HttpStatus.SC_OK);
+    response.contentType(WebConstants.APPLICATION_JSON);
+    response.body("data.experiments", Matchers.notNullValue());
+  }
+
+  // ==================== End SQL Injection Security Tests ====================
 
   /**
    * Seeds test data for filter experiments tests. This ensures all tests have the necessary data to
@@ -270,39 +763,15 @@ class FilterExperimentsIT {
    * seed.sql data which is shared across test classes.
    */
   private static void cleanupTestData() {
+    // Drop the partition we created
     try {
-      // Clean up only the test-specific data we added
-      String deleteTags =
-          String.format(
-              "DELETE FROM experiment.tags WHERE project_key = '%s' AND experiment_id IN ('%s', '%s');",
-              PROJECT_KEY, EXPERIMENT_ID_1, EXPERIMENT_ID_2);
-      TestUtil.executeSQLStatement(TestUtil.getDatabaseConnection(), deleteTags);
-
-      String deleteOwners =
-          String.format(
-              "DELETE FROM experiment.owners WHERE project_key = '%s' AND experiment_id IN ('%s', '%s');",
-              PROJECT_KEY, EXPERIMENT_ID_1, EXPERIMENT_ID_2);
-      TestUtil.executeSQLStatement(TestUtil.getDatabaseConnection(), deleteOwners);
-
-      String deleteExperiments =
-          String.format(
-              "DELETE FROM experiment.experiments WHERE project_key = '%s' AND experiment_id IN ('%s', '%s');",
-              PROJECT_KEY, EXPERIMENT_ID_1, EXPERIMENT_ID_2);
-      TestUtil.executeSQLStatement(TestUtil.getDatabaseConnection(), deleteExperiments);
-
-      // Drop the partition we created
-      try {
-        TestUtil.dropTestPartition("experiments");
-        TestUtil.dropTestPartition("tags");
-        TestUtil.dropTestPartition("owners");
-      } catch (Exception e) {
-        log.debug("Failed to drop partition during cleanup (non-critical)", e);
-      }
-
-      log.info("Cleanup completed for {}", FilterExperimentsIT.class.getSimpleName());
+      TestUtil.dropTestPartition("experiments", PROJECT_KEY);
+      TestUtil.dropTestPartition("tags", PROJECT_KEY);
+      TestUtil.dropTestPartition("owners", PROJECT_KEY);
     } catch (Exception e) {
-      log.warn("Failed to cleanup test data", e);
+      log.debug("Failed to drop partition during cleanup (non-critical)", e);
     }
+    log.info("Cleanup completed for {}", FilterExperimentsIT.class.getSimpleName());
   }
 
   /**
@@ -325,7 +794,7 @@ class FilterExperimentsIT {
                 + "start_time, end_time, created_by, created_at, updated_at, name_tsvector"
                 + ") VALUES ("
                 + "'%s', '%s', '%s', 'Test Description', 'Test Hypothesis', "
-                + "'%s', '%s', 'PASSING', "
+                + "'%s', '%s', 'PASSED', "
                 + "ARRAY['all_users'], '{\"control\": 50, \"variant_a\": 50}'::jsonb, "
                 + "'RANDOM', NULL::jsonb, NULL::jsonb, NULL::jsonb, "
                 + "100, 1000, "
