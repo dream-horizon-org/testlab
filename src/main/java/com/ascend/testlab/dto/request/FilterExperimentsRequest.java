@@ -18,6 +18,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 
 /**
  * Request DTO for filtering experiments with various criteria. Supports filtering by status, owner,
@@ -68,7 +69,7 @@ public class FilterExperimentsRequest {
    * @return true if status filter is present and not empty, false otherwise
    */
   public boolean hasStatusFilter() {
-    return this.status != null && !this.status.isBlank();
+    return StringUtils.isNotBlank(this.status);
   }
 
   /**
@@ -77,7 +78,7 @@ public class FilterExperimentsRequest {
    * @return true if owner filter is present and not empty, false otherwise
    */
   public boolean hasOwnerFilter() {
-    return this.owner != null && !this.owner.isBlank();
+    return StringUtils.isNotBlank(this.owner);
   }
 
   /**
@@ -86,7 +87,7 @@ public class FilterExperimentsRequest {
    * @return true if name filter is present and not empty (after trimming), false otherwise
    */
   public boolean hasNameFilter() {
-    return this.name != null && !this.name.isBlank();
+    return StringUtils.isNotBlank(this.name);
   }
 
   /**
@@ -95,7 +96,7 @@ public class FilterExperimentsRequest {
    * @return true if type filter is present and not empty, false otherwise
    */
   public boolean hasTypeFilter() {
-    return this.type != null && !this.type.isBlank();
+    return StringUtils.isNotBlank(this.type);
   }
 
   /**
@@ -104,7 +105,7 @@ public class FilterExperimentsRequest {
    * @return true if tag filter is present and not empty, false otherwise
    */
   public boolean hasTagFilter() {
-    return this.tag != null && !this.tag.isBlank();
+    return StringUtils.isNotBlank(this.tag);
   }
 
   /**
