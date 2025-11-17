@@ -34,17 +34,23 @@ class TagsIT {
 
   @Test
   void testGetTags_Success() {
-    Map<String, String> headers =
-        Map.of(WebConstants.PROJECT_KEY_HEADER, "123e4567-e89b-12d3-a456-426614174000");
+    String projectKey = "123e4567-e89b-12d3-a456-426614174000";
+    Map<String, String> headers = Map.of(WebConstants.PROJECT_KEY_HEADER, projectKey);
 
-    ValidatableResponse response =
-        TestUtil.executeRequest(null, headers, null, spec -> spec.get(this.route));
+    try {
+      TestUtil.createPartitionForProject("tags", projectKey);
 
-    response.statusCode(HttpStatus.SC_OK);
-    response.contentType(WebConstants.APPLICATION_JSON);
-    response.body("data", Matchers.notNullValue());
-    response.body("data.tags", Matchers.notNullValue());
-    response.body("data.tags.size()", Matchers.greaterThanOrEqualTo(0));
+      ValidatableResponse response =
+          TestUtil.executeRequest(null, headers, null, spec -> spec.get(this.route));
+
+      response.statusCode(HttpStatus.SC_OK);
+      response.contentType(WebConstants.APPLICATION_JSON);
+      response.body("data", Matchers.notNullValue());
+      response.body("data.tags", Matchers.notNullValue());
+      response.body("data.tags.size()", Matchers.greaterThanOrEqualTo(0));
+    } finally {
+      TestUtil.dropTestPartition("tags");
+    }
   }
 
   @Test
@@ -54,7 +60,6 @@ class TagsIT {
 
     String[] expectedTags = new String[] {"ui-test", "feature-flag", "performance"};
     try {
-      dropSeedPartition("tags", projectKey);
       TestUtil.createPartitionForProject("tags", projectKey);
       seedTags(projectKey, expectedTags);
 
@@ -103,16 +108,6 @@ class TagsIT {
       TestUtil.executeSQLStatement(TestUtil.getDatabaseConnection(), insert);
     } catch (Exception e) {
       throw new RuntimeException("Failed seeding tags for tests", e);
-    }
-  }
-
-  private void dropSeedPartition(String tableName, String projectKey) {
-    String partitionName = tableName + "_" + projectKey.replace("-", "");
-    String drop = String.format("DROP TABLE IF EXISTS experiment.%s;", partitionName);
-    try {
-      TestUtil.executeSQLStatement(TestUtil.getDatabaseConnection(), drop);
-    } catch (Exception e) {
-      log.warn("Failed dropping seed partition for table {}", tableName, e);
     }
   }
 }

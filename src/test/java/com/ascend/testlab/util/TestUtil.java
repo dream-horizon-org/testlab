@@ -48,8 +48,9 @@ public final class TestUtil {
     Connection connection = getDatabaseConnection();
     executeSQLFile(connection, TestConstants.SCHEMA_FILE_PATH);
     log.info("Database schema created");
-    executeSQLFile(connection, TestConstants.SEED_FILE_PATH);
-    log.info("Database seed data inserted");
+    // Seed data is no longer used - each test creates its own data
+    // executeSQLFile(connection, TestConstants.SEED_FILE_PATH);
+    // log.info("Database seed data inserted");
     connection.close();
   }
 
