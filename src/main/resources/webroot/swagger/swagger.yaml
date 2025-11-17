@@ -345,8 +345,6 @@ components:
       discriminator:
         propertyName: type
     UpdateExperimentRequest:
-      required:
-      - winning_variant
       type: object
       properties:
         name:

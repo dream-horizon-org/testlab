@@ -12,10 +12,7 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
  * @version 1.0
  * @since 1.0
  */
-@JsonTypeInfo(
-    use = JsonTypeInfo.Id.NAME,
-    include = JsonTypeInfo.As.PROPERTY,
-    property = "type")
+@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.PROPERTY, property = "type")
 @JsonSubTypes({
   @JsonSubTypes.Type(
       value = com.ascend.testlab.variantWeights.ManualVariantWeights.class,

@@ -192,7 +192,7 @@ public class ExperimentDAOTest {
       request.setType(null);
       request.setGuardrailHealthStatus(null);
       request.setCohorts(null);
-      request.setVariantWeights(null);
+      request.setVariant_weights(null);
       request.setExposure(50);
       request.setThreshold(1000);
       request.setStartTime(System.currentTimeMillis() / 1000);
