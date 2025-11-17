@@ -38,7 +38,7 @@ public class Allocation {
   }
 
   @POST
-  @Path("/allocation")
+  @Path("/allocations")
   @Consumes(MediaType.APPLICATION_JSON)
   @Produces(MediaType.APPLICATION_JSON)
   @ApiResponse(
@@ -74,7 +74,7 @@ public class Allocation {
   }
 
   @GET
-  @Path("/allocation")
+  @Path("/allocations")
   @Consumes(MediaType.APPLICATION_JSON)
   @Produces(MediaType.APPLICATION_JSON)
   @ApiResponse(

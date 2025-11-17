@@ -98,6 +98,19 @@ public class AllocationServiceImpl implements AllocationService {
         .doOnError(error -> log.error("Error in allocation flow for user: {}", userId, error));
   }
 
+  /** {@inheritDoc} */
+  @Override
+  public Single<GetAllocationsResponse> getAllocations(String userId, String projectKey) {
+    return allocationDAO
+        .getAllocations(userId, projectKey)
+        .map(GetAllocationsResponse::new)
+        .doOnSuccess(
+            res -> {
+              log.info("Successfully fetched allocations for user: {}", userId);
+            })
+        .doOnError(error -> log.error("Error in allocation flow for user: {}", userId, error));
+  }
+
   // For concluded, uncomment and test
 
   //    @Override
@@ -175,19 +188,6 @@ public class AllocationServiceImpl implements AllocationService {
               result.put(
                   "guestAllocations", userAllocations.getOrDefault(guestId, new ArrayList<>()));
               return result;
-            })
-        .doOnError(error -> log.error("Error in allocation flow for user: {}", userId, error));
-  }
-
-  /** {@inheritDoc} */
-  @Override
-  public Single<GetAllocationsResponse> getAllocations(String userId, String projectKey) {
-    return allocationDAO
-        .getAllocations(userId, projectKey)
-        .map(GetAllocationsResponse::new)
-        .doOnSuccess(
-            res -> {
-              log.info("Successfully fetched allocations for user: {}", userId);
             })
         .doOnError(error -> log.error("Error in allocation flow for user: {}", userId, error));
   }
