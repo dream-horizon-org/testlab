@@ -7,7 +7,7 @@ import java.util.List;
  * Interface for the cohort service. Contains methods to fetch user cohorts from external cohort
  * service.
  *
- * @author anudeepreddy20
+ * @author Anudeep Reddy
  * @version 1.0
  * @since 1.0
  */

@@ -13,7 +13,7 @@ import lombok.extern.slf4j.Slf4j;
  * Filters experiments based on user cohort matching. Experiments with cohort restrictions must
  * match at least one user cohort.
  *
- * @author anudeepreddy20
+ * @author Anudeep Reddy
  * @version 1.0
  * @since 1.0
  * @see AbstractExperimentFilter

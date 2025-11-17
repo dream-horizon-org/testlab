@@ -5,7 +5,7 @@ import lombok.experimental.UtilityClass;
 /**
  * This class contains constant error message strings used throughout the application.
  *
- * @author anudeepreddy20
+ * @author Anudeep Reddy
  * @version 1.0
  * @since 1.0
  */

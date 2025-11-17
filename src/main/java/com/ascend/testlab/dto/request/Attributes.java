@@ -10,7 +10,7 @@ import lombok.NoArgsConstructor;
 /**
  * User attributes for experiment filtering and targeting.
  *
- * @author anudeepreddy20
+ * @author Anudeep Reddy
  * @version 1.0
  * @since 1.0
  */

@@ -17,7 +17,7 @@ import lombok.NoArgsConstructor;
  *
  * <p>Example: { "control": ["user1", "user2"], "treatment": ["user3", "user4"] }
  *
- * @author anudeepreddy20
+ * @author Anudeep Reddy
  * @version 1.0
  * @since 1.0
  */

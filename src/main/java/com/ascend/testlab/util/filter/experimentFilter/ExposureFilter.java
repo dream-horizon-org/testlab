@@ -15,7 +15,7 @@ import lombok.extern.slf4j.Slf4j;
  * should see the experiment. For example, an exposure of 20 means ~20% of users will be exposed to
  * the experiment at given time.
  *
- * @author anudeepreddy20
+ * @author Anudeep Reddy
  * @version 1.0
  * @since 1.0
  * @see AbstractExperimentFilter

@@ -1,5 +1,6 @@
 package com.ascend.testlab.rest;
 
+import com.ascend.testlab.config.ApplicationConfig;
 import com.ascend.testlab.constants.web.WebConstants;
 import com.ascend.testlab.dto.ResponseEntity;
 import com.ascend.testlab.dto.request.AllocationRequest;
@@ -14,12 +15,13 @@ import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import java.util.concurrent.CompletionStage;
+import org.apache.commons.lang3.StringUtils;
 
 /**
  * Allocation endpoint for the testlab application. Contains methods to handle experiment assignment
  * requests for users.
  *
- * @author anudeepreddy20
+ * @author Anudeep Reddy
  * @version 1.0
  * @since 1.0
  * @see AllocationService
@@ -27,10 +29,12 @@ import java.util.concurrent.CompletionStage;
 @Path("/v1")
 public class Allocation {
   private final AllocationService allocationService;
+  private final ApplicationConfig applicationConfig;
 
   @Inject
-  public Allocation(AllocationService allocationService) {
+  public Allocation(AllocationService allocationService, ApplicationConfig applicationConfig) {
     this.allocationService = allocationService;
+    this.applicationConfig = applicationConfig;
   }
 
   @POST
@@ -55,13 +59,15 @@ public class Allocation {
       description = "Internal Server Error",
       content = @Content(schema = @Schema(implementation = ResponseEntity.Failure.class)))
   public CompletionStage<Response> allocationHandle(
-      @HeaderParam(WebConstants.PROJECT_KEY_HEADER) @DefaultValue(WebConstants.DEFAULT_PROJECT_KEY)
-          String projectKey,
+      @HeaderParam(WebConstants.PROJECT_KEY_HEADER) String projectKey,
       @Valid @NotNull AllocationRequest assignRequest) {
+
+    String effectiveProjectKey =
+        StringUtils.isBlank(projectKey) ? applicationConfig.getProjectKey() : projectKey;
 
     assignRequest.validate();
     return allocationService
-        .allotExperiments(projectKey, assignRequest)
+        .allotExperiments(effectiveProjectKey, assignRequest)
         .map(ResponseEntity.Success::new)
         .map(successData -> Response.ok(successData).build())
         .toCompletionStage();
@@ -89,12 +95,14 @@ public class Allocation {
       description = "Internal Server Error",
       content = @Content(schema = @Schema(implementation = ResponseEntity.Failure.class)))
   public CompletionStage<Response> getAllocationHandle(
-      @HeaderParam(WebConstants.PROJECT_KEY_HEADER) @DefaultValue(WebConstants.DEFAULT_PROJECT_KEY)
-          String projectKey,
+      @HeaderParam(WebConstants.PROJECT_KEY_HEADER) String projectKey,
       @HeaderParam(WebConstants.USER_ID_HEADER) String userId) {
 
+    String effectiveProjectKey =
+        StringUtils.isBlank(projectKey) ? applicationConfig.getProjectKey() : projectKey;
+
     return allocationService
-        .getAllocations(userId, projectKey)
+        .getAllocations(userId, effectiveProjectKey)
         .map(ResponseEntity.Success::new)
         .map(successData -> Response.ok(successData).build())
         .toCompletionStage();

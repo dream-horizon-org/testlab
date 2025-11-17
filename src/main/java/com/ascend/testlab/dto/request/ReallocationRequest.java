@@ -8,7 +8,7 @@ import lombok.*;
  * Request object for experiment variant reallocation. Used when changing a user's variant for an
  * already assigned experiment.
  *
- * @author anudeepreddy20
+ * @author Anudeep Reddy
  * @version 1.0
  * @since 1.0
  */

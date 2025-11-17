@@ -1,6 +1,6 @@
 package com.ascend.testlab.util.builder;
 
-import com.ascend.testlab.constants.Constants;
+import com.ascend.testlab.constants.enums.AllocationStatus;
 import com.ascend.testlab.dto.response.UserExperimentMap;
 import com.ascend.testlab.entity.Experiment;
 import com.ascend.testlab.entity.Variant;
@@ -10,7 +10,7 @@ import java.util.Objects;
  * Builder class for creating UserExperimentMap instances. Provides a consistent way to build
  * assignment objects across the application.
  *
- * @author anudeepreddy20
+ * @author Anudeep Reddy
  * @version 1.0
  * @since 1.0
  */
@@ -34,7 +34,7 @@ public class AssignmentBuilder {
         .experimentName(experiment.getName())
         .variant(variant)
         .variantName(variantName)
-        .status(Constants.STATUS_ASSIGNED)
+        .status(AllocationStatus.ASSIGNED.name())
         .assignedAt(System.currentTimeMillis())
         .build();
   }

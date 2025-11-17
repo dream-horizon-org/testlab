@@ -10,7 +10,7 @@ import lombok.Data;
 /**
  * Entity class representing a variables in an variant.
  *
- * @author anudeepreddy20
+ * @author Anudeep Reddy
  * @version 1.0
  * @since 1.0
  */

@@ -12,7 +12,7 @@ import lombok.extern.slf4j.Slf4j;
  * <p>Use Case: Update experiment participants with winning variant without affecting users who
  * never participated.
  *
- * @author anudeepreddy20
+ * @author Anudeep Reddy
  * @version 1.0
  * @since 1.0
  */

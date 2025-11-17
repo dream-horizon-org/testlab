@@ -17,7 +17,7 @@ import lombok.extern.slf4j.Slf4j;
  * matches, the experiment passes) - Within a rule's conditions: AND (ALL conditions must be true
  * for the rule to match)
  *
- * @author anudeepreddy20
+ * @author Anudeep Reddy
  * @version 1.0
  * @since 1.0
  * @see AbstractExperimentFilter

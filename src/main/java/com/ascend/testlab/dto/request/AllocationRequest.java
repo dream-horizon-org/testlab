@@ -12,7 +12,7 @@ import org.apache.commons.lang3.StringUtils;
 /**
  * Request object for experiment allocation.
  *
- * @author anudeepreddy20
+ * @author Anudeep Reddy
  * @version 1.0
  * @since 1.0
  */

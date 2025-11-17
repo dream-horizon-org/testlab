@@ -74,6 +74,11 @@ public enum ErrorEnum implements RestError {
   INVALID_EXPERIMENT_STATUS(
       "INVALID_EXPERIMENT_STATUS", "Experiment status is not valid", HttpStatus.SC_BAD_REQUEST),
 
+  UPSTREAM_PARSING_ERROR(
+      "UPSTREAM_PARSING_ERROR",
+      "Upstream response json parsing error",
+      HttpStatus.SC_INTERNAL_SERVER_ERROR),
+
   /** The error code for validating experiment type failed. */
   INVALID_EXPERIMENT_TYPE(
       "INVALID_EXPERIMENT_TYPE", "Experiment type is not valid", HttpStatus.SC_BAD_REQUEST);

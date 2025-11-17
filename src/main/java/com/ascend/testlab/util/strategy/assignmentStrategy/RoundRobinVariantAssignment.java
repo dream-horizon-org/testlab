@@ -17,7 +17,7 @@ import lombok.extern.slf4j.Slf4j;
  *   <li>Stateless operation: No need to track counters or state
  * </ul>
  *
- * @author anudeepreddy20
+ * @author Anudeep Reddy
  * @version 1.0
  * @since 1.0
  * @see VariantAssignmentStrategy

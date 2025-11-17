@@ -16,7 +16,7 @@ import lombok.NoArgsConstructor;
 /**
  * Entity class representing rule attributes for experiment filtering.
  *
- * @author anudeepreddy20
+ * @author Anudeep Reddy
  * @version 1.0
  * @since 1.0
  */

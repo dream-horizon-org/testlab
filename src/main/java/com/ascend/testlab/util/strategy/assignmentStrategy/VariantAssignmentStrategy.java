@@ -6,7 +6,7 @@ import java.util.List;
 /**
  * Strategy interface for variant assignment.
  *
- * @author anudeepreddy20
+ * @author Anudeep Reddy
  * @version 1.0
  * @since 1.0
  */

@@ -5,11 +5,11 @@ import com.ascend.testlab.config.ApplicationConfig;
 import com.ascend.testlab.dto.response.GetCohortsResponse;
 import com.ascend.testlab.exception.ErrorEnum;
 import com.ascend.testlab.service.CohortService;
+import com.ascend.testlab.util.CommonUtil;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.inject.Inject;
 import io.reactivex.rxjava3.core.Maybe;
 import io.reactivex.rxjava3.core.Single;
-import io.vertx.core.json.JsonObject;
 import io.vertx.rxjava3.core.MultiMap;
 import java.util.*;
 import lombok.extern.slf4j.Slf4j;
@@ -19,7 +19,7 @@ import org.apache.commons.lang3.StringUtils;
  * Implementation of the CohortService interface. Fetches user cohorts from external cohort service
  * using WebClient with fallback to empty list if service is down.
  *
- * @author anudeepreddy20
+ * @author Anudeep Reddy
  * @version 1.0
  * @since 1.0
  * @see CohortService
@@ -51,6 +51,7 @@ public class CohortServiceImpl implements CohortService {
 
     return Maybe.fromSingle(
         fetchCohortsFromService(userId, projectKey)
+            .map(GetCohortsResponse::getCohorts)
             .doOnSuccess(
                 cohorts -> log.info("Fetched {} cohorts for user {}", cohorts.size(), userId))
             .doOnError(
@@ -59,7 +60,7 @@ public class CohortServiceImpl implements CohortService {
             .onErrorReturnItem(Collections.emptyList()));
   }
 
-  private Single<List<String>> fetchCohortsFromService(String userId, String projectKey) {
+  private Single<GetCohortsResponse> fetchCohortsFromService(String userId, String projectKey) {
 
     Map<String, String> queryParams = new HashMap<>();
     MultiMap headers = MultiMap.caseInsensitiveMultiMap();
@@ -67,34 +68,11 @@ public class CohortServiceImpl implements CohortService {
     headers.add("X-user-Id", userId);
     headers.add("Content-Type", "application/json");
 
-    return webClient
-        .sendHTTPGETRequest(
-            cohortsConfig,
-            queryParams,
-            headers,
-            ErrorEnum.USER_COHORTS_SERVICE_REQUEST_FAILED,
-            this::parseCohortResponse)
-        .onErrorReturnItem(Collections.emptyList())
-        .switchIfEmpty(Single.just(Collections.emptyList()));
-  }
-
-  private List<String> parseCohortResponse(JsonObject jsonObject) {
-    try {
-      if (Objects.isNull(jsonObject) || jsonObject.isEmpty()) {
-        return Collections.emptyList();
-      }
-
-      GetCohortsResponse cohortResponse =
-          objectMapper.readValue(jsonObject.encode(), GetCohortsResponse.class);
-
-      if (Objects.nonNull(cohortResponse) && Objects.nonNull(cohortResponse.getCohorts())) {
-        return cohortResponse.getCohorts();
-      }
-
-      return Collections.emptyList();
-    } catch (Exception e) {
-      log.error("Error parsing cohort response", e);
-      return Collections.emptyList();
-    }
+    return webClient.sendHTTPGETRequest(
+        cohortsConfig,
+        queryParams,
+        headers,
+        ErrorEnum.USER_COHORTS_SERVICE_REQUEST_FAILED,
+        CommonUtil.mapResponse(GetCohortsResponse.class));
   }
 }

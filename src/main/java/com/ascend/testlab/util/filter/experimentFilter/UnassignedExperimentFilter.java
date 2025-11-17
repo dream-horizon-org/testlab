@@ -14,7 +14,7 @@ import lombok.extern.slf4j.Slf4j;
 /**
  * Filters experiments that have not been assigned to the user yet.
  *
- * @author anudeepreddy20
+ * @author Anudeep Reddy
  * @version 1.0
  * @since 1.0
  * @see AbstractExperimentFilter

@@ -4,7 +4,7 @@ package com.ascend.testlab.entity;
  * Enum representing the allocation domain for experiments. Defines how variant allocation is
  * determined.
  *
- * @author anudeepreddy20
+ * @author Anudeep Reddy
  * @version 1.0
  * @since 1.0
  */

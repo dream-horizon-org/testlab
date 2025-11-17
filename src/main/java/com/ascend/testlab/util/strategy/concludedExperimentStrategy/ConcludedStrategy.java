@@ -8,7 +8,7 @@ import java.util.List;
  * Strategy interface for handling concluded experiment variant overrides. Provides flexible control
  * over which user assignments should be overridden with winning variants.
  *
- * @author anudeepreddy20
+ * @author Anudeep Reddy
  * @version 1.0
  * @since 1.0
  */

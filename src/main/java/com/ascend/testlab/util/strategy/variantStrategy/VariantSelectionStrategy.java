@@ -6,7 +6,7 @@ import com.ascend.testlab.entity.Experiment;
  * Strategy interface for selecting variants based on assignment domain type. Implements the
  * Strategy Design Pattern for different variant selection approaches.
  *
- * @author anudeepreddy20
+ * @author Anudeep Reddy
  * @version 1.0
  * @since 1.0
  */

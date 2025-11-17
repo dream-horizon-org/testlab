@@ -1,6 +1,7 @@
 package com.ascend.testlab.service.impl;
 
 import com.ascend.testlab.constants.Constants;
+import com.ascend.testlab.constants.enums.AllocationStatus;
 import com.ascend.testlab.dao.AllocationDAO;
 import com.ascend.testlab.dto.request.AllocationRequest;
 import com.ascend.testlab.dto.response.AllocationResponse;
@@ -27,7 +28,7 @@ import lombok.extern.slf4j.Slf4j;
  * Implementation of the AllocationService interface. Handles experiment allocation logic including
  * filtering, variant selection, and user allocation persistence.
  *
- * @author anudeepreddy20
+ * @author Anudeep Reddy
  * @version 1.0
  * @since 1.0
  * @see AllocationService
@@ -47,6 +48,7 @@ public class AllocationServiceImpl implements AllocationService {
     this.objectMapper = objectMapper;
   }
 
+  /** {@inheritDoc} */
   @Override
   public Single<AllocationResponse> allotExperiments(
       String projectKey, AllocationRequest allocationRequest) {
@@ -177,6 +179,8 @@ public class AllocationServiceImpl implements AllocationService {
         .doOnError(error -> log.error("Error in allocation flow for user: {}", userId, error));
   }
 
+  /** {@inheritDoc} */
+  @Override
   public Single<GetAllocationsResponse> getAllocations(String userId, String projectKey) {
     return allocationDAO
         .getAllocations(userId, projectKey)
@@ -445,7 +449,7 @@ public class AllocationServiceImpl implements AllocationService {
                         .experimentId(ga.getExperimentId())
                         .experimentName(ga.getExperimentName())
                         .variant(ga.getVariant())
-                        .status(Constants.STATUS_ASSIGNED)
+                        .status(AllocationStatus.ASSIGNED.name())
                         .variant(ga.getVariant())
                         .assignedAt(System.currentTimeMillis())
                         .build())

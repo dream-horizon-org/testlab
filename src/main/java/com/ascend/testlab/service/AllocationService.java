@@ -9,7 +9,7 @@ import io.reactivex.rxjava3.core.Single;
  * Interface for the allocation service. Contains methods to assign and reassign experiments to
  * users based on various filters and strategies.
  *
- * @author anudeepreddy20
+ * @author Anudeep Reddy
  * @version 1.0
  * @since 1.0
  */
@@ -25,5 +25,13 @@ public interface AllocationService {
   Single<AllocationResponse> allotExperiments(
       String projectKey, AllocationRequest allocationRequest);
 
+  /**
+   * Retrieves all experiment allocations for a specific user within a project.
+   *
+   * @param userId the unique identifier of the user whose allocations are being retrieved
+   * @param projectKey the project identifier to scope the allocations
+   * @return a Single that emits the GetAllocationsResponse containing the user's experiment
+   *     allocations
+   */
   Single<GetAllocationsResponse> getAllocations(String userId, String projectKey);
 }

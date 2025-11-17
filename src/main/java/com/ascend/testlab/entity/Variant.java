@@ -9,7 +9,7 @@ import lombok.NoArgsConstructor;
 /**
  * Entity class representing a variant in an experiment.
  *
- * @author anudeepreddy20
+ * @author Anudeep Reddy
  * @version 1.0
  * @since 1.0
  */

@@ -7,7 +7,7 @@ import java.util.List;
  * Filter interface for experiment filtering using Chain of Responsibility pattern. Each filter can
  * decide whether to pass an experiment to the next filter in the chain.
  *
- * @author anudeepreddy20
+ * @author Anudeep Reddy
  * @version 1.0
  * @since 1.0
  */

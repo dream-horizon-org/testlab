@@ -44,13 +44,13 @@ import lombok.extern.slf4j.Slf4j;
  * Implementation of the AllocationDAO interface. Manages experiment allocations, user allocations,
  * variant counts, and locking using PostgreSQL and Aerospike.
  *
- * @author anudeepreddy20
+ * @author Anudeep Reddy
  * @version 1.0
  * @since 1.0
  * @see AllocationDAO
  */
 @Slf4j
-public class AssignmentDAOImpl implements AllocationDAO {
+public class AllocationDAOImpl implements AllocationDAO {
 
   private final PgReaderClient pgReaderClient;
   private final AerospikeClient aerospikeClient;
@@ -58,7 +58,7 @@ public class AssignmentDAOImpl implements AllocationDAO {
   private final ObjectMapper objectMapper;
 
   /**
-   * Constructor for AssignmentDAOImpl with dependency injection.
+   * Constructor for AllocationDAOImpl with dependency injection.
    *
    * @param pgReaderClient PostgreSQL client for database operations
    * @param aerospikeClient Aerospike client for cache operations
@@ -66,7 +66,7 @@ public class AssignmentDAOImpl implements AllocationDAO {
    * @param objectMapper Jackson ObjectMapper for JSON serialization
    */
   @Inject
-  public AssignmentDAOImpl(
+  public AllocationDAOImpl(
       PgReaderClient pgReaderClient,
       AerospikeClient aerospikeClient,
       AerospikeConfig aerospikeConfig,
@@ -77,13 +77,14 @@ public class AssignmentDAOImpl implements AllocationDAO {
     this.objectMapper = objectMapper;
   }
 
+  /** {@inheritDoc} */
   @Override
   public Single<List<Experiment>> fetchActiveExperiments(
       String projectKey, List<String> experimentKeys) {
     String[] experimentKeysArray = experimentKeys.toArray(new String[0]);
     return pgReaderClient
         .fetchAll(
-            ReadQuery.GET_EXPERIMENTS,
+            ReadQuery.GET_EXPERIMENTS_FROM_KEY,
             Tuple.tuple().addString(projectKey).addArrayOfString(experimentKeysArray),
             this::mapRowToExperiment)
         .doOnSuccess(
@@ -97,6 +98,7 @@ public class AssignmentDAOImpl implements AllocationDAO {
             });
   }
 
+  /** {@inheritDoc} */
   @Override
   public Single<List<UserExperimentMap>> getAllocations(String userId, String projectKey) {
 
@@ -108,6 +110,7 @@ public class AssignmentDAOImpl implements AllocationDAO {
             });
   }
 
+  /** {@inheritDoc} */
   @Override
   public Single<Map<String, List<UserExperimentMap>>> getAllocations(
       List<String> userIds, String projectKey) {
@@ -135,6 +138,7 @@ public class AssignmentDAOImpl implements AllocationDAO {
             });
   }
 
+  /** {@inheritDoc} */
   @Override
   public Single<Boolean> checkThreshold(String projectKey, Experiment experiment) {
 
@@ -170,7 +174,7 @@ public class AssignmentDAOImpl implements AllocationDAO {
     policy.expiration = -1;
     policy.sendKey = true;
 
-    Bin lockBin = new Bin(aerospikeConfig.getLockBin(), System.currentTimeMillis());
+    Bin lockBin = new Bin(aerospikeConfig.getUserAllocationLockBin(), System.currentTimeMillis());
 
     return aerospikeClient
         .put(policy, key, lockBin)
@@ -402,8 +406,8 @@ public class AssignmentDAOImpl implements AllocationDAO {
             CommonUtil.getSetName(aerospikeConfig.getVariantCountSet(), projectKey),
             asKey);
 
-    Operation decrementOp = Operation.add(new Bin(aerospikeConfig.getCountBin(), -1));
-    Operation getOp = Operation.get(aerospikeConfig.getCountBin());
+    Operation decrementOp = Operation.add(new Bin(aerospikeConfig.getVariantCountBin(), -1));
+    Operation getOp = Operation.get(aerospikeConfig.getVariantCountBin());
     WritePolicy policy = new WritePolicy();
     policy.sendKey = true;
 
@@ -416,7 +420,7 @@ public class AssignmentDAOImpl implements AllocationDAO {
                     "Null record returned after decrement for {}:{}", experimentId, variantName);
                 return 0L;
               }
-              long newCount = record.getLong(aerospikeConfig.getCountBin());
+              long newCount = record.getLong(aerospikeConfig.getVariantCountBin());
               log.debug(
                   "Decremented variant count to {} for experiment {} variant {}",
                   newCount,
@@ -448,11 +452,11 @@ public class AssignmentDAOImpl implements AllocationDAO {
     Key[] keyArray = keys.toArray(new Key[0]);
 
     return aerospikeClient
-        .get(batchPolicy, keyArray, aerospikeConfig.getCountBin())
+        .get(batchPolicy, keyArray, aerospikeConfig.getVariantCountBin())
         .map(
             record ->
                 record.stream()
-                    .map(rec -> rec.getLong(aerospikeConfig.getCountBin()))
+                    .map(rec -> rec.getLong(aerospikeConfig.getVariantCountBin()))
                     .reduce(0L, Long::sum))
         .onErrorReturnItem(0L);
   }
@@ -613,15 +617,18 @@ public class AssignmentDAOImpl implements AllocationDAO {
                       CommonUtil.getSetName(aerospikeConfig.getVariantCountSet(), projectKey),
                       keyStr);
 
-              Operation incrementOp = Operation.add(new Bin(aerospikeConfig.getCountBin(), 1));
-              Operation getOp = Operation.get(aerospikeConfig.getCountBin());
+              Operation incrementOp =
+                  Operation.add(new Bin(aerospikeConfig.getVariantCountBin(), 1));
+              Operation getOp = Operation.get(aerospikeConfig.getVariantCountBin());
 
               return aerospikeClient
                   .operate(policy, key, incrementOp, getOp)
                   .map(
                       record -> {
                         Long count =
-                            record != null ? record.getLong(aerospikeConfig.getCountBin()) : 1L;
+                            record != null
+                                ? record.getLong(aerospikeConfig.getVariantCountBin())
+                                : 1L;
                         results.put(keyStr, count);
                         log.debug("Incremented variant count for {} to {}", keyStr, count);
                         return keyStr;
@@ -691,15 +698,18 @@ public class AssignmentDAOImpl implements AllocationDAO {
                       CommonUtil.getSetName(aerospikeConfig.getVariantCountSet(), projectKey),
                       keyStr);
 
-              Operation decrementOp = Operation.add(new Bin(aerospikeConfig.getCountBin(), -1));
-              Operation getOp = Operation.get(aerospikeConfig.getCountBin());
+              Operation decrementOp =
+                  Operation.add(new Bin(aerospikeConfig.getVariantCountBin(), -1));
+              Operation getOp = Operation.get(aerospikeConfig.getVariantCountBin());
 
               return aerospikeClient
                   .operate(policy, key, decrementOp, getOp)
                   .map(
                       record -> {
                         Long newCount =
-                            record != null ? record.getLong(aerospikeConfig.getCountBin()) : 0L;
+                            record != null
+                                ? record.getLong(aerospikeConfig.getVariantCountBin())
+                                : 0L;
                         successCount[0]++;
 
                         if (newCount < 0) {

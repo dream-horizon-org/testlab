@@ -16,7 +16,7 @@ import lombok.NoArgsConstructor;
  *
  * <p>Example: { "premium_users": 70, "free_users": 30 }
  *
- * @author anudeepreddy20
+ * @author Anudeep Reddy
  * @version 1.0
  * @since 1.0
  */

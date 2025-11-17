@@ -13,7 +13,7 @@ import com.ascend.testlab.dao.AllocationDAO;
 import com.ascend.testlab.dao.ExperimentDAO;
 import com.ascend.testlab.dao.HealthCheckDAO;
 import com.ascend.testlab.dao.TagsDAO;
-import com.ascend.testlab.dao.impl.AssignmentDAOImpl;
+import com.ascend.testlab.dao.impl.AllocationDAOImpl;
 import com.ascend.testlab.dao.impl.ExperimentDAOImpl;
 import com.ascend.testlab.dao.impl.HealthCheckDAOImpl;
 import com.ascend.testlab.dao.impl.TagsDAOImpl;
@@ -94,7 +94,7 @@ public class ServiceModule extends DefaultModule {
     bind(HealthCheckDAO.class).to(HealthCheckDAOImpl.class);
     bind(ExperimentDAO.class).to(ExperimentDAOImpl.class);
     bind(TagsDAO.class).to(TagsDAOImpl.class);
-    bind(AllocationDAO.class).to(AssignmentDAOImpl.class);
+    bind(AllocationDAO.class).to(AllocationDAOImpl.class);
   }
 
   /** Bind the service interfaces to their implementations. */

@@ -11,7 +11,7 @@ import lombok.extern.slf4j.Slf4j;
  *
  * <p>Use Case: Immediate full adoption of winning variant for all users.
  *
- * @author anudeepreddy20
+ * @author Anudeep Reddy
  * @version 1.0
  * @since 1.0
  */

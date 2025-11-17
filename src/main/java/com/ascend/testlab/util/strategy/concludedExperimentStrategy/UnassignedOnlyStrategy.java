@@ -12,7 +12,7 @@ import lombok.extern.slf4j.Slf4j;
  * <p>Use Case: Gradual rollout of winning variant to users who didn't participate in the original
  * experiment.
  *
- * @author anudeepreddy20
+ * @author Anudeep Reddy
  * @version 1.0
  * @since 1.0
  */

@@ -14,7 +14,7 @@ import org.apache.commons.lang3.StringUtils;
  * Helper class for selecting variants based on distribution strategy and assignment domain. Uses
  * Strategy Pattern with a chain of responsibility to delegate to appropriate selection strategy.
  *
- * @author anudeepreddy20
+ * @author Anudeep Reddy
  * @version 1.0
  * @since 1.0
  */

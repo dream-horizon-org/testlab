@@ -13,7 +13,7 @@ import lombok.NoArgsConstructor;
 /**
  * Entity class representing an experiment in the testlab application.
  *
- * @author anudeepreddy20
+ * @author Anudeep Reddy
  * @version 1.0
  * @since 1.0
  */

@@ -15,7 +15,7 @@ import lombok.extern.slf4j.Slf4j;
  * Factory class for building filter chains using Builder pattern. Creates a chain of filters based
  * on request parameters.
  *
- * @author anudeepreddy20
+ * @author Anudeep Reddy
  * @version 1.0
  * @since 1.0
  */

@@ -10,7 +10,7 @@ import java.util.Map;
  * Interface for the allocation DAO. Contains methods to manage experiment allocations, user
  * allocations, variant counts, and locking mechanisms.
  *
- * @author anudeepreddy20
+ * @author Anudeep Reddy
  * @version 1.0
  * @since 1.0
  */

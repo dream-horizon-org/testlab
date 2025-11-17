@@ -8,7 +8,7 @@ import lombok.extern.slf4j.Slf4j;
 /**
  * Abstract base class for experiment filters implementing Chain of Responsibility pattern.
  *
- * @author anudeepreddy20
+ * @author Anudeep Reddy
  * @version 1.0
  * @since 1.0
  * @see ExperimentFilter

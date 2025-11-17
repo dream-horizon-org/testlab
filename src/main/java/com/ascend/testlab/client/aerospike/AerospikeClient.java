@@ -60,7 +60,7 @@ public interface AerospikeClient {
   Single<Record> get(Policy policy, Key key, String... binNames);
 
   /**
-   * Get a record from Aerospike database.
+   * Get a list of records from Aerospike database.
    *
    * @param batchPolicy the policy to use for the operation
    * @param keys the key of the record

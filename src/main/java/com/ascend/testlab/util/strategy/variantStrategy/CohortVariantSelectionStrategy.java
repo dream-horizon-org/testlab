@@ -19,7 +19,7 @@ import lombok.extern.slf4j.Slf4j;
  * strategy selection). It converts CohortVariantWeights to a list of Variants and delegates the
  * actual selection to the appropriate VariantAssignmentStrategy obtained from the factory.
  *
- * @author anudeepreddy20
+ * @author Anudeep Reddy
  * @version 1.0
  * @since 1.0
  * @see VariantSelectionStrategy

@@ -114,6 +114,7 @@ public class AerospikeClientImpl implements AerospikeClient {
                 .onFailure(err -> handler.handle(Future.failedFuture(err))));
   }
 
+  /** {@inheritDoc} */
   @Override
   public Single<List<Record>> get(BatchPolicy batchPolicy, Key[] keys, String... binNames) {
     return AsyncResultSingle.toSingle(

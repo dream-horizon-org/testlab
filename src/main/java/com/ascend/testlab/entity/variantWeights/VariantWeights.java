@@ -8,7 +8,7 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
  * Abstract base class for variant weights. Uses Jackson polymorphic deserialization to handle
  * different weight types based on assignment domain.
  *
- * @author anudeepreddy20
+ * @author Anudeep Reddy
  * @version 1.0
  * @since 1.0
  */

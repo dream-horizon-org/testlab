@@ -7,7 +7,7 @@ import lombok.extern.slf4j.Slf4j;
  * Factory for creating variant assignment strategies based on distribution strategy type.
  * Implements the Factory Design Pattern to encapsulate strategy instantiation logic.
  *
- * @author anudeepreddy20
+ * @author Anudeep Reddy
  * @version 1.0
  * @since 1.0
  */

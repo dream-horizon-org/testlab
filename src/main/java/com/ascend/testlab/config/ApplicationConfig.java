@@ -1,6 +1,7 @@
 package com.ascend.testlab.config;
 
 import com.ascend.testlab.config.provider.ConfigProvider;
+import com.typesafe.config.Optional;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
@@ -18,12 +19,24 @@ public class ApplicationConfig {
   /** The cohort service URL for fetching user cohorts. */
   private ServiceConfig cohortsConfig;
 
+  /** The default project key to use when no project key is provided in the request headers. */
+  private String projectKey;
+
+  /** Configuration class for external service connection details. */
   @Data
   @NoArgsConstructor
   public static class ServiceConfig {
+    /** The base URL of the external service. */
     private String serviceURL;
+
+    /** The API endpoint path for the service. */
     private String apiEndPoint;
+
+    /** The timeout in milliseconds for API calls to the service. */
     private int apiTimeoutMS;
+
+    /** The retry count for API calls to the service. */
+    @Optional private Integer retryCount = 3;
   }
 
   /**

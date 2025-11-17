@@ -22,16 +22,18 @@ public final class ReadQuery {
       "SELECT distinct tag FROM experiment.tags WHERE project_key = $1;";
 
   /** Query to fetch active experiments for a tenant within a time range */
-  public static final String GET_EXPERIMENTS =
+  public static final String GET_EXPERIMENTS_FROM_KEY =
       "SELECT * FROM experiment.experiments WHERE project_key = $1 AND status = 'LIVE' AND experiment_key = ANY($2::text[])";
 
   /** Query to fetch concluded experiments for a tenant with winning variants */
   public static final String GET_CONCLUDED_EXPERIMENTS =
-      "SELECT * "
-          + "FROM experiment.experiments "
-          + "WHERE project_key = $1 "
-          + "AND status = 'CONCLUDED' "
-          + "AND winning_variant IS NOT NULL";
+      """
+      SELECT *
+      FROM experiment.experiments
+      WHERE project_key = $1
+        AND status = 'CONCLUDED'
+        AND winning_variant IS NOT NULL
+      """;
 
   /**
    * Query to retrieve a single experiment by project_key and experiment_id. Returns experiment

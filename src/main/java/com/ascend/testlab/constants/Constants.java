@@ -34,17 +34,12 @@ public final class Constants {
   /** The delimiter for colon. */
   public static final String COLON = ":";
 
-  /** The delimiter for space. */
-  public static final String SPACE = " ";
+  /** The delimiter for underscore. */
+  public static final String UNDER_SCORE = "_";
 
   /** The delimiter for apostrophe. */
   public static final String APOSTROPHE = "'";
 
-  public static final String EMPTY_STRING = "";
-
   public static final String GET_TYPE = "getType";
   public static final String GET_NAME = "getName";
-
-  public static final String STATUS_ASSIGNED = "ASSIGNED";
-  public static final String STATUS_CONCLUDED = "CONCLUDED";
 }

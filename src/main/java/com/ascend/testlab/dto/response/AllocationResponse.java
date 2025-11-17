@@ -9,7 +9,7 @@ import lombok.NoArgsConstructor;
 /**
  * Response object for experiment allocation containing the list of assigned experiments.
  *
- * @author anudeepreddy20
+ * @author Anudeep Reddy
  * @version 1.0
  * @since 1.0
  */

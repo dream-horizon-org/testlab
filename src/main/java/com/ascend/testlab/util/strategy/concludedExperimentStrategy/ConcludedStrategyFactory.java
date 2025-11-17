@@ -7,7 +7,7 @@ import lombok.extern.slf4j.Slf4j;
  * Factory class for creating concluded experiment override strategies. Provides easy access to
  * different strategy implementations.
  *
- * @author anudeepreddy20
+ * @author Anudeep Reddy
  * @version 1.0
  * @since 1.0
  */

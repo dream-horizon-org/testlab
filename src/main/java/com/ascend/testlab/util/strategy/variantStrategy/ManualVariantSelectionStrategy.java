@@ -9,7 +9,7 @@ import lombok.extern.slf4j.Slf4j;
  * Manual variant selection strategy. Selects variants based on explicit user-to-variant mappings
  * defined in ManualVariantWeights.
  *
- * @author anudeepreddy20
+ * @author Anudeep Reddy
  * @version 1.0
  * @since 1.0
  */
