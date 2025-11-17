@@ -65,7 +65,7 @@ public final class WebConstants {
   /** The path parameter name for experiment ID. */
   public static final String EXPERIMENT_ID = "experimentId";
 
-  /* Filter Query Parameters */
+  /* Query Parameters */
   /** The query parameter name for experiment status filter. */
   public static final String EXPERIMENT_STATUS = "status";
 

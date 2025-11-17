@@ -11,14 +11,15 @@ import com.ascend.testlab.dao.impl.ExperimentDAOImpl;
 import com.ascend.testlab.dto.entity.Experiment;
 import com.ascend.testlab.dto.request.FilterExperimentsRequest;
 import com.ascend.testlab.dto.response.FilterExperimentsResponse;
+import io.reactivex.rxjava3.core.Maybe;
 import io.reactivex.rxjava3.core.Single;
 import io.reactivex.rxjava3.observers.TestObserver;
 import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
 import io.vertx.rxjava3.sqlclient.Row;
 import io.vertx.rxjava3.sqlclient.Tuple;
-import java.sql.Timestamp;
-import java.time.LocalDateTime;
+import java.time.Instant;
+import java.time.OffsetDateTime;
 import java.util.*;
 import java.util.function.Function;
 import org.junit.jupiter.api.BeforeEach;
@@ -79,7 +80,7 @@ class ExperimentDAOTest {
       Experiment expectedExperiment = createMockExperiment();
       when(pgReaderClient.fetchOne(
               eq(ReadQuery.GET_EXPERIMENT), any(Tuple.class), any(Function.class)))
-          .thenReturn(Single.just(expectedExperiment));
+          .thenReturn(Maybe.just(expectedExperiment));
 
       // Act
       TestObserver<Experiment> testObserver =
@@ -99,17 +100,17 @@ class ExperimentDAOTest {
     @DisplayName("Should handle error when experiment not found")
     void testGetExperimentNotFound(VertxTestContext testContext) {
       // Arrange
-      RuntimeException expectedException = new RuntimeException("Experiment not found");
       when(pgReaderClient.fetchOne(
               eq(ReadQuery.GET_EXPERIMENT), any(Tuple.class), any(Function.class)))
-          .thenReturn(Single.error(expectedException));
+          .thenReturn(Maybe.empty());
 
       // Act
       TestObserver<Experiment> testObserver =
           experimentDAO.getExperiment(PROJECT_KEY, EXPERIMENT_ID).test();
 
       // Assert
-      testObserver.assertError(RuntimeException.class);
+      testObserver.assertNoErrors();
+      testObserver.assertResult();
       verify(pgReaderClient, times(1))
           .fetchOne(eq(ReadQuery.GET_EXPERIMENT), any(Tuple.class), any(Function.class));
       testContext.completeNow();
@@ -122,7 +123,7 @@ class ExperimentDAOTest {
       RuntimeException expectedException = new RuntimeException("Database connection failed");
       when(pgReaderClient.fetchOne(
               eq(ReadQuery.GET_EXPERIMENT), any(Tuple.class), any(Function.class)))
-          .thenReturn(Single.error(expectedException));
+          .thenReturn(Maybe.error(expectedException));
 
       // Act
       TestObserver<Experiment> testObserver =
@@ -161,7 +162,7 @@ class ExperimentDAOTest {
       testObserver.assertNoErrors();
       testObserver.assertValue(
           response ->
-              response.getExperimentList().size() == 1
+              response.getExperiments().size() == 1
                   && response.getPagination().getTotalCount() == 1
                   && response.getPagination().getCurrentPage() == 1
                   && response.getPagination().getPageSize() == 20);
@@ -188,7 +189,7 @@ class ExperimentDAOTest {
       testObserver.assertNoErrors();
       testObserver.assertValue(
           response ->
-              response.getExperimentList().isEmpty()
+              response.getExperiments().isEmpty()
                   && response.getPagination().getTotalCount() == 0
                   && response.getPagination().getCurrentPage() == 1
                   && response.getPagination().getPageSize() == 20);
@@ -217,7 +218,7 @@ class ExperimentDAOTest {
       testObserver.assertNoErrors();
       testObserver.assertValue(
           response ->
-              response.getExperimentList().size() == 1
+              response.getExperiments().size() == 1
                   && response.getPagination().getTotalCount() == 1);
       verify(pgReaderClient, times(1)).fetchAll(anyString(), any(Tuple.class), any(Function.class));
       testContext.completeNow();
@@ -244,7 +245,7 @@ class ExperimentDAOTest {
       testObserver.assertNoErrors();
       testObserver.assertValue(
           response ->
-              response.getExperimentList().size() == 1
+              response.getExperiments().size() == 1
                   && response.getPagination().getTotalCount() == 1);
       verify(pgReaderClient, times(1)).fetchAll(anyString(), any(Tuple.class), any(Function.class));
       testContext.completeNow();
@@ -271,7 +272,7 @@ class ExperimentDAOTest {
       testObserver.assertNoErrors();
       testObserver.assertValue(
           response ->
-              response.getExperimentList().size() == 1
+              response.getExperiments().size() == 1
                   && response.getPagination().getTotalCount() == 1);
       verify(pgReaderClient, times(1)).fetchAll(anyString(), any(Tuple.class), any(Function.class));
       testContext.completeNow();
@@ -298,7 +299,7 @@ class ExperimentDAOTest {
       testObserver.assertNoErrors();
       testObserver.assertValue(
           response ->
-              response.getExperimentList().size() == 1
+              response.getExperiments().size() == 1
                   && response.getPagination().getTotalCount() == 1);
       verify(pgReaderClient, times(1)).fetchAll(anyString(), any(Tuple.class), any(Function.class));
       testContext.completeNow();
@@ -325,7 +326,7 @@ class ExperimentDAOTest {
       testObserver.assertNoErrors();
       testObserver.assertValue(
           response ->
-              response.getExperimentList().size() == 1
+              response.getExperiments().size() == 1
                   && response.getPagination().getTotalCount() == 1);
       verify(pgReaderClient, times(1)).fetchAll(anyString(), any(Tuple.class), any(Function.class));
       testContext.completeNow();
@@ -340,7 +341,7 @@ class ExperimentDAOTest {
           FilterExperimentsRequest.builder()
               .name("test")
               .status("LIVE")
-              .type("A_B")
+              .type("A/B")
               .limit(20)
               .page(1)
               .build();
@@ -358,7 +359,7 @@ class ExperimentDAOTest {
       testObserver.assertNoErrors();
       testObserver.assertValue(
           response ->
-              response.getExperimentList().size() == 1
+              response.getExperiments().size() == 1
                   && response.getPagination().getTotalCount() == 1);
       verify(pgReaderClient, times(1)).fetchAll(anyString(), any(Tuple.class), any(Function.class));
       testContext.completeNow();
@@ -425,7 +426,7 @@ class ExperimentDAOTest {
           FilterExperimentsRequest.builder().limit(20).page(1).build();
       List<Row> mockRows = createMockRows(experiment, 1);
 
-      doReturn(Single.just(experiment))
+      doReturn(Maybe.just(experiment))
           .when(pgReaderClient)
           .fetchOne(eq(ReadQuery.GET_EXPERIMENT), any(Tuple.class), any(Function.class));
       doReturn(Single.just(mockRows))
@@ -468,8 +469,8 @@ class ExperimentDAOTest {
         .startTime(System.currentTimeMillis())
         .endTime(System.currentTimeMillis() + 86400000L)
         .createdBy("test-user")
-        .createdAt(Timestamp.valueOf(LocalDateTime.now()))
-        .updatedAt(Timestamp.valueOf(LocalDateTime.now()))
+        .createdAt(Instant.now())
+        .updatedAt(Instant.now())
         .tags("tag1,tag2")
         .owner("owner1")
         .build();
@@ -485,7 +486,7 @@ class ExperimentDAOTest {
    */
   private List<Row> createMockRows(Experiment experiment, int totalCount) {
     Row mockRow = mock(Row.class);
-    LocalDateTime now = LocalDateTime.now();
+    OffsetDateTime now = OffsetDateTime.now();
 
     // Set up all the fields that ExperimentMapper expects
     when(mockRow.getString("project_key")).thenReturn(experiment.getProjectKey());
@@ -496,7 +497,7 @@ class ExperimentDAOTest {
     when(mockRow.getString("status"))
         .thenReturn(experiment.getStatus() != null ? experiment.getStatus().name() : null);
     when(mockRow.getString("type"))
-        .thenReturn(experiment.getType() != null ? experiment.getType().toJson() : null);
+        .thenReturn(experiment.getType() != null ? experiment.getType().toString() : null);
     when(mockRow.getString("guardrail_health_status")).thenReturn(null);
     when(mockRow.getArrayOfStrings("cohorts")).thenReturn(new String[0]);
     when(mockRow.getJsonObject("variant_weights")).thenReturn(null);
@@ -509,8 +510,8 @@ class ExperimentDAOTest {
     when(mockRow.getLong("start_time")).thenReturn(experiment.getStartTime());
     when(mockRow.getLong("end_time")).thenReturn(experiment.getEndTime());
     when(mockRow.getString("created_by")).thenReturn(experiment.getCreatedBy());
-    when(mockRow.getLocalDateTime("created_at")).thenReturn(now);
-    when(mockRow.getLocalDateTime("updated_at")).thenReturn(now);
+    when(mockRow.getOffsetDateTime("created_at")).thenReturn(now);
+    when(mockRow.getOffsetDateTime("updated_at")).thenReturn(now);
     when(mockRow.getString("tags")).thenReturn(experiment.getTags());
     when(mockRow.getString("owners")).thenReturn(experiment.getOwner());
     // Add total_count for pagination

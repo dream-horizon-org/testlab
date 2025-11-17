@@ -19,7 +19,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class FilterExperimentsResponse {
 
-  private List<Experiment> experimentList;
+  private List<Experiment> experiments;
   private PaginationMeta pagination;
 
   /** Metadata class for pagination information. */

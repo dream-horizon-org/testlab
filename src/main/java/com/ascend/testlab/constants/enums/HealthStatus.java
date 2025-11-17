@@ -11,8 +11,8 @@ public enum HealthStatus {
   /** Indicates a warning status for the experiment health check. */
   WARNING,
 
-  /** Indicates the experiment health check is passing. */
-  PASSING,
+  /** Indicates the experiment health checks are passing. */
+  PASSED,
 
   /** Indicates no health checks are available for the experiment. */
   NO_CHECKS_AVAILABLE,
