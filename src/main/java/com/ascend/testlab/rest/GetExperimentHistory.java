@@ -25,7 +25,6 @@ import java.util.concurrent.CompletionStage;
  * @author Nithya sree
  * @version 1.0
  * @since 1.0
- * @see AdminService
  * @see GetExperimentHistoryResponse
  */
 @Path("/v1/experiments/{experimentId}/history")

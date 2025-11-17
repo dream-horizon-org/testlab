@@ -10,12 +10,16 @@ import com.ascend.testlab.client.webclient.WebClient;
 import com.ascend.testlab.client.webclient.impl.WebClientImpl;
 import com.ascend.testlab.config.*;
 import com.ascend.testlab.dao.AdminDAO;
+import com.ascend.testlab.dao.ExperimentDAO;
 import com.ascend.testlab.dao.HealthCheckDAO;
 import com.ascend.testlab.dao.impl.AdminDAOImpl;
+import com.ascend.testlab.dao.impl.ExperimentDAOImpl;
 import com.ascend.testlab.dao.impl.HealthCheckDAOImpl;
 import com.ascend.testlab.service.AdminService;
+import com.ascend.testlab.service.ExperimentService;
 import com.ascend.testlab.service.HealthCheckService;
 import com.ascend.testlab.service.impl.AdminServiceImpl;
+import com.ascend.testlab.service.impl.ExperimentServiceImpl;
 import com.ascend.testlab.service.impl.HealthCheckServiceImpl;
 import com.ascend.testlab.util.CircuitBreakerFactory;
 import com.google.inject.Singleton;
@@ -83,11 +87,13 @@ public class ServiceModule extends DefaultModule {
   private void bindDAOs() {
     bind(HealthCheckDAO.class).to(HealthCheckDAOImpl.class);
     bind(AdminDAO.class).to(AdminDAOImpl.class);
+    bind(ExperimentDAO.class).to(ExperimentDAOImpl.class);
   }
 
   /** Bind the service interfaces to their implementations. */
   private void bindServices() {
     bind(HealthCheckService.class).to(HealthCheckServiceImpl.class);
     bind(AdminService.class).to(AdminServiceImpl.class);
+    bind(ExperimentService.class).to(ExperimentServiceImpl.class);
   }
 }

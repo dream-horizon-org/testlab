@@ -22,6 +22,7 @@ public enum ErrorEnum implements RestError {
 
   /** The error code for the health check failed. */
   REST_HEALTH_CHECK_FAILED(
+      // TODO: Verify error code standards
       "testlab_REST_HEALTH_CHECK_FAILED",
       "HealthCheck Failed for testlab service",
       HttpStatus.SC_INTERNAL_SERVER_ERROR),
@@ -42,6 +43,18 @@ public enum ErrorEnum implements RestError {
   REST_FETCH_EXPERIMENT_HISTORY_FAILED(
       "testlab_REST_GET_EXPERIMENT_HISTORY_FAILED",
       "Failed to fetch experiment history due to: %s",
+      HttpStatus.SC_INTERNAL_SERVER_ERROR),
+
+  /** The error code for getting experiment by ID failed. */
+  REST_GET_EXPERIMENT_BY_ID_FAILED(
+      "testlab_REST_GET_EXPERIMENT_BY_ID_FAILED",
+      "Get Experiment by Id failed due to: %s",
+      HttpStatus.SC_INTERNAL_SERVER_ERROR),
+
+  /** The error code for filtering experiments failed. */
+  REST_FILTER_EXPERIMENTS_FAILED(
+      "testlab_REST_FILTER_EXPERIMENTS_FAILED",
+      "Filter Experiments failed due to: %s",
       HttpStatus.SC_INTERNAL_SERVER_ERROR),
 
   /* Client Error */
@@ -68,7 +81,21 @@ public enum ErrorEnum implements RestError {
   EXPERIMENT_NAME_TOO_LONG(
       "testlab_EXPERIMENT_NAME_TOO_LONG",
       "experiment name is too long (max 255 characters)",
-      HttpStatus.SC_BAD_REQUEST);
+      HttpStatus.SC_BAD_REQUEST),
+
+  /** The error code when experiment is not found. */
+  EXPERIMENT_NOT_FOUND(
+      "EXPERIMENT_NOT_FOUND",
+      "Experiment not found for the given experimentId",
+      HttpStatus.SC_NOT_FOUND),
+
+  /** The error code for validating experiment status failed. */
+  INVALID_EXPERIMENT_STATUS(
+      "INVALID_EXPERIMENT_STATUS", "Experiment status is not valid", HttpStatus.SC_BAD_REQUEST),
+
+  /** The error code for validating experiment type failed. */
+  INVALID_EXPERIMENT_TYPE(
+      "INVALID_EXPERIMENT_TYPE", "Experiment type is not valid", HttpStatus.SC_BAD_REQUEST);
 
   /** The error code. */
   private final String errorCode;
