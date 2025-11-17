@@ -16,7 +16,7 @@ import jakarta.ws.rs.core.Response;
 import java.util.concurrent.CompletionStage;
 
 /**
- * Assignment endpoint for the testlab application. Contains methods to handle experiment assignment
+ * Allocation endpoint for the testlab application. Contains methods to handle experiment assignment
  * requests for users.
  *
  * @author anudeepreddy20
@@ -25,11 +25,11 @@ import java.util.concurrent.CompletionStage;
  * @see AllocationService
  */
 @Path("/v1")
-public class Assignment {
+public class Allocation {
   private final AllocationService allocationService;
 
   @Inject
-  public Assignment(AllocationService allocationService) {
+  public Allocation(AllocationService allocationService) {
     this.allocationService = allocationService;
   }
 
@@ -54,7 +54,7 @@ public class Assignment {
       responseCode = "500",
       description = "Internal Server Error",
       content = @Content(schema = @Schema(implementation = ResponseEntity.Failure.class)))
-  public CompletionStage<Response> handle(
+  public CompletionStage<Response> allocationHandle(
       @HeaderParam(WebConstants.PROJECT_KEY_HEADER) @DefaultValue(WebConstants.DEFAULT_PROJECT_KEY)
           String projectKey,
       @Valid @NotNull AllocationRequest assignRequest) {
@@ -88,7 +88,7 @@ public class Assignment {
       responseCode = "500",
       description = "Internal Server Error",
       content = @Content(schema = @Schema(implementation = ResponseEntity.Failure.class)))
-  public CompletionStage<Response> handle(
+  public CompletionStage<Response> getAllocationHandle(
       @HeaderParam(WebConstants.PROJECT_KEY_HEADER) @DefaultValue(WebConstants.DEFAULT_PROJECT_KEY)
           String projectKey,
       @HeaderParam(WebConstants.USER_ID_HEADER) String userId) {

@@ -472,7 +472,7 @@ public class AssignmentDAOImpl implements AllocationDAO {
       String ruleAttributesJson =
           Objects.isNull(row.getJson(PostgresColumn.RULE_ATTRIBUTES.getColumn()))
               ? null
-              : row.getString(PostgresColumn.RULE_ATTRIBUTES.getColumn());
+              : row.getJson(PostgresColumn.RULE_ATTRIBUTES.getColumn()).toString();
       List<RuleAttributes> ruleAttributes =
           ruleAttributesJson != null
               ? objectMapper.readValue(ruleAttributesJson, new TypeReference<>() {})

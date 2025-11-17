@@ -14,7 +14,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
 /**
- * Integration tests for the Assignment API endpoints. Tests both POST /v1/allocation (allocate
+ * Integration tests for the Allocation API endpoints. Tests both POST /v1/allocation (allocate
  * experiments) and GET /v1/allocation (retrieve allocations) endpoints.
  *
  * @author anudeepreddy20
