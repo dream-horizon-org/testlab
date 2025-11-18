@@ -57,7 +57,7 @@ public enum ErrorEnum implements RestError {
       "Filter Experiments failed due to: %s",
       HttpStatus.SC_INTERNAL_SERVER_ERROR),
 
-  /* Client Error */
+  /* Client Errors */
 
   /** The error code for the invalid project key. */
   INVALID_PROJECT_KEY(

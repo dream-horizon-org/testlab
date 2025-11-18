@@ -124,8 +124,6 @@ class AdminDAOTest {
     @DisplayName("Should return true when name is available (EXISTS returns false)")
     void testIsExperimentNameAvailable_Available() {
       // Arrange
-      // EXISTS returns false when name doesn't exist, so list contains [false]
-      // After negation: !false = true (name is available)
       when(pgReaderClient.fetchAll(
               eq(ReadQuery.CHECK_EXPERIMENT_NAME), any(Tuple.class), any(Function.class)))
           .thenReturn(Single.just(Arrays.asList(false)));
@@ -150,8 +148,6 @@ class AdminDAOTest {
     @DisplayName("Should return false when name is not available (EXISTS returns true)")
     void testIsExperimentNameAvailable_NotAvailable() {
       // Arrange
-      // EXISTS returns true when name exists, so list contains [true]
-      // After negation: !true = false (name is not available)
       when(pgReaderClient.fetchAll(
               eq(ReadQuery.CHECK_EXPERIMENT_NAME), any(Tuple.class), any(Function.class)))
           .thenReturn(Single.just(Arrays.asList(true)));
@@ -442,7 +438,6 @@ class AdminDAOTest {
         when(mockRow.getValue("current_data")).thenReturn("{\"status\":\"LIVE\"}");
         when(mockRow.getLocalDateTime("created_at")).thenReturn(now.minusHours(i + 1));
         when(mockRow.getLocalDateTime("updated_at")).thenReturn(now.minusHours(i + 1));
-        // Only stub total_count on the first row since that's the only one accessed
         if (i == 0) {
           when(mockRow.getInteger(Columns.TOTAL_COUNT)).thenReturn(totalCount);
         }

@@ -70,7 +70,6 @@ class NameAvailabilityIT {
       response.body("data.isAvailable", Matchers.equalTo(false));
       response.body("data.message", Matchers.notNullValue());
     } catch (Exception e) {
-      // If partition creation fails, skip this test
       log.warn("Skipping test due to partition creation failure: {}", e.getMessage());
     } finally {
       TestUtil.dropTestPartition("experiments", projectKey);

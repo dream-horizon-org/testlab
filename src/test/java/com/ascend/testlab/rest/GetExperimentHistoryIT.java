@@ -35,11 +35,9 @@ class GetExperimentHistoryIT {
   @Test
   void testGetExperimentHistory_Success_WithHistory() throws SQLException {
     try {
-      // Ensure partition exists for test project key
       TestUtil.dropTestPartition("experiment_update_log", testProjectKey);
       TestUtil.createPartitionForProject("experiment_update_log", testProjectKey);
 
-      // Seed history data
       seedExperimentHistory(testProjectKey, testExperimentId);
 
       String route = String.format("/v1/experiments/%s/history", testExperimentId);
@@ -136,7 +134,6 @@ class GetExperimentHistoryIT {
       String route = String.format("/v1/experiments/%s/history", testExperimentId);
       Map<String, String> headers = Map.of(WebConstants.PROJECT_KEY_HEADER, testProjectKey);
 
-      // Test default pagination (limit=20, page=1)
       ValidatableResponse response =
           TestUtil.executeRequest(null, headers, null, spec -> spec.get(route));
 
@@ -186,7 +183,6 @@ class GetExperimentHistoryIT {
       TestUtil.dropTestPartition("experiment_update_log", testProjectKey);
       TestUtil.createPartitionForProject("experiment_update_log", testProjectKey);
 
-      // Seed one history entry (schema only allows one per experiment)
       seedExperimentHistory(testProjectKey, testExperimentId);
 
       String route = String.format("/v1/experiments/%s/history", testExperimentId);
@@ -200,11 +196,8 @@ class GetExperimentHistoryIT {
       response.contentType(WebConstants.APPLICATION_JSON);
       response.body("data.pagination.currentPage", Matchers.equalTo(2));
       response.body("data.pagination.pageSize", Matchers.equalTo(10));
-      // When LIMIT/OFFSET returns 0 rows, we can't get total_count from window function
-      // This is a known limitation - totalCount will be 0 when no rows are returned
       response.body(
           "data.pagination.totalCount", Matchers.anyOf(Matchers.equalTo(0), Matchers.equalTo(1)));
-      // Page 2 should return empty since we only have 1 entry
       response.body("data.history.size()", Matchers.equalTo(0));
     } finally {
       TestUtil.dropTestPartition("experiment_update_log", testProjectKey);
@@ -217,8 +210,6 @@ class GetExperimentHistoryIT {
       TestUtil.dropTestPartition("experiment_update_log", testProjectKey);
       TestUtil.createPartitionForProject("experiment_update_log", testProjectKey);
 
-      // Seed history for multiple different experiments to test pagination
-      // Note: Schema only allows one entry per experiment, so we use different experiment IDs
       seedMultipleExperimentHistory(testProjectKey, 25);
 
       // Test pagination for the first experiment
@@ -261,9 +252,7 @@ class GetExperimentHistoryIT {
    */
   private void seedMultipleExperimentHistory(String projectKey, int count) throws SQLException {
     String partitionName = "experiment_update_log_p_" + testProjectKey;
-    // First seed the test experiment
     seedExperimentHistory(projectKey, testExperimentId);
-    // Then seed other experiments with different IDs
     for (int i = 1; i < count; i++) {
       String experimentId = String.format("exp-%d", i);
       String insert =
