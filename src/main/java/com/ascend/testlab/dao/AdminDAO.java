@@ -31,12 +31,22 @@ public interface AdminDAO {
   Single<Boolean> isExperimentNameAvailable(String projectKey, String experimentName);
 
   /**
-   * Fetches the history of an experiment.
+   * Fetches the history of an experiment with pagination support.
    *
    * @param projectKey the project key
    * @param experimentId the experiment id
-   * @return a Single containing a list of experiment history entries
+   * @param limit the maximum number of history entries to return
+   * @param offset the number of history entries to skip
+   * @return a Single containing ExperimentHistoryResult with history entries and total count
    */
-  Single<List<ExperimentHistoryEntry>> fetchExperimentHistory(
-      String projectKey, String experimentId);
+  Single<ExperimentHistoryResult> fetchExperimentHistory(
+      String projectKey, String experimentId, int limit, int offset);
+
+  /**
+   * Result record containing history entries and total count for pagination.
+   *
+   * @param historyEntries the list of experiment history entries for the current page
+   * @param totalCount the total number of history entries matching the filter
+   */
+  record ExperimentHistoryResult(List<ExperimentHistoryEntry> historyEntries, int totalCount) {}
 }

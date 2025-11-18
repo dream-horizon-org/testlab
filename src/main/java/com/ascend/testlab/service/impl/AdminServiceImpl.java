@@ -100,22 +100,30 @@ public class AdminServiceImpl implements AdminService {
   /** {@inheritDoc} */
   @Override
   public Single<GetExperimentHistoryResponse> getExperimentHistory(
-      String projectKey, String experimentId) {
+      String projectKey, String experimentId, int limit, int page) {
+    int offset = (page - 1) * limit;
     return adminDAO
-        .fetchExperimentHistory(projectKey, experimentId)
+        .fetchExperimentHistory(projectKey, experimentId, limit, offset)
         .map(
-            historyEntries ->
+            result ->
                 GetExperimentHistoryResponse.builder()
                     .experimentId(experimentId)
-                    .history(historyEntries)
-                    .totalCount(historyEntries.size())
+                    .history(result.historyEntries())
+                    .pagination(
+                        GetExperimentHistoryResponse.PaginationMeta.builder()
+                            .currentPage(page)
+                            .pageSize(limit)
+                            .totalCount(result.totalCount())
+                            .build())
                     .build())
         .doOnSuccess(
             res ->
                 log.info(
-                    "Received experiment history for projectKey={} and experimentId={}",
+                    "Received experiment history for projectKey={} and experimentId={}, page={}, limit={}",
                     projectKey,
-                    experimentId))
+                    experimentId,
+                    page,
+                    limit))
         .doOnError(
             err ->
                 log.error(

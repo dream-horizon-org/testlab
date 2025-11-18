@@ -19,18 +19,39 @@ public final class ReadQuery {
 
   /** The query to fetch distinct tags for a given project key. */
   public static final String FETCH_TAGS =
-      "SELECT distinct tag FROM experiment.tags WHERE project_key = $1;";
+      """
+        SELECT DISTINCT tag
+        FROM experiment.tags
+        WHERE project_key = $1;
+        """;
 
   /** The query to check if an experiment name exists for a given project key. */
   public static final String CHECK_EXPERIMENT_NAME =
-      "SELECT EXISTS ( SELECT 1 FROM experiment.experiments WHERE project_key = $1 AND name = $2 );";
+      """
+         SELECT EXISTS (
+             SELECT 1
+             FROM experiment.experiments
+             WHERE project_key = $1
+               AND name = $2
+         );
+         """;
 
-  /** The query to retrieve the update history of a specific experiment. * */
+  /** The query to retrieve the update history of a specific experiment with pagination. */
   public static final String FETCH_EXPERIMENT_HISTORY =
-      "SELECT previous_data, current_data, updated_by, updated_at, created_at "
-          + "FROM experiment.experiment_update_log "
-          + "WHERE project_key=$1 AND experiment_id=$2 "
-          + "ORDER BY created_at DESC;";
+      """
+        SELECT
+            previous_data,
+            current_data,
+            updated_by,
+            updated_at,
+            created_at,
+            COUNT(*) OVER() AS total_count
+        FROM experiment.experiment_update_log
+        WHERE project_key = $1
+          AND experiment_id = $2
+        ORDER BY created_at DESC, updated_by DESC
+        LIMIT $3 OFFSET $4;
+        """;
 
   /**
    * Query to retrieve a single experiment by project_key and experiment_id. Returns experiment

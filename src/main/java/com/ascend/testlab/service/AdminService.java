@@ -38,12 +38,17 @@ public interface AdminService {
       String projectKey, String experimentName);
 
   /**
-   * Fetches the history of an experiment.
+   * Fetches the history of an experiment with pagination support.
+   *
+   * <p>Pagination defaults to limit=20 and page=1 if not specified. Page numbers start at 1.
    *
    * @param projectKey the project key
    * @param experimentId the experiment id
-   * @return a Single containing the get experiment history response
+   * @param limit the maximum number of history entries to return (default: 20)
+   * @param page the page number (default: 1, 1-indexed)
+   * @return a Single containing the get experiment history response with pagination metadata
    * @throws com.dream11.rest.exception.RestException if the operation fails
    */
-  Single<GetExperimentHistoryResponse> getExperimentHistory(String projectKey, String experimentId);
+  Single<GetExperimentHistoryResponse> getExperimentHistory(
+      String projectKey, String experimentId, int limit, int page);
 }

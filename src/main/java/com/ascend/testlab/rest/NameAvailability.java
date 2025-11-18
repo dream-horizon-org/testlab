@@ -73,8 +73,7 @@ public class NameAvailability {
       @HeaderParam(WebConstants.PROJECT_KEY_HEADER)
           @NotBlank(message = ErrorMessages.PROJECT_KEY_MISSING)
           String projectKey,
-      @QueryParam(WebConstants.EXPERIMENT_NAME)
-          @NotBlank(message = ErrorMessages.EXPERIMENT_NAME_MISSING)
+      @QueryParam(WebConstants.NAME) @NotBlank(message = ErrorMessages.EXPERIMENT_NAME_MISSING)
           String experimentName) {
 
     validate(experimentName);

@@ -20,7 +20,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 class NameAvailabilityIT {
 
   private final String route = "/v1/experiments/name-availability";
-  private final String testProjectKey = "test-project-key";
+  private final String testProjectKey = "test_project_key";
 
   @BeforeAll
   public static void initialize() {
@@ -38,7 +38,7 @@ class NameAvailabilityIT {
     TestUtil.createPartitionForProject("experiments", testProjectKey);
 
     Map<String, String> headers = Map.of(WebConstants.PROJECT_KEY_HEADER, testProjectKey);
-    Map<String, String> queryParams = Map.of(WebConstants.EXPERIMENT_NAME, "new-experiment-name");
+    Map<String, String> queryParams = Map.of(WebConstants.NAME, "new-experiment-name");
 
     ValidatableResponse response =
         TestUtil.executeRequest(null, headers, queryParams, spec -> spec.get(route));
@@ -51,16 +51,16 @@ class NameAvailabilityIT {
 
   @Test
   void testNameAvailability_Success_NotAvailable() throws SQLException {
-    String projectKey = "test-project-key-2";
+    String projectKey = "test_project_key_2";
     String experimentName = "existing-experiment";
     try {
       // Drop existing partition if it exists, then create new one
-      TestUtil.dropTestPartition("experiments", testProjectKey);
+      TestUtil.dropTestPartition("experiments", projectKey);
       TestUtil.createPartitionForProject("experiments", projectKey);
       seedExperiment(projectKey, experimentName);
 
       Map<String, String> headers = Map.of(WebConstants.PROJECT_KEY_HEADER, projectKey);
-      Map<String, String> queryParams = Map.of(WebConstants.EXPERIMENT_NAME, experimentName);
+      Map<String, String> queryParams = Map.of(WebConstants.NAME, experimentName);
 
       ValidatableResponse response =
           TestUtil.executeRequest(null, headers, queryParams, spec -> spec.get(route));
@@ -73,13 +73,13 @@ class NameAvailabilityIT {
       // If partition creation fails, skip this test
       log.warn("Skipping test due to partition creation failure: {}", e.getMessage());
     } finally {
-      TestUtil.dropTestPartition("experiments", testProjectKey);
+      TestUtil.dropTestPartition("experiments", projectKey);
     }
   }
 
   @Test
   void testNameAvailability_MissingHeader_BadRequest() {
-    Map<String, String> queryParams = Map.of(WebConstants.EXPERIMENT_NAME, "test-name");
+    Map<String, String> queryParams = Map.of(WebConstants.NAME, "test-name");
 
     ValidatableResponse response =
         TestUtil.executeRequest(null, null, queryParams, spec -> spec.get(route));
@@ -90,7 +90,7 @@ class NameAvailabilityIT {
   @Test
   void testNameAvailability_BlankHeader_BadRequest() {
     Map<String, String> headers = Map.of(WebConstants.PROJECT_KEY_HEADER, "   ");
-    Map<String, String> queryParams = Map.of(WebConstants.EXPERIMENT_NAME, "test-name");
+    Map<String, String> queryParams = Map.of(WebConstants.NAME, "test-name");
 
     ValidatableResponse response =
         TestUtil.executeRequest(null, headers, queryParams, spec -> spec.get(route));
@@ -113,7 +113,7 @@ class NameAvailabilityIT {
   @Test
   void testNameAvailability_BlankQueryParam_BadRequest() {
     Map<String, String> headers = Map.of(WebConstants.PROJECT_KEY_HEADER, testProjectKey);
-    Map<String, String> queryParams = Map.of(WebConstants.EXPERIMENT_NAME, "   ");
+    Map<String, String> queryParams = Map.of(WebConstants.NAME, "   ");
 
     ValidatableResponse response =
         TestUtil.executeRequest(null, headers, queryParams, spec -> spec.get(route));
@@ -126,7 +126,7 @@ class NameAvailabilityIT {
   void testNameAvailability_NameTooLong_BadRequest() {
     Map<String, String> headers = Map.of(WebConstants.PROJECT_KEY_HEADER, testProjectKey);
     String longName = "a".repeat(256);
-    Map<String, String> queryParams = Map.of(WebConstants.EXPERIMENT_NAME, longName);
+    Map<String, String> queryParams = Map.of(WebConstants.NAME, longName);
 
     ValidatableResponse response =
         TestUtil.executeRequest(null, headers, queryParams, spec -> spec.get(route));
@@ -136,12 +136,13 @@ class NameAvailabilityIT {
 
   private void seedExperiment(String projectKey, String experimentName) throws SQLException {
     String experimentId = java.util.UUID.randomUUID().toString();
+    String partitionName = "experiments_p_" + projectKey;
     String insert =
         String.format(
-            "INSERT INTO experiment.experiments_p_test "
+            "INSERT INTO experiment.%s "
                 + "(project_key, experiment_id, name, status) "
                 + "VALUES ('%s', '%s', '%s', 'DRAFT');",
-            projectKey, experimentId, experimentName);
+            partitionName, projectKey, experimentId, experimentName);
     TestUtil.executeSQLStatement(TestUtil.getDatabaseConnection(), insert);
   }
 }

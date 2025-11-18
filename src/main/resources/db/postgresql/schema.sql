@@ -68,8 +68,11 @@ CREATE TABLE IF NOT EXISTS experiment.experiment_update_log (
     updated_by     VARCHAR(255),
     created_at     TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at     TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    PRIMARY KEY (project_key, experiment_id)
+    PRIMARY KEY (project_key, experiment_id, created_at)
 ) PARTITION BY LIST (project_key);
+
+CREATE INDEX IF NOT EXISTS exp_log_proj_exp_created_idx
+    ON experiment.experiment_update_log (project_key, experiment_id, created_at DESC);
 
 CREATE TABLE IF NOT EXISTS experiment.experiment_analysis (
     project_key        VARCHAR(255) NOT NULL,

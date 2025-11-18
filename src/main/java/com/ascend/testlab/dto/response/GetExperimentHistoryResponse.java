@@ -5,7 +5,7 @@ import lombok.Builder;
 
 /**
  * Response DTO for the Get Experiment History API containing the experiment id, history entries,
- * and total count.
+ * and pagination metadata.
  *
  * @author Nithya sree
  * @version 1.0
@@ -13,4 +13,9 @@ import lombok.Builder;
  */
 @Builder
 public record GetExperimentHistoryResponse(
-    String experimentId, List<ExperimentHistoryEntry> history, Integer totalCount) {}
+    String experimentId, List<ExperimentHistoryEntry> history, PaginationMeta pagination) {
+
+  /** Metadata class for pagination information. */
+  @Builder
+  public record PaginationMeta(int currentPage, int pageSize, int totalCount) {}
+}

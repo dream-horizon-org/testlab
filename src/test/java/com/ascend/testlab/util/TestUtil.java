@@ -48,6 +48,7 @@ public final class TestUtil {
     Connection connection = getDatabaseConnection();
     executeSQLFile(connection, TestConstants.SCHEMA_FILE_PATH);
     log.info("Database schema created");
+    executeSQLFile(connection, TestConstants.SEED_FILE_PATH);
     connection.close();
   }
 

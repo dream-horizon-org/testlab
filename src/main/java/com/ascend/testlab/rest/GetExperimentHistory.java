@@ -1,20 +1,18 @@
 package com.ascend.testlab.rest;
 
-import com.ascend.testlab.constants.web.WebConstants;
 import com.ascend.testlab.dto.ResponseEntity;
+import com.ascend.testlab.dto.request.GetExperimentHistoryRequest;
 import com.ascend.testlab.dto.response.GetExperimentHistoryResponse;
-import com.ascend.testlab.exception.ErrorMessages;
 import com.ascend.testlab.service.AdminService;
 import com.google.inject.Inject;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.Valid;
+import jakarta.ws.rs.BeanParam;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.GET;
-import jakarta.ws.rs.HeaderParam;
 import jakarta.ws.rs.Path;
-import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
 import java.util.concurrent.CompletionStage;
@@ -44,12 +42,15 @@ public class GetExperimentHistory {
   }
 
   /**
-   * Handles the GET request to fetch the experiment history for a project.
+   * Handles the GET request to fetch the experiment history for a project with pagination support.
    *
-   * @param projectKey the project key provided in the x-project-key header
-   * @param experimentId the experiment ID provided as a path parameter
-   * @return a CompletionStage containing a ResponseEntity with the history payload
-   * @throws jakarta.validation.ConstraintViolationException if inputs are blank
+   * <p>Pagination defaults to limit=20 and page=1 if not specified. Page numbers start at 1.
+   *
+   * @param request the request containing project key (header), experiment ID (path), limit, and
+   *     page (query parameters)
+   * @return a CompletionStage containing a ResponseEntity with the history payload and pagination
+   *     metadata
+   * @throws jakarta.validation.ConstraintViolationException if inputs are blank or invalid
    */
   @GET
   @Consumes(MediaType.APPLICATION_JSON)
@@ -67,15 +68,14 @@ public class GetExperimentHistory {
       description = "Internal server error",
       content = @Content(schema = @Schema(implementation = ResponseEntity.Failure.class)))
   public CompletionStage<ResponseEntity.Success<GetExperimentHistoryResponse>> handle(
-      @HeaderParam(WebConstants.PROJECT_KEY_HEADER)
-          @NotBlank(message = ErrorMessages.PROJECT_KEY_MISSING)
-          String projectKey,
-      @PathParam(WebConstants.EXPERIMENT_ID)
-          @NotBlank(message = ErrorMessages.EXPERIMENT_ID_MISSING)
-          String experimentId) {
+      @BeanParam @Valid GetExperimentHistoryRequest request) {
 
     return adminService
-        .getExperimentHistory(projectKey, experimentId)
+        .getExperimentHistory(
+            request.getProjectKey(),
+            request.getExperimentId(),
+            request.getLimit(),
+            request.getPage())
         .map(ResponseEntity.Success::new)
         .toCompletionStage();
   }
