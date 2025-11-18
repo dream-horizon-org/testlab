@@ -244,9 +244,6 @@ class GetExperimentHistoryIT {
   }
 
   /**
-   * Seeds history for multiple different experiments (since schema only allows one entry per
-   * experiment).
-   *
    * @param projectKey the project key
    * @param count the number of different experiments to create history for
    */
