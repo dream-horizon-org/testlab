@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 import com.ascend.testlab.client.postgresql.PgReaderClient;
+import com.ascend.testlab.client.postgresql.PgWriterClient;
 import com.ascend.testlab.constants.enums.ExperimentStatus;
 import com.ascend.testlab.constants.enums.ExperimentType;
 import com.ascend.testlab.constants.postgresql.ReadQuery;
@@ -42,6 +43,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 class ExperimentDAOTest {
 
   @Mock private PgReaderClient pgReaderClient;
+  @Mock private PgWriterClient pgWriterClient;
 
   private ExperimentDAO experimentDAO;
 
@@ -50,7 +52,7 @@ class ExperimentDAOTest {
 
   @BeforeEach
   void setUp() {
-    this.experimentDAO = new ExperimentDAOImpl(pgReaderClient);
+    this.experimentDAO = new ExperimentDAOImpl(pgReaderClient, pgWriterClient);
   }
 
   @Nested
@@ -61,7 +63,7 @@ class ExperimentDAOTest {
     @DisplayName("Should create DAO with valid dependencies")
     void testConstructorWithValidDependencies(VertxTestContext testContext) {
       // Act
-      ExperimentDAO dao = new ExperimentDAOImpl(pgReaderClient);
+      ExperimentDAO dao = new ExperimentDAOImpl(pgReaderClient, pgWriterClient);
 
       // Assert
       assertNotNull(dao);

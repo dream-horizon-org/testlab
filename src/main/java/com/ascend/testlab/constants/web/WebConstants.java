@@ -93,4 +93,7 @@ public final class WebConstants {
 
   /** The default page value for pagination. */
   public static final String DEFAULT_PAGE = "1";
+
+  /** The path for deleting an experiment endpoint. */
+  public static final String DELETE_EXPERIMENT_PATH = "/v1/experiments/delete";
 }

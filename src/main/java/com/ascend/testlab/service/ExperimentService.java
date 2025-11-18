@@ -44,4 +44,6 @@ public interface ExperimentService {
    */
   Single<FilterExperimentsResponse> filterExperiments(
       String projectKey, FilterExperimentsRequest request);
+
+  Single<Boolean> deleteExperiment(String projectKey, String experimentId);
 }

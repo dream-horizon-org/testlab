@@ -28,4 +28,6 @@ public interface ExperimentDAO {
    */
   Single<FilterExperimentsResponse> filterExperiments(
       String projectKey, FilterExperimentsRequest req);
+
+  Maybe<Boolean> deleteExperiment(String projectKey, String experimentId);
 }
