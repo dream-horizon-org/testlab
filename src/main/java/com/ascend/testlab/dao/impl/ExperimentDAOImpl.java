@@ -55,11 +55,20 @@ public class ExperimentDAOImpl implements ExperimentDAO {
   public Single<FilterExperimentsResponse> filterExperiments(
       String projectKey, FilterExperimentsRequest req) {
     ParameterizedQuery parameterizedQuery =
-        FilterExperimentsQueryFactory.buildQuery(projectKey, req);
+        FilterExperimentsQueryFactory.buildQuery(projectKey, req, true);
 
     return pgReaderClient
         .fetchAll(parameterizedQuery.query(), parameterizedQuery.tuple(), row -> row)
-        .map(rows -> mapRowsToFilteredExperiment(rows, req));
+        .flatMap(
+            rows -> {
+              if (rows.isEmpty()) {
+                return getTotalFilteredExperimentsCount(projectKey, req)
+                    .map(count -> mapRowsToFilteredExperiment(rows, req, count));
+              }
+              return Single.just(
+                  mapRowsToFilteredExperiment(
+                      rows, req, rows.get(0).getInteger(Columns.TOTAL_COUNT)));
+            });
   }
 
   /**
@@ -67,11 +76,8 @@ public class ExperimentDAOImpl implements ExperimentDAO {
    * and builds pagination metadata.
    */
   private FilterExperimentsResponse mapRowsToFilteredExperiment(
-      List<Row> rows, FilterExperimentsRequest req) {
+      List<Row> rows, FilterExperimentsRequest req, Integer totalCount) {
     FilterExperimentsResponse response = new FilterExperimentsResponse();
-
-    // Extract total count from the first row (all rows have the same total_count value)
-    int totalCount = (rows.isEmpty()) ? 0 : rows.get(0).getInteger(Columns.TOTAL_COUNT);
 
     // Map all rows to experiments
     List<Experiment> experiments =
@@ -81,16 +87,40 @@ public class ExperimentDAOImpl implements ExperimentDAO {
 
     response.setExperiments(experiments);
 
-    FilterExperimentsResponse.PaginationMeta paginationMeta;
-    paginationMeta =
-        FilterExperimentsResponse.PaginationMeta.builder()
-            .pageSize(req.getLimit())
-            .currentPage(req.getPage())
-            .totalCount(totalCount)
-            .build();
+    FilterExperimentsResponse.PaginationMeta paginationMeta =
+        setPaginationInResponse(req, totalCount, rows.size());
 
     response.setPagination(paginationMeta);
 
     return response;
+  }
+
+  private Single<Integer> getTotalFilteredExperimentsCount(
+      String projectKey, FilterExperimentsRequest request) {
+    ParameterizedQuery parameterizedQuery =
+        FilterExperimentsQueryFactory.buildQuery(projectKey, request, false);
+
+    return pgReaderClient
+        .fetchOne(
+            parameterizedQuery.query(),
+            parameterizedQuery.tuple(),
+            row -> row.getInteger(Columns.TOTAL_COUNT))
+        .toSingle()
+        .onErrorReturnItem(0);
+  }
+
+  private FilterExperimentsResponse.PaginationMeta setPaginationInResponse(
+      FilterExperimentsRequest req, Integer totalCount, Integer rowCount) {
+    int currentPage = req.getPage();
+    int pageSize = rowCount;
+    int offset = (currentPage - 1) * req.getLimit();
+    boolean hasNextPage = pageSize == req.getLimit() && (offset + pageSize) <= totalCount;
+
+    return FilterExperimentsResponse.PaginationMeta.builder()
+        .pageSize(pageSize)
+        .currentPage(req.getPage())
+        .totalCount(totalCount)
+        .hasNextPage(hasNextPage)
+        .build();
   }
 }

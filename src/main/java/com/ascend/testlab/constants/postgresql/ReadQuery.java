@@ -1,6 +1,7 @@
 package com.ascend.testlab.constants.postgresql;
 
 import java.util.function.BiFunction;
+import java.util.function.Function;
 import java.util.function.IntFunction;
 import lombok.experimental.UtilityClass;
 
@@ -73,10 +74,13 @@ public final class ReadQuery {
   public static final IntFunction<String> TYPE_FILTER = " AND e.type = ANY($%d)"::formatted;
 
   /**
-   * Filter clause for filtering experiments by tags. Accepts the parameter index and returns the
-   * parameterized query fragment using ANY array syntax.
+   * Filter clause for filtering experiments by tags. Uses EXISTS subquery to filter experiments
+   * first, then all tags are aggregated for those experiments. Accepts the parameter index and
+   * returns the parameterized query fragment using ANY array syntax.
    */
-  public static final IntFunction<String> TAGS_FILTER = " AND t.tag = ANY($%d)"::formatted;
+  public static final IntFunction<String> TAGS_FILTER =
+      " AND EXISTS (SELECT 1 FROM experiment.tags t_filter WHERE t_filter.project_key = e.project_key AND t_filter.experiment_id = e.experiment_id AND t_filter.tag = ANY($%d))"
+          ::formatted;
 
   /**
    * Filter clause for filtering experiments by owners. Accepts the parameter index and returns the
@@ -103,4 +107,7 @@ public final class ReadQuery {
       LEFT JOIN experiment.owners o ON e.project_key = o.project_key AND e.experiment_id = o.experiment_id
       WHERE e.project_key = $1
       """;
+
+  public static final Function<String, String> COUNT_FILTERED_EXPERIMENTS =
+      "SELECT COUNT(*) as total_count FROM (%s) AS grouped_results"::formatted;
 }

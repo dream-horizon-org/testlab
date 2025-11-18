@@ -3,11 +3,7 @@ package com.ascend.testlab.dao.querybuilder.factory;
 import com.ascend.testlab.dao.querybuilder.core.BaseQueryBuilder;
 import com.ascend.testlab.dao.querybuilder.core.FilterQueryBuilder;
 import com.ascend.testlab.dao.querybuilder.core.ParameterizedQuery;
-import com.ascend.testlab.dao.querybuilder.decorator.filter.NameFilterQueryDecorator;
-import com.ascend.testlab.dao.querybuilder.decorator.filter.OwnerFilterQueryDecorator;
-import com.ascend.testlab.dao.querybuilder.decorator.filter.StatusFilterQueryDecorator;
-import com.ascend.testlab.dao.querybuilder.decorator.filter.TagFilterQueryDecorator;
-import com.ascend.testlab.dao.querybuilder.decorator.filter.TypeFilterQueryDecorator;
+import com.ascend.testlab.dao.querybuilder.decorator.filter.*;
 import com.ascend.testlab.dao.querybuilder.decorator.operation.GroupAndOrderQueryDecorator;
 import com.ascend.testlab.dao.querybuilder.decorator.operation.PaginationQueryDecorator;
 import com.ascend.testlab.dto.request.FilterExperimentsRequest;
@@ -34,7 +30,8 @@ public final class FilterExperimentsQueryFactory {
    * @param request the filter experiments request containing filter criteria
    * @return the ParameterizedQuery containing the parameterized SQL query and parameters
    */
-  public static ParameterizedQuery buildQuery(String projectKey, FilterExperimentsRequest request) {
+  public static ParameterizedQuery buildQuery(
+      String projectKey, FilterExperimentsRequest request, Boolean isPaginationReq) {
     FilterQueryBuilder baseQuery = new BaseQueryBuilder(projectKey);
 
     if (request.hasNameFilter()) {
@@ -58,9 +55,13 @@ public final class FilterExperimentsQueryFactory {
     }
     baseQuery = new GroupAndOrderQueryDecorator(baseQuery);
 
-    // Apply pagination at the end
-    int offset = (request.getPage() - 1) * request.getLimit();
-    baseQuery = new PaginationQueryDecorator(baseQuery, request.getLimit(), offset);
+    if (isPaginationReq) {
+      // Apply pagination at the end
+      int offset = (request.getPage() - 1) * request.getLimit();
+      baseQuery = new PaginationQueryDecorator(baseQuery, request.getLimit(), offset);
+    } else {
+      baseQuery = new CountFilterQueryDecorator(baseQuery);
+    }
 
     return baseQuery.buildQuery();
   }

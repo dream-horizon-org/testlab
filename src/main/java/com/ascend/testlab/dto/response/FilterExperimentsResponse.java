@@ -1,6 +1,7 @@
 package com.ascend.testlab.dto.response;
 
 import com.ascend.testlab.dto.entity.Experiment;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -28,8 +29,16 @@ public class FilterExperimentsResponse {
   @AllArgsConstructor
   @Builder
   public static class PaginationMeta {
+    @JsonProperty("current_page")
     private int currentPage;
+
+    @JsonProperty("page_size")
     private int pageSize;
+
+    @JsonProperty("total_count")
     private int totalCount;
+
+    @JsonProperty("has_next_page")
+    private boolean hasNextPage;
   }
 }

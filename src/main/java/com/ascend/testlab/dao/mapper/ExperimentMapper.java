@@ -6,6 +6,7 @@ import com.ascend.testlab.constants.enums.ExperimentType;
 import com.ascend.testlab.constants.enums.HealthStatus;
 import com.ascend.testlab.constants.postgresql.Columns;
 import com.ascend.testlab.dto.entity.Experiment;
+import com.ascend.testlab.util.CommonUtil;
 import io.vertx.rxjava3.sqlclient.Row;
 import java.util.List;
 import java.util.UUID;
@@ -70,7 +71,7 @@ public class ExperimentMapper {
             .createdBy(row.getString(Columns.CREATED_BY))
             .createdAt(row.getOffsetDateTime(Columns.CREATED_AT).toInstant())
             .updatedAt(row.getOffsetDateTime(Columns.UPDATED_AT).toInstant())
-            .tags(row.getString(Columns.TAGS))
+            .tags(CommonUtil.separateCommaSeparatedString(row.getString(Columns.TAGS)))
             .owner(row.getString(Columns.OWNERS));
 
     return builder.build();
