@@ -66,6 +66,105 @@ paths:
                 type: boolean
         "400":
           description: Invalid enum values or validation constraints
+  /v1/experiments:
+    get:
+      operationId: filterExperimentsHandle
+      parameters:
+      - name: x-project-key
+        in: header
+        required: true
+        schema:
+          type: string
+      - name: status
+        in: query
+        schema:
+          type: string
+      - name: owner
+        in: query
+        schema:
+          type: string
+      - name: name
+        in: query
+        schema:
+          type: string
+      - name: type
+        in: query
+        schema:
+          type: string
+      - name: tag
+        in: query
+        schema:
+          type: string
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          format: int32
+          default: 20
+      - name: page
+        in: query
+        schema:
+          type: integer
+          format: int32
+          default: 1
+      responses:
+        "200":
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Success'
+        "400":
+          description: Project Key is missing
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Failure'
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Failure'
+  /v1/experiments/{experimentId}:
+    get:
+      operationId: getExperimentHandle
+      parameters:
+      - name: x-project-key
+        in: header
+        required: true
+        schema:
+          type: string
+      - name: experimentId
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Success'
+        "400":
+          description: Experiment Id is not valid
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Failure'
+        "404":
+          description: Experiment not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Failure'
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Failure'
   /v1/experiments/tags:
     get:
       operationId: getTagsHandle
@@ -183,7 +282,8 @@ components:
         type:
           type: string
           enum:
-          - A_B
+          - A/A
+          - A/B
         guardrail_health_status:
           type: string
           enum:
@@ -372,7 +472,8 @@ components:
         type:
           type: string
           enum:
-          - A_B
+          - A/A
+          - A/B
         guardrail_health_status:
           type: string
           enum:
@@ -446,6 +547,11 @@ components:
           type: string
         end_date:
           type: string
+    Success:
+      type: object
+      properties:
+        data:
+          type: object
     ErrorEntity:
       type: object
       properties:
@@ -460,6 +566,121 @@ components:
       properties:
         error:
           $ref: '#/components/schemas/ErrorEntity'
+    Experiment:
+      type: object
+      properties:
+        experimentId:
+          type: string
+          format: uuid
+        projectKey:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+        hypothesis:
+          type: string
+        status:
+          type: string
+          enum:
+          - LIVE
+          - PAUSED
+          - DRAFT
+          - CONCLUDED
+          - TERMINATED
+        type:
+          type: string
+          enum:
+          - A/A
+          - A/B
+        guardrailHealthStatus:
+          type: string
+          enum:
+          - WARNING
+          - PASSED
+          - NO_CHECKS_AVAILABLE
+          - FAILED
+        cohorts:
+          type: array
+          items:
+            type: string
+        variantWeights:
+          $ref: '#/components/schemas/JsonObject'
+        assignmentStrategy:
+          type: string
+          enum:
+          - RANDOM
+          - ROUND_ROBIN
+        overrides:
+          $ref: '#/components/schemas/JsonObject'
+        ruleAttributes:
+          $ref: '#/components/schemas/JsonObject'
+        winningVariant:
+          $ref: '#/components/schemas/JsonObject'
+        exposure:
+          type: integer
+          format: int32
+        threshold:
+          type: integer
+          format: int64
+        startTime:
+          type: integer
+          format: int64
+        endTime:
+          type: integer
+          format: int64
+        createdBy:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        tags:
+          type: string
+        owner:
+          type: string
+    FilterExperimentsResponse:
+      type: object
+      properties:
+        experiments:
+          type: array
+          items:
+            $ref: '#/components/schemas/Experiment'
+        pagination:
+          $ref: '#/components/schemas/PaginationMeta'
+    JsonObject:
+      type: object
+      properties:
+        map:
+          type: object
+          additionalProperties:
+            type: object
+        empty:
+          type: boolean
+    PaginationMeta:
+      type: object
+      properties:
+        currentPage:
+          type: integer
+          format: int32
+        pageSize:
+          type: integer
+          format: int32
+        totalCount:
+          type: integer
+          format: int32
+    SuccessFilterExperimentsResponse:
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/FilterExperimentsResponse'
+    SuccessExperiment:
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/Experiment'
     SuccessTagsResponse:
       type: object
       properties:

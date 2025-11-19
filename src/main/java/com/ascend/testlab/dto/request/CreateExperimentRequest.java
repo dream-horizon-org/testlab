@@ -138,7 +138,7 @@ public class CreateExperimentRequest {
   private ExperimentStrategy distributionStrategy;
 
   @JsonProperty("assignment_domain")
-  @NotNull(message = "ExperimentStrategy is required")
+  @NotNull(message = "assignmentDomain is required")
   @ValidEnumValue(
       enumClass = AssignmentDomain.class,
       method = Constants.NAME,

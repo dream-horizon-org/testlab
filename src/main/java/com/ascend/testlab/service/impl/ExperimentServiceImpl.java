@@ -3,11 +3,16 @@ package com.ascend.testlab.service.impl;
 import com.ascend.testlab.client.postgresql.PgWriterClient;
 import com.ascend.testlab.constants.enums.ExperimentStatus;
 import com.ascend.testlab.dao.ExperimentDAO;
+import com.ascend.testlab.dto.entity.Experiment;
 import com.ascend.testlab.dto.request.CreateExperimentRequest;
+import com.ascend.testlab.dto.request.FilterExperimentsRequest;
 import com.ascend.testlab.dto.request.UpdateExperimentRequest;
 import com.ascend.testlab.dto.response.CreateExperimentResponse;
+import com.ascend.testlab.dto.response.FilterExperimentsResponse;
 import com.ascend.testlab.dto.response.UpdateExperimentResponse;
+import com.ascend.testlab.exception.ErrorEnum;
 import com.ascend.testlab.service.ExperimentService;
+import com.dream11.rest.exception.RestException;
 import com.google.inject.Inject;
 import io.reactivex.rxjava3.core.Single;
 import java.util.List;
@@ -207,7 +212,12 @@ public class ExperimentServiceImpl implements ExperimentService {
                           status);
                   log.error(
                       "Update blocked for experimentId: {}, reason: {}", experimentId, errorMsg);
-                  return Single.error(new IllegalArgumentException(errorMsg));
+                  return Single.error(
+                      new RestException(
+                          "INVALID_REQUEST",
+                          errorMsg,
+                          org.apache.http.HttpStatus.SC_BAD_REQUEST,
+                          null));
                 }
               }
 
@@ -225,7 +235,12 @@ public class ExperimentServiceImpl implements ExperimentService {
                   validateStatusTransition(currentStatus, newStatus, experimentId);
                 } catch (IllegalArgumentException e) {
                   log.error("Status transition validation failed: {}", e.getMessage());
-                  return Single.error(e);
+                  return Single.error(
+                      new RestException(
+                          "INVALID_REQUEST",
+                          e.getMessage(),
+                          org.apache.http.HttpStatus.SC_BAD_REQUEST,
+                          e));
                 }
               }
 
@@ -435,5 +450,61 @@ public class ExperimentServiceImpl implements ExperimentService {
           || request.getEndTime() != null
           || tags != null;
     }
+  }
+
+  /**
+   * {@inheritDoc}
+   *
+   * <p>Delegates to the DAO layer to fetch the experiment. Handles error translation:
+   *
+   * <ul>
+   *   <li>EXPERIMENT_NOT_FOUND: If no experiment is found with the given project Key and experiment
+   *       ID.
+   *   <li>REST_GET_EXPERIMENT_BY_ID_FAILED: For any other errors encountered during retrieval.
+   * </ul>
+   */
+  @Override
+  public Single<Experiment> getExperiment(String projectKey, String experimentId) {
+    return experimentDAO
+        .getExperiment(projectKey, experimentId)
+        .switchIfEmpty(Single.error(new RestException(ErrorEnum.EXPERIMENT_NOT_FOUND)))
+        .onErrorResumeNext(
+            err -> {
+              log.error(
+                  "Error in get Experiments for project {} and experimentID {} : {}",
+                  projectKey,
+                  experimentId,
+                  err.getMessage());
+              return Single.error(
+                  ErrorEnum.handleException(
+                      err, new RestException(ErrorEnum.REST_GET_EXPERIMENT_BY_ID_FAILED, err)));
+            });
+  }
+
+  /**
+   * {@inheritDoc}
+   *
+   * <p>Delegates filtering to the DAO layer. The DAO handles all filter combinations including
+   * status, type, name, tags, and owners. Multiple filter values can be provided as comma-separated
+   * strings for status, type, tag, and owner parameters.
+   *
+   * <p>Pagination is applied in the SQL query using LIMIT and OFFSET clauses, which is more
+   * efficient than in-memory pagination. The total count is obtained using a window function in the
+   * same query, eliminating the need for a separate COUNT query. Defaults to limit=20 and page=1 if
+   * not specified.
+   */
+  @Override
+  public Single<FilterExperimentsResponse> filterExperiments(
+      String projectKey, FilterExperimentsRequest request) {
+    return experimentDAO
+        .filterExperiments(projectKey, request)
+        .onErrorResumeNext(
+            err -> {
+              log.error(
+                  "Error in filter Experiments for project {}: {}", projectKey, err.getMessage());
+              return Single.error(
+                  ErrorEnum.handleException(
+                      err, new RestException(ErrorEnum.REST_FILTER_EXPERIMENTS_FAILED, err)));
+            });
   }
 }

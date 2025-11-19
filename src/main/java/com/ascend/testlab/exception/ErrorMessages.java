@@ -31,4 +31,13 @@ public final class ErrorMessages {
   public static final String INVALID_EXPERIMENT_STRATEGY = "invalid experiment strategy";
 
   public static final String INVALID_ASSIGNMENT_DOMAIN = "invalid assignment domain";
+
+  /** The error message for invalid limit value. */
+  public static final String INVALID_LIMIT_VALUE = "Limit must be greater than zero";
+
+  /** The error message for invalid page value. */
+  public static final String INVALID_PAGE_VALUE = "Page value must be greater than zero";
+
+  /** The error message for the experiment ID missing. */
+  public static final String EXPERIMENT_ID_MISSING = "Experiment ID is missing or blank";
 }

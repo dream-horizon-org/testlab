@@ -1,8 +1,11 @@
 package com.ascend.testlab.service;
 
+import com.ascend.testlab.dto.entity.Experiment;
 import com.ascend.testlab.dto.request.CreateExperimentRequest;
+import com.ascend.testlab.dto.request.FilterExperimentsRequest;
 import com.ascend.testlab.dto.request.UpdateExperimentRequest;
 import com.ascend.testlab.dto.response.CreateExperimentResponse;
+import com.ascend.testlab.dto.response.FilterExperimentsResponse;
 import com.ascend.testlab.dto.response.UpdateExperimentResponse;
 import io.reactivex.rxjava3.core.Single;
 import java.util.UUID;
@@ -41,4 +44,33 @@ public interface ExperimentService {
    */
   Single<UpdateExperimentResponse> update(
       UUID tenantId, String projectKey, UUID experimentId, UpdateExperimentRequest request);
+
+  /**
+   * Retrieves a single experiment by project Key and experiment ID.
+   *
+   * @param projectKey the project Key that contains the experiment
+   * @param experimentId the unique identifier of the experiment to retrieve
+   * @return a Single containing the Experiment object if found, or an error if not found or on
+   *     failure
+   */
+  Single<Experiment> getExperiment(String projectKey, String experimentId);
+
+  /**
+   * Filters experiments based on the provided criteria and returns paginated results.
+   *
+   * <p>Supports filtering by multiple criteria including status, type, name, tags, and owners.
+   * Multiple filter values can be provided as comma-separated strings for status, type, tag, and
+   * owner parameters. The name filter supports text search and does not support comma-separated
+   * values.
+   *
+   * <p>Pagination defaults to limit=20 and page=1 if not specified. Page numbers start at 1.
+   *
+   * @param projectKey the project Key to filter experiments within
+   * @param request the filter criteria including status, type, name, tags, owners, and pagination
+   *     parameters (limit and page)
+   * @return a Single containing FilterExperimentsResponse with filtered and paginated experiments
+   *     along with pagination metadata
+   */
+  Single<FilterExperimentsResponse> filterExperiments(
+      String projectKey, FilterExperimentsRequest request);
 }

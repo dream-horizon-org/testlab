@@ -25,7 +25,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
-import java.util.NoSuchElementException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.jupiter.api.BeforeEach;
@@ -477,7 +476,7 @@ class PgReaderClientTest {
     }
 
     @Test
-    @DisplayName("Should throw NoSuchElementException when no rows found")
+    @DisplayName("Should return empty when no rows found")
     void testFetchOneNoRows(VertxTestContext testContext) {
       // Arrange
       String preparedQuery = "SELECT * FROM users WHERE id = $1";
@@ -493,8 +492,7 @@ class PgReaderClientTest {
 
       // Assert
       testObserver.awaitDone(1, TimeUnit.SECONDS);
-      testObserver.assertError(NoSuchElementException.class);
-      testObserver.assertError(e -> e.getMessage().equals("No rows fetched for the query"));
+      testObserver.assertResult();
       testContext.completeNow();
     }
 

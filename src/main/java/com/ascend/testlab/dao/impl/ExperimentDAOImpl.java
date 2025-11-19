@@ -3,14 +3,22 @@ package com.ascend.testlab.dao.impl;
 import com.ascend.testlab.client.postgresql.PgReaderClient;
 import com.ascend.testlab.client.postgresql.PgWriterClient;
 import com.ascend.testlab.constants.Constants;
+import com.ascend.testlab.constants.postgresql.Columns;
 import com.ascend.testlab.constants.postgresql.ReadQuery;
 import com.ascend.testlab.constants.postgresql.WriteQuery;
 import com.ascend.testlab.dao.ExperimentDAO;
+import com.ascend.testlab.dao.mapper.ExperimentMapper;
+import com.ascend.testlab.dao.querybuilder.core.ParameterizedQuery;
+import com.ascend.testlab.dao.querybuilder.factory.FilterExperimentsQueryFactory;
+import com.ascend.testlab.dto.entity.Experiment;
 import com.ascend.testlab.dto.request.CreateExperimentRequest;
+import com.ascend.testlab.dto.request.FilterExperimentsRequest;
 import com.ascend.testlab.dto.request.UpdateExperimentRequest;
+import com.ascend.testlab.dto.response.FilterExperimentsResponse;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.inject.Inject;
+import io.reactivex.rxjava3.core.Maybe;
 import io.reactivex.rxjava3.core.Single;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
@@ -299,7 +307,8 @@ public class ExperimentDAOImpl implements ExperimentDAO {
                   experimentId,
                   error.getMessage());
               return new HashMap<>();
-            });
+            })
+        .toSingle();
   }
 
   /**
@@ -650,7 +659,6 @@ public class ExperimentDAOImpl implements ExperimentDAO {
    *
    * @param projectKey project identifier for partitioning
    * @param experimentId experiment identifier
-   * @param experimentFields map of experiment fields to update
    * @param tags list of tags to update (null if no tag update)
    * @param owners list of owners to update (null if no owner update)
    * @param metrics list of metrics to update (null if no metrics update)
@@ -1114,7 +1122,6 @@ public class ExperimentDAOImpl implements ExperimentDAO {
    * @param connection SQL connection for transaction
    * @param projectKey project identifier for partitioning
    * @param experimentId experiment identifier
-   * @param owner owner name/email
    * @return Single emitting true on success, false on failure
    */
   @Override
@@ -1533,5 +1540,58 @@ public class ExperimentDAOImpl implements ExperimentDAO {
       log.error("DAO: Failed to convert DTO to Map: {}", e.getMessage(), e);
       throw new RuntimeException("Failed to convert DTO to Map", e);
     }
+  }
+
+  /** {@inheritDoc} */
+  @Override
+  public Maybe<Experiment> getExperiment(String projectKey, String experimentId) {
+    return pgReaderClient.fetchOne(
+        ReadQuery.GET_EXPERIMENT,
+        Tuple.of(projectKey, experimentId),
+        ExperimentMapper::mapRowToExperiment);
+  }
+
+  /** {@inheritDoc} */
+  @Override
+  public Single<FilterExperimentsResponse> filterExperiments(
+      String projectKey, FilterExperimentsRequest req) {
+    ParameterizedQuery parameterizedQuery =
+        FilterExperimentsQueryFactory.buildQuery(projectKey, req);
+
+    return pgReaderClient
+        .fetchAll(parameterizedQuery.query(), parameterizedQuery.tuple(), row -> row)
+        .map(rows -> mapRowsToFilteredExperiment(rows, req));
+  }
+
+  /**
+   * Maps database rows to a FilterExperimentsResponse object. Extracts experiment data from rows
+   * and builds pagination metadata.
+   */
+  private FilterExperimentsResponse mapRowsToFilteredExperiment(
+      List<Row> rows, FilterExperimentsRequest req) {
+    FilterExperimentsResponse response = new FilterExperimentsResponse();
+
+    // Extract total count from the first row (all rows have the same total_count value)
+    int totalCount = (rows.isEmpty()) ? 0 : rows.get(0).getInteger(Columns.TOTAL_COUNT);
+
+    // Map all rows to experiments
+    List<Experiment> experiments =
+        (rows.isEmpty())
+            ? List.of()
+            : rows.stream().map(ExperimentMapper::mapRowToExperiment).toList();
+
+    response.setExperiments(experiments);
+
+    FilterExperimentsResponse.PaginationMeta paginationMeta;
+    paginationMeta =
+        FilterExperimentsResponse.PaginationMeta.builder()
+            .pageSize(req.getLimit())
+            .currentPage(req.getPage())
+            .totalCount(totalCount)
+            .build();
+
+    response.setPagination(paginationMeta);
+
+    return response;
   }
 }
