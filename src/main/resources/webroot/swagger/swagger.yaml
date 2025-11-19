@@ -4,6 +4,39 @@ info:
   description: testlab Service
   version: "1.0"
 paths:
+  /v1/experiments/delete:
+    delete:
+      operationId: handle
+      parameters:
+      - name: x-project-key
+        in: header
+        required: true
+        schema:
+          type: string
+      - name: experimentId
+        in: query
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Success'
+        "400":
+          description: Project id is missing or Experiment id is invalid
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Failure'
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Failure'
   /v1/experiments:
     get:
       operationId: filterExperimentsHandle
@@ -152,6 +185,11 @@ components:
       properties:
         error:
           $ref: '#/components/schemas/ErrorEntity'
+    SuccessBoolean:
+      type: object
+      properties:
+        data:
+          type: boolean
     Experiment:
       type: object
       properties:

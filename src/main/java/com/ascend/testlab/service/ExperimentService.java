@@ -45,5 +45,17 @@ public interface ExperimentService {
   Single<FilterExperimentsResponse> filterExperiments(
       String projectKey, FilterExperimentsRequest request);
 
+  /**
+   * Deletes an experiment by project Key and experiment ID.
+   *
+   * <p>Deletes a single experiment and all its associated data including tags and owner mappings.
+   * The deletion is performed in a transaction to ensure data consistency. The previous experiment
+   * data is logged in the experiment_log table for audit purposes.
+   *
+   * @param projectKey the project Key that contains the experiment to delete
+   * @param experimentId the unique identifier of the experiment to delete
+   * @return a Single containing true if the deletion was successful, or an error if the experiment
+   *     ID is invalid, the experiment does not exist, or on failure
+   */
   Single<Boolean> deleteExperiment(String projectKey, String experimentId);
 }

@@ -100,6 +100,7 @@ public class ExperimentDAOImpl implements ExperimentDAO {
     return response;
   }
 
+  /** {@inheritDoc} */
   @Override
   public Maybe<Boolean> deleteExperiment(String projectKey, String experimentId) {
     Tuple tuple = Tuple.of(projectKey, experimentId);
@@ -110,28 +111,24 @@ public class ExperimentDAOImpl implements ExperimentDAO {
               JsonObject previous_data_json = JsonObject.mapFrom(exp);
 
               return pgWriterClient.executeWithTransaction(
-                  (sqlConnection) -> {
-                    return pgWriterClient
-                        .execute(sqlConnection, WriteQuery.DELETE_EXPERIMENT_BY_ID, tuple)
-                        .flatMap(
-                            delExp -> {
-                              return pgWriterClient.execute(
-                                  sqlConnection, WriteQuery.DELETE_TAG_FOR_EXPERIMENT, tuple);
-                            })
-                        .flatMap(
-                            delTag -> {
-                              return pgWriterClient.execute(
-                                  sqlConnection, WriteQuery.DELETE_OWNER_FOR_EXPERIMENT, tuple);
-                            })
-                        .flatMap(
-                            delOwner -> {
-                              return pgWriterClient.execute(
-                                  sqlConnection,
-                                  WriteQuery.UPDATE_EXPERIMENT_LOG,
-                                  tuple.addJsonObject(previous_data_json));
-                            })
-                        .toMaybe();
-                  });
+                  (sqlConnection) ->
+                      pgWriterClient
+                          .execute(sqlConnection, WriteQuery.DELETE_EXPERIMENT_BY_ID, tuple)
+                          .flatMap(
+                              delExp ->
+                                  pgWriterClient.execute(
+                                      sqlConnection, WriteQuery.DELETE_TAG_FOR_EXPERIMENT, tuple))
+                          .flatMap(
+                              delTag ->
+                                  pgWriterClient.execute(
+                                      sqlConnection, WriteQuery.DELETE_OWNER_FOR_EXPERIMENT, tuple))
+                          .flatMap(
+                              delOwner ->
+                                  pgWriterClient.execute(
+                                      sqlConnection,
+                                      WriteQuery.UPDATE_EXPERIMENT_LOG,
+                                      tuple.addJsonObject(previous_data_json)))
+                          .toMaybe());
             });
   }
 }

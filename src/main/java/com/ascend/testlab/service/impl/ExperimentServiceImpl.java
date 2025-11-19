@@ -93,6 +93,7 @@ public class ExperimentServiceImpl implements ExperimentService {
             });
   }
 
+  /** {@inheritDoc}* */
   @Override
   public Single<Boolean> deleteExperiment(String projectKey, String experimentId) {
     return experimentDAO
