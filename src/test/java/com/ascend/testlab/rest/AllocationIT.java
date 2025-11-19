@@ -53,9 +53,9 @@ class AllocationIT {
     Map<String, String> headers = Map.of(WebConstants.PROJECT_KEY_HEADER, projectKey);
 
     Map<String, Object> requestBody = new HashMap<>();
-    requestBody.put("userId", "user-123");
-    requestBody.put("guestId", "guest-123");
-    requestBody.put("experiments", List.of(experimentKey));
+    requestBody.put("user_id", "user-123");
+    requestBody.put("stable_id", "guest-123");
+    requestBody.put("experiment_keys", List.of(experimentKey));
     requestBody.put("attributes", createDefaultAttributes());
 
     ValidatableResponse response =
@@ -65,13 +65,12 @@ class AllocationIT {
     response.statusCode(HttpStatus.SC_OK);
     response.contentType(WebConstants.APPLICATION_JSON);
     response.body("data", Matchers.notNullValue());
-    response.body("data.experimentMap", Matchers.notNullValue());
-    response.body("data.experimentMap.size()", Matchers.equalTo(1));
-    response.body("data.experimentMap[0].experimentId", Matchers.notNullValue());
-    response.body("data.experimentMap[0].experimentName", Matchers.notNullValue());
-    response.body("data.experimentMap[0].variant", Matchers.notNullValue());
-    response.body("data.experimentMap[0].variantName", Matchers.notNullValue());
-    response.body("data.experimentMap[0].assignedAt", Matchers.notNullValue());
+    response.body("data.experiment_map", Matchers.notNullValue());
+    response.body("data.experiment_map.size()", Matchers.equalTo(1));
+    response.body("data.experiment_map[0].experiment_id", Matchers.notNullValue());
+    response.body("data.experiment_map[0].experiment_name", Matchers.notNullValue());
+    response.body("data.experiment_map[0].variant", Matchers.notNullValue());
+    response.body("data.experiment_map[0].assigned_at", Matchers.notNullValue());
   }
 
   @Test
@@ -90,9 +89,9 @@ class AllocationIT {
     Map<String, String> headers = Map.of(WebConstants.PROJECT_KEY_HEADER, projectKey);
 
     Map<String, Object> requestBody = new HashMap<>();
-    requestBody.put("userId", "user-456");
-    requestBody.put("guestId", "guest-456");
-    requestBody.put("experiments", List.of(experimentKey1, experimentKey2, experimentKey3));
+    requestBody.put("user_id", "user-456");
+    requestBody.put("stable_id", "guest-456");
+    requestBody.put("experiment_keys", List.of(experimentKey1, experimentKey2, experimentKey3));
     requestBody.put("attributes", createDefaultAttributes());
 
     ValidatableResponse response =
@@ -102,18 +101,55 @@ class AllocationIT {
     response.statusCode(HttpStatus.SC_OK);
     response.contentType(WebConstants.APPLICATION_JSON);
     response.body("data", Matchers.notNullValue());
-    response.body("data.experimentMap", Matchers.notNullValue());
-    response.body("data.experimentMap.size()", Matchers.greaterThanOrEqualTo(1));
+    response.body("data.experiment_map", Matchers.notNullValue());
+    response.body("data.experiment_map.size()", Matchers.greaterThanOrEqualTo(1));
   }
 
   @Test
-  void testAllocation_MissingUserId_BadRequest() {
+  void testAllocation_Missinguser_id_Success() {
 
     Map<String, String> headers = Map.of(WebConstants.PROJECT_KEY_HEADER, projectKey);
 
     Map<String, Object> requestBody = new HashMap<>();
-    requestBody.put("guestId", "guest-789");
-    requestBody.put("experiments", List.of("test-experiment-key"));
+    requestBody.put("stable_id", "guest-789");
+    requestBody.put("experiment_keys", List.of("test-experiment-key"));
+    requestBody.put("attributes", createDefaultAttributes());
+
+    ValidatableResponse response =
+        TestUtil.executeRequest(
+            requestBody, headers, null, spec -> spec.post(this.allocationRoute));
+
+    // Should succeed with only stable_id (user_id is optional)
+    response.statusCode(HttpStatus.SC_OK);
+  }
+
+  @Test
+  void testAllocation_Missingstable_id_Success() {
+
+    Map<String, String> headers = Map.of(WebConstants.PROJECT_KEY_HEADER, projectKey);
+
+    Map<String, Object> requestBody = new HashMap<>();
+    requestBody.put("user_id", "user-789");
+    requestBody.put("experiment_keys", List.of("test-experiment-key"));
+    requestBody.put("attributes", createDefaultAttributes());
+
+    ValidatableResponse response =
+        TestUtil.executeRequest(
+            requestBody, headers, null, spec -> spec.post(this.allocationRoute));
+
+    // Should succeed with only user_id (stable_id is optional)
+    response.statusCode(HttpStatus.SC_OK);
+  }
+
+  @Test
+  void testAllocation_Emptyexperiment_keysList_BadRequest() {
+
+    Map<String, String> headers = Map.of(WebConstants.PROJECT_KEY_HEADER, projectKey);
+
+    Map<String, Object> requestBody = new HashMap<>();
+    requestBody.put("user_id", "user-789");
+    requestBody.put("stable_id", "guest-789");
+    requestBody.put("experiment_keys", List.of());
     requestBody.put("attributes", createDefaultAttributes());
 
     ValidatableResponse response =
@@ -124,74 +160,41 @@ class AllocationIT {
   }
 
   @Test
-  void testAllocation_MissingGuestId_BadRequest() {
+  void testAllocation_Blankuser_id_Success() {
 
     Map<String, String> headers = Map.of(WebConstants.PROJECT_KEY_HEADER, projectKey);
 
     Map<String, Object> requestBody = new HashMap<>();
-    requestBody.put("userId", "user-789");
-    requestBody.put("experiments", List.of("test-experiment-key"));
+    requestBody.put("user_id", "   ");
+    requestBody.put("stable_id", "guest-789");
+    requestBody.put("experiment_keys", List.of("test-experiment-key"));
     requestBody.put("attributes", createDefaultAttributes());
 
     ValidatableResponse response =
         TestUtil.executeRequest(
             requestBody, headers, null, spec -> spec.post(this.allocationRoute));
 
-    response.statusCode(HttpStatus.SC_BAD_REQUEST);
+    // Should succeed with valid stable_id even if user_id is blank
+    response.statusCode(HttpStatus.SC_OK);
   }
 
   @Test
-  void testAllocation_EmptyExperimentsList_BadRequest() {
+  void testAllocation_Blankstable_id_Success() {
 
     Map<String, String> headers = Map.of(WebConstants.PROJECT_KEY_HEADER, projectKey);
 
     Map<String, Object> requestBody = new HashMap<>();
-    requestBody.put("userId", "user-789");
-    requestBody.put("guestId", "guest-789");
-    requestBody.put("experiments", List.of());
+    requestBody.put("user_id", "user-789");
+    requestBody.put("stable_id", "   ");
+    requestBody.put("experiment_keys", List.of("test-experiment-key"));
     requestBody.put("attributes", createDefaultAttributes());
 
     ValidatableResponse response =
         TestUtil.executeRequest(
             requestBody, headers, null, spec -> spec.post(this.allocationRoute));
 
-    response.statusCode(HttpStatus.SC_BAD_REQUEST);
-  }
-
-  @Test
-  void testAllocation_BlankUserId_BadRequest() {
-
-    Map<String, String> headers = Map.of(WebConstants.PROJECT_KEY_HEADER, projectKey);
-
-    Map<String, Object> requestBody = new HashMap<>();
-    requestBody.put("userId", "   ");
-    requestBody.put("guestId", "guest-789");
-    requestBody.put("experiments", List.of("test-experiment-key"));
-    requestBody.put("attributes", createDefaultAttributes());
-
-    ValidatableResponse response =
-        TestUtil.executeRequest(
-            requestBody, headers, null, spec -> spec.post(this.allocationRoute));
-
-    response.statusCode(HttpStatus.SC_BAD_REQUEST);
-  }
-
-  @Test
-  void testAllocation_BlankGuestId_BadRequest() {
-
-    Map<String, String> headers = Map.of(WebConstants.PROJECT_KEY_HEADER, projectKey);
-
-    Map<String, Object> requestBody = new HashMap<>();
-    requestBody.put("userId", "user-789");
-    requestBody.put("guestId", "   ");
-    requestBody.put("experiments", List.of("test-experiment-key"));
-    requestBody.put("attributes", createDefaultAttributes());
-
-    ValidatableResponse response =
-        TestUtil.executeRequest(
-            requestBody, headers, null, spec -> spec.post(this.allocationRoute));
-
-    response.statusCode(HttpStatus.SC_BAD_REQUEST);
+    // Should succeed with valid user_id even if stable_id is blank
+    response.statusCode(HttpStatus.SC_OK);
   }
 
   @Test
@@ -217,9 +220,9 @@ class AllocationIT {
     Map<String, String> headers = new HashMap<>();
 
     Map<String, Object> requestBody = new HashMap<>();
-    requestBody.put("userId", "user-default-123");
-    requestBody.put("guestId", "guest-default-123");
-    requestBody.put("experiments", List.of(experimentKey));
+    requestBody.put("user_id", "user-default-123");
+    requestBody.put("stable_id", "guest-default-123");
+    requestBody.put("experiment_keys", List.of(experimentKey));
     requestBody.put("attributes", createDefaultAttributes());
 
     ValidatableResponse response =
@@ -242,9 +245,9 @@ class AllocationIT {
 
     // Request with duplicate experiment keys - should only process unique keys
     Map<String, Object> requestBody = new HashMap<>();
-    requestBody.put("userId", "user-duplicate-test");
-    requestBody.put("guestId", "guest-duplicate-test");
-    requestBody.put("experiments", List.of(experimentKey, experimentKey, experimentKey));
+    requestBody.put("user_id", "user-duplicate-test");
+    requestBody.put("stable_id", "guest-duplicate-test");
+    requestBody.put("experiment_keys", List.of(experimentKey, experimentKey, experimentKey));
     requestBody.put("attributes", createDefaultAttributes());
 
     ValidatableResponse response =
@@ -254,9 +257,9 @@ class AllocationIT {
     response.statusCode(HttpStatus.SC_OK);
     response.contentType(WebConstants.APPLICATION_JSON);
     response.body("data", Matchers.notNullValue());
-    response.body("data.experimentMap", Matchers.notNullValue());
+    response.body("data.experiment_map", Matchers.notNullValue());
     // Should only have one experiment allocation despite duplicates in request
-    response.body("data.experimentMap.size()", Matchers.equalTo(1));
+    response.body("data.experiment_map.size()", Matchers.equalTo(1));
   }
 
   // ===========================
@@ -265,7 +268,7 @@ class AllocationIT {
 
   @Test
   void testGetAllocations_Success_WithExistingAllocations() {
-    String userId = "user-get-test-123";
+    String user_id = "user-get-test-123";
     String experimentId = UUID.randomUUID().toString();
     String experimentKey = "test-experiment-get";
 
@@ -275,9 +278,9 @@ class AllocationIT {
     Map<String, String> postHeaders = Map.of(WebConstants.PROJECT_KEY_HEADER, projectKey);
 
     Map<String, Object> allocateRequestBody = new HashMap<>();
-    allocateRequestBody.put("userId", userId);
-    allocateRequestBody.put("guestId", "guest-get-test-123");
-    allocateRequestBody.put("experiments", List.of(experimentKey));
+    allocateRequestBody.put("user_id", user_id);
+    allocateRequestBody.put("stable_id", "guest-get-test-123");
+    allocateRequestBody.put("experiment_keys", List.of(experimentKey));
     allocateRequestBody.put("attributes", createDefaultAttributes());
 
     TestUtil.executeRequest(
@@ -286,7 +289,7 @@ class AllocationIT {
     // Now retrieve the allocations
     Map<String, String> getHeaders = new HashMap<>();
     getHeaders.put(WebConstants.PROJECT_KEY_HEADER, projectKey);
-    getHeaders.put(WebConstants.USER_ID_HEADER, userId);
+    getHeaders.put(WebConstants.USER_ID_HEADER, user_id);
 
     ValidatableResponse response =
         TestUtil.executeRequest(null, getHeaders, null, spec -> spec.get(this.allocationRoute));
@@ -294,17 +297,17 @@ class AllocationIT {
     response.statusCode(HttpStatus.SC_OK);
     response.contentType(WebConstants.APPLICATION_JSON);
     response.body("data", Matchers.notNullValue());
-    response.body("data.experimentMap", Matchers.notNullValue());
-    response.body("data.experimentMap.size()", Matchers.greaterThanOrEqualTo(1));
+    response.body("data.experiment_map", Matchers.notNullValue());
+    response.body("data.experiment_map.size()", Matchers.greaterThanOrEqualTo(1));
   }
 
   @Test
   void testGetAllocations_Success_EmptyAllocations() {
-    String userId = "user-new-no-allocations";
+    String user_id = "user-new-no-allocations";
 
     Map<String, String> headers = new HashMap<>();
     headers.put(WebConstants.PROJECT_KEY_HEADER, projectKey);
-    headers.put(WebConstants.USER_ID_HEADER, userId);
+    headers.put(WebConstants.USER_ID_HEADER, user_id);
 
     ValidatableResponse response =
         TestUtil.executeRequest(null, headers, null, spec -> spec.get(this.allocationRoute));
@@ -312,30 +315,30 @@ class AllocationIT {
     response.statusCode(HttpStatus.SC_OK);
     response.contentType(WebConstants.APPLICATION_JSON);
     response.body("data", Matchers.notNullValue());
-    response.body("data.experimentMap", Matchers.notNullValue());
-    response.body("data.experimentMap.size()", Matchers.equalTo(0));
+    response.body("data.experiment_map", Matchers.notNullValue());
+    response.body("data.experiment_map.size()", Matchers.equalTo(0));
   }
 
   @Test
-  void testGetAllocations_MissingUserIdHeader_ReturnsEmptyList() {
+  void testGetAllocations_Missinguser_idHeader_ReturnsEmptyList() {
 
     Map<String, String> headers = Map.of(WebConstants.PROJECT_KEY_HEADER, projectKey);
 
     ValidatableResponse response =
         TestUtil.executeRequest(null, headers, null, spec -> spec.get(this.allocationRoute));
 
-    // UserId header is optional - returns 200 with empty list when not provided
+    // user_id header is optional - returns 200 with empty list when not provided
     response.statusCode(HttpStatus.SC_OK);
     response.contentType(WebConstants.APPLICATION_JSON);
     response.body("data", Matchers.notNullValue());
-    response.body("data.experimentMap", Matchers.notNullValue());
+    response.body("data.experiment_map", Matchers.notNullValue());
   }
 
   @Test
   void testGetAllocations_DefaultProjectKey_Success() {
-    String userId = "user-default-get-test";
+    String user_id = "user-default-get-test";
 
-    Map<String, String> headers = Map.of(WebConstants.USER_ID_HEADER, userId);
+    Map<String, String> headers = Map.of(WebConstants.USER_ID_HEADER, user_id);
 
     ValidatableResponse response =
         TestUtil.executeRequest(null, headers, null, spec -> spec.get(this.allocationRoute));
@@ -348,7 +351,7 @@ class AllocationIT {
 
   @Test
   void testGetAllocations_MultipleExperimentsAllocated() {
-    String userId = "user-multiple-exp-get";
+    String user_id = "user-multiple-exp-get";
     String experimentId1 = UUID.randomUUID().toString();
     String experimentId2 = UUID.randomUUID().toString();
     String experimentId3 = UUID.randomUUID().toString();
@@ -364,9 +367,10 @@ class AllocationIT {
     Map<String, String> postHeaders = Map.of(WebConstants.PROJECT_KEY_HEADER, projectKey);
 
     Map<String, Object> allocateRequestBody = new HashMap<>();
-    allocateRequestBody.put("userId", userId);
-    allocateRequestBody.put("guestId", "guest-multiple-exp-get");
-    allocateRequestBody.put("experiments", List.of(experimentKey1, experimentKey2, experimentKey3));
+    allocateRequestBody.put("user_id", user_id);
+    allocateRequestBody.put("stable_id", "guest-multiple-exp-get");
+    allocateRequestBody.put(
+        "experiment_keys", List.of(experimentKey1, experimentKey2, experimentKey3));
     allocateRequestBody.put("attributes", createDefaultAttributes());
 
     TestUtil.executeRequest(
@@ -375,7 +379,7 @@ class AllocationIT {
     // Now retrieve the allocations
     Map<String, String> getHeaders = new HashMap<>();
     getHeaders.put(WebConstants.PROJECT_KEY_HEADER, projectKey);
-    getHeaders.put(WebConstants.USER_ID_HEADER, userId);
+    getHeaders.put(WebConstants.USER_ID_HEADER, user_id);
 
     ValidatableResponse response =
         TestUtil.executeRequest(null, getHeaders, null, spec -> spec.get(this.allocationRoute));
@@ -383,13 +387,13 @@ class AllocationIT {
     response.statusCode(HttpStatus.SC_OK);
     response.contentType(WebConstants.APPLICATION_JSON);
     response.body("data", Matchers.notNullValue());
-    response.body("data.experimentMap", Matchers.notNullValue());
-    response.body("data.experimentMap.size()", Matchers.greaterThanOrEqualTo(1));
+    response.body("data.experiment_map", Matchers.notNullValue());
+    response.body("data.experiment_map.size()", Matchers.greaterThanOrEqualTo(1));
   }
 
   @Test
   void testGetAllocations_RetrieveSameAllocationsTwice() {
-    String userId = "user-consistent-allocations";
+    String user_id = "user-consistent-allocations";
     String experimentId = UUID.randomUUID().toString();
     String experimentKey = "test-experiment-consistent";
 
@@ -399,9 +403,9 @@ class AllocationIT {
     Map<String, String> postHeaders = Map.of(WebConstants.PROJECT_KEY_HEADER, projectKey);
 
     Map<String, Object> allocateRequestBody = new HashMap<>();
-    allocateRequestBody.put("userId", userId);
-    allocateRequestBody.put("guestId", "guest-consistent");
-    allocateRequestBody.put("experiments", List.of(experimentKey));
+    allocateRequestBody.put("user_id", user_id);
+    allocateRequestBody.put("stable_id", "guest-consistent");
+    allocateRequestBody.put("experiment_keys", List.of(experimentKey));
     allocateRequestBody.put("attributes", createDefaultAttributes());
 
     TestUtil.executeRequest(
@@ -410,20 +414,20 @@ class AllocationIT {
     // Retrieve allocations first time
     Map<String, String> getHeaders = new HashMap<>();
     getHeaders.put(WebConstants.PROJECT_KEY_HEADER, projectKey);
-    getHeaders.put(WebConstants.USER_ID_HEADER, userId);
+    getHeaders.put(WebConstants.USER_ID_HEADER, user_id);
 
     ValidatableResponse response1 =
         TestUtil.executeRequest(null, getHeaders, null, spec -> spec.get(this.allocationRoute));
 
     response1.statusCode(HttpStatus.SC_OK);
-    String variant1 = response1.extract().path("data.experimentMap[0].variantName");
+    String variant1 = response1.extract().path("data.experiment_map[0].variant_name");
 
     // Retrieve allocations second time - should be consistent
     ValidatableResponse response2 =
         TestUtil.executeRequest(null, getHeaders, null, spec -> spec.get(this.allocationRoute));
 
     response2.statusCode(HttpStatus.SC_OK);
-    String variant2 = response2.extract().path("data.experimentMap[0].variantName");
+    String variant2 = response2.extract().path("data.experiment_map[0].variant_name");
 
     // Variants should be the same across both calls
     assert variant1.equals(variant2) : "Variants should be consistent across multiple GET calls";

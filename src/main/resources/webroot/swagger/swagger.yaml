@@ -4,7 +4,7 @@ info:
   description: testlab Service
   version: "1.0"
 paths:
-  /v1/allocation:
+  /v1/allocations:
     get:
       operationId: getAllocationHandle
       parameters:
@@ -234,15 +234,15 @@ components:
     AllocationRequest:
       type: object
       properties:
-        experiments:
+        attributes:
+          $ref: '#/components/schemas/Attributes'
+        experiment_keys:
           type: array
           items:
             type: string
-        attributes:
-          $ref: '#/components/schemas/Attributes'
-        guestId:
+        stable_id:
           type: string
-        userId:
+        user_id:
           type: string
     Attributes:
       type: object
