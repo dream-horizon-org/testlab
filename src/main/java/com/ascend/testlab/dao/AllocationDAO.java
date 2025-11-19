@@ -24,6 +24,15 @@ public interface AllocationDAO {
    */
   Single<List<Experiment>> fetchActiveExperiments(String projectKey, List<String> experimentKeys);
 
+
+    /**
+     * Fetches all active experiments for a given tenant
+     *
+     * @param projectKey project identifier
+     * @return list of active experiments
+     */
+  Single<List<Experiment>> fetchActiveExperiments(String projectKey);
+
   /**
    * Fetches user's current experiment allocations from Aerospike
    *
@@ -92,4 +101,25 @@ public interface AllocationDAO {
       String projectKey,
       List<UserExperimentMap> allocations,
       Map<String, String> variantCountMap);
+
+  /**
+   * Transactionally reallocates a user to a new variant for an experiment. Handles decrementing
+   * the old variant count, incrementing the new variant count, updating user assignment, and logging
+   * the reallocation. If any step fails, appropriate rollback is performed.
+   *
+   * @param userId user identifier
+   * @param projectKey project identifier
+   * @param experimentId experiment identifier
+   * @param oldVariantName the old variant name (null if user had no previous assignment)
+   * @param newVariantAssignment the new user experiment map with updated variant
+   * @param reason the reason for reallocation
+   * @return the updated user experiment map on success
+   */
+  Single<UserExperimentMap> reallocateUserVariant(
+      String userId,
+      String projectKey,
+      String experimentId,
+      String oldVariantName,
+      UserExperimentMap newVariantAssignment,
+      String reason);
 }

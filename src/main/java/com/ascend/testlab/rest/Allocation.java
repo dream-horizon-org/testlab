@@ -4,6 +4,7 @@ import com.ascend.testlab.config.ApplicationConfig;
 import com.ascend.testlab.constants.web.WebConstants;
 import com.ascend.testlab.dto.ResponseEntity;
 import com.ascend.testlab.dto.request.AllocationRequest;
+import com.ascend.testlab.dto.request.ReallocateRequest;
 import com.ascend.testlab.service.AllocationService;
 import com.google.inject.Inject;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -14,6 +15,8 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+
+import java.net.URI;
 import java.util.concurrent.CompletionStage;
 import org.apache.commons.lang3.StringUtils;
 
@@ -107,4 +110,37 @@ public class Allocation {
         .map(successData -> Response.ok(successData).build())
         .toCompletionStage();
   }
+
+    @PUT
+    @Path("/allocations")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    @ApiResponse(
+            responseCode = "200",
+            description = "Successful Reassignment",
+            content = @Content(schema = @Schema(implementation = ResponseEntity.Success.class)))
+    @ApiResponse(
+            responseCode = "400",
+            description = "Bad Request due to invalid/missing body params / header",
+            content = @Content(schema = @Schema(implementation = ResponseEntity.Failure.class)))
+    @ApiResponse(
+            responseCode = "404",
+            description = "Experiment or user assignment not found",
+            content = @Content(schema = @Schema(implementation = ResponseEntity.Failure.class)))
+    @ApiResponse(
+            responseCode = "500",
+            description = "Internal Server Error",
+            content = @Content(schema = @Schema(implementation = ResponseEntity.Failure.class)))
+    public CompletionStage<Response> handle(
+            @HeaderParam(WebConstants.PROJECT_KEY_HEADER) @DefaultValue(WebConstants.DEFAULT_PROJECT_KEY)
+            String projectKey,
+            @Valid ReallocateRequest reallocateRequest) {
+
+      reallocateRequest.validate();
+        return allocationService
+                .reallocateExperiment(projectKey, reallocateRequest)
+                .map(ResponseEntity.Success::new)
+                .map(successData -> Response.ok(successData).build())
+                .toCompletionStage();
+    }
 }

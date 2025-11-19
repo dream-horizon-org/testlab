@@ -52,6 +52,15 @@ public enum ErrorEnum implements RestError {
       "Missing User Identifier, pass user-id/guest-id",
       HttpStatus.SC_BAD_REQUEST),
 
+  NO_ALLOTMENT_FOUND(
+            "NO_ALLOTMENT_FOUND",
+            "No assignment found for given user use overrides to allot variant",
+            HttpStatus.SC_BAD_REQUEST),
+    INVALID_ALLOTMENT_FOUND(
+            "INVALID_ALLOTMENT_FOUND",
+            "Invalid Allotment found",
+            HttpStatus.SC_BAD_REQUEST),
+
   INVALID_ALLOCATION_REQUEST(
       "INVALID_ALLOCATION_REQUEST", "Allocation Request is invalid", HttpStatus.SC_BAD_REQUEST),
 

@@ -62,6 +62,9 @@ public class AerospikeConfig {
   /** The Aerospike set name for storing user locks. */
   private String userLockSet;
 
+  /** The Aerospike set name for storing reallocation logs. */
+  private String reallocationLogSet;
+
   /** The Aerospike bin name for storing variant count data. */
   private String variantCountBin;
 
@@ -70,6 +73,9 @@ public class AerospikeConfig {
 
   /** The Aerospike bin name for storing allocation map data. */
   private String allocationMapBin;
+
+  /** The Aerospike bin name for storing reallocation log data. */
+  private String reallocationLogBin;
 
   /**
    * Get the provider for the Aerospike config.

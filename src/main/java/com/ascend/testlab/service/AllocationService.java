@@ -1,8 +1,10 @@
 package com.ascend.testlab.service;
 
 import com.ascend.testlab.dto.request.AllocationRequest;
+import com.ascend.testlab.dto.request.ReallocateRequest;
 import com.ascend.testlab.dto.response.AllocationResponse;
 import com.ascend.testlab.dto.response.GetAllocationsResponse;
+import com.ascend.testlab.dto.response.UserExperimentMap;
 import io.reactivex.rxjava3.core.Single;
 
 /**
@@ -34,4 +36,16 @@ public interface AllocationService {
    *     allocations
    */
   Single<GetAllocationsResponse> getAllocations(String userId, String projectKey);
+
+
+    /**
+     * Reassigns an experiment allocation for a user within the given project.
+     *
+     * @param projectKey the project identifier to scope the reallocation
+     * @param reallocateRequest the reallocation request containing user, experiment and any
+     *     reallocation parameters
+     * @return a Single that emits a UserExperimentMap representing the updated mapping after
+     *     reallocation
+     */
+    Single<UserExperimentMap> reallocateExperiment(String projectKey, ReallocateRequest reallocateRequest);
 }

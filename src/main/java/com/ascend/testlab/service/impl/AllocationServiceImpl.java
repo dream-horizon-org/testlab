@@ -8,12 +8,16 @@ import com.ascend.testlab.constants.Constants;
 import com.ascend.testlab.constants.enums.AllocationStatus;
 import com.ascend.testlab.dao.AllocationDAO;
 import com.ascend.testlab.dto.request.AllocationRequest;
+import com.ascend.testlab.dto.request.ReallocateRequest;
 import com.ascend.testlab.dto.response.AllocationResponse;
 import com.ascend.testlab.dto.response.GetAllocationsResponse;
 import com.ascend.testlab.dto.response.UserExperimentMap;
 import com.ascend.testlab.entity.Experiment;
+import com.ascend.testlab.entity.Variant;
+import com.ascend.testlab.exception.ErrorEnum;
 import com.ascend.testlab.service.AllocationService;
 import com.ascend.testlab.service.CohortService;
+import com.dream11.rest.util.ExceptionUtil;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.inject.Inject;
@@ -449,6 +453,120 @@ public class AllocationServiceImpl implements AllocationService {
       return null;
     }
   }
+
+    @Override
+    public Single<UserExperimentMap> reallocateExperiment(String projectKey, ReallocateRequest reallocateRequest) {
+        log.info(
+                "Reallocation request for user: {}, experiment: {}, new variant: {}, reason: {}",
+                reallocateRequest.getUserId(),
+                reallocateRequest.getExperimentId(),
+                reallocateRequest.getVariantName(),
+                reallocateRequest.getReason());
+        String userId = reallocateRequest.getUserId();
+        return allocationDAO
+                .acquireUserLock(userId, projectKey)
+                .flatMap(
+                        lockAcquired -> {
+                            if (!lockAcquired) {
+                                log.warn("Failed to acquire lock for user {}, cannot reallocate", userId);
+                                return Single.error(new RuntimeException("Failed to acquire user lock for reallocation"));
+                            }
+                            log.debug("Lock acquired for user {} reallocation", userId);
+
+                            return performReallocation(userId, projectKey, reallocateRequest)
+                                    .flatMap(
+                                            updatedAllocation ->
+                                                    releaseUserLock(userId, projectKey)
+                                                            .flatMap(released -> Single.just(updatedAllocation)))
+                                    .onErrorResumeNext(
+                                            error -> {
+                                                log.error("Error during reallocation, releasing lock", error);
+                                                return releaseUserLock(userId, projectKey)
+                                                        .flatMap(released -> Single.error(error));
+                                            });
+                        });
+    }
+
+    private Single<UserExperimentMap> performReallocation(String userId, String projectKey, ReallocateRequest reallocateRequest) {
+        UUID experimentId = UUID.fromString(reallocateRequest.getExperimentId());
+        return Single.zip(
+                        allocationDAO.fetchActiveExperiments(projectKey),
+                        allocationDAO.getAllocations(userId, projectKey),
+                        (experiments, userAssignments) -> {
+                            Experiment experiment =
+                                    experiments.stream()
+                                            .filter(exp -> exp.getExperimentId().equals(experimentId))
+                                            .findFirst()
+                                            .orElse(null);
+
+                            if (Objects.isNull(experiment)) {
+                                throw ExceptionUtil.getException(ErrorEnum.EXPERIMENT_NOT_FOUND);
+                            }
+                            log.debug("Fetched experiment {} for reallocation", experiment);
+                            //TODO// add filter for variantObjects
+                            UserExperimentMap currentAssignment =
+                                    userAssignments.stream()
+                                            .filter(assignment -> assignment.getExperimentId().equals(experimentId))
+                                            .findFirst()
+                                            .orElse(null);
+
+                            if(Objects.isNull(currentAssignment)) {
+                                throw ExceptionUtil.getException(ErrorEnum.NO_ALLOTMENT_FOUND);
+                            }
+                            log.debug("Fetched assignment {} for reallocation", currentAssignment);
+
+                            return Map.entry(experiment, currentAssignment);
+                        })
+                .flatMap(
+                        data -> {
+                            Experiment experiment = data.getKey();
+                            UserExperimentMap currentAssignment = data.getValue();
+
+                            Variant newVariant = experiment.getVariant().get(reallocateRequest.getVariantName());
+                            if (Objects.isNull(newVariant)) {
+                                throw ExceptionUtil.getException(ErrorEnum.INVALID_ALLOTMENT_FOUND);
+                            }
+                            if (currentAssignment.getVariant().getDisplayName().equals(newVariant.getDisplayName())) {
+                                log.info(
+                                        "User {} already assigned to variant {} for experiment {}, skipping reassignment",
+                                        userId,
+                                        newVariant.getDisplayName(),
+                                        experimentId);
+                                return Single.just(currentAssignment);
+                            }
+                            log.debug("New variant {} old variant {} for reallocation", newVariant, currentAssignment.getVariant());
+
+                            UserExperimentMap newAssignment =
+                                    AssignmentBuilder.buildAssignment(
+                                            experiment, newVariant.getVariantName());
+                            log.debug("OldAssignment {}", currentAssignment);
+                            log.debug("NewAssignment {}", newAssignment);
+                            return allocationDAO
+                                    .reallocateUserVariant(
+                                            userId,
+                                            projectKey,
+                                            experimentId.toString(),
+                                            currentAssignment.getVariant().getDisplayName(),
+                                            newAssignment,
+                                            reallocateRequest.getReason())
+                                    .doOnSuccess(
+                                            result ->
+                                                    log.info(
+                                                            "Successfully reallocated user {} from variant {} to variant {} for experiment {}. Reason: {}",
+                                                            userId,
+                                                            currentAssignment.getVariant().getDisplayName(),
+                                                            newVariant.getDisplayName(),
+                                                            experimentId,
+                                                            reallocateRequest.getReason()))
+                                    .doOnError(
+                                            error ->
+                                                    log.error(
+                                                            "Failed to reallocate user {} for experiment {}",
+                                                            userId,
+                                                            experimentId,
+                                                            error));
+                        });
+    }
 
   private Single<List<UserExperimentMap>> applyGuestCarryover(
       String userId,
