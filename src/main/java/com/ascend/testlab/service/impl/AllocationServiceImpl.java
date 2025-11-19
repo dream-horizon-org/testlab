@@ -94,6 +94,7 @@ public class AllocationServiceImpl implements AllocationService {
                   userId,
                   guestId,
                   projectKey,
+                  cohorts,
                   activeExperiments,
                   filteredExperiments,
                   activeAllocations,
@@ -261,6 +262,7 @@ public class AllocationServiceImpl implements AllocationService {
       String userId,
       String stableId,
       String projectKey,
+      List<String> cohorts,
       List<Experiment> allExperiments,
       List<Experiment> filteredExperiments,
       List<UserExperimentMap> currentAllocations,
@@ -289,6 +291,7 @@ public class AllocationServiceImpl implements AllocationService {
                       userId,
                       stableId,
                       projectKey,
+                      cohorts,
                       allExperiments,
                       filteredExperiments,
                       currentAllocations,
@@ -316,6 +319,7 @@ public class AllocationServiceImpl implements AllocationService {
       String userId,
       String stableId,
       String projectKey,
+      List<String> cohorts,
       List<Experiment> allExperiments,
       List<Experiment> filteredExperiments,
       List<UserExperimentMap> latestAssignments,
@@ -355,7 +359,7 @@ public class AllocationServiceImpl implements AllocationService {
               return Observable.fromIterable(stillUnassigned)
                   .flatMap(
                       experiment ->
-                          assignSingleExperiment(experiment, userId, stableId, projectKey)
+                          assignSingleExperiment(experiment, userId, stableId, projectKey, cohorts)
                               .toObservable())
                   .toList()
                   .flatMap(
@@ -404,7 +408,11 @@ public class AllocationServiceImpl implements AllocationService {
   }
 
   private Maybe<UserExperimentMap> assignSingleExperiment(
-      Experiment experiment, String userId, String stableId, String projectKey) {
+      Experiment experiment,
+      String userId,
+      String stableId,
+      String projectKey,
+      List<String> cohorts) {
 
     String identifierForVariantSelection = getEffectiveIdentifier(userId, stableId);
 
@@ -419,7 +427,7 @@ public class AllocationServiceImpl implements AllocationService {
               }
 
               String selectedVariant =
-                  VariantSelector.selectVariant(experiment, identifierForVariantSelection);
+                  VariantSelector.selectVariant(experiment, identifierForVariantSelection, cohorts);
 
               if (Objects.isNull(selectedVariant)) {
                 log.warn("No variant selected for experiment {}", experiment.getExperimentId());

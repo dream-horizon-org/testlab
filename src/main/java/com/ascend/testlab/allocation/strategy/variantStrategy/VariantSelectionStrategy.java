@@ -1,6 +1,7 @@
 package com.ascend.testlab.allocation.strategy.variantStrategy;
 
 import com.ascend.testlab.entity.Experiment;
+import java.util.List;
 
 /**
  * Strategy interface for selecting variants based on assignment domain type. Implements the
@@ -17,9 +18,10 @@ public interface VariantSelectionStrategy {
    *
    * @param experiment the experiment containing variant configuration
    * @param userId user identifier
+   * @param userCohorts list of cohorts the user belongs to
    * @return selected variant or null if no suitable variant found
    */
-  String selectVariant(Experiment experiment, String userId);
+  String selectVariant(Experiment experiment, String userId, List<String> userCohorts);
 
   /**
    * Checks if this strategy can handle the given experiment's assignment domain

@@ -26,7 +26,7 @@ import com.ascend.testlab.entity.Experiment;
 import com.ascend.testlab.entity.RuleAttributes;
 import com.ascend.testlab.entity.Variant;
 import com.ascend.testlab.entity.variantWeights.CohortVariantWeights;
-import com.ascend.testlab.entity.variantWeights.ManualVariantWeights;
+import com.ascend.testlab.entity.variantWeights.StratifiedVariantWeights;
 import com.ascend.testlab.entity.variantWeights.VariantWeights;
 import com.ascend.testlab.util.CommonUtil;
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -774,10 +774,10 @@ public class AllocationDAOImpl implements AllocationDAO {
 
       switch (assignmentDomain) {
         case STRATIFIED:
-          ManualVariantWeights manualWeights =
-              objectMapper.readValue(jsonString, ManualVariantWeights.class);
+          StratifiedVariantWeights manualWeights =
+              objectMapper.readValue(jsonString, StratifiedVariantWeights.class);
           log.debug(
-              "Deserialized ManualVariantWeights for experiment {}: {}",
+              "Deserialized StratifiedVariantWeights for experiment {}: {}",
               experimentId,
               manualWeights);
           return manualWeights;

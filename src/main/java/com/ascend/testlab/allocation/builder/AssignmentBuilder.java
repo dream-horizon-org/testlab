@@ -28,7 +28,21 @@ public class AssignmentBuilder {
       throw new IllegalArgumentException("Experiment and variant cannot be null");
     }
 
+    if (Objects.isNull(experiment.getVariant()) || experiment.getVariant().isEmpty()) {
+      throw new IllegalArgumentException(
+          "Experiment variant map cannot be null or empty for experiment: "
+              + experiment.getExperimentId());
+    }
+
     Variant variant = experiment.getVariant().get(variantName);
+
+    if (Objects.isNull(variant)) {
+      throw new IllegalArgumentException(
+          String.format(
+              "Variant '%s' not found in experiment variant map for experiment: %s",
+              variantName, experiment.getExperimentId()));
+    }
+
     return UserExperimentMap.builder()
         .experimentId(experiment.getExperimentId())
         .experimentName(experiment.getName())

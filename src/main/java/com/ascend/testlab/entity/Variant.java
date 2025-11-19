@@ -1,5 +1,6 @@
 package com.ascend.testlab.entity;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -18,7 +19,8 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class Variant {
+  @JsonProperty(value = "display_name")
   private String displayName;
-  private String variantName;
+
   private List<Variables> variables;
 }

@@ -18,7 +18,7 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
     property = "type",
     defaultImpl = CohortVariantWeights.class)
 @JsonSubTypes({
-  @JsonSubTypes.Type(value = ManualVariantWeights.class, name = "MANUAL"),
+  @JsonSubTypes.Type(value = StratifiedVariantWeights.class, name = "MANUAL"),
   @JsonSubTypes.Type(value = CohortVariantWeights.class, name = "COHORT"),
 })
 public abstract class VariantWeights {

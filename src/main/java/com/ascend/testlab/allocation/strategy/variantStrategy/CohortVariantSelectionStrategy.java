@@ -11,13 +11,11 @@ import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * Cohort-based variant selection strategy. Selects variants based on user's cohorts and their
- * distribution strategy (ROUND_ROBIN, RANDOM) using the Strategy and Factory design patterns.
+ * Cohort-based variant selection strategy. Selects variants using random or round-robin
+ * distribution from ALL variants in the experiment's variant map.
  *
- * <p>This class acts as an adapter between the VariantSelectionStrategy interface (used at the
- * assignment domain level) and the VariantAssignmentStrategy interface (used for distribution
- * strategy selection). It converts CohortVariantWeights to a list of Variants and delegates the
- * actual selection to the appropriate VariantAssignmentStrategy obtained from the factory.
+ * <p>This strategy ignores variantWeights and simply selects from all available variants in the
+ * experiment based on the distribution strategy (ROUND_ROBIN or RANDOM).
  *
  * @author Anudeep Reddy
  * @version 1.0
@@ -30,7 +28,7 @@ import lombok.extern.slf4j.Slf4j;
 public class CohortVariantSelectionStrategy implements VariantSelectionStrategy {
 
   @Override
-  public String selectVariant(Experiment experiment, String userId) {
+  public String selectVariant(Experiment experiment, String userId, List<String> userCohorts) {
     if (!(experiment.getVariantWeights() instanceof CohortVariantWeights)) {
       log.warn(
           "Cohort assignment domain but variant weights is not CohortVariantWeights for experiment {}",
@@ -38,9 +36,7 @@ public class CohortVariantSelectionStrategy implements VariantSelectionStrategy 
       return null;
     }
 
-    CohortVariantWeights cohortWeights = (CohortVariantWeights) experiment.getVariantWeights();
-
-    List<Variant> variants = convertToVariantList(cohortWeights, experiment.getVariant());
+    List<Variant> variants = convertVariantMapToList(experiment.getVariant());
     if (variants == null || variants.isEmpty()) {
       log.warn("No variants available for experiment {}", experiment.getExperimentId());
       return null;
@@ -59,57 +55,64 @@ public class CohortVariantSelectionStrategy implements VariantSelectionStrategy 
       return null;
     }
 
+    String selectedVariantName = findVariantNameInMap(experiment.getVariant(), selectedVariant);
+
+    if (selectedVariantName == null) {
+      log.warn(
+          "Selected variant not found in variant map for experiment {}",
+          experiment.getExperimentId());
+      return null;
+    }
+
     log.debug(
-        "Selected variant {} for user {} in experiment {} using {} strategy",
+        "Selected variant {} for user {} in experiment {} using {} strategy from {} total variants",
         selectedVariant.getDisplayName(),
         userId,
         experiment.getExperimentId(),
-        distributionStrategy);
+        distributionStrategy,
+        variants.size());
 
-    return selectedVariant.getVariantName();
+    return selectedVariantName;
   }
 
   /**
-   * Converts CohortVariantWeights to a list of Variant objects for strategy pattern usage.
+   * Converts the experiment's variant map to a list of Variant objects for selection.
    *
-   * @param cohortWeights cohort variant weights containing variant names
    * @param variantMap map of variant name to Variant object from experiment
-   * @return list of Variant objects, or null if no valid variants
+   * @return list of all Variant objects, or null if map is null or empty
    */
-  private List<Variant> convertToVariantList(
-      CohortVariantWeights cohortWeights, Map<String, Variant> variantMap) {
-
-    if (cohortWeights == null
-        || cohortWeights.getWeights() == null
-        || cohortWeights.getWeights().isEmpty()) {
-      log.warn("Empty cohort weights provided");
-      return null;
-    }
-
+  private List<Variant> convertVariantMapToList(Map<String, Variant> variantMap) {
     if (variantMap == null || variantMap.isEmpty()) {
-      log.warn("Empty variant map provided");
+      log.warn("Empty or null variant map provided");
       return null;
     }
 
-    List<Variant> variants = new ArrayList<>();
+    List<Variant> variants = new ArrayList<>(variantMap.values());
 
-    for (String variantName : cohortWeights.getWeights().keySet()) {
-      Variant variant = variantMap.get(variantName);
+    log.debug("Converted {} variants from variant map", variants.size());
+    return variants;
+  }
 
-      if (variant != null) {
-        variants.add(variant);
-      } else {
-        log.warn("Variant {} not found in variant map", variantName);
+  /**
+   * Finds the key (variant name) for a given Variant object in the variant map.
+   *
+   * @param variantMap map of variant name to Variant object
+   * @param targetVariant the Variant object to find
+   * @return the variant name (key) or null if not found
+   */
+  private String findVariantNameInMap(Map<String, Variant> variantMap, Variant targetVariant) {
+    if (variantMap == null || targetVariant == null) {
+      return null;
+    }
+
+    for (Map.Entry<String, Variant> entry : variantMap.entrySet()) {
+      if (entry.getValue().equals(targetVariant)) {
+        return entry.getKey();
       }
     }
 
-    if (variants.isEmpty()) {
-      log.warn("No valid variants found after conversion");
-      return null;
-    }
-
-    log.debug("Converted {} variants from cohort weights", variants.size());
-    return variants;
+    log.warn("Variant object not found in map: {}", targetVariant.getDisplayName());
+    return null;
   }
 
   @Override

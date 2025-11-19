@@ -34,9 +34,11 @@ public class VariantSelector {
    *
    * @param experiment the experiment to assign
    * @param userId user identifier
+   * @param userCohorts list of cohorts the user belongs to
    * @return selected variant or null if none available
    */
-  public static String selectVariant(Experiment experiment, String userId) {
+  public static String selectVariant(
+      Experiment experiment, String userId, List<String> userCohorts) {
 
     if (Objects.isNull(experiment)) {
       log.warn("Cannot select variant: experiment is null");
@@ -55,6 +57,13 @@ public class VariantSelector {
       return null;
     }
 
+    if (Objects.isNull(experiment.getVariant()) || experiment.getVariant().isEmpty()) {
+      log.warn(
+          "Cannot select variant: variant map is null or empty for experiment {}",
+          experiment.getExperimentId());
+      return null;
+    }
+
     for (VariantSelectionStrategy strategy : STRATEGIES) {
       if (strategy.canHandle(experiment)) {
         log.info(
@@ -62,7 +71,7 @@ public class VariantSelector {
             strategy.getClass().getSimpleName(),
             experiment.getExperimentId());
 
-        String selectedVariant = strategy.selectVariant(experiment, userId);
+        String selectedVariant = strategy.selectVariant(experiment, userId, userCohorts);
 
         if (selectedVariant != null) {
           log.info(
