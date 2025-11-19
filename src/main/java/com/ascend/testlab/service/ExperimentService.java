@@ -28,7 +28,7 @@ public interface ExperimentService {
    * @return Single emitting CreateExperimentResponse with id, status, and message
    */
   Single<CreateExperimentResponse> create(
-      UUID tenantId, UUID projectKey, CreateExperimentRequest request);
+      UUID tenantId, String projectKey, CreateExperimentRequest request);
 
   /**
    * Updates experiment fields partially with validation.
@@ -40,5 +40,5 @@ public interface ExperimentService {
    * @return Single emitting UpdateExperimentResponse with id, status, and message
    */
   Single<UpdateExperimentResponse> update(
-      UUID tenantId, UUID projectKey, UUID experimentId, UpdateExperimentRequest request);
+      UUID tenantId, String projectKey, UUID experimentId, UpdateExperimentRequest request);
 }

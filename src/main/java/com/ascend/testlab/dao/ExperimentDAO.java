@@ -28,7 +28,7 @@ public interface ExperimentDAO {
    * @param request experiment creation request with all experiment details
    * @return Single emitting 1L on success, 0L on failure
    */
-  Single<Long> create(UUID tenantId, UUID projectKey, CreateExperimentRequest request);
+  Single<Long> create(UUID tenantId, String projectKey, CreateExperimentRequest request);
 
   /**
    * Creates experiment with tags, owner, update log, and analysis in a transaction.
@@ -50,7 +50,7 @@ public interface ExperimentDAO {
    * @param experimentId experiment identifier
    * @return Single emitting map of experiment data
    */
-  Single<Map<String, Object>> getExperimentData(UUID projectKey, UUID experimentId);
+  Single<Map<String, Object>> getExperimentData(String projectKey, UUID experimentId);
 
   /**
    * Updates experiment fields partially based on provided request map.
@@ -60,7 +60,7 @@ public interface ExperimentDAO {
    * @param request map of field names to values for update
    * @return Single emitting true on success, false on failure
    */
-  Single<Boolean> updatePartial(UUID projectKey, UUID experimentId, Map<String, Object> request);
+  Single<Boolean> updatePartial(String projectKey, UUID experimentId, Map<String, Object> request);
 
   /**
    * Updates experiment with tags and logs in a transaction.
@@ -74,10 +74,12 @@ public interface ExperimentDAO {
    * @return Single emitting true on success
    */
   Single<Boolean> updateWithTransaction(
-      UUID projectKey,
+      String projectKey,
       UUID experimentId,
       UpdateExperimentRequest request,
       List<String> tags,
+      List<String> owners,
+      List<String> metrics,
       Map<String, Object> previousData,
       String updatedBy);
 
@@ -93,7 +95,7 @@ public interface ExperimentDAO {
    * @return Single emitting true on success, false on failure
    */
   Single<Boolean> batchInsertTags(
-      SqlConnection connection, UUID projectKey, UUID experimentId, List<String> tags);
+      SqlConnection connection, String projectKey, UUID experimentId, List<String> tags);
 
   /**
    * Gets all tags for an experiment.
@@ -103,7 +105,7 @@ public interface ExperimentDAO {
    * @param experimentId experiment identifier
    * @return Single emitting list of tag names
    */
-  Single<List<String>> getTags(SqlConnection connection, UUID projectKey, UUID experimentId);
+  Single<List<String>> getTags(SqlConnection connection, String projectKey, UUID experimentId);
 
   /**
    * Deletes tags (hard delete).
@@ -115,7 +117,7 @@ public interface ExperimentDAO {
    * @return Single emitting true on success, false on failure
    */
   Single<Boolean> deleteTags(
-      SqlConnection connection, UUID projectKey, UUID experimentId, List<String> tags);
+      SqlConnection connection, String projectKey, UUID experimentId, List<String> tags);
 
   /**
    * Deletes all tags for an experiment.
@@ -125,7 +127,7 @@ public interface ExperimentDAO {
    * @param experimentId experiment identifier
    * @return Single emitting true on success, false on failure
    */
-  Single<Boolean> deleteTags(SqlConnection connection, UUID projectKey, UUID experimentId);
+  Single<Boolean> deleteTags(SqlConnection connection, String projectKey, UUID experimentId);
 
   // ==================== Owner Operations ====================
 
@@ -139,7 +141,7 @@ public interface ExperimentDAO {
    * @return Single emitting true on success, false on failure
    */
   Single<Boolean> batchInsertOwners(
-      SqlConnection connection, UUID projectKey, UUID experimentId, List<String> owners);
+      SqlConnection connection, String projectKey, UUID experimentId, List<String> owners);
 
   /**
    * Deletes all owners for an experiment.
@@ -149,7 +151,7 @@ public interface ExperimentDAO {
    * @param experimentId experiment identifier
    * @return Single emitting true on success, false on failure
    */
-  Single<Boolean> deleteOwners(SqlConnection connection, UUID projectKey, UUID experimentId);
+  Single<Boolean> deleteOwners(SqlConnection connection, String projectKey, UUID experimentId);
 
   // ==================== Update Log Operations ====================
 
@@ -166,7 +168,7 @@ public interface ExperimentDAO {
    */
   Single<Boolean> insertUpdateLog(
       SqlConnection connection,
-      UUID projectKey,
+      String projectKey,
       UUID experimentId,
       Map<String, Object> previousData,
       Map<String, Object> currentData,
@@ -184,7 +186,7 @@ public interface ExperimentDAO {
    * @return Single emitting true on success, false on failure
    */
   Single<Boolean> insertAnalysis(
-      SqlConnection connection, UUID projectKey, UUID experimentId, List<String> metrics);
+      SqlConnection connection, String projectKey, UUID experimentId, List<String> metrics);
 
   /**
    * Inserts an experiment analysis entry with specified values.
@@ -200,7 +202,7 @@ public interface ExperimentDAO {
    */
   Single<Boolean> insertAnalysis(
       SqlConnection connection,
-      UUID projectKey,
+      String projectKey,
       UUID experimentId,
       String config,
       String primaryMetrics,

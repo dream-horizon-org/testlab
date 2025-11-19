@@ -69,7 +69,11 @@ public final class Constants {
           "exposure",
           "threshold",
           "start_time",
-          "end_time");
+          "end_time",
+          "created_by",
+          "tags",
+          "owner",
+          "metrics");
 
   /**
    * Set of fields that are NOT allowed to be updated in an experiment.
@@ -77,15 +81,5 @@ public final class Constants {
    * <p>These fields are either immutable, auto-managed, or should only be set during creation.
    */
   public static final Set<String> NON_UPDATABLE_FIELDS =
-      Set.of(
-          "name",
-          "experiment_key",
-          "project_key",
-          "experiment_id",
-          "created_by",
-          "created_at",
-          "updated_at",
-          "metrics",
-          "tags",
-          "owner");
+      Set.of("name", "experiment_key", "project_key", "experiment_id", "created_at", "updated_at");
 }

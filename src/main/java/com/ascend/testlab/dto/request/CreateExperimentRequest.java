@@ -10,6 +10,7 @@ import com.ascend.testlab.entity.AssignmentDomain;
 import com.ascend.testlab.entity.RuleAttributes;
 import com.ascend.testlab.entity.Variant;
 import com.ascend.testlab.exception.ErrorMessages;
+import com.ascend.testlab.validation.annotations.ValidCreateStatus;
 import com.ascend.testlab.validation.annotations.ValidExperimentTargeting;
 import com.ascend.testlab.validation.annotations.ValidTimeRange;
 import com.ascend.testlab.validation.annotations.ValidVariantKeys;
@@ -72,6 +73,7 @@ public class CreateExperimentRequest {
       enumClass = ExperimentStatus.class,
       method = Constants.NAME,
       message = ErrorMessages.INVALID_EXPERIMENT_STATUS)
+  @ValidCreateStatus
   private ExperimentStatus status;
 
   @JsonProperty("type")
@@ -150,7 +152,7 @@ public class CreateExperimentRequest {
   @JsonProperty("exposure")
   @Min(value = 0, message = "Exposure must be at least 0")
   @Max(value = 100, message = "Exposure must not exceed 100")
-  private int exposure;
+  private int exposure = 100;
 
   @JsonProperty("threshold")
   @Min(value = 0, message = "Threshold must be at least 0")

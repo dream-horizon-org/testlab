@@ -26,7 +26,8 @@ public class JsonMappingExceptionMapper implements ExceptionMapper<JsonMappingEx
 
   @Override
   public Response toResponse(JsonMappingException exception) {
-    log.error("JSON mapping error: ", exception);
+    log.error("JSON mapping error: {}", exception.getMessage());
+    log.debug("Full exception details: ", exception);
 
     String errorMessage = "Invalid request format";
     String fieldName = getFieldName(exception);
@@ -34,22 +35,32 @@ public class JsonMappingExceptionMapper implements ExceptionMapper<JsonMappingEx
     if (exception instanceof InvalidFormatException) {
       InvalidFormatException ife = (InvalidFormatException) exception;
       if (ife.getTargetType() != null && ife.getTargetType().isEnum()) {
+        String validValues = getEnumValues(ife.getTargetType());
         errorMessage =
             String.format(
                 "Invalid value '%s' for field '%s'. Allowed values: %s",
-                ife.getValue(), fieldName, getEnumValues(ife.getTargetType()));
+                ife.getValue(), fieldName, validValues);
+        log.warn(
+            "Invalid enum value '{}' for field '{}'. Valid values: {}",
+            ife.getValue(),
+            fieldName,
+            validValues);
       } else {
         errorMessage =
             String.format("Invalid value '%s' for field '%s'", ife.getValue(), fieldName);
+        log.warn("Invalid value '{}' for field '{}'", ife.getValue(), fieldName);
       }
     } else {
       errorMessage =
           String.format(
               "Invalid format for field '%s': %s", fieldName, exception.getOriginalMessage());
+      log.warn("Invalid format for field '{}': {}", fieldName, exception.getOriginalMessage());
     }
 
     RestException restException =
         new RestException("INVALID_REQUEST", errorMessage, HttpStatus.SC_BAD_REQUEST, exception);
+
+    log.info("Returning 400 Bad Request with message: {}", errorMessage);
 
     return Response.status(restException.getHttpStatusCode())
         .entity(restException.toString())

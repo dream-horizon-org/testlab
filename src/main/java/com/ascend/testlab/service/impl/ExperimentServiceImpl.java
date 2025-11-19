@@ -55,7 +55,7 @@ public class ExperimentServiceImpl implements ExperimentService {
    */
   @Override
   public Single<CreateExperimentResponse> create(
-      UUID tenantId, UUID projectKey, CreateExperimentRequest request) {
+      UUID tenantId, String projectKey, CreateExperimentRequest request) {
     log.info(
         "Creating experiment for tenantId: {}, projectKey: {}, experimentName: {}, tags: {}, owner: {}",
         tenantId,
@@ -66,7 +66,7 @@ public class ExperimentServiceImpl implements ExperimentService {
 
     // Set project_key and experiment_id - both come from header
     UUID experimentId = UUID.randomUUID();
-    request.setProjectKey(projectKey.toString());
+    request.setProjectKey(projectKey);
     request.setExperimentId(experimentId);
 
     // Generate experiment_key from name: replace spaces and hyphens with underscores
@@ -102,7 +102,7 @@ public class ExperimentServiceImpl implements ExperimentService {
    */
   @Override
   public Single<UpdateExperimentResponse> update(
-      UUID tenantId, UUID projectKey, UUID experimentId, UpdateExperimentRequest request) {
+      UUID tenantId, String projectKey, UUID experimentId, UpdateExperimentRequest request) {
     log.info(
         "Updating experiment for tenantId: {}, projectKey: {}, experimentId: {}",
         tenantId,
@@ -132,11 +132,11 @@ public class ExperimentServiceImpl implements ExperimentService {
   }
 
   /**
-   * Extracts update context from DTO, separating tags and metadata.
+   * Extracts update context from DTO, separating tags, owners, metrics and metadata.
    *
    * @param request validated update experiment request DTO
    * @param experimentId experiment identifier for logging
-   * @return UpdateContext containing the request, tags, and updatedBy
+   * @return UpdateContext containing the request, tags, owners, metrics, and updatedBy
    */
   private UpdateContext extractUpdateContext(UpdateExperimentRequest request, UUID experimentId) {
     List<String> tags = request.getTags();
@@ -144,12 +144,27 @@ public class ExperimentServiceImpl implements ExperimentService {
       log.debug("Tags found in update request for experimentId: {}, tags: {}", experimentId, tags);
     }
 
+    List<String> owners = request.getOwner();
+    if (owners != null) {
+      log.debug(
+          "Owners found in update request for experimentId: {}, owners: {}", experimentId, owners);
+    }
+
+    List<String> metrics = request.getMetrics();
+    if (metrics != null) {
+      log.debug(
+          "Metrics found in update request for experimentId: {}, metrics: {}",
+          experimentId,
+          metrics);
+    }
+
     String updatedBy = request.getUpdatedBy();
     if (updatedBy != null) {
       log.debug("updated_by found in update request: {}", updatedBy);
     }
 
-    return new UpdateContext(request, tags, updatedBy != null ? updatedBy : "system");
+    return new UpdateContext(
+        request, tags, owners, metrics, updatedBy != null ? updatedBy : "system");
   }
 
   /**
@@ -162,7 +177,7 @@ public class ExperimentServiceImpl implements ExperimentService {
    * @return Single emitting true on success
    */
   private Single<Boolean> executeTransactionalUpdate(
-      UUID tenantId, UUID projectKey, UUID experimentId, UpdateContext context) {
+      UUID tenantId, String projectKey, UUID experimentId, UpdateContext context) {
 
     log.info(
         "Executing transactional update for experimentId: {}, projectKey: {}",
@@ -179,11 +194,25 @@ public class ExperimentServiceImpl implements ExperimentService {
                     previousData.keySet()))
         .flatMap(
             previousData -> {
+              // Check if experiment is in a terminal state (CONCLUDED or TERMINATED)
+              Object currentStatusObj = previousData.get("status");
+              String currentStatus = currentStatusObj != null ? currentStatusObj.toString() : null;
+
+              if (currentStatus != null) {
+                ExperimentStatus status = ExperimentStatus.valueOf(currentStatus);
+                if (status == ExperimentStatus.CONCLUDED || status == ExperimentStatus.TERMINATED) {
+                  String errorMsg =
+                      String.format(
+                          "Cannot update experiment in %s state. This is a terminal state.",
+                          status);
+                  log.error(
+                      "Update blocked for experimentId: {}, reason: {}", experimentId, errorMsg);
+                  return Single.error(new IllegalArgumentException(errorMsg));
+                }
+              }
+
               // Validate status transition if status is being updated
               if (context.request.getStatus() != null) {
-                Object currentStatusObj = previousData.get("status");
-                String currentStatus =
-                    currentStatusObj != null ? currentStatusObj.toString() : null;
                 String newStatus = context.request.getStatus().name();
 
                 log.debug(
@@ -205,6 +234,8 @@ public class ExperimentServiceImpl implements ExperimentService {
                   experimentId,
                   context.request,
                   context.tags,
+                  context.owners,
+                  context.metrics,
                   previousData,
                   context.updatedBy);
             });
@@ -218,7 +249,7 @@ public class ExperimentServiceImpl implements ExperimentService {
    * @param experimentId experiment identifier
    * @param error error that occurred
    */
-  private void logError(UUID tenantId, UUID projectKey, UUID experimentId, Throwable error) {
+  private void logError(UUID tenantId, String projectKey, UUID experimentId, Throwable error) {
     log.error(
         "Failed to update experiment for tenantId: {}, projectKey: {}, experimentId: {}, error: {}",
         tenantId,
@@ -238,7 +269,7 @@ public class ExperimentServiceImpl implements ExperimentService {
     if (name == null || name.isEmpty()) {
       return "";
     }
-    return name.replaceAll("[ -]", "_");
+    return name.replaceAll("[ -]", "_").toLowerCase();
   }
 
   /**
@@ -365,11 +396,20 @@ public class ExperimentServiceImpl implements ExperimentService {
   private static class UpdateContext {
     final UpdateExperimentRequest request;
     final List<String> tags;
+    final List<String> owners;
+    final List<String> metrics;
     final String updatedBy;
 
-    UpdateContext(UpdateExperimentRequest request, List<String> tags, String updatedBy) {
+    UpdateContext(
+        UpdateExperimentRequest request,
+        List<String> tags,
+        List<String> owners,
+        List<String> metrics,
+        String updatedBy) {
       this.request = request;
       this.tags = tags;
+      this.owners = owners;
+      this.metrics = metrics;
       this.updatedBy = updatedBy;
     }
 
@@ -394,25 +434,6 @@ public class ExperimentServiceImpl implements ExperimentService {
           || request.getStartTime() != null
           || request.getEndTime() != null
           || tags != null;
-    }
-  }
-
-  /**
-   * Sets the type in variant_weights based on assignment_domain.
-   *
-   * <p>This method automatically derives and sets the type field in variant_weights from the
-   * assignment_domain: - MANUAL -> type = MANUAL - COHORT -> type = COHORT - DEFAULT -> type =
-   * COHORT
-   *
-   * @param request the create experiment request
-   */
-  private void setVariantWeightsType(CreateExperimentRequest request) {
-    if (request.getVariantWeights() != null && request.getAssignmentDomain() != null) {
-      // The type is already set by the getType() method in the concrete classes
-      // We just need to ensure the correct subclass is used based on assignment_domain
-      log.debug(
-          "Variant weights type is derived from assignment_domain: {}",
-          request.getAssignmentDomain());
     }
   }
 }

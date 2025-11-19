@@ -40,14 +40,14 @@ public class ExperimentDAOTest {
   private ExperimentDAO experimentDAO;
 
   private UUID testTenantId;
-  private UUID testProjectKey;
+  private String testProjectKey;
   private UUID testExperimentId;
 
   @BeforeEach
   void setUp() {
     experimentDAO = new ExperimentDAOImpl(pgWriterClient, pgReaderClient);
     testTenantId = UUID.randomUUID();
-    testProjectKey = UUID.randomUUID();
+    testProjectKey = UUID.randomUUID().toString();
     testExperimentId = UUID.randomUUID();
   }
 

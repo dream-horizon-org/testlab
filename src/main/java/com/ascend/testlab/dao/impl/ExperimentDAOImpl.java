@@ -69,7 +69,7 @@ public class ExperimentDAOImpl implements ExperimentDAO {
    * @return Single emitting 1L on success, 0L on failure
    */
   @Override
-  public Single<Long> create(UUID tenantId, UUID projectKey, CreateExperimentRequest request) {
+  public Single<Long> create(UUID tenantId, String projectKey, CreateExperimentRequest request) {
     log.info(
         "DAO: Creating experiment in database, tenantId: {}, projectKey: {}, experimentId: {}, name: {}",
         tenantId,
@@ -193,7 +193,7 @@ public class ExperimentDAOImpl implements ExperimentDAO {
   @Override
   public Single<Long> createWithRelatedData(UUID tenantId, CreateExperimentRequest request) {
 
-    UUID projectKey = UUID.fromString(request.getProjectKey());
+    String projectKey = request.getProjectKey();
     UUID experimentId = request.getExperimentId();
     List<String> tags = request.getTags();
     List<String> owners = request.getOwner();
@@ -276,14 +276,13 @@ public class ExperimentDAOImpl implements ExperimentDAO {
    * @return Single emitting map of experiment data
    */
   @Override
-  public Single<Map<String, Object>> getExperimentData(UUID projectKey, UUID experimentId) {
+  public Single<Map<String, Object>> getExperimentData(String projectKey, UUID experimentId) {
     log.debug(
         "DAO: Getting experiment data for projectKey: {}, experimentId: {}",
         projectKey,
         experimentId);
 
-    Tuple params =
-        Tuple.tuple().addString(projectKey.toString()).addString(experimentId.toString());
+    Tuple params = Tuple.tuple().addString(projectKey).addString(experimentId.toString());
 
     return pgReaderClient
         .fetchOne(ReadQuery.GET_EXPERIMENT_DATA, params, this::rowToMap)
@@ -347,7 +346,7 @@ public class ExperimentDAOImpl implements ExperimentDAO {
    */
   @Override
   public Single<Boolean> updatePartial(
-      UUID projectKey, UUID experimentId, Map<String, Object> request) {
+      String projectKey, UUID experimentId, Map<String, Object> request) {
     log.info(
         "DAO: Updating experiment, projectKey: {}, experimentId: {}, fields: {}",
         projectKey,
@@ -549,7 +548,8 @@ public class ExperimentDAOImpl implements ExperimentDAO {
    * @param experimentId experiment identifier
    * @return complete UPDATE SQL query string
    */
-  private String buildUpdateQuery(Map<String, Object> updates, UUID projectKey, UUID experimentId) {
+  private String buildUpdateQuery(
+      Map<String, Object> updates, String projectKey, UUID experimentId) {
     StringBuilder query = new StringBuilder(WriteQuery.UPDATE_EXPERIMENT_PREFIX);
     int paramIndex = 1;
 
@@ -604,12 +604,13 @@ public class ExperimentDAOImpl implements ExperimentDAO {
    * @param experimentId experiment identifier
    * @return Tuple with all query parameters
    */
-  private Tuple buildUpdateParams(Map<String, Object> updates, UUID projectKey, UUID experimentId) {
+  private Tuple buildUpdateParams(
+      Map<String, Object> updates, String projectKey, UUID experimentId) {
     Tuple params = Tuple.tuple();
     for (Object value : updates.values()) {
       params.addValue(value);
     }
-    params.addString(projectKey.toString()).addString(experimentId.toString());
+    params.addString(projectKey).addString(experimentId.toString());
     return params;
   }
 
@@ -623,7 +624,7 @@ public class ExperimentDAOImpl implements ExperimentDAO {
    * @return Single emitting true on success, false on failure
    */
   private Single<Boolean> executeUpdate(
-      String query, Tuple params, UUID projectKey, UUID experimentId) {
+      String query, Tuple params, String projectKey, UUID experimentId) {
     return pgWriterClient
         .execute(query, params)
         .doOnSuccess(
@@ -645,22 +646,26 @@ public class ExperimentDAOImpl implements ExperimentDAO {
   }
 
   /**
-   * Updates experiment with tags and logs in a transaction.
+   * Updates experiment with tags, owners, metrics and logs in a transaction.
    *
    * @param projectKey project identifier for partitioning
    * @param experimentId experiment identifier
    * @param experimentFields map of experiment fields to update
    * @param tags list of tags to update (null if no tag update)
+   * @param owners list of owners to update (null if no owner update)
+   * @param metrics list of metrics to update (null if no metrics update)
    * @param previousData experiment data before update
    * @param updatedBy user who updated the experiment
    * @return Single emitting true on success
    */
   @Override
   public Single<Boolean> updateWithTransaction(
-      UUID projectKey,
+      String projectKey,
       UUID experimentId,
       UpdateExperimentRequest request,
       List<String> tags,
+      List<String> owners,
+      List<String> metrics,
       Map<String, Object> previousData,
       String updatedBy) {
 
@@ -670,7 +675,14 @@ public class ExperimentDAOImpl implements ExperimentDAO {
         experimentId);
 
     // Convert request to map for dynamic SQL generation
-    Map<String, Object> experimentFields = convertDtoToMap(request);
+    Map<String, Object> allFields = convertDtoToMap(request);
+
+    // Separate experiment table fields from related table fields (tags, owner, metrics)
+    Map<String, Object> experimentFields = new java.util.HashMap<>(allFields);
+    experimentFields.remove("tags");
+    experimentFields.remove("owner");
+    experimentFields.remove("metrics");
+    experimentFields.remove("updated_by");
 
     return pgWriterClient.executeWithTransaction(
         connection ->
@@ -678,6 +690,12 @@ public class ExperimentDAOImpl implements ExperimentDAO {
                 .flatMap(success -> validateUpdateSuccess(success, "experiment fields"))
                 .flatMap(unused -> updateTagsIfPresent(connection, projectKey, experimentId, tags))
                 .flatMap(success -> validateUpdateSuccess(success, "tags"))
+                .flatMap(
+                    unused -> updateOwnersIfPresent(connection, projectKey, experimentId, owners))
+                .flatMap(success -> validateUpdateSuccess(success, "owners"))
+                .flatMap(
+                    unused -> updateMetricsIfPresent(connection, projectKey, experimentId, metrics))
+                .flatMap(success -> validateUpdateSuccess(success, "metrics"))
                 .flatMap(
                     unused ->
                         logUpdate(
@@ -698,7 +716,7 @@ public class ExperimentDAOImpl implements ExperimentDAO {
    * @return Single emitting true on success
    */
   private Single<Boolean> updateExperimentFields(
-      UUID projectKey, UUID experimentId, Map<String, Object> fields) {
+      String projectKey, UUID experimentId, Map<String, Object> fields) {
     return fields.isEmpty() ? Single.just(true) : updatePartial(projectKey, experimentId, fields);
   }
 
@@ -713,7 +731,7 @@ public class ExperimentDAOImpl implements ExperimentDAO {
    */
   private Single<Boolean> updateTagsIfPresent(
       io.vertx.rxjava3.sqlclient.SqlConnection connection,
-      UUID projectKey,
+      String projectKey,
       UUID experimentId,
       List<String> tags) {
     if (tags == null) {
@@ -754,6 +772,87 @@ public class ExperimentDAOImpl implements ExperimentDAO {
   }
 
   /**
+   * Updates owners if present in the update request.
+   *
+   * @param connection SQL connection for transaction
+   * @param projectKey project identifier
+   * @param experimentId experiment identifier
+   * @param owners list of owners to update (null if no update)
+   * @return Single emitting true on success
+   */
+  private Single<Boolean> updateOwnersIfPresent(
+      io.vertx.rxjava3.sqlclient.SqlConnection connection,
+      String projectKey,
+      UUID experimentId,
+      List<String> owners) {
+    if (owners == null) {
+      return Single.just(true);
+    }
+
+    return getOwners(connection, projectKey, experimentId)
+        .flatMap(
+            existingOwners -> {
+              List<String> ownersToRemove =
+                  existingOwners.stream()
+                      .filter(owner -> !owners.contains(owner))
+                      .collect(java.util.stream.Collectors.toList());
+
+              List<String> ownersToAdd =
+                  owners.stream()
+                      .filter(owner -> !existingOwners.contains(owner))
+                      .collect(java.util.stream.Collectors.toList());
+
+              Single<Boolean> deleteOwners =
+                  ownersToRemove.isEmpty()
+                      ? Single.just(true)
+                      : deleteOwners(connection, projectKey, experimentId, ownersToRemove);
+
+              Single<Boolean> insertNew =
+                  ownersToAdd.isEmpty()
+                      ? Single.just(true)
+                      : batchInsertOwners(connection, projectKey, experimentId, ownersToAdd);
+
+              return deleteOwners.flatMap(
+                  deleteSuccess -> {
+                    if (!deleteSuccess) {
+                      return Single.error(new RuntimeException("Failed to delete owners"));
+                    }
+                    return insertNew;
+                  });
+            });
+  }
+
+  /**
+   * Updates metrics if present in the update request.
+   *
+   * @param connection SQL connection for transaction
+   * @param projectKey project identifier
+   * @param experimentId experiment identifier
+   * @param metrics list of metrics to update (null if no update)
+   * @return Single emitting true on success
+   */
+  private Single<Boolean> updateMetricsIfPresent(
+      io.vertx.rxjava3.sqlclient.SqlConnection connection,
+      String projectKey,
+      UUID experimentId,
+      List<String> metrics) {
+    if (metrics == null) {
+      return Single.just(true);
+    }
+
+    // For metrics, we'll do a simple delete and re-insert
+    // First delete existing metrics, then insert new ones
+    return deleteAllMetrics(connection, projectKey, experimentId)
+        .flatMap(
+            deleteSuccess -> {
+              if (!deleteSuccess) {
+                return Single.error(new RuntimeException("Failed to delete existing metrics"));
+              }
+              return insertMetrics(connection, projectKey, experimentId, metrics);
+            });
+  }
+
+  /**
    * Logs experiment update by computing current data from previous data and updates.
    *
    * <p>This method avoids an extra database call by merging the previous data with the update
@@ -769,7 +868,7 @@ public class ExperimentDAOImpl implements ExperimentDAO {
    */
   private Single<Boolean> logUpdate(
       io.vertx.rxjava3.sqlclient.SqlConnection connection,
-      UUID projectKey,
+      String projectKey,
       UUID experimentId,
       Map<String, Object> experimentFields,
       Map<String, Object> previousData,
@@ -819,7 +918,7 @@ public class ExperimentDAOImpl implements ExperimentDAO {
    */
   @Override
   public Single<Boolean> batchInsertTags(
-      SqlConnection connection, UUID projectKey, UUID experimentId, List<String> tags) {
+      SqlConnection connection, String projectKey, UUID experimentId, List<String> tags) {
     if (tags == null || tags.isEmpty()) {
       log.debug("No tags to insert for experimentId: {}", experimentId);
       return Single.just(true);
@@ -835,10 +934,7 @@ public class ExperimentDAOImpl implements ExperimentDAO {
     List<Tuple> tuples = new ArrayList<>();
     for (String tag : tags) {
       Tuple params =
-          Tuple.tuple()
-              .addString(experimentId.toString())
-              .addString(projectKey.toString())
-              .addString(tag);
+          Tuple.tuple().addString(experimentId.toString()).addString(projectKey).addString(tag);
       tuples.add(params);
     }
 
@@ -872,11 +968,10 @@ public class ExperimentDAOImpl implements ExperimentDAO {
    */
   @Override
   public Single<List<String>> getTags(
-      SqlConnection connection, UUID projectKey, UUID experimentId) {
+      SqlConnection connection, String projectKey, UUID experimentId) {
     log.debug("DAO: Getting tags for experimentId: {}, projectKey: {}", experimentId, projectKey);
 
-    Tuple params =
-        Tuple.tuple().addString(projectKey.toString()).addString(experimentId.toString());
+    Tuple params = Tuple.tuple().addString(projectKey).addString(experimentId.toString());
 
     return pgReaderClient
         .fetchAll(WriteQuery.GET_TAGS, params, row -> row.getString("tag"))
@@ -908,7 +1003,7 @@ public class ExperimentDAOImpl implements ExperimentDAO {
    */
   @Override
   public Single<Boolean> deleteTags(
-      SqlConnection connection, UUID projectKey, UUID experimentId, List<String> tags) {
+      SqlConnection connection, String projectKey, UUID experimentId, List<String> tags) {
     if (tags == null || tags.isEmpty()) {
       log.debug("DAO: No tags to delete for experimentId: {}", experimentId);
       return Single.just(true);
@@ -922,10 +1017,7 @@ public class ExperimentDAOImpl implements ExperimentDAO {
 
     String[] tagsArray = tags.toArray(new String[0]);
     Tuple params =
-        Tuple.tuple()
-            .addString(projectKey.toString())
-            .addString(experimentId.toString())
-            .addValue(tagsArray);
+        Tuple.tuple().addString(projectKey).addString(experimentId.toString()).addValue(tagsArray);
 
     return pgWriterClient
         .execute(connection, WriteQuery.DELETE_TAGS, params)
@@ -955,11 +1047,11 @@ public class ExperimentDAOImpl implements ExperimentDAO {
    * @return Single emitting true on success, false on failure
    */
   @Override
-  public Single<Boolean> deleteTags(SqlConnection connection, UUID projectKey, UUID experimentId) {
+  public Single<Boolean> deleteTags(
+      SqlConnection connection, String projectKey, UUID experimentId) {
     log.debug("DAO: Deleting tags for experimentId: {}, projectKey: {}", experimentId, projectKey);
 
-    Tuple params =
-        Tuple.tuple().addString(projectKey.toString()).addString(experimentId.toString());
+    Tuple params = Tuple.tuple().addString(projectKey).addString(experimentId.toString());
 
     return pgWriterClient
         .execute(connection, WriteQuery.DELETE_EXPERIMENT_TAGS, params)
@@ -982,6 +1074,41 @@ public class ExperimentDAOImpl implements ExperimentDAO {
   // ==================== Owner Operations ====================
 
   /**
+   * Gets all owners for an experiment.
+   *
+   * @param connection SQL connection for transaction
+   * @param projectKey project identifier for partitioning
+   * @param experimentId experiment identifier
+   * @return Single emitting list of owner names
+   */
+  private Single<List<String>> getOwners(
+      io.vertx.rxjava3.sqlclient.SqlConnection connection, String projectKey, UUID experimentId) {
+    log.debug("DAO: Getting owners for experimentId: {}, projectKey: {}", experimentId, projectKey);
+
+    String query =
+        "SELECT owner FROM experiment.owners WHERE project_key = $1 AND experiment_id = $2 ORDER BY owner";
+    Tuple params = Tuple.tuple().addString(projectKey).addString(experimentId.toString());
+
+    return pgReaderClient
+        .fetchAll(query, params, row -> row.getString("owner"))
+        .doOnSuccess(
+            owners ->
+                log.info(
+                    "DAO: Retrieved {} owners for experimentId: {}, projectKey: {}",
+                    owners.size(),
+                    experimentId,
+                    projectKey))
+        .onErrorReturn(
+            error -> {
+              log.error(
+                  "DAO: Returning empty list for get owners, experimentId: {}, error: {}",
+                  experimentId,
+                  error.getMessage());
+              return new ArrayList<>();
+            });
+  }
+
+  /**
    * Inserts an owner for an experiment.
    *
    * @param connection SQL connection for transaction
@@ -992,7 +1119,7 @@ public class ExperimentDAOImpl implements ExperimentDAO {
    */
   @Override
   public Single<Boolean> batchInsertOwners(
-      SqlConnection connection, UUID projectKey, UUID experimentId, List<String> owners) {
+      SqlConnection connection, String projectKey, UUID experimentId, List<String> owners) {
     if (owners == null || owners.isEmpty()) {
       log.debug("No owners to insert for experimentId: {}", experimentId);
       return Single.just(true);
@@ -1010,8 +1137,7 @@ public class ExperimentDAOImpl implements ExperimentDAO {
       queryBuilder.append(", ($1, $2, $").append(3 + i).append(")");
     }
 
-    Tuple params =
-        Tuple.tuple().addString(experimentId.toString()).addString(projectKey.toString());
+    Tuple params = Tuple.tuple().addString(experimentId.toString()).addString(projectKey);
 
     for (String owner : owners) {
       params.addString(owner);
@@ -1046,12 +1172,11 @@ public class ExperimentDAOImpl implements ExperimentDAO {
    */
   @Override
   public Single<Boolean> deleteOwners(
-      SqlConnection connection, UUID projectKey, UUID experimentId) {
+      SqlConnection connection, String projectKey, UUID experimentId) {
     log.debug(
         "DAO: Deleting owners for experimentId: {}, projectKey: {}", experimentId, projectKey);
 
-    Tuple params =
-        Tuple.tuple().addString(projectKey.toString()).addString(experimentId.toString());
+    Tuple params = Tuple.tuple().addString(projectKey).addString(experimentId.toString());
 
     return pgWriterClient
         .execute(connection, WriteQuery.DELETE_EXPERIMENT_OWNERS, params)
@@ -1065,6 +1190,65 @@ public class ExperimentDAOImpl implements ExperimentDAO {
             error -> {
               log.error(
                   "DAO: Returning false for owner deletion, experimentId: {}, error: {}",
+                  experimentId,
+                  error.getMessage());
+              return false;
+            });
+  }
+
+  /**
+   * Deletes specific owners for an experiment.
+   *
+   * @param connection SQL connection for transaction
+   * @param projectKey project identifier for partitioning
+   * @param experimentId experiment identifier
+   * @param ownersToDelete list of owner names to delete
+   * @return Single emitting true on success, false on failure
+   */
+  private Single<Boolean> deleteOwners(
+      io.vertx.rxjava3.sqlclient.SqlConnection connection,
+      String projectKey,
+      UUID experimentId,
+      List<String> ownersToDelete) {
+    if (ownersToDelete == null || ownersToDelete.isEmpty()) {
+      return Single.just(true);
+    }
+
+    log.debug(
+        "DAO: Deleting {} specific owners for experimentId: {}, projectKey: {}",
+        ownersToDelete.size(),
+        experimentId,
+        projectKey);
+
+    // Build dynamic query with IN clause
+    StringBuilder queryBuilder =
+        new StringBuilder(
+            "DELETE FROM experiment.owners WHERE project_key = $1 AND experiment_id = $2 AND owner IN (");
+
+    for (int i = 0; i < ownersToDelete.size(); i++) {
+      if (i > 0) queryBuilder.append(", ");
+      queryBuilder.append("$").append(3 + i);
+    }
+    queryBuilder.append(")");
+
+    Tuple params = Tuple.tuple().addString(projectKey).addString(experimentId.toString());
+    for (String owner : ownersToDelete) {
+      params.addString(owner);
+    }
+
+    return pgWriterClient
+        .execute(connection, queryBuilder.toString(), params)
+        .doOnSuccess(
+            success ->
+                log.info(
+                    "DAO: Successfully deleted {} owners for experimentId: {}, projectKey: {}",
+                    ownersToDelete.size(),
+                    experimentId,
+                    projectKey))
+        .onErrorReturn(
+            error -> {
+              log.error(
+                  "DAO: Returning false for specific owner deletion, experimentId: {}, error: {}",
                   experimentId,
                   error.getMessage());
               return false;
@@ -1087,7 +1271,7 @@ public class ExperimentDAOImpl implements ExperimentDAO {
   @Override
   public Single<Boolean> insertUpdateLog(
       SqlConnection connection,
-      UUID projectKey,
+      String projectKey,
       UUID experimentId,
       Map<String, Object> previousData,
       Map<String, Object> currentData,
@@ -1111,7 +1295,7 @@ public class ExperimentDAOImpl implements ExperimentDAO {
                       : null;
 
               return Tuple.tuple()
-                  .addString(projectKey.toString())
+                  .addString(projectKey)
                   .addString(experimentId.toString())
                   .addValue(previousDataJson)
                   .addValue(currentDataJson)
@@ -1136,6 +1320,106 @@ public class ExperimentDAOImpl implements ExperimentDAO {
             });
   }
 
+  // ==================== Metrics Operations ====================
+
+  /**
+   * Deletes all metrics for an experiment from the analysis table.
+   *
+   * @param connection SQL connection for transaction
+   * @param projectKey project identifier for partitioning
+   * @param experimentId experiment identifier
+   * @return Single emitting true on success, false on failure
+   */
+  private Single<Boolean> deleteAllMetrics(
+      io.vertx.rxjava3.sqlclient.SqlConnection connection, String projectKey, UUID experimentId) {
+    log.debug(
+        "DAO: Deleting all metrics for experimentId: {}, projectKey: {}", experimentId, projectKey);
+
+    String query =
+        "DELETE FROM experiment.experiment_analysis WHERE project_key = $1 AND experiment_id = $2";
+    Tuple params = Tuple.tuple().addString(projectKey).addString(experimentId.toString());
+
+    return pgWriterClient
+        .execute(connection, query, params)
+        .doOnSuccess(
+            success ->
+                log.info(
+                    "DAO: Successfully deleted metrics for experimentId: {}, projectKey: {}",
+                    experimentId,
+                    projectKey))
+        .onErrorReturn(
+            error -> {
+              log.error(
+                  "DAO: Returning false for metrics deletion, experimentId: {}, error: {}",
+                  experimentId,
+                  error.getMessage());
+              return false;
+            });
+  }
+
+  /**
+   * Inserts metrics for an experiment into the analysis table.
+   *
+   * @param connection SQL connection for transaction
+   * @param projectKey project identifier for partitioning
+   * @param experimentId experiment identifier
+   * @param metrics list of metrics to insert
+   * @return Single emitting true on success, false on failure
+   */
+  private Single<Boolean> insertMetrics(
+      io.vertx.rxjava3.sqlclient.SqlConnection connection,
+      String projectKey,
+      UUID experimentId,
+      List<String> metrics) {
+    if (metrics == null || metrics.isEmpty()) {
+      log.debug("No metrics to insert for experimentId: {}", experimentId);
+      return Single.just(true);
+    }
+
+    log.debug(
+        "DAO: Inserting {} metrics for experimentId: {}, projectKey: {}",
+        metrics.size(),
+        experimentId,
+        projectKey);
+
+    // Safely extract metrics with null and bounds checking
+    String primaryMetrics = null;
+    String secondaryMetrics = null;
+
+    if (metrics.size() > 0) {
+      primaryMetrics = metrics.get(0);
+    }
+    if (metrics.size() > 1) {
+      secondaryMetrics = metrics.get(1);
+    }
+
+    Tuple params =
+        Tuple.tuple()
+            .addString(projectKey) // $1
+            .addString(experimentId.toString()) // $2
+            .addValue(null) // $3 config (not used in update)
+            .addString(primaryMetrics) // $4
+            .addString(secondaryMetrics) // $5
+            .addValue(null); // $6 metric_tokens (not used in update)
+
+    return pgWriterClient
+        .execute(connection, WriteQuery.INSERT_EXPERIMENT_ANALYSIS, params)
+        .doOnSuccess(
+            success ->
+                log.info(
+                    "DAO: Successfully inserted metrics for experimentId: {}, projectKey: {}",
+                    experimentId,
+                    projectKey))
+        .onErrorReturn(
+            error -> {
+              log.error(
+                  "DAO: Returning false for metrics insertion, experimentId: {}, error: {}",
+                  experimentId,
+                  error.getMessage());
+              return false;
+            });
+  }
+
   // ==================== Analysis Operations ====================
 
   /**
@@ -1149,7 +1433,7 @@ public class ExperimentDAOImpl implements ExperimentDAO {
    */
   @Override
   public Single<Boolean> insertAnalysis(
-      SqlConnection connection, UUID projectKey, UUID experimentId, List<String> metrics) {
+      SqlConnection connection, String projectKey, UUID experimentId, List<String> metrics) {
 
     // Safely extract metrics with null and bounds checking
     String primaryMetrics = null;
@@ -1191,7 +1475,7 @@ public class ExperimentDAOImpl implements ExperimentDAO {
   @Override
   public Single<Boolean> insertAnalysis(
       SqlConnection connection,
-      UUID projectKey,
+      String projectKey,
       UUID experimentId,
       String config,
       String primaryMetrics,
@@ -1202,7 +1486,7 @@ public class ExperimentDAOImpl implements ExperimentDAO {
 
     Tuple params =
         Tuple.tuple()
-            .addString(projectKey.toString())
+            .addString(projectKey)
             .addString(experimentId.toString())
             .addString(config)
             .addString(primaryMetrics)

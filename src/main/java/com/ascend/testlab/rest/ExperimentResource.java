@@ -71,7 +71,7 @@ public class ExperimentResource {
       })
   public CompletionStage<ResponseEntity.Success<CreateExperimentResponse>> create(
       @HeaderParam("x-tenant-id") UUID tenantId,
-      @HeaderParam("x-project-key") UUID projectKey,
+      @HeaderParam("x-project-key") String projectKey,
       @Valid CreateExperimentRequest request) {
 
     return experimentService
@@ -114,7 +114,7 @@ public class ExperimentResource {
       })
   public CompletionStage<ResponseEntity.Success<UpdateExperimentResponse>> update(
       @HeaderParam("x-tenant-id") UUID tenantId,
-      @HeaderParam("x-project-key") UUID projectKey,
+      @HeaderParam("x-project-key") String projectKey,
       @PathParam("experiment_id") UUID experimentId,
       @Valid UpdateExperimentRequest request) {
 

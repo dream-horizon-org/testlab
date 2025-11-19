@@ -43,14 +43,14 @@ public class ExperimentServiceTest {
   private ExperimentService experimentService;
 
   private UUID testTenantId;
-  private UUID testProjectKey;
+  private String testProjectKey;
   private UUID testExperimentId;
 
   @BeforeEach
   void setUp() {
     experimentService = new ExperimentServiceImpl(experimentDAO, pgWriterClient);
     testTenantId = UUID.randomUUID();
-    testProjectKey = UUID.randomUUID();
+    testProjectKey = UUID.randomUUID().toString();
     testExperimentId = UUID.randomUUID();
 
     // Mock transaction execution by default (lenient to avoid unnecessary stubbing errors)
@@ -251,6 +251,8 @@ public class ExperimentServiceTest {
               any(UUID.class),
               any(UpdateExperimentRequest.class),
               any(),
+              any(),
+              any(),
               anyMap(),
               any()))
           .thenReturn(Single.just(true));
@@ -276,6 +278,8 @@ public class ExperimentServiceTest {
               any(UUID.class),
               any(UpdateExperimentRequest.class),
               any(),
+              any(),
+              any(),
               anyMap(),
               any()))
           .thenReturn(Single.just(true));
@@ -297,6 +301,8 @@ public class ExperimentServiceTest {
               any(UUID.class),
               any(UpdateExperimentRequest.class),
               any(),
+              any(),
+              any(),
               anyMap(),
               any());
     }
@@ -317,6 +323,8 @@ public class ExperimentServiceTest {
               any(UUID.class),
               any(UUID.class),
               any(UpdateExperimentRequest.class),
+              any(),
+              any(),
               any(),
               anyMap(),
               any()))
@@ -552,6 +560,8 @@ public class ExperimentServiceTest {
               any(UUID.class),
               any(UpdateExperimentRequest.class),
               any(),
+              any(),
+              any(),
               anyMap(),
               any()))
           .thenReturn(Single.just(true));
@@ -575,6 +585,8 @@ public class ExperimentServiceTest {
               any(UUID.class),
               any(UUID.class),
               any(UpdateExperimentRequest.class),
+              any(),
+              any(),
               any(),
               anyMap(),
               any());
