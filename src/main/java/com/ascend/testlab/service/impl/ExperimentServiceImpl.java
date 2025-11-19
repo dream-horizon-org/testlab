@@ -8,12 +8,9 @@ import com.ascend.testlab.dto.request.UpdateExperimentRequest;
 import com.ascend.testlab.dto.response.CreateExperimentResponse;
 import com.ascend.testlab.dto.response.UpdateExperimentResponse;
 import com.ascend.testlab.service.ExperimentService;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.inject.Inject;
 import io.reactivex.rxjava3.core.Single;
-import io.vertx.rxjava3.sqlclient.SqlConnection;
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
 import lombok.extern.slf4j.Slf4j;
 
@@ -69,7 +66,7 @@ public class ExperimentServiceImpl implements ExperimentService {
 
     // Set project_key and experiment_id - both come from header
     UUID experimentId = UUID.randomUUID();
-    request.setProjectKey(projectKey);
+    request.setProjectKey(projectKey.toString());
     request.setExperimentId(experimentId);
 
     // Generate experiment_key from name: replace spaces and hyphens with underscores
@@ -86,8 +83,7 @@ public class ExperimentServiceImpl implements ExperimentService {
 
     // Execute all insert operations in a transaction (delegated to DAO)
     return experimentDAO
-        .createWithRelatedData(
-            tenantId, projectKey, experimentId, request, request.getTags(), request.getOwner())
+        .createWithRelatedData(tenantId, request)
         .map(id -> new CreateExperimentResponse(experimentId, true, "created"));
   }
 
@@ -126,44 +122,34 @@ public class ExperimentServiceImpl implements ExperimentService {
                 new UpdateExperimentResponse(
                     experimentId, success, success ? "updated" : "Update failed"))
         .doOnSuccess(
-            response -> logSuccess(tenantId, projectKey, experimentId, response.isStatus()));
+            response ->
+                log.info(
+                    "Update experiment completed - tenantId: {}, projectKey: {}, experimentId: {}, status: {}",
+                    tenantId,
+                    projectKey,
+                    experimentId,
+                    response.isStatus()));
   }
 
   /**
-   * Extracts update context from DTO, separating experiment fields, tags, and metadata.
+   * Extracts update context from DTO, separating tags and metadata.
    *
    * @param request validated update experiment request DTO
    * @param experimentId experiment identifier for logging
-   * @return UpdateContext containing separated fields
+   * @return UpdateContext containing the request, tags, and updatedBy
    */
   private UpdateContext extractUpdateContext(UpdateExperimentRequest request, UUID experimentId) {
-    Map<String, Object> experimentFields = convertDtoToMap(request);
-
-    List<String> tags = extractField(experimentFields, "tags", List.class);
+    List<String> tags = request.getTags();
     if (tags != null) {
       log.debug("Tags found in update request for experimentId: {}, tags: {}", experimentId, tags);
     }
 
-    String updatedBy = extractField(experimentFields, "updated_by", String.class);
+    String updatedBy = request.getUpdatedBy();
     if (updatedBy != null) {
       log.debug("updated_by found in update request: {}", updatedBy);
     }
 
-    return new UpdateContext(experimentFields, tags, updatedBy != null ? updatedBy : "system");
-  }
-
-  /**
-   * Extracts and removes a field from map with type safety.
-   *
-   * @param map source map
-   * @param key field key
-   * @param type expected type
-   * @return extracted value or null
-   */
-  @SuppressWarnings("unchecked")
-  private <T> T extractField(Map<String, Object> map, String key, Class<T> type) {
-    Object value = map.remove(key);
-    return type.isInstance(value) ? (T) value : null;
+    return new UpdateContext(request, tags, updatedBy != null ? updatedBy : "system");
   }
 
   /**
@@ -194,13 +180,11 @@ public class ExperimentServiceImpl implements ExperimentService {
         .flatMap(
             previousData -> {
               // Validate status transition if status is being updated
-              if (context.experimentFields.containsKey("status")) {
+              if (context.request.getStatus() != null) {
                 Object currentStatusObj = previousData.get("status");
-                Object newStatusObj = context.experimentFields.get("status");
-
                 String currentStatus =
                     currentStatusObj != null ? currentStatusObj.toString() : null;
-                String newStatus = newStatusObj != null ? newStatusObj.toString() : null;
+                String newStatus = context.request.getStatus().name();
 
                 log.debug(
                     "Status transition check - current: {}, new: {}, experimentId: {}",
@@ -219,28 +203,11 @@ public class ExperimentServiceImpl implements ExperimentService {
               return experimentDAO.updateWithTransaction(
                   projectKey,
                   experimentId,
-                  context.experimentFields,
+                  context.request,
                   context.tags,
                   previousData,
                   context.updatedBy);
             });
-  }
-
-  /**
-   * Logs successful update.
-   *
-   * @param tenantId tenant identifier
-   * @param projectKey project identifier
-   * @param experimentId experiment identifier
-   * @param success operation result
-   */
-  private void logSuccess(UUID tenantId, UUID projectKey, UUID experimentId, Boolean success) {
-    log.info(
-        "Successfully updated experiment with update log, tenantId: {}, projectKey: {}, experimentId: {}, success: {}",
-        tenantId,
-        projectKey,
-        experimentId,
-        success);
   }
 
   /**
@@ -259,115 +226,6 @@ public class ExperimentServiceImpl implements ExperimentService {
         experimentId,
         error.getMessage(),
         error);
-  }
-
-  /**
-   * Handles update error and returns false.
-   *
-   * @param tenantId tenant identifier
-   * @param projectKey project identifier
-   * @param experimentId experiment identifier
-   * @param error error that occurred
-   * @return false to indicate failure
-   */
-  private Boolean handleError(UUID tenantId, UUID projectKey, UUID experimentId, Throwable error) {
-    log.error(
-        "Returning false for experiment update, tenantId: {}, projectKey: {}, experimentId: {}, error: {}",
-        tenantId,
-        projectKey,
-        experimentId,
-        error.getMessage());
-    return false;
-  }
-
-  /** Inner class to hold update context with separated fields. */
-  // ==================== Tag Management Methods ====================
-
-  /**
-   * Batch inserts tags for an experiment.
-   *
-   * @param connection SQL connection for transaction
-   * @param projectKey project identifier for partitioning
-   * @param experimentId experiment identifier
-   * @param tags list of tags to insert
-   * @return Single emitting true on success, false on failure
-   */
-  private Single<Boolean> insertTags(
-      SqlConnection connection, UUID projectKey, UUID experimentId, List<String> tags) {
-    if (tags == null || tags.isEmpty()) {
-      return Single.just(true);
-    }
-    return experimentDAO.batchInsertTags(connection, projectKey, experimentId, tags);
-  }
-
-  /**
-   * Updates tags for an experiment by merging with existing tags.
-   *
-   * @param connection SQL connection for transaction
-   * @param projectKey project identifier for partitioning
-   * @param experimentId experiment identifier
-   * @param newTags list of new tags to set
-   * @return Single emitting true on success, false on failure
-   */
-  private Single<Boolean> updateTags(
-      SqlConnection connection, UUID projectKey, UUID experimentId, List<String> newTags) {
-    if (newTags == null || newTags.isEmpty()) {
-      return Single.just(true);
-    }
-
-    return experimentDAO
-        .getTags(connection, projectKey, experimentId)
-        .flatMap(
-            existingTags -> {
-              List<String> tagsToRemove =
-                  existingTags.stream()
-                      .filter(tag -> !newTags.contains(tag))
-                      .collect(java.util.stream.Collectors.toList());
-
-              List<String> tagsToAdd =
-                  newTags.stream()
-                      .filter(tag -> !existingTags.contains(tag))
-                      .collect(java.util.stream.Collectors.toList());
-
-              Single<Boolean> markInactive =
-                  tagsToRemove.isEmpty()
-                      ? Single.just(true)
-                      : experimentDAO.deleteTags(
-                          connection, projectKey, experimentId, tagsToRemove);
-
-              Single<Boolean> insertNew =
-                  tagsToAdd.isEmpty()
-                      ? Single.just(true)
-                      : experimentDAO.batchInsertTags(
-                          connection, projectKey, experimentId, tagsToAdd);
-
-              return markInactive.flatMap(
-                  markSuccess -> {
-                    if (!markSuccess) {
-                      return Single.error(new RuntimeException("Failed to mark tags as inactive"));
-                    }
-                    return insertNew;
-                  });
-            });
-  }
-
-  // ==================== Owner Management Methods ====================
-
-  /**
-   * Inserts an owner for an experiment.
-   *
-   * @param connection SQL connection for transaction
-   * @param projectKey project identifier for partitioning
-   * @param experimentId experiment identifier
-   * @param owner owner name/email
-   * @return Single emitting true on success, false on failure
-   */
-  private Single<Boolean> insertOwner(
-      SqlConnection connection, UUID projectKey, UUID experimentId, String owner) {
-    if (owner == null || owner.isEmpty()) {
-      return Single.just(true);
-    }
-    return experimentDAO.insertOwner(connection, projectKey, experimentId, owner);
   }
 
   /**
@@ -503,47 +361,58 @@ public class ExperimentServiceImpl implements ExperimentService {
         newStatus);
   }
 
-  /**
-   * Converts UpdateExperimentRequest DTO to Map for DAO layer.
-   *
-   * <p>Serializes the DTO to JSON string and then deserializes to Map to preserve @JsonProperty
-   * annotations and remove null values.
-   *
-   * @param request update experiment request DTO
-   * @return map of field names to values (excluding null values)
-   */
-  private Map<String, Object> convertDtoToMap(UpdateExperimentRequest request) {
-    ObjectMapper mapper = new ObjectMapper();
-    try {
-      // Serialize to JSON string to respect @JsonProperty annotations
-      String jsonString = mapper.writeValueAsString(request);
-      // Deserialize back to Map
-      @SuppressWarnings("unchecked")
-      Map<String, Object> map = mapper.readValue(jsonString, Map.class);
-
-      // Remove null values
-      map.values().removeIf(value -> value == null);
-
-      return map;
-    } catch (Exception e) {
-      log.error("Failed to convert DTO to Map: {}", e.getMessage(), e);
-      throw new RuntimeException("Failed to convert DTO to Map", e);
-    }
-  }
-
+  /** Context holder for update operation containing request, tags, and metadata. */
   private static class UpdateContext {
-    final Map<String, Object> experimentFields;
+    final UpdateExperimentRequest request;
     final List<String> tags;
     final String updatedBy;
 
-    UpdateContext(Map<String, Object> experimentFields, List<String> tags, String updatedBy) {
-      this.experimentFields = experimentFields;
+    UpdateContext(UpdateExperimentRequest request, List<String> tags, String updatedBy) {
+      this.request = request;
       this.tags = tags;
       this.updatedBy = updatedBy;
     }
 
     boolean hasUpdates() {
-      return !experimentFields.isEmpty() || tags != null;
+      // Check if request has any non-null fields (excluding tags and updatedBy)
+      return request.getName() != null
+          || request.getDescription() != null
+          || request.getHypothesis() != null
+          || request.getStatus() != null
+          || request.getType() != null
+          || request.getGuardrailHealthStatus() != null
+          || request.getCohorts() != null
+          || request.getVariantWeights() != null
+          || request.getVariants() != null
+          || request.getDistributionStrategy() != null
+          || request.getAssignmentDomain() != null
+          || request.getOverrides() != null
+          || request.getRuleAttributes() != null
+          || request.getWinningVariant() != null
+          || request.getExposure() != null
+          || request.getThreshold() != null
+          || request.getStartTime() != null
+          || request.getEndTime() != null
+          || tags != null;
+    }
+  }
+
+  /**
+   * Sets the type in variant_weights based on assignment_domain.
+   *
+   * <p>This method automatically derives and sets the type field in variant_weights from the
+   * assignment_domain: - MANUAL -> type = MANUAL - COHORT -> type = COHORT - DEFAULT -> type =
+   * COHORT
+   *
+   * @param request the create experiment request
+   */
+  private void setVariantWeightsType(CreateExperimentRequest request) {
+    if (request.getVariantWeights() != null && request.getAssignmentDomain() != null) {
+      // The type is already set by the getType() method in the concrete classes
+      // We just need to ensure the correct subclass is used based on assignment_domain
+      log.debug(
+          "Variant weights type is derived from assignment_domain: {}",
+          request.getAssignmentDomain());
     }
   }
 }

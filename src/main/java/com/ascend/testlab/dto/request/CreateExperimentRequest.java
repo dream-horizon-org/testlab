@@ -10,14 +10,16 @@ import com.ascend.testlab.entity.AssignmentDomain;
 import com.ascend.testlab.entity.RuleAttributes;
 import com.ascend.testlab.entity.Variant;
 import com.ascend.testlab.exception.ErrorMessages;
+import com.ascend.testlab.validation.annotations.ValidExperimentTargeting;
+import com.ascend.testlab.validation.annotations.ValidTimeRange;
 import com.ascend.testlab.validation.annotations.ValidVariantKeys;
+import com.ascend.testlab.validation.annotations.ValidVariantWeightKeys;
 import com.ascend.testlab.validation.annotations.ValidVariantWeights;
 import com.ascend.testlab.variantWeights.VariantWeights;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.*;
-import java.sql.Timestamp;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -31,11 +33,14 @@ import lombok.Data;
  * @since 1.0
  */
 @Data
+@ValidExperimentTargeting
+@ValidTimeRange
+@ValidVariantWeightKeys
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class CreateExperimentRequest {
 
   @JsonProperty("project_key")
-  private UUID projectKey;
+  private String projectKey;
 
   @JsonProperty("tenant_id")
   private UUID tenantId;
@@ -85,48 +90,41 @@ public class CreateExperimentRequest {
   private ExperimentHealth guardrailHealthStatus;
 
   @JsonProperty("metrics")
-  @Size(max = 10, message = "Maximum 10 metrics allowed")
-  private List<@NotBlank(message = "Metric name cannot be blank") String> metrics;
+  private List<String> metrics;
 
   @JsonProperty("cohorts")
-  @NotEmpty(message = "At least one cohort is required")
-  @Size(min = 1, max = 20, message = "Number of cohorts must be between 1 and 20")
-  private List<@NotBlank(message = "Cohort name cannot be blank") String> cohorts;
+  private List<String> cohorts;
 
   @JsonProperty("tags")
-  @Size(max = 20, message = "Maximum 20 tags allowed")
   private List<@NotBlank(message = "Tag cannot be blank") String> tags;
 
   @JsonProperty("owner")
-  @NotBlank(message = "Owner is required")
-  @Email(message = "Owner must be a valid email address")
-  @Size(max = 255, message = "Owner email must not exceed 255 characters")
-  private String owner;
+  @NotEmpty(message = "At least one owner is required")
+  @Size(max = 10, message = "Maximum 10 owners allowed")
+  private List<
+          @NotBlank(message = "Owner cannot be blank")
+          @Email(message = "Owner must be a valid email address") String>
+      owner;
 
   @JsonProperty("variant_weights")
   @NotNull(message = "Variant weights are required")
   @Valid
   @ValidVariantWeights
-  private VariantWeights variant_weights;
+  private VariantWeights variantWeights;
 
   @JsonProperty("rule_attributes")
   @Valid
-  @NotNull(message = "RuleAttributes is required")
-  @Size(max = 50, message = "Maximum 50 rule attributes allowed")
   private List<RuleAttributes> ruleAttributes;
 
   @JsonProperty("winning_variant")
   @Valid
-  @NotNull(message = "Winning Variant is required")
   @ValidVariantKeys
-  @Size(max = 50, message = "Maximum 50 variants allowed")
   private Map<String, @Valid Variant> winningVariant;
 
   @JsonProperty("variants")
   @Valid
   @NotNull(message = "Variant is required")
   @ValidVariantKeys
-  @Size(max = 50, message = "Maximum 50 variants allowed")
   private Map<String, @Valid Variant> variants;
 
   @JsonProperty("distribution_strategy")
@@ -146,8 +144,8 @@ public class CreateExperimentRequest {
   private AssignmentDomain assignmentDomain;
 
   @JsonProperty("overrides")
-  @Size(max = 255, message = "Overrides must not exceed 255 characters")
-  private String overrides;
+  @Size(max = 100, message = "Maximum 100 overrides allowed")
+  private List<@NotBlank(message = "Override cannot be blank") String> overrides;
 
   @JsonProperty("exposure")
   @Min(value = 0, message = "Exposure must be at least 0")
@@ -172,8 +170,8 @@ public class CreateExperimentRequest {
   private String createdBy;
 
   @JsonProperty("created_at")
-  private Timestamp createdAt;
+  private long createdAt;
 
   @JsonProperty("updated_at")
-  private Timestamp updatedAt;
+  private long updatedAt;
 }

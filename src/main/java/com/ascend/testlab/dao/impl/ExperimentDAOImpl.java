@@ -7,6 +7,7 @@ import com.ascend.testlab.constants.postgresql.ReadQuery;
 import com.ascend.testlab.constants.postgresql.WriteQuery;
 import com.ascend.testlab.dao.ExperimentDAO;
 import com.ascend.testlab.dto.request.CreateExperimentRequest;
+import com.ascend.testlab.dto.request.UpdateExperimentRequest;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.inject.Inject;
@@ -91,8 +92,8 @@ public class ExperimentDAOImpl implements ExperimentDAO {
               String ruleAttributesJson = null;
               String winningVariantJson = null;
 
-              if (request.getVariant_weights() != null) {
-                variantWeightsJson = MAPPER.writeValueAsString(request.getVariant_weights());
+              if (request.getVariantWeights() != null) {
+                variantWeightsJson = MAPPER.writeValueAsString(request.getVariantWeights());
               }
               if (request.getVariants() != null) {
                 variantsJson = MAPPER.writeValueAsString(request.getVariants());
@@ -135,7 +136,11 @@ public class ExperimentDAOImpl implements ExperimentDAO {
                       request.getAssignmentDomain() == null
                           ? null
                           : request.getAssignmentDomain().name()) // $14 assignment_domain
-                  .addValue(request.getOverrides()) // $15 overrides as varchar
+                  .addValue(
+                      request.getOverrides() == null || request.getOverrides().isEmpty()
+                          ? null
+                          : serializeToJson(
+                              "overrides", request.getOverrides())) // $15 overrides as jsonb
                   .addValue(ruleAttributesJson) // $16 rule_attributes as jsonb string
                   .addValue(winningVariantJson) // $17 winning_variant as jsonb string
                   .addValue(request.getExposure()) // $18 exposure
@@ -177,22 +182,21 @@ public class ExperimentDAOImpl implements ExperimentDAO {
   /**
    * Creates experiment with tags, owner, update log, and analysis in a transaction.
    *
+   * <p>Extracts projectKey, experimentId, tags, and owner from the request object and executes all
+   * insert operations in parallel within a transaction.
+   *
    * @param tenantId tenant identifier for multi-tenancy
-   * @param projectKey project identifier for partitioning
-   * @param experimentId experiment identifier
-   * @param request experiment creation request with all experiment details
-   * @param tags list of tags to associate with experiment
-   * @param owner owner of the experiment
+   * @param request experiment creation request with all experiment details including projectKey,
+   *     experimentId, tags, and owner
    * @return Single emitting experiment ID on success
    */
   @Override
-  public Single<Long> createWithRelatedData(
-      UUID tenantId,
-      UUID projectKey,
-      UUID experimentId,
-      CreateExperimentRequest request,
-      List<String> tags,
-      String owner) {
+  public Single<Long> createWithRelatedData(UUID tenantId, CreateExperimentRequest request) {
+
+    UUID projectKey = UUID.fromString(request.getProjectKey());
+    UUID experimentId = request.getExperimentId();
+    List<String> tags = request.getTags();
+    List<String> owners = request.getOwner();
 
     log.info(
         "DAO: Creating experiment with related data, projectKey: {}, experimentId: {}",
@@ -214,7 +218,7 @@ public class ExperimentDAOImpl implements ExperimentDAO {
                       // Execute all inserts in parallel using zip
                       return Single.zip(
                           batchInsertTags(connection, projectKey, experimentId, tags),
-                          insertOwner(connection, projectKey, experimentId, owner),
+                          batchInsertOwners(connection, projectKey, experimentId, owners),
                           insertUpdateLog(
                               connection,
                               projectKey,
@@ -458,6 +462,8 @@ public class ExperimentDAOImpl implements ExperimentDAO {
   private Object processFieldValue(String key, Object value) {
     if (key.equals("cohorts") && value instanceof java.util.List) {
       return convertCohortsToArray(value);
+    } else if (key.equals("overrides") && value instanceof java.util.List) {
+      return serializeToJson(key, value);
     } else if (isEnumField(key)) {
       return convertEnumValue(value);
     } else if (isJsonbField(key)) {
@@ -653,7 +659,7 @@ public class ExperimentDAOImpl implements ExperimentDAO {
   public Single<Boolean> updateWithTransaction(
       UUID projectKey,
       UUID experimentId,
-      Map<String, Object> experimentFields,
+      UpdateExperimentRequest request,
       List<String> tags,
       Map<String, Object> previousData,
       String updatedBy) {
@@ -662,6 +668,9 @@ public class ExperimentDAOImpl implements ExperimentDAO {
         "DAO: Starting transactional update, projectKey: {}, experimentId: {}",
         projectKey,
         experimentId);
+
+    // Convert request to map for dynamic SQL generation
+    Map<String, Object> experimentFields = convertDtoToMap(request);
 
     return pgWriterClient.executeWithTransaction(
         connection ->
@@ -982,40 +991,46 @@ public class ExperimentDAOImpl implements ExperimentDAO {
    * @return Single emitting true on success, false on failure
    */
   @Override
-  public Single<Boolean> insertOwner(
-      SqlConnection connection, UUID projectKey, UUID experimentId, String owner) {
-    if (owner == null || owner.isEmpty()) {
-      log.debug("No owner to insert for experimentId: {}", experimentId);
+  public Single<Boolean> batchInsertOwners(
+      SqlConnection connection, UUID projectKey, UUID experimentId, List<String> owners) {
+    if (owners == null || owners.isEmpty()) {
+      log.debug("No owners to insert for experimentId: {}", experimentId);
       return Single.just(true);
     }
 
     log.debug(
-        "DAO: Inserting owner: {} for experimentId: {}, projectKey: {}",
-        owner,
+        "DAO: Batch inserting {} owners for experimentId: {}, projectKey: {}",
+        owners.size(),
         experimentId,
         projectKey);
 
+    // Build batch insert query
+    StringBuilder queryBuilder = new StringBuilder(WriteQuery.INSERT_EXPERIMENT_OWNER);
+    for (int i = 1; i < owners.size(); i++) {
+      queryBuilder.append(", ($1, $2, $").append(3 + i).append(")");
+    }
+
     Tuple params =
-        Tuple.tuple()
-            .addString(experimentId.toString())
-            .addString(projectKey.toString())
-            .addString(owner);
+        Tuple.tuple().addString(experimentId.toString()).addString(projectKey.toString());
+
+    for (String owner : owners) {
+      params.addString(owner);
+    }
 
     return pgWriterClient
-        .execute(connection, WriteQuery.INSERT_EXPERIMENT_OWNER, params)
+        .execute(connection, queryBuilder.toString(), params)
         .doOnSuccess(
             success ->
                 log.info(
-                    "DAO: Successfully inserted owner: {} for experimentId: {}, projectKey: {}",
-                    owner,
+                    "DAO: Successfully batch inserted {} owners for experimentId: {}, projectKey: {}",
+                    owners.size(),
                     experimentId,
                     projectKey))
         .onErrorReturn(
             error -> {
               log.error(
-                  "DAO: Returning false for owner insert, experimentId: {}, owner: {}, error: {}",
+                  "DAO: Returning false for owners batch insert, experimentId: {}, error: {}",
                   experimentId,
-                  owner,
                   error.getMessage());
               return false;
             });
@@ -1210,5 +1225,29 @@ public class ExperimentDAOImpl implements ExperimentDAO {
                   error.getMessage());
               return false;
             });
+  }
+
+  /**
+   * Converts UpdateExperimentRequest DTO to Map for dynamic SQL generation.
+   *
+   * @param request update experiment request DTO
+   * @return Map representation of the request with null values removed
+   */
+  private Map<String, Object> convertDtoToMap(UpdateExperimentRequest request) {
+    try {
+      // Serialize to JSON string to respect @JsonProperty annotations
+      String jsonString = MAPPER.writeValueAsString(request);
+      // Deserialize back to Map
+      @SuppressWarnings("unchecked")
+      Map<String, Object> map = MAPPER.readValue(jsonString, Map.class);
+
+      // Remove null values
+      map.values().removeIf(value -> value == null);
+
+      return map;
+    } catch (Exception e) {
+      log.error("DAO: Failed to convert DTO to Map: {}", e.getMessage(), e);
+      throw new RuntimeException("Failed to convert DTO to Map", e);
+    }
   }
 }

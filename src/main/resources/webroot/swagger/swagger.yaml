@@ -140,24 +140,20 @@ components:
     CreateExperimentRequest:
       required:
       - assignment_domain
-      - cohorts
       - created_by
       - description
       - distribution_strategy
       - hypothesis
       - name
       - owner
-      - rule_attributes
       - status
       - type
       - variant_weights
       - variants
-      - winning_variant
       type: object
       properties:
         project_key:
           type: string
-          format: uuid
         tenant_id:
           type: string
           format: uuid
@@ -198,6 +194,18 @@ components:
           - NO_CHECKS_AVAILABLE
           - FAILED
         metrics:
+          type: array
+          items:
+            type: string
+        cohorts:
+          type: array
+          items:
+            type: string
+        tags:
+          type: array
+          items:
+            type: string
+        owner:
           maxItems: 10
           minItems: 0
           type: array
@@ -205,31 +213,9 @@ components:
             maxLength: 10
             minLength: 0
             type: string
-        cohorts:
-          maxItems: 20
-          minItems: 1
-          type: array
-          items:
-            maxLength: 20
-            minLength: 1
-            type: string
-        tags:
-          maxItems: 20
-          minItems: 0
-          type: array
-          items:
-            maxLength: 20
-            minLength: 0
-            type: string
-        owner:
-          maxLength: 255
-          minLength: 0
-          type: string
         variant_weights:
           $ref: '#/components/schemas/VariantWeights'
         rule_attributes:
-          maxItems: 50
-          minItems: 0
           type: array
           items:
             $ref: '#/components/schemas/RuleAttributes'
@@ -253,9 +239,13 @@ components:
           - COHORT
           - DEFAULT
         overrides:
-          maxLength: 255
-          minLength: 0
-          type: string
+          maxItems: 100
+          minItems: 0
+          type: array
+          items:
+            maxLength: 100
+            minLength: 0
+            type: string
         exposure:
           maximum: 100
           minimum: 0
@@ -278,11 +268,11 @@ components:
           minLength: 0
           type: string
         created_at:
-          type: string
-          format: date-time
+          type: integer
+          format: int64
         updated_at:
-          type: string
-          format: date-time
+          type: integer
+          format: int64
     ManualVariantWeights:
       required:
       - weights
@@ -312,17 +302,19 @@ components:
     Variables:
       required:
       - dataType
+      - key
+      - value
       type: object
       properties:
-        value:
-          type: string
         key:
+          type: string
+        value:
           type: string
         dataType:
           type: string
     Variant:
       required:
-      - dataType
+      - variables
       type: object
       properties:
         displayName:
@@ -331,8 +323,6 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Variables'
-        dataType:
-          type: string
     VariantWeights:
       type: object
       properties:
@@ -362,7 +352,9 @@ components:
           items:
             type: string
         owner:
-          type: string
+          type: array
+          items:
+            type: string
         description:
           maxLength: 255
           minLength: 0
@@ -422,9 +414,13 @@ components:
           items:
             $ref: '#/components/schemas/RuleAttributes'
         overrides:
-          maxLength: 255
-          minLength: 0
-          type: string
+          maxItems: 100
+          minItems: 0
+          type: array
+          items:
+            maxLength: 100
+            minLength: 0
+            type: string
         winning_variant:
           type: object
           additionalProperties:

@@ -1,6 +1,7 @@
 package com.ascend.testlab.dao;
 
 import com.ascend.testlab.dto.request.CreateExperimentRequest;
+import com.ascend.testlab.dto.request.UpdateExperimentRequest;
 import io.reactivex.rxjava3.core.Single;
 import io.vertx.rxjava3.sqlclient.SqlConnection;
 import java.util.List;
@@ -32,21 +33,15 @@ public interface ExperimentDAO {
   /**
    * Creates experiment with tags, owner, update log, and analysis in a transaction.
    *
+   * <p>All necessary data (projectKey, experimentId, tags, owner) is extracted from the request
+   * object.
+   *
    * @param tenantId tenant identifier for multi-tenancy
-   * @param projectKey project identifier for partitioning
-   * @param experimentId experiment identifier
-   * @param request experiment creation request with all experiment details
-   * @param tags list of tags to associate with experiment
-   * @param owner owner of the experiment
+   * @param request experiment creation request with all experiment details including projectKey,
+   *     experimentId, tags, and owner
    * @return Single emitting experiment ID on success
    */
-  Single<Long> createWithRelatedData(
-      UUID tenantId,
-      UUID projectKey,
-      UUID experimentId,
-      CreateExperimentRequest request,
-      List<String> tags,
-      String owner);
+  Single<Long> createWithRelatedData(UUID tenantId, CreateExperimentRequest request);
 
   /**
    * Gets current experiment data as a map.
@@ -81,7 +76,7 @@ public interface ExperimentDAO {
   Single<Boolean> updateWithTransaction(
       UUID projectKey,
       UUID experimentId,
-      Map<String, Object> experimentFields,
+      UpdateExperimentRequest request,
       List<String> tags,
       Map<String, Object> previousData,
       String updatedBy);
@@ -143,8 +138,8 @@ public interface ExperimentDAO {
    * @param owner owner name/email
    * @return Single emitting true on success, false on failure
    */
-  Single<Boolean> insertOwner(
-      SqlConnection connection, UUID projectKey, UUID experimentId, String owner);
+  Single<Boolean> batchInsertOwners(
+      SqlConnection connection, UUID projectKey, UUID experimentId, List<String> owners);
 
   /**
    * Deletes all owners for an experiment.

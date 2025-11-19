@@ -72,13 +72,7 @@ public class ExperimentServiceTest {
     void testCreateExperimentSuccess() {
       // Arrange
       CreateExperimentRequest request = createValidRequest();
-      when(experimentDAO.createWithRelatedData(
-              any(UUID.class),
-              any(UUID.class),
-              any(UUID.class),
-              any(CreateExperimentRequest.class),
-              anyList(),
-              anyString()))
+      when(experimentDAO.createWithRelatedData(any(UUID.class), any(CreateExperimentRequest.class)))
           .thenReturn(Single.just(1L));
 
       // Act
@@ -96,13 +90,7 @@ public class ExperimentServiceTest {
       assertEquals("created", response.getMessage());
 
       verify(experimentDAO, times(1))
-          .createWithRelatedData(
-              any(UUID.class),
-              any(UUID.class),
-              any(UUID.class),
-              any(CreateExperimentRequest.class),
-              anyList(),
-              anyString());
+          .createWithRelatedData(any(UUID.class), any(CreateExperimentRequest.class));
     }
 
     @Test
@@ -113,13 +101,7 @@ public class ExperimentServiceTest {
       request.setProjectKey(null);
       request.setExperimentId(null);
 
-      when(experimentDAO.createWithRelatedData(
-              any(UUID.class),
-              any(UUID.class),
-              any(UUID.class),
-              any(CreateExperimentRequest.class),
-              anyList(),
-              anyString()))
+      when(experimentDAO.createWithRelatedData(any(UUID.class), any(CreateExperimentRequest.class)))
           .thenReturn(Single.just(1L));
 
       // Act
@@ -140,13 +122,7 @@ public class ExperimentServiceTest {
     void testCreateExperimentDaoReturnsZero() {
       // Arrange
       CreateExperimentRequest request = createValidRequest();
-      when(experimentDAO.createWithRelatedData(
-              any(UUID.class),
-              any(UUID.class),
-              any(UUID.class),
-              any(CreateExperimentRequest.class),
-              anyList(),
-              anyString()))
+      when(experimentDAO.createWithRelatedData(any(UUID.class), any(CreateExperimentRequest.class)))
           .thenReturn(Single.error(new RuntimeException("Failed to insert experiment")));
 
       // Act
@@ -170,13 +146,7 @@ public class ExperimentServiceTest {
       // Arrange
       CreateExperimentRequest request = createValidRequest();
       RuntimeException exception = new RuntimeException("Database connection failed");
-      when(experimentDAO.createWithRelatedData(
-              any(UUID.class),
-              any(UUID.class),
-              any(UUID.class),
-              any(CreateExperimentRequest.class),
-              anyList(),
-              anyString()))
+      when(experimentDAO.createWithRelatedData(any(UUID.class), any(CreateExperimentRequest.class)))
           .thenReturn(Single.error(exception));
 
       // Act
@@ -219,15 +189,9 @@ public class ExperimentServiceTest {
       CreateExperimentRequest request = createValidRequest();
       request.setCohorts(Arrays.asList("premium_users", "mobile_users"));
 
-      request.setOverrides("user1@example.com,user2@example.com");
+      request.setOverrides(List.of("user1@example.com", "user2@example.com"));
 
-      when(experimentDAO.createWithRelatedData(
-              any(UUID.class),
-              any(UUID.class),
-              any(UUID.class),
-              any(CreateExperimentRequest.class),
-              anyList(),
-              anyString()))
+      when(experimentDAO.createWithRelatedData(any(UUID.class), any(CreateExperimentRequest.class)))
           .thenReturn(Single.just(1L));
 
       // Act
@@ -256,13 +220,7 @@ public class ExperimentServiceTest {
       request.setEndTime(System.currentTimeMillis() / 1000 + 86400);
       request.setCreatedBy("test@example.com");
 
-      when(experimentDAO.createWithRelatedData(
-              any(UUID.class),
-              any(UUID.class),
-              any(UUID.class),
-              any(CreateExperimentRequest.class),
-              anyList(),
-              anyString()))
+      when(experimentDAO.createWithRelatedData(any(UUID.class), any(CreateExperimentRequest.class)))
           .thenReturn(Single.just(1L));
 
       // Act
@@ -289,7 +247,12 @@ public class ExperimentServiceTest {
       when(experimentDAO.getExperimentData(any(UUID.class), any(UUID.class)))
           .thenReturn(Single.just(previousData));
       when(experimentDAO.updateWithTransaction(
-              any(UUID.class), any(UUID.class), anyMap(), any(), anyMap(), any()))
+              any(UUID.class),
+              any(UUID.class),
+              any(UpdateExperimentRequest.class),
+              any(),
+              anyMap(),
+              any()))
           .thenReturn(Single.just(true));
     }
 
@@ -309,7 +272,12 @@ public class ExperimentServiceTest {
       when(experimentDAO.getExperimentData(any(UUID.class), any(UUID.class)))
           .thenReturn(Single.just(previousData));
       when(experimentDAO.updateWithTransaction(
-              any(UUID.class), any(UUID.class), anyMap(), any(), anyMap(), any()))
+              any(UUID.class),
+              any(UUID.class),
+              any(UpdateExperimentRequest.class),
+              any(),
+              anyMap(),
+              any()))
           .thenReturn(Single.just(true));
 
       // Act
@@ -325,7 +293,12 @@ public class ExperimentServiceTest {
       verify(experimentDAO, times(1)).getExperimentData(any(UUID.class), any(UUID.class));
       verify(experimentDAO, times(1))
           .updateWithTransaction(
-              any(UUID.class), any(UUID.class), anyMap(), any(), anyMap(), any());
+              any(UUID.class),
+              any(UUID.class),
+              any(UpdateExperimentRequest.class),
+              any(),
+              anyMap(),
+              any());
     }
 
     @Test
@@ -341,7 +314,12 @@ public class ExperimentServiceTest {
       when(experimentDAO.getExperimentData(any(UUID.class), any(UUID.class)))
           .thenReturn(Single.just(previousData));
       when(experimentDAO.updateWithTransaction(
-              any(UUID.class), any(UUID.class), anyMap(), any(), anyMap(), any()))
+              any(UUID.class),
+              any(UUID.class),
+              any(UpdateExperimentRequest.class),
+              any(),
+              anyMap(),
+              any()))
           .thenReturn(Single.just(true));
 
       // Act
@@ -415,7 +393,7 @@ public class ExperimentServiceTest {
 
       List<String> overrides =
           Arrays.asList("user1@example.com", "user2@example.com", "user3@example.com");
-      updates.setOverrides(String.join(",", overrides));
+      updates.setOverrides(overrides);
 
       mockUpdateWithTransaction();
 
@@ -441,7 +419,12 @@ public class ExperimentServiceTest {
       when(experimentDAO.getExperimentData(any(UUID.class), any(UUID.class)))
           .thenReturn(Single.just(previousData));
       when(experimentDAO.updateWithTransaction(
-              any(UUID.class), any(UUID.class), anyMap(), any(), anyMap(), any()))
+              any(UUID.class),
+              any(UUID.class),
+              any(UpdateExperimentRequest.class),
+              any(),
+              anyMap(),
+              any()))
           .thenReturn(Single.just(false));
 
       // Act
@@ -526,13 +509,7 @@ public class ExperimentServiceTest {
       CreateExperimentRequest request2 = createValidRequest();
       CreateExperimentRequest request3 = createValidRequest();
 
-      when(experimentDAO.createWithRelatedData(
-              any(UUID.class),
-              any(UUID.class),
-              any(UUID.class),
-              any(CreateExperimentRequest.class),
-              anyList(),
-              anyString()))
+      when(experimentDAO.createWithRelatedData(any(UUID.class), any(CreateExperimentRequest.class)))
           .thenReturn(Single.just(1L))
           .thenReturn(Single.just(2L))
           .thenReturn(Single.just(3L));
@@ -551,13 +528,7 @@ public class ExperimentServiceTest {
       observer3.assertComplete().assertNoErrors();
 
       verify(experimentDAO, times(3))
-          .createWithRelatedData(
-              any(UUID.class),
-              any(UUID.class),
-              any(UUID.class),
-              any(CreateExperimentRequest.class),
-              anyList(),
-              anyString());
+          .createWithRelatedData(any(UUID.class), any(CreateExperimentRequest.class));
     }
 
     @Test
@@ -577,7 +548,12 @@ public class ExperimentServiceTest {
       when(experimentDAO.getExperimentData(any(UUID.class), any(UUID.class)))
           .thenReturn(Single.just(previousData));
       when(experimentDAO.updateWithTransaction(
-              any(UUID.class), any(UUID.class), anyMap(), any(), anyMap(), any()))
+              any(UUID.class),
+              any(UUID.class),
+              any(UpdateExperimentRequest.class),
+              any(),
+              anyMap(),
+              any()))
           .thenReturn(Single.just(true));
 
       // Act
@@ -596,7 +572,12 @@ public class ExperimentServiceTest {
       verify(experimentDAO, times(3)).getExperimentData(any(UUID.class), any(UUID.class));
       verify(experimentDAO, times(3))
           .updateWithTransaction(
-              any(UUID.class), any(UUID.class), anyMap(), any(), anyMap(), any());
+              any(UUID.class),
+              any(UUID.class),
+              any(UpdateExperimentRequest.class),
+              any(),
+              anyMap(),
+              any());
     }
   }
 
@@ -611,13 +592,7 @@ public class ExperimentServiceTest {
       CreateExperimentRequest request = createValidRequest();
       request.setName("a".repeat(100)); // Very long name
 
-      when(experimentDAO.createWithRelatedData(
-              any(UUID.class),
-              any(UUID.class),
-              any(UUID.class),
-              any(CreateExperimentRequest.class),
-              anyList(),
-              anyString()))
+      when(experimentDAO.createWithRelatedData(any(UUID.class), any(CreateExperimentRequest.class)))
           .thenReturn(Single.just(1L));
 
       // Act
@@ -640,13 +615,7 @@ public class ExperimentServiceTest {
       }
       request.setCohorts(largeCohorts);
 
-      when(experimentDAO.createWithRelatedData(
-              any(UUID.class),
-              any(UUID.class),
-              any(UUID.class),
-              any(CreateExperimentRequest.class),
-              anyList(),
-              anyString()))
+      when(experimentDAO.createWithRelatedData(any(UUID.class), any(CreateExperimentRequest.class)))
           .thenReturn(Single.just(1L));
 
       // Act
@@ -667,13 +636,7 @@ public class ExperimentServiceTest {
       // Note: variantWeights is now VariantWeights type, not Map
       // Skipping complex variant weights for this test
 
-      when(experimentDAO.createWithRelatedData(
-              any(UUID.class),
-              any(UUID.class),
-              any(UUID.class),
-              any(CreateExperimentRequest.class),
-              anyList(),
-              anyString()))
+      when(experimentDAO.createWithRelatedData(any(UUID.class), any(CreateExperimentRequest.class)))
           .thenReturn(Single.just(1L));
 
       // Act

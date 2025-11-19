@@ -4,24 +4,31 @@ import com.ascend.testlab.annotations.ValidEnumValue;
 import com.ascend.testlab.constants.Constants;
 import com.ascend.testlab.constants.enums.DataTypeEnum;
 import com.ascend.testlab.exception.ErrorMessages;
+import com.ascend.testlab.validation.annotations.ValidVariableDataType;
 import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
 
 /**
- * Entity class representing a variables in an variant.
+ * Entity class representing a variable in a variant.
+ *
+ * <p>Each variable has a key, value, and dataType. The dataType must match the actual type of the
+ * value (e.g., if dataType is NUMBER, value must be a valid integer).
  *
  * @author anudeepreddy20
  * @version 1.0
  * @since 1.0
  */
 @Data
+@ValidVariableDataType
 public class Variables {
 
-  String value;
+  @NotBlank(message = "Variable key cannot be blank")
+  private String key;
 
-  String key;
+  @NotBlank(message = "Variable value cannot be blank")
+  private String value;
 
-  @NotBlank
+  @NotBlank(message = "Variable dataType cannot be blank")
   @ValidEnumValue(
       enumClass = DataTypeEnum.class,
       method = Constants.GET_TYPE,

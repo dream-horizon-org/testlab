@@ -78,7 +78,7 @@ public class ExperimentDAOTest {
     void testCreateExperimentMinimalFields() {
       // Arrange
       CreateExperimentRequest request = new CreateExperimentRequest();
-      request.setProjectKey(testProjectKey);
+      request.setProjectKey(testProjectKey.toString());
       request.setExperimentId(testExperimentId);
       request.setName("minimal_experiment");
       request.setDescription("Minimal description");
@@ -164,7 +164,7 @@ public class ExperimentDAOTest {
       // Note: variantWeights is now VariantWeights type, not Map
       // Skipping variant weights for this test
 
-      request.setOverrides("user1@example.com,user2@example.com");
+      request.setOverrides(List.of("user1@example.com", "user2@example.com"));
 
       when(pgWriterClient.execute(anyString(), any(Tuple.class))).thenReturn(Single.just(true));
 
@@ -183,7 +183,7 @@ public class ExperimentDAOTest {
     void testCreateExperimentWithNullFields() {
       // Arrange
       CreateExperimentRequest request = new CreateExperimentRequest();
-      request.setProjectKey(testProjectKey);
+      request.setProjectKey(testProjectKey.toString());
       request.setExperimentId(testExperimentId);
       request.setName("test_experiment");
       request.setDescription("Test description");
@@ -192,7 +192,7 @@ public class ExperimentDAOTest {
       request.setType(null);
       request.setGuardrailHealthStatus(null);
       request.setCohorts(null);
-      request.setVariant_weights(null);
+      request.setVariantWeights(null);
       request.setExposure(50);
       request.setThreshold(1000);
       request.setStartTime(System.currentTimeMillis() / 1000);
@@ -480,7 +480,7 @@ public class ExperimentDAOTest {
   // Helper method to create a valid request
   private CreateExperimentRequest createValidRequest() {
     CreateExperimentRequest request = new CreateExperimentRequest();
-    request.setProjectKey(testProjectKey);
+    request.setProjectKey(testProjectKey.toString());
     request.setExperimentId(testExperimentId);
     request.setName("test_experiment");
     request.setDescription("Test description");

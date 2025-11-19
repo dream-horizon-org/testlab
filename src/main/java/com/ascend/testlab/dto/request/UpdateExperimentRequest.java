@@ -52,7 +52,7 @@ public class UpdateExperimentRequest {
   private List<String> tags;
 
   @JsonProperty("owner")
-  private String owner;
+  private List<String> owner;
 
   // Updatable fields
   @JsonProperty("description")
@@ -119,8 +119,8 @@ public class UpdateExperimentRequest {
   private List<RuleAttributes> ruleAttributes;
 
   @JsonProperty("overrides")
-  @Size(max = 255, message = "Overrides must not exceed 255 characters")
-  private String overrides;
+  @Size(max = 100, message = "Maximum 100 overrides allowed")
+  private List<@NotBlank(message = "Override cannot be blank") String> overrides;
 
   @JsonProperty("winning_variant")
   @Valid
