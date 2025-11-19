@@ -53,4 +53,15 @@ public final class CommonUtil {
   public static List<String> separateCommaSeparatedString(String values) {
     return Stream.of(values.split(Constants.COMMA)).map(String::trim).toList();
   }
+
+  /**
+   * Generates a standardized experiment key by replacing spaces and hyphens with underscores and
+   * converting to lowercase.
+   *
+   * @param experimentName the original experiment name
+   * @return the standardized experiment key
+   */
+  public static String getExperimentKey(String experimentName) {
+    return experimentName.replaceAll("[\\s-]+", Constants.UNDER_SCORE).toLowerCase();
+  }
 }

@@ -26,17 +26,15 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class GetExperimentHistoryRequest {
+public class ExperimentHistoryRequest {
 
   @HeaderParam(WebConstants.PROJECT_KEY_HEADER)
   @NotBlank(message = ErrorMessages.PROJECT_KEY_MISSING)
-  @Builder.Default
-  private String projectKey = null;
+  private String projectKey;
 
   @PathParam(WebConstants.EXPERIMENT_ID)
   @NotBlank(message = ErrorMessages.EXPERIMENT_ID_MISSING)
-  @Builder.Default
-  private String experimentId = null;
+  private String experimentId;
 
   @QueryParam(WebConstants.LIMIT)
   @DefaultValue(WebConstants.DEFAULT_LIMIT)

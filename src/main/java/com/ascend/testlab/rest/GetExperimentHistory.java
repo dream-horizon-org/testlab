@@ -1,7 +1,7 @@
 package com.ascend.testlab.rest;
 
 import com.ascend.testlab.dto.ResponseEntity;
-import com.ascend.testlab.dto.request.GetExperimentHistoryRequest;
+import com.ascend.testlab.dto.request.ExperimentHistoryRequest;
 import com.ascend.testlab.dto.response.GetExperimentHistoryResponse;
 import com.ascend.testlab.service.AdminService;
 import com.google.inject.Inject;
@@ -68,7 +68,7 @@ public class GetExperimentHistory {
       description = "Internal server error",
       content = @Content(schema = @Schema(implementation = ResponseEntity.Failure.class)))
   public CompletionStage<ResponseEntity.Success<GetExperimentHistoryResponse>> handle(
-      @BeanParam @Valid GetExperimentHistoryRequest request) {
+      @BeanParam @Valid ExperimentHistoryRequest request) {
 
     return adminService
         .getExperimentHistory(

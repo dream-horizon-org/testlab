@@ -39,4 +39,7 @@ public final class Constants {
 
   /** The delimiter for apostrophe. */
   public static final String APOSTROPHE = "'";
+
+  /** The delimiter for underscore. */
+  public static final String UNDER_SCORE = "_";
 }

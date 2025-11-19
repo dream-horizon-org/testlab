@@ -32,7 +32,7 @@ public final class ReadQuery {
              SELECT 1
              FROM experiment.experiments
              WHERE project_key = $1
-               AND name = $2
+               AND key = $2
          );
          """;
 
@@ -49,7 +49,7 @@ public final class ReadQuery {
         FROM experiment.experiment_update_log
         WHERE project_key = $1
           AND experiment_id = $2
-        ORDER BY created_at DESC, updated_by DESC
+        ORDER BY created_at DESC
         LIMIT $3 OFFSET $4;
         """;
 

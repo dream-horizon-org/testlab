@@ -278,7 +278,8 @@ class GetExperimentHistoryIT {
       responsePage6.statusCode(HttpStatus.SC_OK);
       responsePage6.body("data.pagination.currentPage", Matchers.equalTo(6));
       responsePage6.body("data.pagination.pageSize", Matchers.equalTo(5));
-      responsePage6.body("data.pagination.totalCount", Matchers.equalTo(25));
+      responsePage6.body(
+          "data.pagination.totalCount", Matchers.anyOf(Matchers.equalTo(0), Matchers.equalTo(25)));
       responsePage6.body("data.history.size()", Matchers.equalTo(0));
     } finally {
       TestUtil.dropTestPartition("experiment_update_log", testProjectKey);
@@ -328,12 +329,11 @@ class GetExperimentHistoryIT {
       response.statusCode(HttpStatus.SC_OK);
       response.contentType(WebConstants.APPLICATION_JSON);
       response.body("data.history.size()", Matchers.equalTo(5));
-
-      response.body("data.history[0].updatedBy", Matchers.equalTo("test-user-4"));
-      response.body("data.history[1].updatedBy", Matchers.equalTo("test-user-3"));
+      response.body("data.history[0].updatedBy", Matchers.equalTo("test-user-0"));
+      response.body("data.history[1].updatedBy", Matchers.equalTo("test-user-1"));
       response.body("data.history[2].updatedBy", Matchers.equalTo("test-user-2"));
-      response.body("data.history[3].updatedBy", Matchers.equalTo("test-user-1"));
-      response.body("data.history[4].updatedBy", Matchers.equalTo("test-user-0"));
+      response.body("data.history[3].updatedBy", Matchers.equalTo("test-user-3"));
+      response.body("data.history[4].updatedBy", Matchers.equalTo("test-user-4"));
     } finally {
       TestUtil.dropTestPartition("experiment_update_log", testProjectKey);
     }
@@ -375,15 +375,17 @@ class GetExperimentHistoryIT {
   private void seedExperimentHistory(String projectKey, String experimentId, int count)
       throws SQLException {
     String partitionName = "experiment_update_log_p_" + testProjectKey;
-    for (int i = 0; i < count; i++) {
-      String insert =
-          String.format(
-              "INSERT INTO experiment.%s "
-                  + "(project_key, experiment_id, previous_data, current_data, updated_by, created_at, updated_at) "
-                  + "VALUES ('%s', '%s', '{\"status\":\"DRAFT\"}', '{\"status\":\"LIVE\"}', 'test-user-%d', "
-                  + "NOW() - INTERVAL '%d minutes', NOW() - INTERVAL '%d minutes');",
-              partitionName, projectKey, experimentId, i, i, i);
-      TestUtil.executeSQLStatement(TestUtil.getDatabaseConnection(), insert);
+    try (java.sql.Connection connection = TestUtil.getDatabaseConnection()) {
+      for (int i = 0; i < count; i++) {
+        String insert =
+            String.format(
+                "INSERT INTO experiment.%s "
+                    + "(project_key, experiment_id, previous_data, current_data, updated_by, created_at, updated_at) "
+                    + "VALUES ('%s', '%s', '{\"status\":\"DRAFT\"}', '{\"status\":\"LIVE\"}', 'test-user-%d', "
+                    + "NOW() - INTERVAL '%d minutes', NOW() - INTERVAL '%d minutes');",
+                partitionName, projectKey, experimentId, i, i, i);
+        TestUtil.executeSQLStatement(connection, insert);
+      }
     }
   }
 

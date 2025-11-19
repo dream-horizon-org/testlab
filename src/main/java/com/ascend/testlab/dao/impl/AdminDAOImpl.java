@@ -5,6 +5,7 @@ import com.ascend.testlab.constants.postgresql.Columns;
 import com.ascend.testlab.constants.postgresql.ReadQuery;
 import com.ascend.testlab.dao.AdminDAO;
 import com.ascend.testlab.dto.response.ExperimentHistoryEntry;
+import com.ascend.testlab.util.CommonUtil;
 import com.google.inject.Inject;
 import io.reactivex.rxjava3.core.Single;
 import io.vertx.rxjava3.sqlclient.Row;
@@ -47,10 +48,11 @@ public class AdminDAOImpl implements AdminDAO {
   /** {@inheritDoc} */
   @Override
   public Single<Boolean> isExperimentNameAvailable(String projectKey, String experimentName) {
+    String experimentKey = CommonUtil.getExperimentKey(experimentName);
     return pgReaderClient
         .fetchAll(
             ReadQuery.CHECK_EXPERIMENT_NAME,
-            Tuple.tuple().addString(projectKey).addString(experimentName),
+            Tuple.tuple().addString(projectKey).addString(experimentKey),
             row -> row.getBoolean(0))
         .map(list -> list.isEmpty() ? true : !list.get(0));
   }

@@ -3,6 +3,7 @@ package com.ascend.testlab.rest;
 import com.ascend.testlab.Setup;
 import com.ascend.testlab.constants.web.WebConstants;
 import com.ascend.testlab.exception.ErrorMessages;
+import com.ascend.testlab.util.CommonUtil;
 import com.ascend.testlab.util.TestUtil;
 import io.restassured.response.ValidatableResponse;
 import java.sql.SQLException;
@@ -135,13 +136,16 @@ class NameAvailabilityIT {
 
   private void seedExperiment(String projectKey, String experimentName) throws SQLException {
     String experimentId = java.util.UUID.randomUUID().toString();
+    String experimentKey = CommonUtil.getExperimentKey(experimentName);
     String partitionName = "experiments_p_" + projectKey;
-    String insert =
-        String.format(
-            "INSERT INTO experiment.%s "
-                + "(project_key, experiment_id, name, status) "
-                + "VALUES ('%s', '%s', '%s', 'DRAFT');",
-            partitionName, projectKey, experimentId, experimentName);
-    TestUtil.executeSQLStatement(TestUtil.getDatabaseConnection(), insert);
+    try (java.sql.Connection connection = TestUtil.getDatabaseConnection()) {
+      String insert =
+          String.format(
+              "INSERT INTO experiment.%s "
+                  + "(project_key, experiment_id, name, key, status) "
+                  + "VALUES ('%s', '%s', '%s', '%s', 'DRAFT');",
+              partitionName, projectKey, experimentId, experimentName, experimentKey);
+      TestUtil.executeSQLStatement(connection, insert);
+    }
   }
 }
