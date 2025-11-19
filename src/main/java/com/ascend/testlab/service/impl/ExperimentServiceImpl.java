@@ -16,6 +16,7 @@ import com.dream11.rest.exception.RestException;
 import com.google.inject.Inject;
 import io.reactivex.rxjava3.core.Single;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import lombok.extern.slf4j.Slf4j;
 
@@ -155,7 +156,7 @@ public class ExperimentServiceImpl implements ExperimentService {
           "Owners found in update request for experimentId: {}, owners: {}", experimentId, owners);
     }
 
-    List<String> metrics = request.getMetrics();
+    Map<String, List<String>> metrics = request.getMetrics();
     if (metrics != null) {
       log.debug(
           "Metrics found in update request for experimentId: {}, metrics: {}",
@@ -412,14 +413,14 @@ public class ExperimentServiceImpl implements ExperimentService {
     final UpdateExperimentRequest request;
     final List<String> tags;
     final List<String> owners;
-    final List<String> metrics;
+    final Map<String, List<String>> metrics;
     final String updatedBy;
 
     UpdateContext(
         UpdateExperimentRequest request,
         List<String> tags,
         List<String> owners,
-        List<String> metrics,
+        Map<String, List<String>> metrics,
         String updatedBy) {
       this.request = request;
       this.tags = tags;

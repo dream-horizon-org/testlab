@@ -661,7 +661,7 @@ public class ExperimentDAOImpl implements ExperimentDAO {
    * @param experimentId experiment identifier
    * @param tags list of tags to update (null if no tag update)
    * @param owners list of owners to update (null if no owner update)
-   * @param metrics list of metrics to update (null if no metrics update)
+   * @param metrics map of metrics to update (null if no metrics update)
    * @param previousData experiment data before update
    * @param updatedBy user who updated the experiment
    * @return Single emitting true on success
@@ -673,7 +673,7 @@ public class ExperimentDAOImpl implements ExperimentDAO {
       UpdateExperimentRequest request,
       List<String> tags,
       List<String> owners,
-      List<String> metrics,
+      Map<String, List<String>> metrics,
       Map<String, Object> previousData,
       String updatedBy) {
 
@@ -836,14 +836,14 @@ public class ExperimentDAOImpl implements ExperimentDAO {
    * @param connection SQL connection for transaction
    * @param projectKey project identifier
    * @param experimentId experiment identifier
-   * @param metrics list of metrics to update (null if no update)
+   * @param metrics map of metrics to update (null if no update)
    * @return Single emitting true on success
    */
   private Single<Boolean> updateMetricsIfPresent(
       io.vertx.rxjava3.sqlclient.SqlConnection connection,
       String projectKey,
       UUID experimentId,
-      List<String> metrics) {
+      Map<String, List<String>> metrics) {
     if (metrics == null) {
       return Single.just(true);
     }
@@ -1377,28 +1377,27 @@ public class ExperimentDAOImpl implements ExperimentDAO {
       io.vertx.rxjava3.sqlclient.SqlConnection connection,
       String projectKey,
       UUID experimentId,
-      List<String> metrics) {
+      Map<String, List<String>> metrics) {
     if (metrics == null || metrics.isEmpty()) {
       log.debug("No metrics to insert for experimentId: {}", experimentId);
       return Single.just(true);
     }
 
     log.debug(
-        "DAO: Inserting {} metrics for experimentId: {}, projectKey: {}",
-        metrics.size(),
-        experimentId,
-        projectKey);
+        "DAO: Inserting metrics for experimentId: {}, projectKey: {}", experimentId, projectKey);
 
-    // Safely extract metrics with null and bounds checking
-    String primaryMetrics = null;
-    String secondaryMetrics = null;
+    // Extract primary and secondary metrics from the map
+    List<String> primaryMetricsList = metrics.get("primary");
+    List<String> secondaryMetricsList = metrics.get("secondary");
 
-    if (metrics.size() > 0) {
-      primaryMetrics = metrics.get(0);
-    }
-    if (metrics.size() > 1) {
-      secondaryMetrics = metrics.get(1);
-    }
+    String primaryMetrics =
+        (primaryMetricsList != null && !primaryMetricsList.isEmpty())
+            ? String.join(",", primaryMetricsList)
+            : null;
+    String secondaryMetrics =
+        (secondaryMetricsList != null && !secondaryMetricsList.isEmpty())
+            ? String.join(",", secondaryMetricsList)
+            : null;
 
     Tuple params =
         Tuple.tuple()
@@ -1435,26 +1434,32 @@ public class ExperimentDAOImpl implements ExperimentDAO {
    * @param connection SQL connection for transaction
    * @param projectKey project identifier for partitioning
    * @param experimentId experiment identifier
-   * @param metrics list of metrics (primary and secondary)
+   * @param metrics map of metrics (primary and secondary)
    * @return Single emitting true on success, false on failure
    */
   @Override
   public Single<Boolean> insertAnalysis(
-      SqlConnection connection, String projectKey, UUID experimentId, List<String> metrics) {
+      SqlConnection connection,
+      String projectKey,
+      UUID experimentId,
+      Map<String, List<String>> metrics) {
 
-    // Safely extract metrics with null and bounds checking
+    // Extract primary and secondary metrics from the map
     String primaryMetrics = null;
     String secondaryMetrics = null;
 
     if (metrics != null && !metrics.isEmpty()) {
-      // Check if index 0 exists
-      if (metrics.size() > 0) {
-        primaryMetrics = metrics.get(0);
-      }
-      // Check if index 1 exists
-      if (metrics.size() > 1) {
-        secondaryMetrics = metrics.get(1);
-      }
+      List<String> primaryMetricsList = metrics.get("primary");
+      List<String> secondaryMetricsList = metrics.get("secondary");
+
+      primaryMetrics =
+          (primaryMetricsList != null && !primaryMetricsList.isEmpty())
+              ? String.join(",", primaryMetricsList)
+              : null;
+      secondaryMetrics =
+          (secondaryMetricsList != null && !secondaryMetricsList.isEmpty())
+              ? String.join(",", secondaryMetricsList)
+              : null;
     }
 
     log.debug(

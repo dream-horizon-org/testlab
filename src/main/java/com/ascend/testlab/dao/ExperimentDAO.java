@@ -82,7 +82,7 @@ public interface ExperimentDAO {
       UpdateExperimentRequest request,
       List<String> tags,
       List<String> owners,
-      List<String> metrics,
+      Map<String, List<String>> metrics,
       Map<String, Object> previousData,
       String updatedBy);
 
@@ -184,11 +184,14 @@ public interface ExperimentDAO {
    * @param connection SQL connection for transaction
    * @param projectKey project identifier for partitioning
    * @param experimentId experiment identifier
-   * @param metrics list of metrics (primary and secondary)
+   * @param metrics map of metrics (primary and secondary)
    * @return Single emitting true on success, false on failure
    */
   Single<Boolean> insertAnalysis(
-      SqlConnection connection, String projectKey, UUID experimentId, List<String> metrics);
+      SqlConnection connection,
+      String projectKey,
+      UUID experimentId,
+      Map<String, List<String>> metrics);
 
   /**
    * Inserts an experiment analysis entry with specified values.

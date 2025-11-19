@@ -12,6 +12,7 @@ import com.ascend.testlab.entity.Variant;
 import com.ascend.testlab.exception.ErrorMessages;
 import com.ascend.testlab.validation.annotations.ValidCreateStatus;
 import com.ascend.testlab.validation.annotations.ValidExperimentTargeting;
+import com.ascend.testlab.validation.annotations.ValidMetrics;
 import com.ascend.testlab.validation.annotations.ValidTimeRange;
 import com.ascend.testlab.validation.annotations.ValidVariantKeys;
 import com.ascend.testlab.validation.annotations.ValidVariantWeightKeys;
@@ -92,7 +93,9 @@ public class CreateExperimentRequest {
   private ExperimentHealth guardrailHealthStatus;
 
   @JsonProperty("metrics")
-  private List<String> metrics;
+  @NotNull(message = "Metrics are required")
+  @ValidMetrics
+  private Map<String, List<String>> metrics;
 
   @JsonProperty("cohorts")
   private List<String> cohorts;

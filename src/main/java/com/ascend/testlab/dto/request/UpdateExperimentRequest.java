@@ -10,6 +10,7 @@ import com.ascend.testlab.entity.AssignmentDomain;
 import com.ascend.testlab.entity.RuleAttributes;
 import com.ascend.testlab.entity.Variant;
 import com.ascend.testlab.exception.ErrorMessages;
+import com.ascend.testlab.validation.annotations.ValidMetrics;
 import com.ascend.testlab.validation.annotations.ValidVariantKeys;
 import com.ascend.testlab.validation.annotations.ValidVariantWeights;
 import com.ascend.testlab.variantWeights.VariantWeights;
@@ -46,7 +47,8 @@ public class UpdateExperimentRequest {
   private String createdBy;
 
   @JsonProperty("metrics")
-  private List<String> metrics;
+  @ValidMetrics
+  private Map<String, List<String>> metrics;
 
   @JsonProperty("tags")
   private List<String> tags;

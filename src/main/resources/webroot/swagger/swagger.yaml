@@ -241,6 +241,7 @@ components:
       - description
       - distribution_strategy
       - hypothesis
+      - metrics
       - name
       - owner
       - status
@@ -292,9 +293,11 @@ components:
           - NO_CHECKS_AVAILABLE
           - FAILED
         metrics:
-          type: array
-          items:
-            type: string
+          type: object
+          additionalProperties:
+            type: array
+            items:
+              type: string
         cohorts:
           type: array
           items:
@@ -442,9 +445,11 @@ components:
         created_by:
           type: string
         metrics:
-          type: array
-          items:
-            type: string
+          type: object
+          additionalProperties:
+            type: array
+            items:
+              type: string
         tags:
           type: array
           items:
