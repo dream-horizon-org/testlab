@@ -28,5 +28,5 @@ public final class ErrorMessages {
 
   /** The error message for experiment name too long. */
   public static final String EXPERIMENT_NAME_TOO_LONG =
-      "experiment name is too long (max 64 characters)";
+      "Experiment name is too long (max 64 characters)";
 }

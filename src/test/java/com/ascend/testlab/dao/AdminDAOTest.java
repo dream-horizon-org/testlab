@@ -55,6 +55,21 @@ class AdminDAOTest {
   }
 
   @Nested
+  @DisplayName("Constructor Tests")
+  class ConstructorTests {
+
+    @Test
+    @DisplayName("Should create DAO with valid dependencies")
+    void testConstructorWithValidDependencies() {
+      // Act
+      AdminDAO dao = new AdminDAOImpl(pgReaderClient);
+
+      // Assert
+      assertNotNull(dao);
+    }
+  }
+
+  @Nested
   @DisplayName("Tag Fetching Tests")
   class FetchTagsTests {
     @Test
@@ -298,7 +313,8 @@ class AdminDAOTest {
               .limit(limit)
               .page(page)
               .build();
-      Single<ExperimentHistoryResponse> result = adminDAO.fetchExperimentHistory(request);
+      int offset = 0; // For page 1, limit 20: offset = 0
+      Single<ExperimentHistoryResponse> result = adminDAO.fetchExperimentHistory(request, offset);
       TestObserver<ExperimentHistoryResponse> testObserver = result.test();
 
       // Assert
@@ -323,7 +339,8 @@ class AdminDAOTest {
     void testFetchExperimentHistory_Pagination() {
       // Arrange
       int limit = 10;
-      int page = 2; // offset = (2-1) * 10 = 10
+      int page = 2;
+      int offset = 10;
       int totalCount = 25;
       List<Row> mockRows = createMockHistoryRows(10, totalCount);
       when(pgReaderClient.fetchAll(
@@ -338,7 +355,7 @@ class AdminDAOTest {
               .limit(limit)
               .page(page)
               .build();
-      Single<ExperimentHistoryResponse> result = adminDAO.fetchExperimentHistory(request);
+      Single<ExperimentHistoryResponse> result = adminDAO.fetchExperimentHistory(request, offset);
       TestObserver<ExperimentHistoryResponse> testObserver = result.test();
 
       // Assert
@@ -372,7 +389,8 @@ class AdminDAOTest {
               .limit(limit)
               .page(page)
               .build();
-      Single<ExperimentHistoryResponse> result = adminDAO.fetchExperimentHistory(request);
+      int offset = 0;
+      Single<ExperimentHistoryResponse> result = adminDAO.fetchExperimentHistory(request, offset);
       TestObserver<ExperimentHistoryResponse> testObserver = result.test();
 
       // Assert
@@ -408,7 +426,8 @@ class AdminDAOTest {
               .limit(limit)
               .page(page)
               .build();
-      Single<ExperimentHistoryResponse> result = adminDAO.fetchExperimentHistory(request);
+      int offset = 0;
+      Single<ExperimentHistoryResponse> result = adminDAO.fetchExperimentHistory(request, offset);
       TestObserver<ExperimentHistoryResponse> testObserver = result.test();
 
       // Assert
@@ -439,8 +458,9 @@ class AdminDAOTest {
                     .limit(limit)
                     .page(page)
                     .build();
+            int offset = 0; // For page 1, limit 20: offset = 0
             TestObserver<ExperimentHistoryResponse> testObserver =
-                adminDAO.fetchExperimentHistory(request).test();
+                adminDAO.fetchExperimentHistory(request, offset).test();
 
             // Assert
             testObserver.assertComplete();

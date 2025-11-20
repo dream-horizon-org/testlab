@@ -67,8 +67,8 @@ public class GetExperimentHistory {
       responseCode = "500",
       description = "Internal server error",
       content = @Content(schema = @Schema(implementation = ResponseEntity.Failure.class)))
-  public CompletionStage<ResponseEntity.Success<ExperimentHistoryResponse>> handle(
-      @BeanParam @Valid ExperimentHistoryRequest request) {
+  public CompletionStage<ResponseEntity.Success<ExperimentHistoryResponse>>
+      getExperimentHistoryHandle(@BeanParam @Valid ExperimentHistoryRequest request) {
 
     return adminService
         .getExperimentHistory(request)

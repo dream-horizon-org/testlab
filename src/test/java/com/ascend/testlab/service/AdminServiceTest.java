@@ -52,6 +52,31 @@ public class AdminServiceTest {
   }
 
   @Nested
+  @DisplayName("Constructor Tests")
+  class ConstructorTests {
+
+    @Test
+    @DisplayName("Should create service with valid DAO")
+    void testConstructorWithValidDAO() {
+      // Act
+      AdminServiceImpl service = new AdminServiceImpl(adminDAO);
+
+      // Assert
+      assertNotNull(service);
+    }
+
+    @Test
+    @DisplayName("Should create service with null DAO")
+    void testConstructorWithNullDAO() {
+      // Act
+      AdminServiceImpl service = new AdminServiceImpl(null);
+
+      // Assert
+      assertNotNull(service);
+    }
+  }
+
+  @Nested
   @DisplayName("Tag Retrieval Tests")
   class TagsTests {
     @Test
@@ -221,7 +246,8 @@ public class AdminServiceTest {
               .limit(limit)
               .page(page)
               .build();
-      when(adminDAO.fetchExperimentHistory(request)).thenReturn(Single.just(mockResult));
+      int offset = CommonUtil.calculateOffset(page, limit);
+      when(adminDAO.fetchExperimentHistory(request, offset)).thenReturn(Single.just(mockResult));
 
       // Act
       TestObserver<ExperimentHistoryResponse> testObserver =
@@ -242,7 +268,7 @@ public class AdminServiceTest {
       assertEquals(2, response.pagination().totalCount());
       assertEquals("user1", response.history().get(0).updatedBy());
       assertEquals("user2", response.history().get(1).updatedBy());
-      verify(adminDAO, times(1)).fetchExperimentHistory(request);
+      verify(adminDAO, times(1)).fetchExperimentHistory(request, offset);
     }
 
     @Test
@@ -279,7 +305,8 @@ public class AdminServiceTest {
               .limit(limit)
               .page(page)
               .build();
-      when(adminDAO.fetchExperimentHistory(request)).thenReturn(Single.just(mockResult));
+      int offset = CommonUtil.calculateOffset(page, limit);
+      when(adminDAO.fetchExperimentHistory(request, offset)).thenReturn(Single.just(mockResult));
 
       // Act
       TestObserver<ExperimentHistoryResponse> testObserver =
@@ -293,7 +320,7 @@ public class AdminServiceTest {
       assertEquals(page, response.pagination().currentPage());
       assertEquals(limit, response.pagination().pageSize());
       assertEquals(totalCount, response.pagination().totalCount());
-      verify(adminDAO, times(1)).fetchExperimentHistory(request);
+      verify(adminDAO, times(1)).fetchExperimentHistory(request, offset);
     }
 
     @Test
@@ -316,7 +343,8 @@ public class AdminServiceTest {
               .limit(limit)
               .page(page)
               .build();
-      when(adminDAO.fetchExperimentHistory(request)).thenReturn(Single.just(mockResult));
+      int offset = CommonUtil.calculateOffset(page, limit);
+      when(adminDAO.fetchExperimentHistory(request, offset)).thenReturn(Single.just(mockResult));
 
       // Act
       TestObserver<ExperimentHistoryResponse> testObserver =
@@ -335,7 +363,7 @@ public class AdminServiceTest {
       assertEquals(0, response.pagination().totalCount());
       assertEquals(page, response.pagination().currentPage());
       assertEquals(limit, response.pagination().pageSize());
-      verify(adminDAO, times(1)).fetchExperimentHistory(request);
+      verify(adminDAO, times(1)).fetchExperimentHistory(request, offset);
     }
 
     @Test
@@ -352,7 +380,8 @@ public class AdminServiceTest {
               .limit(limit)
               .page(page)
               .build();
-      when(adminDAO.fetchExperimentHistory(request)).thenReturn(Single.error(dbException));
+      int offset = CommonUtil.calculateOffset(page, limit);
+      when(adminDAO.fetchExperimentHistory(request, offset)).thenReturn(Single.error(dbException));
 
       // Act
       Single<ExperimentHistoryResponse> result = adminService.getExperimentHistory(request);
@@ -360,7 +389,7 @@ public class AdminServiceTest {
 
       // Assert
       testObserver.assertError(RestException.class);
-      verify(adminDAO, times(1)).fetchExperimentHistory(request);
+      verify(adminDAO, times(1)).fetchExperimentHistory(request, offset);
     }
   }
 }

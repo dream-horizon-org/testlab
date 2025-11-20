@@ -8,12 +8,12 @@ import com.ascend.testlab.dto.entity.ExperimentHistoryEntry;
 import com.ascend.testlab.dto.request.ExperimentHistoryRequest;
 import com.ascend.testlab.dto.response.ExperimentHistoryResponse;
 import com.ascend.testlab.dto.response.PaginationMeta;
-import com.ascend.testlab.util.CommonUtil;
 import com.google.inject.Inject;
 import io.reactivex.rxjava3.core.Single;
 import io.vertx.rxjava3.sqlclient.Row;
 import io.vertx.rxjava3.sqlclient.Tuple;
 import java.util.List;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * Implementation of the AdminDAO interface for database operations.
@@ -24,6 +24,7 @@ import java.util.List;
  * @see AdminDAO
  * @see PgReaderClient
  */
+@Slf4j
 public class AdminDAOImpl implements AdminDAO {
 
   /** The PostgreSQL reader client. */
@@ -62,8 +63,7 @@ public class AdminDAOImpl implements AdminDAO {
   /** {@inheritDoc} */
   @Override
   public Single<ExperimentHistoryResponse> fetchExperimentHistory(
-      ExperimentHistoryRequest request) {
-    int offset = CommonUtil.calculateOffset(request.getPage(), request.getLimit());
+      ExperimentHistoryRequest request, int offset) {
     return pgReaderClient
         .fetchAll(
             ReadQuery.FETCH_EXPERIMENT_HISTORY,

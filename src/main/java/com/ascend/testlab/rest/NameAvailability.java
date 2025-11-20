@@ -69,7 +69,7 @@ public class NameAvailability {
       responseCode = "500",
       description = "Internal server error",
       content = @Content(schema = @Schema(implementation = ResponseEntity.Failure.class)))
-  public CompletionStage<ResponseEntity.Success<NameAvailabilityResponse>> handle(
+  public CompletionStage<ResponseEntity.Success<NameAvailabilityResponse>> nameAvailabilityHandle(
       @HeaderParam(WebConstants.PROJECT_KEY_HEADER)
           @NotBlank(message = ErrorMessages.PROJECT_KEY_MISSING)
           String projectKey,

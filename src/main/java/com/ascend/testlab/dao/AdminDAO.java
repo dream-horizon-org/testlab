@@ -36,8 +36,10 @@ public interface AdminDAO {
    *
    * @param request the experiment history request containing project key, experiment id, limit, and
    *     page
+   * @param offset the calculated offset for pagination
    * @return a Single containing ExperimentHistoryResponse with history entries and pagination
    *     metadata
    */
-  Single<ExperimentHistoryResponse> fetchExperimentHistory(ExperimentHistoryRequest request);
+  Single<ExperimentHistoryResponse> fetchExperimentHistory(
+      ExperimentHistoryRequest request, int offset);
 }

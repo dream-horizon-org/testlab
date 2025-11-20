@@ -77,8 +77,9 @@ public class AdminServiceImpl implements AdminService {
   /** {@inheritDoc} */
   @Override
   public Single<ExperimentHistoryResponse> getExperimentHistory(ExperimentHistoryRequest request) {
+    int offset = CommonUtil.calculateOffset(request.getPage(), request.getLimit());
     return adminDAO
-        .fetchExperimentHistory(request)
+        .fetchExperimentHistory(request, offset)
         .onErrorResumeNext(
             err -> {
               log.error(

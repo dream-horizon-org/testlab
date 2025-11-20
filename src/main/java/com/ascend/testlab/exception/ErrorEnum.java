@@ -59,12 +59,6 @@ public enum ErrorEnum implements RestError {
 
   /* Client Errors */
 
-  /** The error code for the experiment name too long. */
-  EXPERIMENT_NAME_TOO_LONG(
-      "testlab_EXPERIMENT_NAME_TOO_LONG",
-      "experiment name is too long (max 255 characters)",
-      HttpStatus.SC_BAD_REQUEST),
-
   /** The error code when experiment is not found. */
   EXPERIMENT_NOT_FOUND(
       "EXPERIMENT_NOT_FOUND",
