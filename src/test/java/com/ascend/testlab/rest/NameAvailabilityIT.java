@@ -20,8 +20,8 @@ import org.junit.jupiter.api.extension.ExtendWith;
 @ExtendWith(Setup.class)
 class NameAvailabilityIT {
 
+  private static final String PROJECT_KEY = "name_availability_it";
   private final String route = "/v1/experiments/name-availability";
-  private final String testProjectKey = "test_project_key";
 
   @BeforeAll
   public static void initialize() {
@@ -35,14 +35,14 @@ class NameAvailabilityIT {
 
   @Test
   void testNameAvailability_Success_Available() {
-    TestUtil.dropTestPartition("experiments", testProjectKey);
-    TestUtil.createPartitionForProject("experiments", testProjectKey);
+    TestUtil.dropTestPartition("experiments", PROJECT_KEY);
+    TestUtil.createPartitionForProject("experiments", PROJECT_KEY);
 
-    Map<String, String> headers = Map.of(WebConstants.PROJECT_KEY_HEADER, testProjectKey);
+    Map<String, String> headers = Map.of(WebConstants.PROJECT_KEY_HEADER, PROJECT_KEY);
     Map<String, String> queryParams = Map.of(WebConstants.NAME, "new-experiment-name");
 
     ValidatableResponse response =
-        TestUtil.executeRequest(null, headers, queryParams, spec -> spec.get(route));
+        TestUtil.executeRequest(null, headers, queryParams, spec -> spec.get(this.route));
 
     response.statusCode(HttpStatus.SC_OK);
     response.contentType(WebConstants.APPLICATION_JSON);
@@ -51,7 +51,7 @@ class NameAvailabilityIT {
 
   @Test
   void testNameAvailability_Success_NotAvailable() throws SQLException {
-    String projectKey = "test_project_key_2";
+    String projectKey = "name_availability_it_2";
     String experimentName = "existing-experiment";
     try {
       // Drop existing partition if it exists, then create new one
@@ -63,7 +63,7 @@ class NameAvailabilityIT {
       Map<String, String> queryParams = Map.of(WebConstants.NAME, experimentName);
 
       ValidatableResponse response =
-          TestUtil.executeRequest(null, headers, queryParams, spec -> spec.get(route));
+          TestUtil.executeRequest(null, headers, queryParams, spec -> spec.get(this.route));
 
       response.statusCode(HttpStatus.SC_OK);
       response.contentType(WebConstants.APPLICATION_JSON);
@@ -80,7 +80,7 @@ class NameAvailabilityIT {
     Map<String, String> queryParams = Map.of(WebConstants.NAME, "test-name");
 
     ValidatableResponse response =
-        TestUtil.executeRequest(null, null, queryParams, spec -> spec.get(route));
+        TestUtil.executeRequest(null, null, queryParams, spec -> spec.get(this.route));
 
     response.statusCode(HttpStatus.SC_BAD_REQUEST);
   }
@@ -91,7 +91,7 @@ class NameAvailabilityIT {
     Map<String, String> queryParams = Map.of(WebConstants.NAME, "test-name");
 
     ValidatableResponse response =
-        TestUtil.executeRequest(null, headers, queryParams, spec -> spec.get(route));
+        TestUtil.executeRequest(null, headers, queryParams, spec -> spec.get(this.route));
 
     response.statusCode(HttpStatus.SC_BAD_REQUEST);
     response.body(Matchers.containsString(ErrorMessages.PROJECT_KEY_MISSING));
@@ -99,10 +99,10 @@ class NameAvailabilityIT {
 
   @Test
   void testNameAvailability_MissingQueryParam_BadRequest() {
-    Map<String, String> headers = Map.of(WebConstants.PROJECT_KEY_HEADER, testProjectKey);
+    Map<String, String> headers = Map.of(WebConstants.PROJECT_KEY_HEADER, PROJECT_KEY);
 
     ValidatableResponse response =
-        TestUtil.executeRequest(null, headers, null, spec -> spec.get(route));
+        TestUtil.executeRequest(null, headers, null, spec -> spec.get(this.route));
 
     response.statusCode(HttpStatus.SC_BAD_REQUEST);
     response.body(Matchers.containsString(ErrorMessages.EXPERIMENT_NAME_MISSING));
@@ -110,11 +110,11 @@ class NameAvailabilityIT {
 
   @Test
   void testNameAvailability_BlankQueryParam_BadRequest() {
-    Map<String, String> headers = Map.of(WebConstants.PROJECT_KEY_HEADER, testProjectKey);
+    Map<String, String> headers = Map.of(WebConstants.PROJECT_KEY_HEADER, PROJECT_KEY);
     Map<String, String> queryParams = Map.of(WebConstants.NAME, "   ");
 
     ValidatableResponse response =
-        TestUtil.executeRequest(null, headers, queryParams, spec -> spec.get(route));
+        TestUtil.executeRequest(null, headers, queryParams, spec -> spec.get(this.route));
 
     response.statusCode(HttpStatus.SC_BAD_REQUEST);
     response.body(Matchers.containsString(ErrorMessages.EXPERIMENT_NAME_MISSING));
@@ -122,12 +122,12 @@ class NameAvailabilityIT {
 
   @Test
   void testNameAvailability_NameTooLong_BadRequest() {
-    Map<String, String> headers = Map.of(WebConstants.PROJECT_KEY_HEADER, testProjectKey);
+    Map<String, String> headers = Map.of(WebConstants.PROJECT_KEY_HEADER, PROJECT_KEY);
     String longName = "a".repeat(256);
     Map<String, String> queryParams = Map.of(WebConstants.NAME, longName);
 
     ValidatableResponse response =
-        TestUtil.executeRequest(null, headers, queryParams, spec -> spec.get(route));
+        TestUtil.executeRequest(null, headers, queryParams, spec -> spec.get(this.route));
 
     response.statusCode(HttpStatus.SC_BAD_REQUEST);
   }

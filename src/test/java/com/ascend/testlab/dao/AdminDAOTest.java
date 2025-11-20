@@ -44,13 +44,13 @@ class AdminDAOTest {
 
   private AdminDAO adminDAO;
 
-  private final String testProjectKey = "123e4567-e89b-12d3-a456-426614174000";
-  private final String testExperimentName = "test-experiment";
-  private final String testExperimentKey = CommonUtil.getExperimentKey(testExperimentName);
-  private final String testExperimentId = "123e4567-e89b-12d3-a456-426614174001";
+  private static final String PROJECT_KEY = "123e4567-e89b-12d3-a456-426614174000";
+  private static final String EXPERIMENT_NAME = "test-experiment";
+  private static final String EXPERIMENT_KEY = CommonUtil.getExperimentKey(EXPERIMENT_NAME);
+  private static final String EXPERIMENT_ID = "123e4567-e89b-12d3-a456-426614174001";
 
   @BeforeEach
-  void setUp(Vertx vertx) {
+  void setUp() {
     adminDAO = new AdminDAOImpl(pgReaderClient);
   }
 
@@ -65,7 +65,7 @@ class AdminDAOTest {
           .thenReturn(Single.just(Arrays.asList("A/B-test", "feature-flag")));
 
       // Act
-      Single<List<String>> result = adminDAO.fetchTags(testProjectKey);
+      Single<List<String>> result = adminDAO.fetchTags(PROJECT_KEY);
       TestObserver<List<String>> testObserver = result.test();
 
       // Assert
@@ -89,7 +89,7 @@ class AdminDAOTest {
           .thenReturn(Single.just(List.of()));
 
       // Act
-      Single<List<String>> result = adminDAO.fetchTags(testProjectKey);
+      Single<List<String>> result = adminDAO.fetchTags(PROJECT_KEY);
       TestObserver<List<String>> testObserver = result.test();
 
       // Assert
@@ -112,7 +112,7 @@ class AdminDAOTest {
           .thenReturn(Single.error(dbException));
 
       // Act
-      Single<List<String>> result = adminDAO.fetchTags(testProjectKey);
+      Single<List<String>> result = adminDAO.fetchTags(PROJECT_KEY);
       TestObserver<List<String>> testObserver = result.test();
 
       // Assert
@@ -131,10 +131,10 @@ class AdminDAOTest {
       // Arrange
       when(pgReaderClient.fetchAll(
               eq(ReadQuery.CHECK_EXPERIMENT_NAME), any(Tuple.class), any(Function.class)))
-          .thenReturn(Single.just(Arrays.asList(false)));
+          .thenReturn(Single.just(List.of(false)));
 
       // Act
-      Single<Boolean> result = adminDAO.isExperimentKeyAvailable(testProjectKey, testExperimentKey);
+      Single<Boolean> result = adminDAO.isExperimentKeyAvailable(PROJECT_KEY, EXPERIMENT_KEY);
       TestObserver<Boolean> testObserver = result.test();
 
       // Assert
@@ -154,10 +154,10 @@ class AdminDAOTest {
       // Arrange
       when(pgReaderClient.fetchAll(
               eq(ReadQuery.CHECK_EXPERIMENT_NAME), any(Tuple.class), any(Function.class)))
-          .thenReturn(Single.just(Arrays.asList(true)));
+          .thenReturn(Single.just(List.of(true)));
 
       // Act
-      Single<Boolean> result = adminDAO.isExperimentKeyAvailable(testProjectKey, testExperimentKey);
+      Single<Boolean> result = adminDAO.isExperimentKeyAvailable(PROJECT_KEY, EXPERIMENT_KEY);
       TestObserver<Boolean> testObserver = result.test();
 
       // Assert
@@ -181,7 +181,7 @@ class AdminDAOTest {
           .thenReturn(Single.just(List.of()));
 
       // Act
-      Single<Boolean> result = adminDAO.isExperimentKeyAvailable(testProjectKey, testExperimentKey);
+      Single<Boolean> result = adminDAO.isExperimentKeyAvailable(PROJECT_KEY, EXPERIMENT_KEY);
       TestObserver<Boolean> testObserver = result.test();
 
       // Assert
@@ -205,7 +205,7 @@ class AdminDAOTest {
           .thenReturn(Single.error(dbException));
 
       // Act
-      Single<Boolean> result = adminDAO.isExperimentKeyAvailable(testProjectKey, testExperimentKey);
+      Single<Boolean> result = adminDAO.isExperimentKeyAvailable(PROJECT_KEY, EXPERIMENT_KEY);
       TestObserver<Boolean> testObserver = result.test();
 
       // Assert
@@ -229,7 +229,7 @@ class AdminDAOTest {
       // Act
       vertx.runOnContext(
           v -> {
-            TestObserver<List<String>> testObserver = adminDAO.fetchTags(testProjectKey).test();
+            TestObserver<List<String>> testObserver = adminDAO.fetchTags(PROJECT_KEY).test();
 
             // Assert
             testObserver.assertComplete();
@@ -258,7 +258,7 @@ class AdminDAOTest {
       vertx.runOnContext(
           v -> {
             TestObserver<Boolean> testObserver =
-                adminDAO.isExperimentKeyAvailable(testProjectKey, testExperimentKey).test();
+                adminDAO.isExperimentKeyAvailable(PROJECT_KEY, EXPERIMENT_KEY).test();
 
             // Assert
             testObserver.assertComplete();
@@ -293,8 +293,8 @@ class AdminDAOTest {
       // Act
       ExperimentHistoryRequest request =
           ExperimentHistoryRequest.builder()
-              .projectKey(testProjectKey)
-              .experimentId(testExperimentId)
+              .projectKey(PROJECT_KEY)
+              .experimentId(EXPERIMENT_ID)
               .limit(limit)
               .page(page)
               .build();
@@ -307,7 +307,7 @@ class AdminDAOTest {
       testObserver.assertValueCount(1);
       ExperimentHistoryResponse actualResult = testObserver.values().get(0);
       assertNotNull(actualResult);
-      assertEquals(testExperimentId, actualResult.experimentId());
+      assertEquals(EXPERIMENT_ID, actualResult.experimentId());
       assertEquals(2, actualResult.history().size());
       assertEquals(totalCount, actualResult.pagination().totalCount());
       assertEquals(page, actualResult.pagination().currentPage());
@@ -333,8 +333,8 @@ class AdminDAOTest {
       // Act
       ExperimentHistoryRequest request =
           ExperimentHistoryRequest.builder()
-              .projectKey(testProjectKey)
-              .experimentId(testExperimentId)
+              .projectKey(PROJECT_KEY)
+              .experimentId(EXPERIMENT_ID)
               .limit(limit)
               .page(page)
               .build();
@@ -367,8 +367,8 @@ class AdminDAOTest {
       // Act
       ExperimentHistoryRequest request =
           ExperimentHistoryRequest.builder()
-              .projectKey(testProjectKey)
-              .experimentId(testExperimentId)
+              .projectKey(PROJECT_KEY)
+              .experimentId(EXPERIMENT_ID)
               .limit(limit)
               .page(page)
               .build();
@@ -403,8 +403,8 @@ class AdminDAOTest {
       // Act
       ExperimentHistoryRequest request =
           ExperimentHistoryRequest.builder()
-              .projectKey(testProjectKey)
-              .experimentId(testExperimentId)
+              .projectKey(PROJECT_KEY)
+              .experimentId(EXPERIMENT_ID)
               .limit(limit)
               .page(page)
               .build();
@@ -434,8 +434,8 @@ class AdminDAOTest {
           v -> {
             ExperimentHistoryRequest request =
                 ExperimentHistoryRequest.builder()
-                    .projectKey(testProjectKey)
-                    .experimentId(testExperimentId)
+                    .projectKey(PROJECT_KEY)
+                    .experimentId(EXPERIMENT_ID)
                     .limit(limit)
                     .page(page)
                     .build();
