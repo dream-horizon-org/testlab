@@ -121,7 +121,7 @@ class ConditionValueValidatorTest {
     void testValidInteger() {
       RuleAttributes.Condition condition =
           RuleAttributes.Condition.builder()
-              .operand("age")
+              .operand("build_number")
               .operandDataType("NUMBER")
               .operator(">")
               .value("25")
@@ -136,7 +136,7 @@ class ConditionValueValidatorTest {
     void testNegativeInteger() {
       RuleAttributes.Condition condition =
           RuleAttributes.Condition.builder()
-              .operand("temperature")
+              .operand("build_number")
               .operandDataType("NUMBER")
               .operator("<")
               .value("-10")
@@ -151,7 +151,7 @@ class ConditionValueValidatorTest {
     void testInvalidDecimalForNumber() {
       RuleAttributes.Condition condition =
           RuleAttributes.Condition.builder()
-              .operand("age")
+              .operand("build_number")
               .operandDataType("NUMBER")
               .operator(">")
               .value("25.5")
@@ -166,7 +166,7 @@ class ConditionValueValidatorTest {
     void testInvalidString() {
       RuleAttributes.Condition condition =
           RuleAttributes.Condition.builder()
-              .operand("age")
+              .operand("build_number")
               .operandDataType("NUMBER")
               .operator(">")
               .value("abc")
@@ -186,7 +186,7 @@ class ConditionValueValidatorTest {
     void testValidDecimal() {
       RuleAttributes.Condition condition =
           RuleAttributes.Condition.builder()
-              .operand("price")
+              .operand("build_number")
               .operandDataType("DECIMAL")
               .operator(">=")
               .value("99.99")
@@ -201,7 +201,7 @@ class ConditionValueValidatorTest {
     void testIntegerForDecimal() {
       RuleAttributes.Condition condition =
           RuleAttributes.Condition.builder()
-              .operand("price")
+              .operand("build_number")
               .operandDataType("DECIMAL")
               .operator(">=")
               .value("100")
@@ -216,7 +216,7 @@ class ConditionValueValidatorTest {
     void testInvalidDecimal() {
       RuleAttributes.Condition condition =
           RuleAttributes.Condition.builder()
-              .operand("price")
+              .operand("build_number")
               .operandDataType("DECIMAL")
               .operator(">=")
               .value("abc")
@@ -321,7 +321,7 @@ class ConditionValueValidatorTest {
     void testValidObject() {
       RuleAttributes.Condition condition =
           RuleAttributes.Condition.builder()
-              .operand("metadata")
+              .operand("platform")
               .operandDataType("OBJECT")
               .operator("=")
               .value("{\"key\": \"value\"}")
@@ -336,7 +336,7 @@ class ConditionValueValidatorTest {
     void testInvalidObject() {
       RuleAttributes.Condition condition =
           RuleAttributes.Condition.builder()
-              .operand("metadata")
+              .operand("platform")
               .operandDataType("OBJECT")
               .operator("=")
               .value("{key: value}")
@@ -353,7 +353,7 @@ class ConditionValueValidatorTest {
     void testNonObject() {
       RuleAttributes.Condition condition =
           RuleAttributes.Condition.builder()
-              .operand("metadata")
+              .operand("platform")
               .operandDataType("OBJECT")
               .operator("=")
               .value("not an object")
@@ -373,7 +373,7 @@ class ConditionValueValidatorTest {
     void testValidList() {
       RuleAttributes.Condition condition =
           RuleAttributes.Condition.builder()
-              .operand("tags")
+              .operand("platform")
               .operandDataType("LIST")
               .operator("contains")
               .value("[\"tag1\", \"tag2\"]")
@@ -388,7 +388,7 @@ class ConditionValueValidatorTest {
     void testNonList() {
       RuleAttributes.Condition condition =
           RuleAttributes.Condition.builder()
-              .operand("tags")
+              .operand("platform")
               .operandDataType("LIST")
               .operator("contains")
               .value("not a list")
