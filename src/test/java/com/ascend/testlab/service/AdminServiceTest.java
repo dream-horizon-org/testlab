@@ -4,15 +4,20 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 import com.ascend.testlab.dao.AdminDAO;
-import com.ascend.testlab.dto.response.ExperimentHistoryEntry;
-import com.ascend.testlab.dto.response.GetExperimentHistoryResponse;
+import com.ascend.testlab.dto.entity.ExperimentHistoryEntry;
+import com.ascend.testlab.dto.request.ExperimentHistoryRequest;
+import com.ascend.testlab.dto.response.ExperimentHistoryResponse;
 import com.ascend.testlab.dto.response.NameAvailabilityResponse;
+import com.ascend.testlab.dto.response.PaginationMeta;
 import com.ascend.testlab.dto.response.TagsResponse;
 import com.ascend.testlab.service.impl.AdminServiceImpl;
+import com.ascend.testlab.util.CommonUtil;
 import com.dream11.rest.exception.RestException;
 import io.reactivex.rxjava3.core.Single;
 import io.reactivex.rxjava3.observers.TestObserver;
+import io.vertx.core.json.JsonObject;
 import io.vertx.junit5.VertxExtension;
+import java.time.Instant;
 import java.util.Arrays;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
@@ -38,6 +43,7 @@ class AdminServiceTest {
   private AdminService adminService;
   private final String testProjectKey = "123e4567-e89b-12d3-a456-426614174000";
   private final String testExperimentName = "test-experiment";
+  private final String testExperimentKey = CommonUtil.getExperimentKey(testExperimentName);
   private final String testExperimentId = "123e4567-e89b-12d3-a456-426614174001";
 
   @BeforeEach
@@ -117,7 +123,7 @@ class AdminServiceTest {
     @DisplayName("Should return available=true when experiment name does not exist")
     void testIsExperimentNameAvailable_Available() {
       // Arrange
-      when(adminDAO.isExperimentNameAvailable(testProjectKey, testExperimentName))
+      when(adminDAO.isExperimentKeyAvailable(testProjectKey, testExperimentKey))
           .thenReturn(Single.just(true));
 
       // Act
@@ -131,19 +137,14 @@ class AdminServiceTest {
       NameAvailabilityResponse response = testObserver.values().get(0);
       assertNotNull(response);
       assertTrue(response.isAvailable());
-      assertNotNull(response.message());
-      assertTrue(
-          response.message().contains(testExperimentName)
-              && response.message().contains(testProjectKey)
-              && response.message().contains("available"));
-      verify(adminDAO, times(1)).isExperimentNameAvailable(testProjectKey, testExperimentName);
+      verify(adminDAO, times(1)).isExperimentKeyAvailable(testProjectKey, testExperimentKey);
     }
 
     @Test
     @DisplayName("Should return available=false when experiment name already exists")
     void testIsExperimentNameAvailable_NotAvailable() {
       // Arrange
-      when(adminDAO.isExperimentNameAvailable(testProjectKey, testExperimentName))
+      when(adminDAO.isExperimentKeyAvailable(testProjectKey, testExperimentKey))
           .thenReturn(Single.just(false));
 
       // Act
@@ -157,12 +158,7 @@ class AdminServiceTest {
       NameAvailabilityResponse response = testObserver.values().get(0);
       assertNotNull(response);
       assertFalse(response.isAvailable());
-      assertNotNull(response.message());
-      assertTrue(
-          response.message().contains(testExperimentName)
-              && response.message().contains(testProjectKey)
-              && response.message().contains("already exists"));
-      verify(adminDAO, times(1)).isExperimentNameAvailable(testProjectKey, testExperimentName);
+      verify(adminDAO, times(1)).isExperimentKeyAvailable(testProjectKey, testExperimentKey);
     }
 
     @Test
@@ -170,7 +166,7 @@ class AdminServiceTest {
     void testIsExperimentNameAvailable_DAOError() {
       // Arrange
       RuntimeException dbException = new RuntimeException("Database error");
-      when(adminDAO.isExperimentNameAvailable(testProjectKey, testExperimentName))
+      when(adminDAO.isExperimentKeyAvailable(testProjectKey, testExperimentKey))
           .thenReturn(Single.error(dbException));
 
       // Act
@@ -180,7 +176,7 @@ class AdminServiceTest {
 
       // Assert
       testObserver.assertError(RestException.class);
-      verify(adminDAO, times(1)).isExperimentNameAvailable(testProjectKey, testExperimentName);
+      verify(adminDAO, times(1)).isExperimentKeyAvailable(testProjectKey, testExperimentKey);
     }
   }
 
@@ -197,34 +193,45 @@ class AdminServiceTest {
       ExperimentHistoryEntry entry1 =
           ExperimentHistoryEntry.builder()
               .updatedBy("user1")
-              .previousData("{\"status\":\"DRAFT\"}")
-              .currentData("{\"status\":\"LIVE\"}")
-              .createdAt(System.currentTimeMillis())
-              .updatedAt(System.currentTimeMillis())
+              .previousData(new JsonObject().put("status", "DRAFT"))
+              .currentData(new JsonObject().put("status", "LIVE"))
+              .createdAt(Instant.now())
+              .updatedAt(Instant.now())
               .build();
       ExperimentHistoryEntry entry2 =
           ExperimentHistoryEntry.builder()
               .updatedBy("user2")
-              .previousData("{\"status\":\"LIVE\"}")
-              .currentData("{\"status\":\"PAUSED\"}")
-              .createdAt(System.currentTimeMillis())
-              .updatedAt(System.currentTimeMillis())
+              .previousData(new JsonObject().put("status", "LIVE"))
+              .currentData(new JsonObject().put("status", "PAUSED"))
+              .createdAt(Instant.now())
+              .updatedAt(Instant.now())
               .build();
       List<ExperimentHistoryEntry> mockHistory = Arrays.asList(entry1, entry2);
-      AdminDAO.ExperimentHistoryResult mockResult =
-          new AdminDAO.ExperimentHistoryResult(mockHistory, 2);
-      when(adminDAO.fetchExperimentHistory(testProjectKey, testExperimentId, limit, 0))
-          .thenReturn(Single.just(mockResult));
+      ExperimentHistoryResponse mockResult =
+          ExperimentHistoryResponse.builder()
+              .experimentId(testExperimentId)
+              .history(mockHistory)
+              .pagination(
+                  PaginationMeta.builder().currentPage(page).pageSize(limit).totalCount(2).build())
+              .build();
+      ExperimentHistoryRequest request =
+          ExperimentHistoryRequest.builder()
+              .projectKey(testProjectKey)
+              .experimentId(testExperimentId)
+              .limit(limit)
+              .page(page)
+              .build();
+      when(adminDAO.fetchExperimentHistory(request)).thenReturn(Single.just(mockResult));
 
       // Act
-      TestObserver<GetExperimentHistoryResponse> testObserver =
-          adminService.getExperimentHistory(testProjectKey, testExperimentId, limit, page).test();
+      TestObserver<ExperimentHistoryResponse> testObserver =
+          adminService.getExperimentHistory(request).test();
 
       // Assert
       testObserver.assertComplete();
       testObserver.assertNoErrors();
       testObserver.assertValueCount(1);
-      GetExperimentHistoryResponse response = testObserver.values().get(0);
+      ExperimentHistoryResponse response = testObserver.values().get(0);
       assertNotNull(response);
       assertEquals(testExperimentId, response.experimentId());
       assertNotNull(response.history());
@@ -235,7 +242,7 @@ class AdminServiceTest {
       assertEquals(2, response.pagination().totalCount());
       assertEquals("user1", response.history().get(0).updatedBy());
       assertEquals("user2", response.history().get(1).updatedBy());
-      verify(adminDAO, times(1)).fetchExperimentHistory(testProjectKey, testExperimentId, limit, 0);
+      verify(adminDAO, times(1)).fetchExperimentHistory(request);
     }
 
     @Test
@@ -249,30 +256,44 @@ class AdminServiceTest {
           Arrays.asList(
               ExperimentHistoryEntry.builder()
                   .updatedBy("user11")
-                  .previousData("{\"status\":\"DRAFT\"}")
-                  .currentData("{\"status\":\"LIVE\"}")
-                  .createdAt(System.currentTimeMillis())
-                  .updatedAt(System.currentTimeMillis())
+                  .previousData(new JsonObject().put("status", "DRAFT"))
+                  .currentData(new JsonObject().put("status", "LIVE"))
+                  .createdAt(Instant.now())
+                  .updatedAt(Instant.now())
                   .build());
-      AdminDAO.ExperimentHistoryResult mockResult =
-          new AdminDAO.ExperimentHistoryResult(mockHistory, totalCount);
-      when(adminDAO.fetchExperimentHistory(testProjectKey, testExperimentId, limit, 10))
-          .thenReturn(Single.just(mockResult));
+      ExperimentHistoryResponse mockResult =
+          ExperimentHistoryResponse.builder()
+              .experimentId(testExperimentId)
+              .history(mockHistory)
+              .pagination(
+                  PaginationMeta.builder()
+                      .currentPage(page)
+                      .pageSize(limit)
+                      .totalCount(totalCount)
+                      .build())
+              .build();
+      ExperimentHistoryRequest request =
+          ExperimentHistoryRequest.builder()
+              .projectKey(testProjectKey)
+              .experimentId(testExperimentId)
+              .limit(limit)
+              .page(page)
+              .build();
+      when(adminDAO.fetchExperimentHistory(request)).thenReturn(Single.just(mockResult));
 
       // Act
-      TestObserver<GetExperimentHistoryResponse> testObserver =
-          adminService.getExperimentHistory(testProjectKey, testExperimentId, limit, page).test();
+      TestObserver<ExperimentHistoryResponse> testObserver =
+          adminService.getExperimentHistory(request).test();
 
       // Assert
       testObserver.assertComplete();
       testObserver.assertNoErrors();
-      GetExperimentHistoryResponse response = testObserver.values().get(0);
+      ExperimentHistoryResponse response = testObserver.values().get(0);
       assertNotNull(response);
       assertEquals(page, response.pagination().currentPage());
       assertEquals(limit, response.pagination().pageSize());
       assertEquals(totalCount, response.pagination().totalCount());
-      verify(adminDAO, times(1))
-          .fetchExperimentHistory(testProjectKey, testExperimentId, limit, 10);
+      verify(adminDAO, times(1)).fetchExperimentHistory(request);
     }
 
     @Test
@@ -281,20 +302,31 @@ class AdminServiceTest {
       // Arrange
       int limit = 20;
       int page = 1;
-      AdminDAO.ExperimentHistoryResult mockResult =
-          new AdminDAO.ExperimentHistoryResult(List.of(), 0);
-      when(adminDAO.fetchExperimentHistory(testProjectKey, testExperimentId, limit, 0))
-          .thenReturn(Single.just(mockResult));
+      ExperimentHistoryResponse mockResult =
+          ExperimentHistoryResponse.builder()
+              .experimentId(testExperimentId)
+              .history(List.of())
+              .pagination(
+                  PaginationMeta.builder().currentPage(page).pageSize(limit).totalCount(0).build())
+              .build();
+      ExperimentHistoryRequest request =
+          ExperimentHistoryRequest.builder()
+              .projectKey(testProjectKey)
+              .experimentId(testExperimentId)
+              .limit(limit)
+              .page(page)
+              .build();
+      when(adminDAO.fetchExperimentHistory(request)).thenReturn(Single.just(mockResult));
 
       // Act
-      TestObserver<GetExperimentHistoryResponse> testObserver =
-          adminService.getExperimentHistory(testProjectKey, testExperimentId, limit, page).test();
+      TestObserver<ExperimentHistoryResponse> testObserver =
+          adminService.getExperimentHistory(request).test();
 
       // Assert
       testObserver.assertComplete();
       testObserver.assertNoErrors();
       testObserver.assertValueCount(1);
-      GetExperimentHistoryResponse response = testObserver.values().get(0);
+      ExperimentHistoryResponse response = testObserver.values().get(0);
       assertNotNull(response);
       assertEquals(testExperimentId, response.experimentId());
       assertNotNull(response.history());
@@ -303,7 +335,7 @@ class AdminServiceTest {
       assertEquals(0, response.pagination().totalCount());
       assertEquals(page, response.pagination().currentPage());
       assertEquals(limit, response.pagination().pageSize());
-      verify(adminDAO, times(1)).fetchExperimentHistory(testProjectKey, testExperimentId, limit, 0);
+      verify(adminDAO, times(1)).fetchExperimentHistory(request);
     }
 
     @Test
@@ -313,17 +345,22 @@ class AdminServiceTest {
       int limit = 20;
       int page = 1;
       RuntimeException dbException = new RuntimeException("Database error");
-      when(adminDAO.fetchExperimentHistory(testProjectKey, testExperimentId, limit, 0))
-          .thenReturn(Single.error(dbException));
+      ExperimentHistoryRequest request =
+          ExperimentHistoryRequest.builder()
+              .projectKey(testProjectKey)
+              .experimentId(testExperimentId)
+              .limit(limit)
+              .page(page)
+              .build();
+      when(adminDAO.fetchExperimentHistory(request)).thenReturn(Single.error(dbException));
 
       // Act
-      Single<GetExperimentHistoryResponse> result =
-          adminService.getExperimentHistory(testProjectKey, testExperimentId, limit, page);
-      TestObserver<GetExperimentHistoryResponse> testObserver = result.test();
+      Single<ExperimentHistoryResponse> result = adminService.getExperimentHistory(request);
+      TestObserver<ExperimentHistoryResponse> testObserver = result.test();
 
       // Assert
       testObserver.assertError(RestException.class);
-      verify(adminDAO, times(1)).fetchExperimentHistory(testProjectKey, testExperimentId, limit, 0);
+      verify(adminDAO, times(1)).fetchExperimentHistory(request);
     }
   }
 }

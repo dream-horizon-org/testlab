@@ -1,5 +1,6 @@
 package com.ascend.testlab.dto.response;
 
+import com.ascend.testlab.dto.entity.ExperimentHistoryEntry;
 import java.util.List;
 import lombok.Builder;
 
@@ -12,10 +13,5 @@ import lombok.Builder;
  * @since 1.0
  */
 @Builder
-public record GetExperimentHistoryResponse(
-    String experimentId, List<ExperimentHistoryEntry> history, PaginationMeta pagination) {
-
-  /** Metadata class for pagination information. */
-  @Builder
-  public record PaginationMeta(int currentPage, int pageSize, int totalCount) {}
-}
+public record ExperimentHistoryResponse(
+    String experimentId, List<ExperimentHistoryEntry> history, PaginationMeta pagination) {}

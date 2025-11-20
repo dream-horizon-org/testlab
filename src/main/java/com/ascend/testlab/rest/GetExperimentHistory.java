@@ -2,7 +2,7 @@ package com.ascend.testlab.rest;
 
 import com.ascend.testlab.dto.ResponseEntity;
 import com.ascend.testlab.dto.request.ExperimentHistoryRequest;
-import com.ascend.testlab.dto.response.GetExperimentHistoryResponse;
+import com.ascend.testlab.dto.response.ExperimentHistoryResponse;
 import com.ascend.testlab.service.AdminService;
 import com.google.inject.Inject;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -23,7 +23,7 @@ import java.util.concurrent.CompletionStage;
  * @author Nithya sree
  * @version 1.0
  * @since 1.0
- * @see GetExperimentHistoryResponse
+ * @see ExperimentHistoryResponse
  */
 @Path("/v1/experiments/{experimentId}/history")
 public class GetExperimentHistory {
@@ -67,15 +67,11 @@ public class GetExperimentHistory {
       responseCode = "500",
       description = "Internal server error",
       content = @Content(schema = @Schema(implementation = ResponseEntity.Failure.class)))
-  public CompletionStage<ResponseEntity.Success<GetExperimentHistoryResponse>> handle(
+  public CompletionStage<ResponseEntity.Success<ExperimentHistoryResponse>> handle(
       @BeanParam @Valid ExperimentHistoryRequest request) {
 
     return adminService
-        .getExperimentHistory(
-            request.getProjectKey(),
-            request.getExperimentId(),
-            request.getLimit(),
-            request.getPage())
+        .getExperimentHistory(request)
         .map(ResponseEntity.Success::new)
         .toCompletionStage();
   }

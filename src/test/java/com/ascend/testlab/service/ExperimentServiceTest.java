@@ -9,6 +9,7 @@ import com.ascend.testlab.dao.ExperimentDAO;
 import com.ascend.testlab.dto.entity.Experiment;
 import com.ascend.testlab.dto.request.FilterExperimentsRequest;
 import com.ascend.testlab.dto.response.FilterExperimentsResponse;
+import com.ascend.testlab.dto.response.PaginationMeta;
 import com.ascend.testlab.exception.ErrorEnum;
 import com.ascend.testlab.service.impl.ExperimentServiceImpl;
 import com.dream11.rest.exception.RestException;
@@ -360,8 +361,7 @@ public class ExperimentServiceTest {
       // Arrange
       FilterExperimentsRequest request = new FilterExperimentsRequest();
       FilterExperimentsResponse emptyResponse =
-          new FilterExperimentsResponse(
-              Collections.emptyList(), new FilterExperimentsResponse.PaginationMeta(1, 20, 0));
+          new FilterExperimentsResponse(Collections.emptyList(), new PaginationMeta(1, 20, 0));
       when(experimentDAO.filterExperiments(PROJECT_KEY, request))
           .thenReturn(Single.just(emptyResponse));
 
@@ -382,8 +382,7 @@ public class ExperimentServiceTest {
       // Arrange
       FilterExperimentsRequest request =
           FilterExperimentsRequest.builder().limit(10).page(2).build();
-      FilterExperimentsResponse.PaginationMeta paginationMeta =
-          new FilterExperimentsResponse.PaginationMeta(2, 10, 25);
+      PaginationMeta paginationMeta = new PaginationMeta(2, 10, 25);
       FilterExperimentsResponse expectedResponse =
           new FilterExperimentsResponse(List.of(createMockExperiment()), paginationMeta);
       when(experimentDAO.filterExperiments(PROJECT_KEY, request))
@@ -398,10 +397,8 @@ public class ExperimentServiceTest {
       testObserver.assertNoErrors();
       testObserver.assertValue(
           response -> {
-            FilterExperimentsResponse.PaginationMeta meta = response.getPagination();
-            return meta.getCurrentPage() == 2
-                && meta.getPageSize() == 10
-                && meta.getTotalCount() == 25;
+            PaginationMeta meta = response.getPagination();
+            return meta.currentPage() == 2 && meta.pageSize() == 10 && meta.totalCount() == 25;
           });
       verify(experimentDAO, times(1)).filterExperiments(PROJECT_KEY, request);
     }
@@ -738,8 +735,7 @@ public class ExperimentServiceTest {
    * @return a mock FilterExperimentsResponse object
    */
   private FilterExperimentsResponse createMockFilterResponse() {
-    FilterExperimentsResponse.PaginationMeta paginationMeta =
-        new FilterExperimentsResponse.PaginationMeta(1, 20, 1);
+    PaginationMeta paginationMeta = new PaginationMeta(1, 20, 1);
     return new FilterExperimentsResponse(List.of(createMockExperiment()), paginationMeta);
   }
 }

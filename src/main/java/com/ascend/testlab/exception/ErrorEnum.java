@@ -59,24 +59,6 @@ public enum ErrorEnum implements RestError {
 
   /* Client Errors */
 
-  /** The error code for the invalid project key. */
-  INVALID_PROJECT_KEY(
-      "testlab_INVALID_PROJECT_KEY",
-      "x-project-key header is missing/invalid",
-      HttpStatus.SC_BAD_REQUEST),
-
-  /** The error code for the invalid experiment id. */
-  INVALID_EXPERIMENT_ID(
-      "testlab_INVALID_EXPERIMENT_ID",
-      "experiment-id is missing/invalid",
-      HttpStatus.SC_BAD_REQUEST),
-
-  /** The error code for the invalid experiment name. */
-  INVALID_EXPERIMENT_NAME(
-      "testlab_INVALID_EXPERIMENT_NAME",
-      "experiment name is missing/invalid",
-      HttpStatus.SC_BAD_REQUEST),
-
   /** The error code for the experiment name too long. */
   EXPERIMENT_NAME_TOO_LONG(
       "testlab_EXPERIMENT_NAME_TOO_LONG",

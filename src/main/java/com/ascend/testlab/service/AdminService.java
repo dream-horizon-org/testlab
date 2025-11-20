@@ -1,6 +1,7 @@
 package com.ascend.testlab.service;
 
-import com.ascend.testlab.dto.response.GetExperimentHistoryResponse;
+import com.ascend.testlab.dto.request.ExperimentHistoryRequest;
+import com.ascend.testlab.dto.response.ExperimentHistoryResponse;
 import com.ascend.testlab.dto.response.NameAvailabilityResponse;
 import com.ascend.testlab.dto.response.TagsResponse;
 import io.reactivex.rxjava3.core.Single;
@@ -42,13 +43,10 @@ public interface AdminService {
    *
    * <p>Pagination defaults to limit=20 and page=1 if not specified. Page numbers start at 1.
    *
-   * @param projectKey the project key
-   * @param experimentId the experiment id
-   * @param limit the maximum number of history entries to return (default: 20)
-   * @param page the page number (default: 1, 1-indexed)
-   * @return a Single containing the get experiment history response with pagination metadata
+   * @param request the experiment history request containing project key, experiment id, limit, and
+   *     page
+   * @return a Single containing the experiment history response with pagination metadata
    * @throws com.dream11.rest.exception.RestException if the operation fails
    */
-  Single<GetExperimentHistoryResponse> getExperimentHistory(
-      String projectKey, String experimentId, int limit, int page);
+  Single<ExperimentHistoryResponse> getExperimentHistory(ExperimentHistoryRequest request);
 }

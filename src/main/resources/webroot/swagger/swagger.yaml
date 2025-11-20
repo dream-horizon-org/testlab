@@ -135,7 +135,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/SuccessGetExperimentHistoryResponse'
+                $ref: '#/components/schemas/SuccessExperimentHistoryResponse'
         "400":
           description: Invalid project key or experiment id
           content:
@@ -161,6 +161,8 @@ paths:
         in: query
         required: true
         schema:
+          maxLength: 64
+          minLength: 0
           type: string
       responses:
         "200":
@@ -351,16 +353,16 @@ components:
         updatedBy:
           type: string
         previousData:
-          type: object
+          $ref: '#/components/schemas/JsonObject'
         currentData:
-          type: object
+          $ref: '#/components/schemas/JsonObject'
         createdAt:
-          type: integer
-          format: int64
+          type: string
+          format: date-time
         updatedAt:
-          type: integer
-          format: int64
-    GetExperimentHistoryResponse:
+          type: string
+          format: date-time
+    ExperimentHistoryResponse:
       type: object
       properties:
         experimentId:
@@ -371,18 +373,16 @@ components:
             $ref: '#/components/schemas/ExperimentHistoryEntry'
         pagination:
           $ref: '#/components/schemas/PaginationMeta'
-    SuccessGetExperimentHistoryResponse:
+    SuccessExperimentHistoryResponse:
       type: object
       properties:
         data:
-          $ref: '#/components/schemas/GetExperimentHistoryResponse'
+          $ref: '#/components/schemas/ExperimentHistoryResponse'
     NameAvailabilityResponse:
       type: object
       properties:
         isAvailable:
           type: boolean
-        message:
-          type: string
     SuccessNameAvailabilityResponse:
       type: object
       properties:

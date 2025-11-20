@@ -32,7 +32,7 @@ public final class ReadQuery {
              SELECT 1
              FROM experiment.experiments
              WHERE project_key = $1
-               AND key = $2
+               AND experiment_key = $2
          );
          """;
 

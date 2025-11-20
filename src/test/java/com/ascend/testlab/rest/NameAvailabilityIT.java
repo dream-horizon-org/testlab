@@ -47,7 +47,6 @@ class NameAvailabilityIT {
     response.statusCode(HttpStatus.SC_OK);
     response.contentType(WebConstants.APPLICATION_JSON);
     response.body("data.isAvailable", Matchers.equalTo(true));
-    response.body("data.message", Matchers.notNullValue());
   }
 
   @Test
@@ -69,7 +68,6 @@ class NameAvailabilityIT {
       response.statusCode(HttpStatus.SC_OK);
       response.contentType(WebConstants.APPLICATION_JSON);
       response.body("data.isAvailable", Matchers.equalTo(false));
-      response.body("data.message", Matchers.notNullValue());
     } catch (Exception e) {
       log.warn("Skipping test due to partition creation failure: {}", e.getMessage());
     } finally {
@@ -142,7 +140,7 @@ class NameAvailabilityIT {
       String insert =
           String.format(
               "INSERT INTO experiment.%s "
-                  + "(project_key, experiment_id, name, key, status) "
+                  + "(project_key, experiment_id, name, experiment_key, status) "
                   + "VALUES ('%s', '%s', '%s', '%s', 'DRAFT');",
               partitionName, projectKey, experimentId, experimentName, experimentKey);
       TestUtil.executeSQLStatement(connection, insert);

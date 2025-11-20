@@ -1,17 +1,17 @@
 package com.ascend.testlab.rest;
 
+import com.ascend.testlab.constants.Constants;
 import com.ascend.testlab.constants.web.WebConstants;
 import com.ascend.testlab.dto.ResponseEntity;
 import com.ascend.testlab.dto.response.NameAvailabilityResponse;
-import com.ascend.testlab.exception.ErrorEnum;
 import com.ascend.testlab.exception.ErrorMessages;
 import com.ascend.testlab.service.AdminService;
-import com.dream11.rest.util.ExceptionUtil;
 import com.google.inject.Inject;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.HeaderParam;
@@ -73,20 +73,16 @@ public class NameAvailability {
       @HeaderParam(WebConstants.PROJECT_KEY_HEADER)
           @NotBlank(message = ErrorMessages.PROJECT_KEY_MISSING)
           String projectKey,
-      @QueryParam(WebConstants.NAME) @NotBlank(message = ErrorMessages.EXPERIMENT_NAME_MISSING)
+      @QueryParam(WebConstants.NAME)
+          @NotBlank(message = ErrorMessages.EXPERIMENT_NAME_MISSING)
+          @Size(
+              max = Constants.MAX_EXPERIMENT_NAME_LENGTH,
+              message = ErrorMessages.EXPERIMENT_NAME_TOO_LONG)
           String experimentName) {
-
-    validate(experimentName);
 
     return adminService
         .isExperimentNameAvailable(projectKey, experimentName)
         .map(ResponseEntity.Success::new)
         .toCompletionStage();
-  }
-
-  private void validate(String name) {
-    if (name.length() > 255) {
-      throw ExceptionUtil.getException(ErrorEnum.EXPERIMENT_NAME_TOO_LONG);
-    }
   }
 }

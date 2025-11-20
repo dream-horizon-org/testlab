@@ -64,4 +64,15 @@ public final class CommonUtil {
   public static String getExperimentKey(String experimentName) {
     return experimentName.replaceAll("[\\s-]+", Constants.UNDER_SCORE).toLowerCase();
   }
+
+  /**
+   * Calculates the offset for pagination based on page number and limit.
+   *
+   * @param page the page number (1-based)
+   * @param limit the number of items per page
+   * @return the offset value to use in SQL queries
+   */
+  public static int calculateOffset(int page, int limit) {
+    return (page - 1) * limit;
+  }
 }

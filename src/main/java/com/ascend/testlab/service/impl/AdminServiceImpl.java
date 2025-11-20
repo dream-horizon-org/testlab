@@ -1,11 +1,13 @@
 package com.ascend.testlab.service.impl;
 
 import com.ascend.testlab.dao.AdminDAO;
-import com.ascend.testlab.dto.response.GetExperimentHistoryResponse;
+import com.ascend.testlab.dto.request.ExperimentHistoryRequest;
+import com.ascend.testlab.dto.response.ExperimentHistoryResponse;
 import com.ascend.testlab.dto.response.NameAvailabilityResponse;
 import com.ascend.testlab.dto.response.TagsResponse;
 import com.ascend.testlab.exception.ErrorEnum;
 import com.ascend.testlab.service.AdminService;
+import com.ascend.testlab.util.CommonUtil;
 import com.dream11.rest.exception.RestException;
 import com.google.inject.Inject;
 import io.reactivex.rxjava3.core.Single;
@@ -55,89 +57,38 @@ public class AdminServiceImpl implements AdminService {
   @Override
   public Single<NameAvailabilityResponse> isExperimentNameAvailable(
       String projectKey, String experimentName) {
+    String experimentKey = CommonUtil.getExperimentKey(experimentName);
     return adminDAO
-        .isExperimentNameAvailable(projectKey, experimentName)
-        .map(
-            isAvailable -> {
-              if (isAvailable) {
-                return new NameAvailabilityResponse(
-                    true,
-                    String.format(
-                        "Experiment name '%s' is available in project '%s'",
-                        experimentName, projectKey));
-              } else {
-                return new NameAvailabilityResponse(
-                    false,
-                    String.format(
-                        "Experiment name '%s' already exists in project '%s'",
-                        experimentName, projectKey));
-              }
-            })
-        .doOnSuccess(
-            response ->
-                log.info(
-                    "Checked experiment name availability for projectKey={} and experimentName={}",
-                    projectKey,
-                    experimentName))
-        .doOnError(
-            error ->
-                log.error(
-                    "Error checking experiment name availability for projectKey={} and experimentName={}: {}",
-                    projectKey,
-                    experimentName,
-                    error.getMessage(),
-                    error))
+        .isExperimentKeyAvailable(projectKey, experimentKey)
+        .map(NameAvailabilityResponse::new)
         .onErrorResumeNext(
-            error ->
-                Single.error(
-                    new RestException(
-                        ErrorEnum.REST_EXPERIMENT_NAME_CHECK_FAILED.getErrorCode(),
-                        ErrorEnum.REST_EXPERIMENT_NAME_CHECK_FAILED.getErrorMessage(),
-                        ErrorEnum.REST_EXPERIMENT_NAME_CHECK_FAILED.getHttpStatusCode(),
-                        error)));
+            err -> {
+              log.error(
+                  "Error checking experiment name availability for projectKey={} and experimentName={}: {}",
+                  projectKey,
+                  experimentName,
+                  err.getMessage());
+              return Single.error(
+                  ErrorEnum.handleException(
+                      err, new RestException(ErrorEnum.REST_EXPERIMENT_NAME_CHECK_FAILED, err)));
+            });
   }
 
   /** {@inheritDoc} */
   @Override
-  public Single<GetExperimentHistoryResponse> getExperimentHistory(
-      String projectKey, String experimentId, int limit, int page) {
-    int offset = (page - 1) * limit;
+  public Single<ExperimentHistoryResponse> getExperimentHistory(ExperimentHistoryRequest request) {
     return adminDAO
-        .fetchExperimentHistory(projectKey, experimentId, limit, offset)
-        .map(
-            result ->
-                GetExperimentHistoryResponse.builder()
-                    .experimentId(experimentId)
-                    .history(result.historyEntries())
-                    .pagination(
-                        GetExperimentHistoryResponse.PaginationMeta.builder()
-                            .currentPage(page)
-                            .pageSize(limit)
-                            .totalCount(result.totalCount())
-                            .build())
-                    .build())
-        .doOnSuccess(
-            res ->
-                log.info(
-                    "Received experiment history for projectKey={} and experimentId={}, page={}, limit={}",
-                    projectKey,
-                    experimentId,
-                    page,
-                    limit))
-        .doOnError(
-            err ->
-                log.error(
-                    "Error getting experiment history for projectKey={} and experimentId={}",
-                    projectKey,
-                    experimentId,
-                    err))
+        .fetchExperimentHistory(request)
         .onErrorResumeNext(
-            error ->
-                Single.error(
-                    new RestException(
-                        ErrorEnum.REST_FETCH_EXPERIMENT_HISTORY_FAILED.getErrorCode(),
-                        ErrorEnum.REST_FETCH_EXPERIMENT_HISTORY_FAILED.getErrorMessage(),
-                        ErrorEnum.REST_FETCH_EXPERIMENT_HISTORY_FAILED.getHttpStatusCode(),
-                        error)));
+            err -> {
+              log.error(
+                  "Error getting experiment history for projectKey={} and experimentId={}: {}",
+                  request.getProjectKey(),
+                  request.getExperimentId(),
+                  err.getMessage());
+              return Single.error(
+                  ErrorEnum.handleException(
+                      err, new RestException(ErrorEnum.REST_FETCH_EXPERIMENT_HISTORY_FAILED, err)));
+            });
   }
 }

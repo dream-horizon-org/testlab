@@ -4,15 +4,16 @@ import com.ascend.testlab.client.postgresql.PgReaderClient;
 import com.ascend.testlab.constants.postgresql.Columns;
 import com.ascend.testlab.constants.postgresql.ReadQuery;
 import com.ascend.testlab.dao.AdminDAO;
-import com.ascend.testlab.dto.response.ExperimentHistoryEntry;
+import com.ascend.testlab.dto.entity.ExperimentHistoryEntry;
+import com.ascend.testlab.dto.request.ExperimentHistoryRequest;
+import com.ascend.testlab.dto.response.ExperimentHistoryResponse;
+import com.ascend.testlab.dto.response.PaginationMeta;
 import com.ascend.testlab.util.CommonUtil;
 import com.google.inject.Inject;
 import io.reactivex.rxjava3.core.Single;
 import io.vertx.rxjava3.sqlclient.Row;
 import io.vertx.rxjava3.sqlclient.Tuple;
-import java.time.ZoneOffset;
 import java.util.List;
-import java.util.stream.Collectors;
 
 /**
  * Implementation of the AdminDAO interface for database operations.
@@ -42,42 +43,51 @@ public class AdminDAOImpl implements AdminDAO {
   @Override
   public Single<List<String>> fetchTags(String projectKey) {
     return pgReaderClient.fetchAll(
-        ReadQuery.FETCH_TAGS, Tuple.tuple().addString(projectKey), (row -> row.getString("tag")));
+        ReadQuery.FETCH_TAGS,
+        Tuple.tuple().addString(projectKey),
+        (row -> row.getString(Columns.TAG)));
   }
 
   /** {@inheritDoc} */
   @Override
-  public Single<Boolean> isExperimentNameAvailable(String projectKey, String experimentName) {
-    String experimentKey = CommonUtil.getExperimentKey(experimentName);
+  public Single<Boolean> isExperimentKeyAvailable(String projectKey, String experimentKey) {
     return pgReaderClient
         .fetchAll(
             ReadQuery.CHECK_EXPERIMENT_NAME,
             Tuple.tuple().addString(projectKey).addString(experimentKey),
             row -> row.getBoolean(0))
-        .map(list -> list.isEmpty() ? true : !list.get(0));
+        .map(list -> list.isEmpty() || !list.get(0));
   }
 
   /** {@inheritDoc} */
   @Override
-  public Single<AdminDAO.ExperimentHistoryResult> fetchExperimentHistory(
-      String projectKey, String experimentId, int limit, int offset) {
+  public Single<ExperimentHistoryResponse> fetchExperimentHistory(
+      ExperimentHistoryRequest request) {
+    int offset = CommonUtil.calculateOffset(request.getPage(), request.getLimit());
     return pgReaderClient
         .fetchAll(
             ReadQuery.FETCH_EXPERIMENT_HISTORY,
             Tuple.tuple()
-                .addString(projectKey)
-                .addString(experimentId)
-                .addInteger(limit)
+                .addString(request.getProjectKey())
+                .addString(request.getExperimentId())
+                .addInteger(request.getLimit())
                 .addInteger(offset),
             row -> row)
         .map(
             rows -> {
               int totalCount = rows.isEmpty() ? 0 : rows.get(0).getInteger(Columns.TOTAL_COUNT);
               List<ExperimentHistoryEntry> historyEntries =
-                  rows.stream()
-                      .map(this::mapRowToExperimentHistoryEntry)
-                      .collect(Collectors.toList());
-              return new AdminDAO.ExperimentHistoryResult(historyEntries, totalCount);
+                  rows.stream().map(this::mapRowToExperimentHistoryEntry).toList();
+              return ExperimentHistoryResponse.builder()
+                  .experimentId(request.getExperimentId())
+                  .history(historyEntries)
+                  .pagination(
+                      PaginationMeta.builder()
+                          .currentPage(request.getPage())
+                          .pageSize(request.getLimit())
+                          .totalCount(totalCount)
+                          .build())
+                  .build();
             });
   }
 
@@ -89,22 +99,16 @@ public class AdminDAOImpl implements AdminDAO {
    */
   private ExperimentHistoryEntry mapRowToExperimentHistoryEntry(Row row) {
     return ExperimentHistoryEntry.builder()
-        .updatedBy(row.getString("updated_by"))
-        .previousData(row.getValue("previous_data"))
-        .currentData(row.getValue("current_data"))
+        .updatedBy(row.getString(Columns.UPDATED_BY))
+        .previousData(row.getJsonObject(Columns.PREVIOUS_DATA))
+        .currentData(row.getJsonObject(Columns.CURRENT_DATA))
         .createdAt(
-            row.getLocalDateTime("created_at") != null
-                ? row.getLocalDateTime("created_at")
-                    .atZone(ZoneOffset.UTC)
-                    .toInstant()
-                    .toEpochMilli()
+            row.getOffsetDateTime(Columns.CREATED_AT) != null
+                ? row.getOffsetDateTime(Columns.CREATED_AT).toInstant()
                 : null)
         .updatedAt(
-            row.getLocalDateTime("updated_at") != null
-                ? row.getLocalDateTime("updated_at")
-                    .atZone(ZoneOffset.UTC)
-                    .toInstant()
-                    .toEpochMilli()
+            row.getOffsetDateTime(Columns.UPDATED_AT) != null
+                ? row.getOffsetDateTime(Columns.UPDATED_AT).toInstant()
                 : null)
         .build();
   }
