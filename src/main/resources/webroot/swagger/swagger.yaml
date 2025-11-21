@@ -4,6 +4,41 @@ info:
   description: testlab Service
   version: "1.0"
 paths:
+  /v1/experiments/key-availability:
+    get:
+      operationId: experimentKeyAvailabilityHandle
+      parameters:
+      - name: x-project-key
+        in: header
+        required: true
+        schema:
+          type: string
+      - name: experimentKey
+        in: query
+        required: true
+        schema:
+          maxLength: 255
+          minLength: 0
+          type: string
+      responses:
+        "200":
+          description: Successfully validated experiment key
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessExperimentKeyAvailabilityResponse'
+        "400":
+          description: Invalid project key or experiment key
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Failure'
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Failure'
   /v1/experiments:
     get:
       operationId: filterExperimentsHandle
@@ -142,37 +177,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Failure'
-        "500":
-          description: Internal server error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Failure'
-  /v1/experiments/name-availability:
-    get:
-      operationId: nameAvailabilityHandle
-      parameters:
-      - name: x-project-key
-        in: header
-        required: true
-        schema:
-          type: string
-      - name: name
-        in: query
-        required: true
-        schema:
-          maxLength: 64
-          minLength: 0
-          type: string
-      responses:
-        "200":
-          description: Successfully validated experiment name
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/SuccessNameAvailabilityResponse'
-        "400":
-          description: Invalid project key or experiment name
+        "404":
+          description: Experiment not found
           content:
             application/json:
               schema:
@@ -213,11 +219,6 @@ paths:
                 $ref: '#/components/schemas/Failure'
 components:
   schemas:
-    Success:
-      type: object
-      properties:
-        data:
-          type: object
     ErrorEntity:
       type: object
       properties:
@@ -232,6 +233,21 @@ components:
       properties:
         error:
           $ref: '#/components/schemas/ErrorEntity'
+    ExperimentKeyAvailabilityResponse:
+      type: object
+      properties:
+        isAvailable:
+          type: boolean
+    SuccessExperimentKeyAvailabilityResponse:
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/ExperimentKeyAvailabilityResponse'
+    Success:
+      type: object
+      properties:
+        data:
+          type: object
     Experiment:
       type: object
       properties:
@@ -378,16 +394,6 @@ components:
       properties:
         data:
           $ref: '#/components/schemas/ExperimentHistoryResponse'
-    NameAvailabilityResponse:
-      type: object
-      properties:
-        isAvailable:
-          type: boolean
-    SuccessNameAvailabilityResponse:
-      type: object
-      properties:
-        data:
-          $ref: '#/components/schemas/NameAvailabilityResponse'
     SuccessTagsResponse:
       type: object
       properties:

@@ -13,8 +13,8 @@ CREATE TYPE experiment.experiment_strategy AS ENUM ('RANDOM','ROUND_ROBIN');
 CREATE TABLE IF NOT EXISTS experiment.experiments (
     project_key          VARCHAR(255) NOT NULL,
     experiment_id       VARCHAR(36) NOT NULL,
-    name                VARCHAR(64) NOT NULL,
-    experiment_key      VARCHAR(64) NOT NULL,
+    name                VARCHAR(255) NOT NULL,
+    experiment_key      VARCHAR(255) NOT NULL,
     description         VARCHAR(255),
     hypothesis          TEXT,
     status              experiment.experiment_status NOT NULL,

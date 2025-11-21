@@ -8,6 +8,7 @@ import com.ascend.testlab.dto.entity.ExperimentHistoryEntry;
 import com.ascend.testlab.dto.request.ExperimentHistoryRequest;
 import com.ascend.testlab.dto.response.ExperimentHistoryResponse;
 import com.ascend.testlab.dto.response.PaginationMeta;
+import com.ascend.testlab.util.CommonUtil;
 import com.google.inject.Inject;
 import io.reactivex.rxjava3.core.Single;
 import io.vertx.rxjava3.sqlclient.Row;
@@ -54,7 +55,7 @@ public class AdminDAOImpl implements AdminDAO {
   public Single<Boolean> isExperimentKeyAvailable(String projectKey, String experimentKey) {
     return pgReaderClient
         .fetchAll(
-            ReadQuery.CHECK_EXPERIMENT_NAME,
+            ReadQuery.CHECK_EXPERIMENT_KEY,
             Tuple.tuple().addString(projectKey).addString(experimentKey),
             row -> row.getBoolean(0))
         .map(list -> list.isEmpty() || !list.get(0));
@@ -63,7 +64,8 @@ public class AdminDAOImpl implements AdminDAO {
   /** {@inheritDoc} */
   @Override
   public Single<ExperimentHistoryResponse> fetchExperimentHistory(
-      ExperimentHistoryRequest request, int offset) {
+      ExperimentHistoryRequest request) {
+    int offset = CommonUtil.calculateOffset(request.getPage(), request.getLimit());
     return pgReaderClient
         .fetchAll(
             ReadQuery.FETCH_EXPERIMENT_HISTORY,
@@ -84,7 +86,7 @@ public class AdminDAOImpl implements AdminDAO {
                   .pagination(
                       PaginationMeta.builder()
                           .currentPage(request.getPage())
-                          .pageSize(request.getLimit())
+                          .pageSize(historyEntries.size())
                           .totalCount(totalCount)
                           .build())
                   .build();
@@ -102,14 +104,8 @@ public class AdminDAOImpl implements AdminDAO {
         .updatedBy(row.getString(Columns.UPDATED_BY))
         .previousData(row.getJsonObject(Columns.PREVIOUS_DATA))
         .currentData(row.getJsonObject(Columns.CURRENT_DATA))
-        .createdAt(
-            row.getOffsetDateTime(Columns.CREATED_AT) != null
-                ? row.getOffsetDateTime(Columns.CREATED_AT).toInstant()
-                : null)
-        .updatedAt(
-            row.getOffsetDateTime(Columns.UPDATED_AT) != null
-                ? row.getOffsetDateTime(Columns.UPDATED_AT).toInstant()
-                : null)
+        .createdAt(row.getOffsetDateTime(Columns.CREATED_AT).toInstant())
+        .updatedAt(row.getOffsetDateTime(Columns.UPDATED_AT).toInstant())
         .build();
   }
 }

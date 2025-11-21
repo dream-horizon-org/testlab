@@ -79,8 +79,11 @@ public final class WebConstants {
   /** The query parameter name for owner filter. */
   public static final String OWNER = "owner";
 
-  /** The query parameter name for experiment name. */
+  /** The query parameter name for name filter. */
   public static final String NAME = "name";
+
+  /** The query parameter name for experiment key. */
+  public static final String EXPERIMENT_KEY = "experimentKey";
 
   /* Pagination Parameter Constants */
 

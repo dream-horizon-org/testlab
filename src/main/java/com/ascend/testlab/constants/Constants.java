@@ -43,6 +43,6 @@ public final class Constants {
   /** The delimiter for underscore. */
   public static final String UNDER_SCORE = "_";
 
-  /** The maximum length for experiment name. */
-  public static final int MAX_EXPERIMENT_NAME_LENGTH = 64;
+  /** The maximum length for experiment key. */
+  public static final int MAX_EXPERIMENT_KEY_LENGTH = 255;
 }

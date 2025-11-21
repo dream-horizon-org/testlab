@@ -2,18 +2,18 @@ package com.ascend.testlab.service;
 
 import com.ascend.testlab.dto.request.ExperimentHistoryRequest;
 import com.ascend.testlab.dto.response.ExperimentHistoryResponse;
-import com.ascend.testlab.dto.response.NameAvailabilityResponse;
+import com.ascend.testlab.dto.response.ExperimentKeyAvailabilityResponse;
 import com.ascend.testlab.dto.response.TagsResponse;
 import io.reactivex.rxjava3.core.Single;
 
 /**
- * Service interface for admin operations including tags and name availability.
+ * Service interface for admin operations including tags and key availability.
  *
  * @author Nithya sree
  * @version 1.0
  * @since 1.0
  * @see TagsResponse
- * @see NameAvailabilityResponse
+ * @see ExperimentKeyAvailabilityResponse
  */
 public interface AdminService {
 
@@ -27,16 +27,16 @@ public interface AdminService {
   Single<TagsResponse> getTags(String projectKey);
 
   /**
-   * Checks if an experiment name is available for a given project key.
+   * Checks if an experiment key is available for a given project key.
    *
    * @param projectKey the project key
-   * @param experimentName the experiment name
-   * @return a Single that emits the name availability response if the experiment name is available,
-   *     false otherwise
-   * @throws com.dream11.rest.exception.RestException if the experiment name is not available
+   * @param experimentKey the experiment key
+   * @return a Single that emits the experiment key availability response of the experiment,
+   *     indicating whether the experiment key is available
+   * @throws com.dream11.rest.exception.RestException if the experiment key is not available
    */
-  Single<NameAvailabilityResponse> isExperimentNameAvailable(
-      String projectKey, String experimentName);
+  Single<ExperimentKeyAvailabilityResponse> isExperimentKeyAvailable(
+      String projectKey, String experimentKey);
 
   /**
    * Fetches the history of an experiment with pagination support.

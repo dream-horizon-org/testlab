@@ -447,8 +447,7 @@
           <charset>UTF-8</charset>
           <windowtitle>TestLab API Documentation</windowtitle>
           <doctitle>TestLab ${project.version} API</doctitle>
-          <header><![CDATA[<b>TestLab ${project.version}</b>]]></header>
-          <footer><![CDATA[<i>Copyright © 2025</i>]]></footer>
+          <header><![CDATA[<b>TestLab ${project.version}</b><br/><i>Copyright © 2025</i>]]></header>
         </configuration>
         <executions>
           <execution>

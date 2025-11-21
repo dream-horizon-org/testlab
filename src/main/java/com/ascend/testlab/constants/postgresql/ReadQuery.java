@@ -25,8 +25,8 @@ public final class ReadQuery {
         WHERE project_key = $1;
         """;
 
-  /** The query to check if an experiment name exists for a given project key. */
-  public static final String CHECK_EXPERIMENT_NAME =
+  /** The query to check if an experiment key exists for a given project key. */
+  public static final String CHECK_EXPERIMENT_KEY =
       """
          SELECT EXISTS (
              SELECT 1

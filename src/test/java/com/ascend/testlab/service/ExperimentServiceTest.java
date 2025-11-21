@@ -361,7 +361,7 @@ public class ExperimentServiceTest {
       // Arrange
       FilterExperimentsRequest request = new FilterExperimentsRequest();
       FilterExperimentsResponse emptyResponse =
-          new FilterExperimentsResponse(Collections.emptyList(), new PaginationMeta(1, 20, 0));
+          new FilterExperimentsResponse(Collections.emptyList(), new PaginationMeta(1, 0, 0));
       when(experimentDAO.filterExperiments(PROJECT_KEY, request))
           .thenReturn(Single.just(emptyResponse));
 
@@ -382,9 +382,10 @@ public class ExperimentServiceTest {
       // Arrange
       FilterExperimentsRequest request =
           FilterExperimentsRequest.builder().limit(10).page(2).build();
-      PaginationMeta paginationMeta = new PaginationMeta(2, 10, 25);
+      List<Experiment> mockExperiments = List.of(createMockExperiment());
+      PaginationMeta paginationMeta = new PaginationMeta(2, mockExperiments.size(), 25);
       FilterExperimentsResponse expectedResponse =
-          new FilterExperimentsResponse(List.of(createMockExperiment()), paginationMeta);
+          new FilterExperimentsResponse(mockExperiments, paginationMeta);
       when(experimentDAO.filterExperiments(PROJECT_KEY, request))
           .thenReturn(Single.just(expectedResponse));
 
@@ -398,7 +399,9 @@ public class ExperimentServiceTest {
       testObserver.assertValue(
           response -> {
             PaginationMeta meta = response.getPagination();
-            return meta.currentPage() == 2 && meta.pageSize() == 10 && meta.totalCount() == 25;
+            return meta.currentPage() == 2
+                && meta.pageSize() == response.getExperiments().size()
+                && meta.totalCount() == 25;
           });
       verify(experimentDAO, times(1)).filterExperiments(PROJECT_KEY, request);
     }

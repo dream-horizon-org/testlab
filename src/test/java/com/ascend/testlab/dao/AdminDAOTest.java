@@ -9,7 +9,6 @@ import com.ascend.testlab.constants.postgresql.ReadQuery;
 import com.ascend.testlab.dao.impl.AdminDAOImpl;
 import com.ascend.testlab.dto.request.ExperimentHistoryRequest;
 import com.ascend.testlab.dto.response.ExperimentHistoryResponse;
-import com.ascend.testlab.util.CommonUtil;
 import io.reactivex.rxjava3.core.Single;
 import io.reactivex.rxjava3.observers.TestObserver;
 import io.vertx.core.Vertx;
@@ -18,6 +17,9 @@ import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
 import io.vertx.rxjava3.sqlclient.Row;
 import io.vertx.rxjava3.sqlclient.Tuple;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.function.Function;
@@ -45,8 +47,7 @@ class AdminDAOTest {
   private AdminDAO adminDAO;
 
   private static final String PROJECT_KEY = "123e4567-e89b-12d3-a456-426614174000";
-  private static final String EXPERIMENT_NAME = "test-experiment";
-  private static final String EXPERIMENT_KEY = CommonUtil.getExperimentKey(EXPERIMENT_NAME);
+  private static final String EXPERIMENT_KEY = "test_experiment_key";
   private static final String EXPERIMENT_ID = "123e4567-e89b-12d3-a456-426614174001";
 
   @BeforeEach
@@ -138,14 +139,14 @@ class AdminDAOTest {
   }
 
   @Nested
-  @DisplayName("Name Availability Check Tests")
-  class NameAvailabilityTests {
+  @DisplayName("Key Availability Check Tests")
+  class ExperimentKeyAvailabilityTests {
     @Test
-    @DisplayName("Should return true when name is available (EXISTS returns false)")
-    void testIsExperimentNameAvailable_Available() {
+    @DisplayName("Should return true when key is available (EXISTS returns false)")
+    void testIsExperimentKeyAvailable_Available() {
       // Arrange
       when(pgReaderClient.fetchAll(
-              eq(ReadQuery.CHECK_EXPERIMENT_NAME), any(Tuple.class), any(Function.class)))
+              eq(ReadQuery.CHECK_EXPERIMENT_KEY), any(Tuple.class), any(Function.class)))
           .thenReturn(Single.just(List.of(false)));
 
       // Act
@@ -160,15 +161,15 @@ class AdminDAOTest {
       assertNotNull(isAvailable);
       assertTrue(isAvailable);
       verify(pgReaderClient, times(1))
-          .fetchAll(eq(ReadQuery.CHECK_EXPERIMENT_NAME), any(Tuple.class), any(Function.class));
+          .fetchAll(eq(ReadQuery.CHECK_EXPERIMENT_KEY), any(Tuple.class), any(Function.class));
     }
 
     @Test
-    @DisplayName("Should return false when name is not available (EXISTS returns true)")
-    void testIsExperimentNameAvailable_NotAvailable() {
+    @DisplayName("Should return false when key is not available (EXISTS returns true)")
+    void testIsExperimentKeyAvailable_NotAvailable() {
       // Arrange
       when(pgReaderClient.fetchAll(
-              eq(ReadQuery.CHECK_EXPERIMENT_NAME), any(Tuple.class), any(Function.class)))
+              eq(ReadQuery.CHECK_EXPERIMENT_KEY), any(Tuple.class), any(Function.class)))
           .thenReturn(Single.just(List.of(true)));
 
       // Act
@@ -183,16 +184,15 @@ class AdminDAOTest {
       assertNotNull(isAvailable);
       assertFalse(isAvailable);
       verify(pgReaderClient, times(1))
-          .fetchAll(eq(ReadQuery.CHECK_EXPERIMENT_NAME), any(Tuple.class), any(Function.class));
+          .fetchAll(eq(ReadQuery.CHECK_EXPERIMENT_KEY), any(Tuple.class), any(Function.class));
     }
 
     @Test
     @DisplayName("Should return true when list is empty (safe default)")
-    void testIsExperimentNameAvailable_EmptyList() {
+    void testIsExperimentKeyAvailable_EmptyList() {
       // Arrange
-      // Empty list should return true (name available) as safe default
       when(pgReaderClient.fetchAll(
-              eq(ReadQuery.CHECK_EXPERIMENT_NAME), any(Tuple.class), any(Function.class)))
+              eq(ReadQuery.CHECK_EXPERIMENT_KEY), any(Tuple.class), any(Function.class)))
           .thenReturn(Single.just(List.of()));
 
       // Act
@@ -207,16 +207,16 @@ class AdminDAOTest {
       assertNotNull(isAvailable);
       assertTrue(isAvailable);
       verify(pgReaderClient, times(1))
-          .fetchAll(eq(ReadQuery.CHECK_EXPERIMENT_NAME), any(Tuple.class), any(Function.class));
+          .fetchAll(eq(ReadQuery.CHECK_EXPERIMENT_KEY), any(Tuple.class), any(Function.class));
     }
 
     @Test
     @DisplayName("Should throw RuntimeException when DB fails")
-    void testIsExperimentNameAvailable_DatabaseError() {
+    void testIsExperimentKeyAvailable_DatabaseError() {
       // Arrange
       RuntimeException dbException = new RuntimeException("Database connection failed");
       when(pgReaderClient.fetchAll(
-              eq(ReadQuery.CHECK_EXPERIMENT_NAME), any(Tuple.class), any(Function.class)))
+              eq(ReadQuery.CHECK_EXPERIMENT_KEY), any(Tuple.class), any(Function.class)))
           .thenReturn(Single.error(dbException));
 
       // Act
@@ -226,7 +226,7 @@ class AdminDAOTest {
       // Assert
       testObserver.assertError(RuntimeException.class);
       verify(pgReaderClient, times(1))
-          .fetchAll(eq(ReadQuery.CHECK_EXPERIMENT_NAME), any(Tuple.class), any(Function.class));
+          .fetchAll(eq(ReadQuery.CHECK_EXPERIMENT_KEY), any(Tuple.class), any(Function.class));
     }
   }
 
@@ -262,11 +262,11 @@ class AdminDAOTest {
     }
 
     @Test
-    @DisplayName("Should check name availability asynchronously using Vert.x event loop context")
-    void testIsExperimentNameAvailable_Success_Async(Vertx vertx, VertxTestContext testContext) {
+    @DisplayName("Should check key availability asynchronously using Vert.x event loop context")
+    void testIsExperimentKeyAvailable_Success_Async(Vertx vertx, VertxTestContext testContext) {
       // Arrange
       when(pgReaderClient.fetchAll(
-              eq(ReadQuery.CHECK_EXPERIMENT_NAME), any(Tuple.class), any(Function.class)))
+              eq(ReadQuery.CHECK_EXPERIMENT_KEY), any(Tuple.class), any(Function.class)))
           .thenReturn(Single.just(List.of(false)));
 
       // Act
@@ -284,7 +284,7 @@ class AdminDAOTest {
             assertTrue(isAvailable);
             verify(pgReaderClient, times(1))
                 .fetchAll(
-                    eq(ReadQuery.CHECK_EXPERIMENT_NAME), any(Tuple.class), any(Function.class));
+                    eq(ReadQuery.CHECK_EXPERIMENT_KEY), any(Tuple.class), any(Function.class));
             testContext.completeNow();
           });
     }
@@ -313,8 +313,7 @@ class AdminDAOTest {
               .limit(limit)
               .page(page)
               .build();
-      int offset = 0; // For page 1, limit 20: offset = 0
-      Single<ExperimentHistoryResponse> result = adminDAO.fetchExperimentHistory(request, offset);
+      Single<ExperimentHistoryResponse> result = adminDAO.fetchExperimentHistory(request);
       TestObserver<ExperimentHistoryResponse> testObserver = result.test();
 
       // Assert
@@ -327,7 +326,7 @@ class AdminDAOTest {
       assertEquals(2, actualResult.history().size());
       assertEquals(totalCount, actualResult.pagination().totalCount());
       assertEquals(page, actualResult.pagination().currentPage());
-      assertEquals(limit, actualResult.pagination().pageSize());
+      assertEquals(actualResult.history().size(), actualResult.pagination().pageSize());
       assertEquals("user1", actualResult.history().get(0).updatedBy());
       assertEquals("user2", actualResult.history().get(1).updatedBy());
       verify(pgReaderClient, times(1))
@@ -340,7 +339,6 @@ class AdminDAOTest {
       // Arrange
       int limit = 10;
       int page = 2;
-      int offset = 10;
       int totalCount = 25;
       List<Row> mockRows = createMockHistoryRows(10, totalCount);
       when(pgReaderClient.fetchAll(
@@ -355,7 +353,7 @@ class AdminDAOTest {
               .limit(limit)
               .page(page)
               .build();
-      Single<ExperimentHistoryResponse> result = adminDAO.fetchExperimentHistory(request, offset);
+      Single<ExperimentHistoryResponse> result = adminDAO.fetchExperimentHistory(request);
       TestObserver<ExperimentHistoryResponse> testObserver = result.test();
 
       // Assert
@@ -366,7 +364,49 @@ class AdminDAOTest {
       assertEquals(10, actualResult.history().size());
       assertEquals(totalCount, actualResult.pagination().totalCount());
       assertEquals(page, actualResult.pagination().currentPage());
-      assertEquals(limit, actualResult.pagination().pageSize());
+      assertEquals(actualResult.history().size(), actualResult.pagination().pageSize());
+      verify(pgReaderClient, times(1))
+          .fetchAll(eq(ReadQuery.FETCH_EXPERIMENT_HISTORY), any(Tuple.class), any(Function.class));
+    }
+
+    @Test
+    @DisplayName("Should return last page with fewer rows than limit")
+    void testFetchExperimentHistory_LastPage_FewerRows() {
+      // Arrange
+      int limit = 10;
+      int page = 3;
+      int totalCount = 23;
+      int actualRowsReturned = 3;
+      List<Row> mockRows = createMockHistoryRows(actualRowsReturned, totalCount);
+      when(pgReaderClient.fetchAll(
+              eq(ReadQuery.FETCH_EXPERIMENT_HISTORY), any(Tuple.class), any(Function.class)))
+          .thenReturn(Single.just(mockRows));
+
+      // Act
+      ExperimentHistoryRequest request =
+          ExperimentHistoryRequest.builder()
+              .projectKey(PROJECT_KEY)
+              .experimentId(EXPERIMENT_ID)
+              .limit(limit)
+              .page(page)
+              .build();
+      Single<ExperimentHistoryResponse> result = adminDAO.fetchExperimentHistory(request);
+      TestObserver<ExperimentHistoryResponse> testObserver = result.test();
+
+      // Assert
+      testObserver.assertComplete();
+      testObserver.assertNoErrors();
+      testObserver.assertValueCount(1);
+      ExperimentHistoryResponse actualResult = testObserver.values().get(0);
+      assertNotNull(actualResult);
+      assertEquals(actualRowsReturned, actualResult.history().size());
+      assertEquals(totalCount, actualResult.pagination().totalCount());
+      assertEquals(page, actualResult.pagination().currentPage());
+      assertEquals(actualRowsReturned, actualResult.pagination().pageSize());
+      assertNotEquals(
+          limit,
+          actualResult.pagination().pageSize(),
+          "pageSize should be actual rows returned, not the requested limit");
       verify(pgReaderClient, times(1))
           .fetchAll(eq(ReadQuery.FETCH_EXPERIMENT_HISTORY), any(Tuple.class), any(Function.class));
     }
@@ -389,8 +429,7 @@ class AdminDAOTest {
               .limit(limit)
               .page(page)
               .build();
-      int offset = 0;
-      Single<ExperimentHistoryResponse> result = adminDAO.fetchExperimentHistory(request, offset);
+      Single<ExperimentHistoryResponse> result = adminDAO.fetchExperimentHistory(request);
       TestObserver<ExperimentHistoryResponse> testObserver = result.test();
 
       // Assert
@@ -402,7 +441,7 @@ class AdminDAOTest {
       assertTrue(actualResult.history().isEmpty());
       assertEquals(0, actualResult.pagination().totalCount());
       assertEquals(page, actualResult.pagination().currentPage());
-      assertEquals(limit, actualResult.pagination().pageSize());
+      assertEquals(actualResult.history().size(), actualResult.pagination().pageSize());
       verify(pgReaderClient, times(1))
           .fetchAll(eq(ReadQuery.FETCH_EXPERIMENT_HISTORY), any(Tuple.class), any(Function.class));
     }
@@ -426,8 +465,7 @@ class AdminDAOTest {
               .limit(limit)
               .page(page)
               .build();
-      int offset = 0;
-      Single<ExperimentHistoryResponse> result = adminDAO.fetchExperimentHistory(request, offset);
+      Single<ExperimentHistoryResponse> result = adminDAO.fetchExperimentHistory(request);
       TestObserver<ExperimentHistoryResponse> testObserver = result.test();
 
       // Assert
@@ -458,9 +496,8 @@ class AdminDAOTest {
                     .limit(limit)
                     .page(page)
                     .build();
-            int offset = 0; // For page 1, limit 20: offset = 0
             TestObserver<ExperimentHistoryResponse> testObserver =
-                adminDAO.fetchExperimentHistory(request, offset).test();
+                adminDAO.fetchExperimentHistory(request).test();
 
             // Assert
             testObserver.assertComplete();
@@ -485,8 +522,8 @@ class AdminDAOTest {
      * @return a list of mock Row objects
      */
     private List<Row> createMockHistoryRows(int count, int totalCount) {
-      List<Row> rows = new java.util.ArrayList<>();
-      java.time.LocalDateTime now = java.time.LocalDateTime.now(java.time.ZoneOffset.UTC);
+      List<Row> rows = new ArrayList<>();
+      LocalDateTime now = LocalDateTime.now(ZoneOffset.UTC);
 
       for (int i = 0; i < count; i++) {
         Row mockRow = mock(Row.class);
@@ -496,9 +533,9 @@ class AdminDAOTest {
         when(mockRow.getJsonObject(Columns.CURRENT_DATA))
             .thenReturn(new JsonObject().put("status", "LIVE"));
         when(mockRow.getOffsetDateTime(Columns.CREATED_AT))
-            .thenReturn(now.minusHours(i + 1).atZone(java.time.ZoneOffset.UTC).toOffsetDateTime());
+            .thenReturn(now.minusHours(i + 1).atZone(ZoneOffset.UTC).toOffsetDateTime());
         when(mockRow.getOffsetDateTime(Columns.UPDATED_AT))
-            .thenReturn(now.minusHours(i + 1).atZone(java.time.ZoneOffset.UTC).toOffsetDateTime());
+            .thenReturn(now.minusHours(i + 1).atZone(ZoneOffset.UTC).toOffsetDateTime());
         if (i == 0) {
           when(mockRow.getInteger(Columns.TOTAL_COUNT)).thenReturn(totalCount);
         }

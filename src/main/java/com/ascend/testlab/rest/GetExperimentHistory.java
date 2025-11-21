@@ -64,6 +64,10 @@ public class GetExperimentHistory {
       description = "Invalid project key or experiment id",
       content = @Content(schema = @Schema(implementation = ResponseEntity.Failure.class)))
   @ApiResponse(
+      responseCode = "404",
+      description = "Experiment not found",
+      content = @Content(schema = @Schema(implementation = ResponseEntity.Failure.class)))
+  @ApiResponse(
       responseCode = "500",
       description = "Internal server error",
       content = @Content(schema = @Schema(implementation = ResponseEntity.Failure.class)))

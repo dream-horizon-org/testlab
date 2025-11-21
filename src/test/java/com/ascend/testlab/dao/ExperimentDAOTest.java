@@ -165,7 +165,7 @@ class ExperimentDAOTest {
               response.getExperiments().size() == 1
                   && response.getPagination().totalCount() == 1
                   && response.getPagination().currentPage() == 1
-                  && response.getPagination().pageSize() == 20);
+                  && response.getPagination().pageSize() == response.getExperiments().size());
       verify(pgReaderClient, times(1)).fetchAll(anyString(), any(Tuple.class), any(Function.class));
       testContext.completeNow();
     }
@@ -192,7 +192,7 @@ class ExperimentDAOTest {
               response.getExperiments().isEmpty()
                   && response.getPagination().totalCount() == 0
                   && response.getPagination().currentPage() == 1
-                  && response.getPagination().pageSize() == 20);
+                  && response.getPagination().pageSize() == response.getExperiments().size());
       verify(pgReaderClient, times(1)).fetchAll(anyString(), any(Tuple.class), any(Function.class));
       testContext.completeNow();
     }
@@ -382,7 +382,7 @@ class ExperimentDAOTest {
           response ->
               response.getPagination().totalCount() == 15
                   && response.getPagination().currentPage() == 2
-                  && response.getPagination().pageSize() == 10);
+                  && response.getPagination().pageSize() == response.getExperiments().size());
       verify(pgReaderClient, times(1)).fetchAll(anyString(), any(Tuple.class), any(Function.class));
       testContext.completeNow();
     }

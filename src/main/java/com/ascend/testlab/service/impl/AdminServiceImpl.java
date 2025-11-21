@@ -3,18 +3,17 @@ package com.ascend.testlab.service.impl;
 import com.ascend.testlab.dao.AdminDAO;
 import com.ascend.testlab.dto.request.ExperimentHistoryRequest;
 import com.ascend.testlab.dto.response.ExperimentHistoryResponse;
-import com.ascend.testlab.dto.response.NameAvailabilityResponse;
+import com.ascend.testlab.dto.response.ExperimentKeyAvailabilityResponse;
 import com.ascend.testlab.dto.response.TagsResponse;
 import com.ascend.testlab.exception.ErrorEnum;
 import com.ascend.testlab.service.AdminService;
-import com.ascend.testlab.util.CommonUtil;
 import com.dream11.rest.exception.RestException;
 import com.google.inject.Inject;
 import io.reactivex.rxjava3.core.Single;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * Implementation of the AdminService interface for managing tags and name availability operations.
+ * Implementation of the AdminService interface for managing tags and key availability operations.
  *
  * @author Nithya sree
  * @version 1.0
@@ -55,31 +54,36 @@ public class AdminServiceImpl implements AdminService {
 
   /** {@inheritDoc} */
   @Override
-  public Single<NameAvailabilityResponse> isExperimentNameAvailable(
-      String projectKey, String experimentName) {
-    String experimentKey = CommonUtil.getExperimentKey(experimentName);
+  public Single<ExperimentKeyAvailabilityResponse> isExperimentKeyAvailable(
+      String projectKey, String experimentKey) {
     return adminDAO
         .isExperimentKeyAvailable(projectKey, experimentKey)
-        .map(NameAvailabilityResponse::new)
+        .map(ExperimentKeyAvailabilityResponse::new)
         .onErrorResumeNext(
             err -> {
               log.error(
-                  "Error checking experiment name availability for projectKey={} and experimentName={}: {}",
+                  "Error checking experiment key availability for projectKey={} and experimentKey={}: {}",
                   projectKey,
-                  experimentName,
+                  experimentKey,
                   err.getMessage());
               return Single.error(
                   ErrorEnum.handleException(
-                      err, new RestException(ErrorEnum.REST_EXPERIMENT_NAME_CHECK_FAILED, err)));
+                      err, new RestException(ErrorEnum.REST_EXPERIMENT_KEY_CHECK_FAILED, err)));
             });
   }
 
   /** {@inheritDoc} */
   @Override
   public Single<ExperimentHistoryResponse> getExperimentHistory(ExperimentHistoryRequest request) {
-    int offset = CommonUtil.calculateOffset(request.getPage(), request.getLimit());
     return adminDAO
-        .fetchExperimentHistory(request, offset)
+        .fetchExperimentHistory(request)
+        .flatMap(
+            response -> {
+              if (response.pagination().totalCount() == 0 && request.getPage() == 1) {
+                return Single.error(new RestException(ErrorEnum.EXPERIMENT_NOT_FOUND));
+              }
+              return Single.just(response);
+            })
         .onErrorResumeNext(
             err -> {
               log.error(

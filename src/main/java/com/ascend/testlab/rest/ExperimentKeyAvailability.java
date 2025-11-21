@@ -3,7 +3,7 @@ package com.ascend.testlab.rest;
 import com.ascend.testlab.constants.Constants;
 import com.ascend.testlab.constants.web.WebConstants;
 import com.ascend.testlab.dto.ResponseEntity;
-import com.ascend.testlab.dto.response.NameAvailabilityResponse;
+import com.ascend.testlab.dto.response.ExperimentKeyAvailabilityResponse;
 import com.ascend.testlab.exception.ErrorMessages;
 import com.ascend.testlab.service.AdminService;
 import com.google.inject.Inject;
@@ -22,35 +22,35 @@ import jakarta.ws.rs.core.MediaType;
 import java.util.concurrent.CompletionStage;
 
 /**
- * REST endpoint for validating experiment name availability for a specific project.
+ * REST endpoint for validating experiment key availability for a specific project.
  *
  * @author Nithya sree
  * @version 1.0
  * @since 1.0
  * @see AdminService
- * @see NameAvailabilityResponse
+ * @see ExperimentKeyAvailabilityResponse
  */
-@Path("/v1/experiments/name-availability")
-public class NameAvailability {
+@Path("/v1/experiments/key-availability")
+public class ExperimentKeyAvailability {
 
   /** The admin service. */
   private final AdminService adminService;
 
   /**
-   * Constructor for the NameAvailability class.
+   * Constructor for the ExperimentKeyAvailability class.
    *
    * @param adminService the admin service
    */
   @Inject
-  public NameAvailability(AdminService adminService) {
+  public ExperimentKeyAvailability(AdminService adminService) {
     this.adminService = adminService;
   }
 
   /**
-   * Handles the GET request to validate experiment name availability for a project.
+   * Handles the GET request to validate experiment key availability for a project.
    *
    * @param projectKey the project key provided in the x-project-key header
-   * @param experimentName the experiment name provided in the name query parameter
+   * @param experimentKey the experiment key provided in the experimentKey query parameter
    * @return a CompletionStage containing a ResponseEntity with availability and message
    * @throws jakarta.validation.ConstraintViolationException if inputs are blank
    */
@@ -59,29 +59,30 @@ public class NameAvailability {
   @Produces(MediaType.APPLICATION_JSON)
   @ApiResponse(
       responseCode = "200",
-      description = "Successfully validated experiment name",
+      description = "Successfully validated experiment key",
       useReturnTypeSchema = true)
   @ApiResponse(
       responseCode = "400",
-      description = "Invalid project key or experiment name",
+      description = "Invalid project key or experiment key",
       content = @Content(schema = @Schema(implementation = ResponseEntity.Failure.class)))
   @ApiResponse(
       responseCode = "500",
       description = "Internal server error",
       content = @Content(schema = @Schema(implementation = ResponseEntity.Failure.class)))
-  public CompletionStage<ResponseEntity.Success<NameAvailabilityResponse>> nameAvailabilityHandle(
-      @HeaderParam(WebConstants.PROJECT_KEY_HEADER)
-          @NotBlank(message = ErrorMessages.PROJECT_KEY_MISSING)
-          String projectKey,
-      @QueryParam(WebConstants.NAME)
-          @NotBlank(message = ErrorMessages.EXPERIMENT_NAME_MISSING)
-          @Size(
-              max = Constants.MAX_EXPERIMENT_NAME_LENGTH,
-              message = ErrorMessages.EXPERIMENT_NAME_TOO_LONG)
-          String experimentName) {
+  public CompletionStage<ResponseEntity.Success<ExperimentKeyAvailabilityResponse>>
+      experimentKeyAvailabilityHandle(
+          @HeaderParam(WebConstants.PROJECT_KEY_HEADER)
+              @NotBlank(message = ErrorMessages.PROJECT_KEY_MISSING)
+              String projectKey,
+          @QueryParam(WebConstants.EXPERIMENT_KEY)
+              @NotBlank(message = ErrorMessages.EXPERIMENT_KEY_MISSING)
+              @Size(
+                  max = Constants.MAX_EXPERIMENT_KEY_LENGTH,
+                  message = ErrorMessages.EXPERIMENT_KEY_TOO_LONG)
+              String experimentKey) {
 
     return adminService
-        .isExperimentNameAvailable(projectKey, experimentName)
+        .isExperimentKeyAvailable(projectKey, experimentKey)
         .map(ResponseEntity.Success::new)
         .toCompletionStage();
   }

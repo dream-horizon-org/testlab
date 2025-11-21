@@ -314,7 +314,7 @@ class FilterExperimentsIT {
     response.statusCode(HttpStatus.SC_OK);
     response.body("data.experiments", Matchers.notNullValue());
     response.body("data.experiments.size()", Matchers.equalTo(2));
-    response.body("data.pagination.pageSize", Matchers.equalTo(100));
+    response.body("data.pagination.pageSize", Matchers.equalTo(2));
   }
 
   @Test
@@ -445,7 +445,7 @@ class FilterExperimentsIT {
 
     response.statusCode(HttpStatus.SC_OK);
     response.body("data.pagination.currentPage", Matchers.equalTo(1));
-    response.body("data.pagination.pageSize", Matchers.equalTo(20));
+    response.body("data.pagination.pageSize", Matchers.equalTo(2));
   }
 
   @Test
