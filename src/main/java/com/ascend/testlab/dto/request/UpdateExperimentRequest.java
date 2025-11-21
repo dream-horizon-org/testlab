@@ -11,6 +11,7 @@ import com.ascend.testlab.entity.RuleAttributes;
 import com.ascend.testlab.entity.Variant;
 import com.ascend.testlab.exception.ErrorMessages;
 import com.ascend.testlab.validation.annotations.ValidMetrics;
+import com.ascend.testlab.validation.annotations.ValidTimeRange;
 import com.ascend.testlab.validation.annotations.ValidUpdateRequest;
 import com.ascend.testlab.validation.annotations.ValidVariantKeys;
 import com.ascend.testlab.validation.annotations.ValidVariantWeights;
@@ -39,6 +40,7 @@ import lombok.Data;
     nonUpdatableFields = {"name", "experimentKey", "createdBy"},
     message =
         "The following fields cannot be updated: name, experiment_key, project_key, experiment_id, created_by, created_at")
+@ValidTimeRange(message = "End time must be greater than start time")
 public class UpdateExperimentRequest {
 
   // Non-updatable fields - included only to capture and reject in validation

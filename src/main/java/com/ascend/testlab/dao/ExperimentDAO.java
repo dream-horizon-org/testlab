@@ -172,8 +172,8 @@ public interface ExperimentDAO {
       SqlConnection connection,
       String projectKey,
       UUID experimentId,
-      Map<String, Object> previousData,
-      Map<String, Object> currentData,
+      Object previousData,
+      Object currentData,
       String updatedBy);
 
   // ==================== Analysis Operations ====================

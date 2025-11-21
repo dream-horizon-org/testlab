@@ -231,7 +231,7 @@ public class ExperimentDAOImpl implements ExperimentDAO {
                               projectKey,
                               experimentId,
                               null, // previous_data is null for create
-                              convertRequestToMap(request),
+                              request, // Pass POJO directly
                               request.getCreatedBy()),
                           insertAnalysis(
                               connection, projectKey, experimentId, request.getMetrics()),
@@ -257,22 +257,6 @@ public class ExperimentDAOImpl implements ExperimentDAO {
                             return id;
                           });
                     }));
-  }
-
-  /**
-   * Converts CreateExperimentRequest to Map for storing in update log.
-   *
-   * @param request experiment creation request
-   * @return Map representation of the request
-   */
-  private Map<String, Object> convertRequestToMap(CreateExperimentRequest request) {
-    try {
-      String json = MAPPER.writeValueAsString(request);
-      return MAPPER.readValue(json, Map.class);
-    } catch (Exception e) {
-      log.error("DAO: Failed to convert request to map: {}", e.getMessage(), e);
-      return new HashMap<>();
-    }
   }
 
   /**
@@ -681,15 +665,8 @@ public class ExperimentDAOImpl implements ExperimentDAO {
         projectKey,
         experimentId);
 
-    // Convert request to map for dynamic SQL generation
-    Map<String, Object> allFields = convertDtoToMap(request);
-
-    // Separate experiment table fields from related table fields (tags, owner, metrics)
-    Map<String, Object> experimentFields = new java.util.HashMap<>(allFields);
-    experimentFields.remove("tags");
-    experimentFields.remove("owner");
-    experimentFields.remove("metrics");
-    experimentFields.remove("updated_by");
+    // Extract non-null fields from request POJO for dynamic SQL generation
+    Map<String, Object> experimentFields = extractNonNullFields(request);
 
     return pgWriterClient.executeWithTransaction(
         connection ->
@@ -1277,8 +1254,8 @@ public class ExperimentDAOImpl implements ExperimentDAO {
       SqlConnection connection,
       String projectKey,
       UUID experimentId,
-      Map<String, Object> previousData,
-      Map<String, Object> currentData,
+      Object previousData,
+      Object currentData,
       String updatedBy) {
     log.debug(
         "DAO: Inserting update log for experimentId: {}, projectKey: {}, updatedBy: {}",
@@ -1288,7 +1265,7 @@ public class ExperimentDAOImpl implements ExperimentDAO {
 
     return Single.fromCallable(
             () -> {
-              // Convert maps to JsonObject for JSONB columns
+              // Convert POJOs/Maps directly to JsonObject for JSONB columns
               JsonObject previousDataJson =
                   previousData != null
                       ? new JsonObject(MAPPER.writeValueAsString(previousData))
@@ -1524,21 +1501,50 @@ public class ExperimentDAOImpl implements ExperimentDAO {
    * @param request update experiment request DTO
    * @return Map representation of the request with null values removed
    */
-  private Map<String, Object> convertDtoToMap(UpdateExperimentRequest request) {
+  /**
+   * Extracts non-null fields from UpdateExperimentRequest for dynamic SQL generation. Excludes
+   * fields that are not part of the experiments table (tags, owner, metrics, updated_by).
+   *
+   * @param request update experiment request
+   * @return map of non-null field names to values (using snake_case from @JsonProperty)
+   */
+  private Map<String, Object> extractNonNullFields(UpdateExperimentRequest request) {
+    Map<String, Object> fields = new LinkedHashMap<>();
+
     try {
-      // Serialize to JSON string to respect @JsonProperty annotations
-      String jsonString = MAPPER.writeValueAsString(request);
-      // Deserialize back to Map
-      @SuppressWarnings("unchecked")
-      Map<String, Object> map = MAPPER.readValue(jsonString, Map.class);
+      // Use reflection to get all fields from the request
+      for (java.lang.reflect.Field field : UpdateExperimentRequest.class.getDeclaredFields()) {
+        field.setAccessible(true);
+        Object value = field.get(request);
 
-      // Remove null values
-      map.values().removeIf(value -> value == null);
+        // Skip null values and fields that are not in the experiments table
+        if (value == null) {
+          continue;
+        }
 
-      return map;
-    } catch (Exception e) {
-      log.error("DAO: Failed to convert DTO to Map: {}", e.getMessage(), e);
-      throw new RuntimeException("Failed to convert DTO to Map", e);
+        // Get the JSON property name (snake_case)
+        com.fasterxml.jackson.annotation.JsonProperty jsonProperty =
+            field.getAnnotation(com.fasterxml.jackson.annotation.JsonProperty.class);
+        String fieldName = jsonProperty != null ? jsonProperty.value() : field.getName();
+
+        // Exclude fields that are not part of the experiments table
+        if (fieldName.equals("tags")
+            || fieldName.equals("owner")
+            || fieldName.equals("metrics")
+            || fieldName.equals("updated_by")) {
+          continue;
+        }
+
+        fields.put(fieldName, value);
+      }
+
+      log.debug("DAO: Extracted {} non-null experiment fields for update", fields.size());
+      return fields;
+
+    } catch (IllegalAccessException e) {
+      log.error(
+          "DAO: Failed to extract fields from UpdateExperimentRequest: {}", e.getMessage(), e);
+      throw new RuntimeException("Failed to extract fields from request", e);
     }
   }
 
