@@ -329,7 +329,7 @@ public class AdminServiceTest {
     void testGetExperimentHistory_EmptyResult() {
       // Arrange
       int limit = 20;
-      int page = 1;
+      int page = 2;
       ExperimentHistoryResponse mockResult =
           ExperimentHistoryResponse.builder()
               .experimentId(EXPERIMENT_ID)
@@ -345,6 +345,8 @@ public class AdminServiceTest {
               .page(page)
               .build();
       when(adminDAO.fetchExperimentHistory(request)).thenReturn(Single.just(mockResult));
+      when(adminDAO.getExperimentHistoryCount(PROJECT_KEY, EXPERIMENT_ID))
+          .thenReturn(Single.just(0));
 
       // Act
       Single<ExperimentHistoryResponse> result = adminService.getExperimentHistory(request);
@@ -384,6 +386,90 @@ public class AdminServiceTest {
       // Assert
       testObserver.assertError(RestException.class);
       verify(adminDAO, times(1)).fetchExperimentHistory(request);
+    }
+
+    @Test
+    @DisplayName("Should populate pagination using count DAO when service result is empty history")
+    void testGetExperimentHistory_EmptyFetchUsesCountInPagination() {
+      // Arrange
+      int limit = 10;
+      int page = 1;
+      int daoCount = 57;
+      ExperimentHistoryRequest request =
+          ExperimentHistoryRequest.builder()
+              .projectKey(PROJECT_KEY)
+              .experimentId(EXPERIMENT_ID)
+              .limit(limit)
+              .page(page)
+              .build();
+      ExperimentHistoryResponse emptyResponse =
+          ExperimentHistoryResponse.builder()
+              .experimentId(EXPERIMENT_ID)
+              .history(List.of())
+              .pagination(
+                  PaginationMeta.builder().currentPage(page).pageSize(0).totalCount(0).build())
+              .build();
+      when(adminDAO.fetchExperimentHistory(request)).thenReturn(Single.just(emptyResponse));
+      when(adminDAO.getExperimentHistoryCount(PROJECT_KEY, EXPERIMENT_ID))
+          .thenReturn(Single.just(daoCount));
+
+      // Act
+      TestObserver<ExperimentHistoryResponse> testObserver =
+          adminService.getExperimentHistory(request).test();
+
+      // Assert
+      testObserver.assertComplete();
+      testObserver.assertNoErrors();
+      testObserver.assertValueCount(1);
+      ExperimentHistoryResponse resp = testObserver.values().get(0);
+      assertEquals(EXPERIMENT_ID, resp.experimentId());
+      assertTrue(resp.history().isEmpty());
+      assertEquals(page, resp.pagination().currentPage());
+      assertEquals(0, resp.pagination().pageSize());
+      assertEquals(daoCount, resp.pagination().totalCount());
+      verify(adminDAO, times(1)).fetchExperimentHistory(request);
+      verify(adminDAO, times(1)).getExperimentHistoryCount(PROJECT_KEY, EXPERIMENT_ID);
+    }
+
+    @Test
+    @DisplayName(
+        "Should throw EXPERIMENT_NOT_FOUND error if count DAO is empty (experiment does not exist)")
+    void testGetExperimentHistory_EmptyFetchAndCountTriggersNotFoundError() {
+      // Arrange
+      int limit = 10;
+      int page = 1;
+      ExperimentHistoryRequest request =
+          ExperimentHistoryRequest.builder()
+              .projectKey(PROJECT_KEY)
+              .experimentId(EXPERIMENT_ID)
+              .limit(limit)
+              .page(page)
+              .build();
+      ExperimentHistoryResponse emptyResponse =
+          ExperimentHistoryResponse.builder()
+              .experimentId(EXPERIMENT_ID)
+              .history(List.of())
+              .pagination(
+                  PaginationMeta.builder().currentPage(page).pageSize(0).totalCount(0).build())
+              .build();
+      when(adminDAO.fetchExperimentHistory(request)).thenReturn(Single.just(emptyResponse));
+      when(adminDAO.getExperimentHistoryCount(PROJECT_KEY, EXPERIMENT_ID))
+          .thenReturn(Single.just(0));
+
+      // Act
+      TestObserver<ExperimentHistoryResponse> testObserver =
+          adminService.getExperimentHistory(request).test();
+
+      // Assert
+      testObserver.assertError(RestException.class);
+      testObserver.assertError(
+          error ->
+              error instanceof RestException
+                  && ((RestException) error)
+                      .getErrorCode()
+                      .equals(ErrorEnum.EXPERIMENT_NOT_FOUND.getErrorCode()));
+      verify(adminDAO, times(1)).fetchExperimentHistory(request);
+      verify(adminDAO, times(1)).getExperimentHistoryCount(PROJECT_KEY, EXPERIMENT_ID);
     }
   }
 }

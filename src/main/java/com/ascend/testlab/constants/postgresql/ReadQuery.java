@@ -53,6 +53,15 @@ public final class ReadQuery {
         LIMIT $3 OFFSET $4;
         """;
 
+  /** Query to retrieve the count of history entries for a given project_key and experiment_id. */
+  public static final String GET_EXPERIMENT_HISTORY_COUNT =
+      """
+        SELECT COUNT(1)
+        FROM experiment.experiment_update_log
+        WHERE project_key = $1
+        AND experiment_id = $2;
+        """;
+
   /**
    * Query to retrieve a single experiment by project_key and experiment_id. Returns experiment
    * details including tags and owners aggregated as comma-separated strings.

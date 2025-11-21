@@ -40,4 +40,13 @@ public interface AdminDAO {
    *     metadata
    */
   Single<ExperimentHistoryResponse> fetchExperimentHistory(ExperimentHistoryRequest request);
+
+  /**
+   * Retrieves the count of history entries for a given project_key and experiment_id.
+   *
+   * @param projectKey the project key
+   * @param experimentId the experiment id
+   * @return a Single that emits the count of history entries
+   */
+  Single<Integer> getExperimentHistoryCount(String projectKey, String experimentId);
 }

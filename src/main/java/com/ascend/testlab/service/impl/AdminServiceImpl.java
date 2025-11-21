@@ -4,12 +4,14 @@ import com.ascend.testlab.dao.AdminDAO;
 import com.ascend.testlab.dto.request.ExperimentHistoryRequest;
 import com.ascend.testlab.dto.response.ExperimentHistoryResponse;
 import com.ascend.testlab.dto.response.ExperimentKeyAvailabilityResponse;
+import com.ascend.testlab.dto.response.PaginationMeta;
 import com.ascend.testlab.dto.response.TagsResponse;
 import com.ascend.testlab.exception.ErrorEnum;
 import com.ascend.testlab.service.AdminService;
 import com.dream11.rest.exception.RestException;
 import com.google.inject.Inject;
 import io.reactivex.rxjava3.core.Single;
+import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -79,10 +81,28 @@ public class AdminServiceImpl implements AdminService {
         .fetchExperimentHistory(request)
         .flatMap(
             response -> {
-              if (response.pagination().totalCount() == 0 && request.getPage() == 1) {
-                return Single.error(new RestException(ErrorEnum.EXPERIMENT_NOT_FOUND));
-              }
-              return Single.just(response);
+              // if history is empty, it means one of these two things:
+              // 1. The experiment does not exist
+              // 2. The experiment has no history with the given offset and limit
+              if (response.history().isEmpty()) {
+                return adminDAO
+                    .getExperimentHistoryCount(request.getProjectKey(), request.getExperimentId())
+                    .map(
+                        historyCount -> {
+                          if (historyCount <= 0)
+                            throw new RestException(ErrorEnum.EXPERIMENT_NOT_FOUND);
+                          return ExperimentHistoryResponse.builder()
+                              .experimentId(request.getExperimentId())
+                              .history(List.of())
+                              .pagination(
+                                  PaginationMeta.builder()
+                                      .currentPage(request.getPage())
+                                      .pageSize(0)
+                                      .totalCount(historyCount)
+                                      .build())
+                              .build();
+                        });
+              } else return Single.just(response);
             })
         .onErrorResumeNext(
             err -> {

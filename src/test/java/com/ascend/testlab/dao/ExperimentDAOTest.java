@@ -192,7 +192,7 @@ class ExperimentDAOTest {
               response.getExperiments().isEmpty()
                   && response.getPagination().totalCount() == 0
                   && response.getPagination().currentPage() == 1
-                  && response.getPagination().pageSize() == response.getExperiments().size());
+                  && response.getPagination().pageSize() == 0);
       verify(pgReaderClient, times(1)).fetchAll(anyString(), any(Tuple.class), any(Function.class));
       testContext.completeNow();
     }

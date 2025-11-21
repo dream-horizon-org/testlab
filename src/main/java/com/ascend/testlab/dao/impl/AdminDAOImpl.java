@@ -93,6 +93,17 @@ public class AdminDAOImpl implements AdminDAO {
             });
   }
 
+  /** {@inheritDoc} */
+  @Override
+  public Single<Integer> getExperimentHistoryCount(String projectKey, String experimentId) {
+    return pgReaderClient
+        .fetchOne(
+            ReadQuery.GET_EXPERIMENT_HISTORY_COUNT,
+            Tuple.tuple().addString(projectKey).addString(experimentId),
+            row -> row.getInteger(0))
+        .switchIfEmpty(Single.just(0));
+  }
+
   /**
    * Maps a database row to an ExperimentHistoryEntry.
    *

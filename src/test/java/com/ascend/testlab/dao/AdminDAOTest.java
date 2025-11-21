@@ -9,6 +9,7 @@ import com.ascend.testlab.constants.postgresql.ReadQuery;
 import com.ascend.testlab.dao.impl.AdminDAOImpl;
 import com.ascend.testlab.dto.request.ExperimentHistoryRequest;
 import com.ascend.testlab.dto.response.ExperimentHistoryResponse;
+import io.reactivex.rxjava3.core.Maybe;
 import io.reactivex.rxjava3.core.Single;
 import io.reactivex.rxjava3.observers.TestObserver;
 import io.vertx.core.Vertx;
@@ -227,66 +228,6 @@ class AdminDAOTest {
       testObserver.assertError(RuntimeException.class);
       verify(pgReaderClient, times(1))
           .fetchAll(eq(ReadQuery.CHECK_EXPERIMENT_KEY), any(Tuple.class), any(Function.class));
-    }
-  }
-
-  @Nested
-  @DisplayName("Async Vert.x Style Demo")
-  class VertxAsyncDemoTests {
-    @Test
-    @DisplayName("Should fetch tags asynchronously using Vert.x event loop context")
-    void testFetchTags_Success_Async(Vertx vertx, VertxTestContext testContext) {
-      // Arrange
-      List<String> mockTags = Arrays.asList("A/B-test", "feature-flag");
-      when(pgReaderClient.fetchAll(eq(ReadQuery.FETCH_TAGS), any(Tuple.class), any(Function.class)))
-          .thenReturn(Single.just(mockTags));
-
-      // Act
-      vertx.runOnContext(
-          v -> {
-            TestObserver<List<String>> testObserver = adminDAO.fetchTags(PROJECT_KEY).test();
-
-            // Assert
-            testObserver.assertComplete();
-            testObserver.assertNoErrors();
-            testObserver.assertValueCount(1);
-            List<String> actualTags = testObserver.values().get(0);
-            assertNotNull(actualTags);
-            assertEquals(2, actualTags.size());
-            assertTrue(actualTags.contains("A/B-test"));
-            assertTrue(actualTags.contains("feature-flag"));
-            verify(pgReaderClient, times(1))
-                .fetchAll(eq(ReadQuery.FETCH_TAGS), any(Tuple.class), any(Function.class));
-            testContext.completeNow();
-          });
-    }
-
-    @Test
-    @DisplayName("Should check key availability asynchronously using Vert.x event loop context")
-    void testIsExperimentKeyAvailable_Success_Async(Vertx vertx, VertxTestContext testContext) {
-      // Arrange
-      when(pgReaderClient.fetchAll(
-              eq(ReadQuery.CHECK_EXPERIMENT_KEY), any(Tuple.class), any(Function.class)))
-          .thenReturn(Single.just(List.of(false)));
-
-      // Act
-      vertx.runOnContext(
-          v -> {
-            TestObserver<Boolean> testObserver =
-                adminDAO.isExperimentKeyAvailable(PROJECT_KEY, EXPERIMENT_KEY).test();
-
-            // Assert
-            testObserver.assertComplete();
-            testObserver.assertNoErrors();
-            testObserver.assertValueCount(1);
-            Boolean isAvailable = testObserver.values().get(0);
-            assertNotNull(isAvailable);
-            assertTrue(isAvailable);
-            verify(pgReaderClient, times(1))
-                .fetchAll(
-                    eq(ReadQuery.CHECK_EXPERIMENT_KEY), any(Tuple.class), any(Function.class));
-            testContext.completeNow();
-          });
     }
   }
 
@@ -554,6 +495,71 @@ class AdminDAOTest {
      */
     private List<Row> createMockHistoryRows(int count) {
       return createMockHistoryRows(count, count);
+    }
+  }
+
+  @Nested
+  @DisplayName("Experiment History Count Tests")
+  class ExperimentHistoryCountTests {
+    @Test
+    @DisplayName("Should return count when DB returns count value")
+    void testGetExperimentHistoryCount_Success() {
+      // Arrange
+      int expectedCount = 42;
+      when(pgReaderClient.fetchOne(
+              eq(ReadQuery.GET_EXPERIMENT_HISTORY_COUNT), any(Tuple.class), any()))
+          .thenReturn(Maybe.just(expectedCount));
+
+      // Act
+      Single<Integer> result = adminDAO.getExperimentHistoryCount(PROJECT_KEY, EXPERIMENT_ID);
+      TestObserver<Integer> testObserver = result.test();
+
+      // Assert
+      testObserver.assertComplete();
+      testObserver.assertNoErrors();
+      testObserver.assertValueCount(1);
+      testObserver.assertValue(expectedCount);
+      verify(pgReaderClient, times(1))
+          .fetchOne(eq(ReadQuery.GET_EXPERIMENT_HISTORY_COUNT), any(Tuple.class), any());
+    }
+
+    @Test
+    @DisplayName("Should complete with no value when DB returns empty result")
+    void testGetExperimentHistoryCount_Empty() {
+      // Arrange
+      when(pgReaderClient.fetchOne(
+              eq(ReadQuery.GET_EXPERIMENT_HISTORY_COUNT), any(Tuple.class), any()))
+          .thenReturn(Maybe.empty());
+
+      // Act
+      Single<Integer> result = adminDAO.getExperimentHistoryCount(PROJECT_KEY, EXPERIMENT_ID);
+      TestObserver<Integer> testObserver = result.test();
+
+      // Assert
+      testObserver.assertComplete();
+      testObserver.assertNoErrors();
+      testObserver.assertValueCount(1);
+      verify(pgReaderClient, times(1))
+          .fetchOne(eq(ReadQuery.GET_EXPERIMENT_HISTORY_COUNT), any(Tuple.class), any());
+    }
+
+    @Test
+    @DisplayName("Should emit error when DB fails")
+    void testGetExperimentHistoryCount_Error() {
+      // Arrange
+      RuntimeException dbException = new RuntimeException("DB error");
+      when(pgReaderClient.fetchOne(
+              eq(ReadQuery.GET_EXPERIMENT_HISTORY_COUNT), any(Tuple.class), any()))
+          .thenReturn(Maybe.error(dbException));
+
+      // Act
+      Single<Integer> result = adminDAO.getExperimentHistoryCount(PROJECT_KEY, EXPERIMENT_ID);
+      TestObserver<Integer> testObserver = result.test();
+
+      // Assert
+      testObserver.assertError(RuntimeException.class);
+      verify(pgReaderClient, times(1))
+          .fetchOne(eq(ReadQuery.GET_EXPERIMENT_HISTORY_COUNT), any(Tuple.class), any());
     }
   }
 }
