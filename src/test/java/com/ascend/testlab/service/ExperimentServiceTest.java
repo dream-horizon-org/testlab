@@ -137,10 +137,12 @@ public class ExperimentServiceTest {
       TestObserver<CreateExperimentResponse> testObserver =
           experimentService.create(testTenantId, testProjectKey, request).test();
 
-      // Assert - Service propagates errors
-      testObserver.assertError(RuntimeException.class);
+      // Assert - Service wraps error with EXPERIMENT_CREATION_FAILED
+      testObserver.assertError(RestException.class);
       testObserver.assertError(
-          throwable -> throwable.getMessage().contains("Failed to insert experiment"));
+          throwable ->
+              throwable.getMessage().contains("Failed to create experiment")
+                  || throwable.getMessage().contains("Failed to insert experiment"));
     }
 
     @Test
@@ -156,10 +158,12 @@ public class ExperimentServiceTest {
       TestObserver<CreateExperimentResponse> testObserver =
           experimentService.create(testTenantId, testProjectKey, request).test();
 
-      // Assert - Service propagates errors
-      testObserver.assertError(RuntimeException.class);
+      // Assert - Service wraps error with EXPERIMENT_CREATION_FAILED
+      testObserver.assertError(RestException.class);
       testObserver.assertError(
-          throwable -> throwable.getMessage().contains("Database connection failed"));
+          throwable ->
+              throwable.getMessage().contains("Failed to create experiment")
+                  || throwable.getMessage().contains("Database connection failed"));
     }
 
     // Note: Null request validation happens at REST layer, so no null test needed here
@@ -413,10 +417,12 @@ public class ExperimentServiceTest {
       TestObserver<UpdateExperimentResponse> testObserver =
           experimentService.update(testTenantId, testProjectKey, testExperimentId, updates).test();
 
-      // Assert - Service propagates errors
-      testObserver.assertError(RuntimeException.class);
+      // Assert - Service wraps error with EXPERIMENT_UPDATE_FAILED
+      testObserver.assertError(RestException.class);
       testObserver.assertError(
-          throwable -> throwable.getMessage().contains("Database connection failed"));
+          throwable ->
+              throwable.getMessage().contains("Failed to update experiment")
+                  || throwable.getMessage().contains("Database connection failed"));
     }
 
     @Test

@@ -11,6 +11,7 @@ import com.ascend.testlab.entity.RuleAttributes;
 import com.ascend.testlab.entity.Variant;
 import com.ascend.testlab.exception.ErrorMessages;
 import com.ascend.testlab.validation.annotations.ValidMetrics;
+import com.ascend.testlab.validation.annotations.ValidUpdateRequest;
 import com.ascend.testlab.validation.annotations.ValidVariantKeys;
 import com.ascend.testlab.validation.annotations.ValidVariantWeights;
 import com.ascend.testlab.variantWeights.VariantWeights;
@@ -34,6 +35,10 @@ import lombok.Data;
  */
 @Data
 @JsonIgnoreProperties(ignoreUnknown = true)
+@ValidUpdateRequest(
+    nonUpdatableFields = {"name", "experimentKey", "createdBy"},
+    message =
+        "The following fields cannot be updated: name, experiment_key, project_key, experiment_id, created_by, created_at")
 public class UpdateExperimentRequest {
 
   // Non-updatable fields - included only to capture and reject in validation

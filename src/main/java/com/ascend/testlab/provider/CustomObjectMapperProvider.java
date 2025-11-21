@@ -1,9 +1,7 @@
 package com.ascend.testlab.provider;
 
-import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.ascend.testlab.injection.GuiceInjector;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import jakarta.annotation.Priority;
 import jakarta.ws.rs.Priorities;
 import jakarta.ws.rs.ext.ContextResolver;
@@ -12,8 +10,11 @@ import jakarta.ws.rs.ext.Provider;
 /**
  * Custom ObjectMapper provider for Jackson configuration.
  *
- * <p>Configures Jackson to: - Fail on unknown properties - Fail on invalid enum values with clear
- * error messages - Support Java 8 date/time types
+ * <p>Uses the ObjectMapper instance configured and bound in DefaultModule to ensure consistent
+ * Jackson configuration across the application.
+ *
+ * <p>Note: This provider uses a no-arg constructor (required by JAX-RS) and obtains the
+ * ObjectMapper from the GuiceInjector singleton.
  *
  * @author Ravi Pandey
  * @version 1.0
@@ -25,20 +26,13 @@ public class CustomObjectMapperProvider implements ContextResolver<ObjectMapper>
 
   private final ObjectMapper objectMapper;
 
+  /**
+   * No-arg constructor required by JAX-RS.
+   *
+   * <p>Obtains the ObjectMapper from the GuiceInjector singleton.
+   */
   public CustomObjectMapperProvider() {
-    objectMapper = new ObjectMapper();
-
-    // Register Java 8 date/time module
-    objectMapper.registerModule(new JavaTimeModule());
-
-    // Configure deserialization
-    objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-    objectMapper.configure(DeserializationFeature.READ_UNKNOWN_ENUM_VALUES_AS_NULL, false);
-    objectMapper.configure(DeserializationFeature.FAIL_ON_INVALID_SUBTYPE, true);
-
-    // Configure serialization
-    objectMapper.configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false);
-    objectMapper.configure(SerializationFeature.FAIL_ON_EMPTY_BEANS, false);
+    this.objectMapper = GuiceInjector.getInstance(ObjectMapper.class);
   }
 
   @Override

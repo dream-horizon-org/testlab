@@ -1,71 +1,71 @@
 package com.ascend.testlab.validation;
 
-import com.ascend.testlab.constants.Constants;
-import com.ascend.testlab.dto.request.UpdateExperimentRequest;
 import com.ascend.testlab.validation.annotations.ValidUpdateRequest;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.validation.ConstraintValidator;
 import jakarta.validation.ConstraintValidatorContext;
+import java.lang.reflect.Field;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
 
 /**
- * Validator for UpdateExperimentRequest to ensure only updatable fields are present.
+ * Validator for {@link ValidUpdateRequest} annotation.
+ *
+ * <p>Validates that non-updatable fields are not present (i.e., are null) in the update request.
+ * Uses reflection to check the specified fields dynamically.
  *
  * @author Ravi Pandey
  * @version 1.0
  * @since 1.0
  */
-public class UpdateRequestValidator
-    implements ConstraintValidator<ValidUpdateRequest, UpdateExperimentRequest> {
+public class UpdateRequestValidator implements ConstraintValidator<ValidUpdateRequest, Object> {
+
+  private String[] nonUpdatableFields;
+  private String message;
 
   @Override
   public void initialize(ValidUpdateRequest constraintAnnotation) {
-    // No initialization needed
+    this.nonUpdatableFields = constraintAnnotation.nonUpdatableFields();
+    this.message = constraintAnnotation.message();
   }
 
   @Override
-  public boolean isValid(UpdateExperimentRequest request, ConstraintValidatorContext context) {
-    if (request == null) {
-      return true; // Let @NotNull handle null validation
+  public boolean isValid(Object value, ConstraintValidatorContext context) {
+    if (value == null) {
+      return true; // Null objects are considered valid
     }
 
-    // Convert DTO to Map to check which fields are present
-    ObjectMapper mapper = new ObjectMapper();
-    try {
-      String jsonString = mapper.writeValueAsString(request);
-      @SuppressWarnings("unchecked")
-      Map<String, Object> requestMap = mapper.readValue(jsonString, Map.class);
+    List<String> violatedFields = new ArrayList<>();
 
-      // Remove null values
-      requestMap.values().removeIf(value -> value == null);
+    // Check each non-updatable field
+    for (String fieldName : nonUpdatableFields) {
+      try {
+        Field field = value.getClass().getDeclaredField(fieldName);
+        field.setAccessible(true);
+        Object fieldValue = field.get(value);
 
-      // Find non-updatable fields that are present in the request
-      List<String> foundNonUpdatableFields =
-          requestMap.keySet().stream()
-              .filter(Constants.NON_UPDATABLE_FIELDS::contains)
-              .collect(Collectors.toList());
-
-      if (!foundNonUpdatableFields.isEmpty()) {
-        // Disable default constraint violation
-        context.disableDefaultConstraintViolation();
-
-        // Build custom error message
-        String errorMessage =
-            String.format(
-                "The following fields cannot be updated: %s",
-                String.join(", ", foundNonUpdatableFields));
-
-        context.buildConstraintViolationWithTemplate(errorMessage).addConstraintViolation();
-
-        return false;
+        // If the field is not null, it means the client is trying to update it
+        if (fieldValue != null) {
+          violatedFields.add(fieldName);
+        }
+      } catch (NoSuchFieldException e) {
+        // Field doesn't exist in the class, skip it
+        continue;
+      } catch (IllegalAccessException e) {
+        throw new RuntimeException("Failed to access field: " + fieldName, e);
       }
-
-      return true;
-    } catch (Exception e) {
-      // If serialization fails, let it pass and let other validations handle it
-      return true;
     }
+
+    // If any non-updatable fields were provided, validation fails
+    if (!violatedFields.isEmpty()) {
+      context.disableDefaultConstraintViolation();
+      String errorMessage =
+          String.format(
+              "The following fields cannot be updated: %s. Attempted to update: %s",
+              String.join(", ", nonUpdatableFields), String.join(", ", violatedFields));
+      context.buildConstraintViolationWithTemplate(errorMessage).addConstraintViolation();
+      return false;
+    }
+
+    return true;
   }
 }

@@ -15,6 +15,8 @@ import com.ascend.testlab.dto.request.CreateExperimentRequest;
 import com.ascend.testlab.dto.request.FilterExperimentsRequest;
 import com.ascend.testlab.dto.request.UpdateExperimentRequest;
 import com.ascend.testlab.dto.response.FilterExperimentsResponse;
+import com.ascend.testlab.exception.ErrorEnum;
+import com.dream11.rest.exception.RestException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.inject.Inject;
@@ -119,43 +121,40 @@ public class ExperimentDAOImpl implements ExperimentDAO {
                   request.getProjectKey());
 
               return Tuple.tuple()
-                  .addValue(request.getProjectKey().toString()) // $1 project_key
-                  .addValue(request.getExperimentId().toString()) // $2 experiment_id
-                  .addValue(request.getName()) // $3 name
-                  .addValue(request.getExperimentKey()) // $4 experiment_key
-                  .addValue(request.getDescription()) // $5 description
-                  .addValue(request.getHypothesis()) // $6 hypothesis
-                  .addValue(
-                      request.getStatus() == null ? null : request.getStatus().name()) // $7 status
-                  .addValue(
-                      request.getType() == null ? null : request.getType().getValue()) // $8 type
+                  .addValue(request.getProjectKey().toString())
+                  .addValue(request.getExperimentId().toString())
+                  .addValue(request.getName())
+                  .addValue(request.getExperimentKey())
+                  .addValue(request.getDescription())
+                  .addValue(request.getHypothesis())
+                  .addValue(request.getStatus() == null ? null : request.getStatus().name())
+                  .addValue(request.getType() == null ? null : request.getType().getValue())
                   .addValue(
                       request.getGuardrailHealthStatus() == null
                           ? null
-                          : request.getGuardrailHealthStatus().name()) // $9 guardrail_health_status
-                  .addValue(cohortsArray) // $10 cohorts as varchar array
-                  .addValue(variantWeightsJson) // $11 variant_weights as jsonb string
-                  .addValue(variantsJson) // $12 variants as jsonb string
+                          : request.getGuardrailHealthStatus().name())
+                  .addValue(cohortsArray)
+                  .addValue(variantWeightsJson)
+                  .addValue(variantsJson)
                   .addValue(
                       request.getDistributionStrategy() == null
                           ? null
-                          : request.getDistributionStrategy().name()) // $13 distribution_strategy
+                          : request.getDistributionStrategy().name())
                   .addValue(
                       request.getAssignmentDomain() == null
                           ? null
-                          : request.getAssignmentDomain().name()) // $14 assignment_domain
+                          : request.getAssignmentDomain().name())
                   .addValue(
                       request.getOverrides() == null || request.getOverrides().isEmpty()
                           ? null
-                          : serializeToJson(
-                              "overrides", request.getOverrides())) // $15 overrides as jsonb
-                  .addValue(ruleAttributesJson) // $16 rule_attributes as jsonb string
-                  .addValue(winningVariantJson) // $17 winning_variant as jsonb string
-                  .addValue(request.getExposure()) // $18 exposure
-                  .addValue(request.getThreshold()) // $19 threshold
-                  .addValue(request.getStartTime()) // $20 start_time
-                  .addValue(request.getEndTime()) // $21 end_time
-                  .addValue(request.getCreatedBy()); // $22 created_by
+                          : serializeToJson("overrides", request.getOverrides()))
+                  .addValue(ruleAttributesJson)
+                  .addValue(winningVariantJson)
+                  .addValue(request.getExposure())
+                  .addValue(request.getThreshold())
+                  .addValue(request.getStartTime())
+                  .addValue(request.getEndTime())
+                  .addValue(request.getCreatedBy());
             })
         .flatMap(params -> pgWriterClient.execute(WriteQuery.INSERT_EXPERIMENT, params))
         .doOnSuccess(
@@ -239,16 +238,16 @@ public class ExperimentDAOImpl implements ExperimentDAO {
                           (tagsSuccess, ownerSuccess, updateLogSuccess, analysisSuccess) -> {
                             // Validate all operations succeeded
                             if (!tagsSuccess) {
-                              throw new RuntimeException("Failed to insert tags");
+                              throw new RestException(ErrorEnum.TAGS_INSERTION_FAILED);
                             }
                             if (!ownerSuccess) {
-                              throw new RuntimeException("Failed to insert owner");
+                              throw new RestException(ErrorEnum.OWNER_INSERTION_FAILED);
                             }
                             if (!updateLogSuccess) {
-                              throw new RuntimeException("Failed to insert update log");
+                              throw new RestException(ErrorEnum.UPDATE_LOG_INSERTION_FAILED);
                             }
                             if (!analysisSuccess) {
-                              throw new RuntimeException("Failed to insert analysis");
+                              throw new RestException(ErrorEnum.ANALYSIS_INSERTION_FAILED);
                             }
                             log.info(
                                 "DAO: Successfully created experiment with all related data in parallel, id: {}, experimentId: {}, projectKey: {}",
@@ -1262,8 +1261,6 @@ public class ExperimentDAOImpl implements ExperimentDAO {
             });
   }
 
-  // ==================== Update Log Operations ====================
-
   /**
    * Inserts an experiment update log entry.
    *
@@ -1326,8 +1323,6 @@ public class ExperimentDAOImpl implements ExperimentDAO {
               return false;
             });
   }
-
-  // ==================== Metrics Operations ====================
 
   /**
    * Deletes all metrics for an experiment from the analysis table.
@@ -1401,12 +1396,12 @@ public class ExperimentDAOImpl implements ExperimentDAO {
 
     Tuple params =
         Tuple.tuple()
-            .addString(projectKey) // $1
-            .addString(experimentId.toString()) // $2
-            .addValue(null) // $3 config (not used in update)
-            .addString(primaryMetrics) // $4
-            .addString(secondaryMetrics) // $5
-            .addValue(null); // $6 metric_tokens (not used in update)
+            .addString(projectKey)
+            .addString(experimentId.toString())
+            .addValue(null)
+            .addString(primaryMetrics)
+            .addString(secondaryMetrics)
+            .addValue(null);
 
     return pgWriterClient
         .execute(connection, WriteQuery.INSERT_EXPERIMENT_ANALYSIS, params)

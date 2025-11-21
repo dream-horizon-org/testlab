@@ -90,7 +90,19 @@ public class ExperimentServiceImpl implements ExperimentService {
     // Execute all insert operations in a transaction (delegated to DAO)
     return experimentDAO
         .createWithRelatedData(tenantId, request)
-        .map(id -> new CreateExperimentResponse(experimentId, true, "created"));
+        .map(id -> new CreateExperimentResponse(experimentId, true, "created"))
+        .onErrorResumeNext(
+            err -> {
+              log.error(
+                  "Failed to create experiment for tenantId: {}, projectKey: {}, experimentName: {}, error: {}",
+                  tenantId,
+                  projectKey,
+                  request.getName(),
+                  err.getMessage());
+              return Single.error(
+                  ErrorEnum.handleException(
+                      err, new RestException(ErrorEnum.EXPERIMENT_CREATION_FAILED, err)));
+            });
   }
 
   /**
@@ -216,7 +228,7 @@ public class ExperimentServiceImpl implements ExperimentService {
                   return Single.error(
                       new RestException(
                           "INVALID_REQUEST",
-                          errorMsg,
+                          "Cannot update experiment: " + errorMsg,
                           org.apache.http.HttpStatus.SC_BAD_REQUEST,
                           null));
                 }
@@ -239,7 +251,7 @@ public class ExperimentServiceImpl implements ExperimentService {
                   return Single.error(
                       new RestException(
                           "INVALID_REQUEST",
-                          e.getMessage(),
+                          "Invalid status transition: " + e.getMessage(),
                           org.apache.http.HttpStatus.SC_BAD_REQUEST,
                           e));
                 }
@@ -254,6 +266,18 @@ public class ExperimentServiceImpl implements ExperimentService {
                   context.metrics,
                   previousData,
                   context.updatedBy);
+            })
+        .onErrorResumeNext(
+            err -> {
+              log.error(
+                  "Failed to update experiment for tenantId: {}, projectKey: {}, experimentId: {}, error: {}",
+                  tenantId,
+                  projectKey,
+                  experimentId,
+                  err.getMessage());
+              return Single.error(
+                  ErrorEnum.handleException(
+                      err, new RestException(ErrorEnum.EXPERIMENT_UPDATE_FAILED, err)));
             });
   }
 

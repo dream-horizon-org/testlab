@@ -34,7 +34,7 @@ public enum ErrorEnum implements RestError {
       HttpStatus.SC_INTERNAL_SERVER_ERROR),
 
   INVALID_REQUEST_BODY(
-      "FF_INVALID_REQUEST_BODY",
+      "INVALID_REQUEST_BODY",
       "Request body param(s) is/are missing/invalid",
       HttpStatus.SC_BAD_REQUEST),
 
@@ -66,7 +66,47 @@ public enum ErrorEnum implements RestError {
 
   /** The error code for validating experiment type failed. */
   INVALID_EXPERIMENT_TYPE(
-      "INVALID_EXPERIMENT_TYPE", "Experiment type is not valid", HttpStatus.SC_BAD_REQUEST);
+      "INVALID_EXPERIMENT_TYPE", "Experiment type is not valid", HttpStatus.SC_BAD_REQUEST),
+
+  /* Database Operation Errors */
+
+  /** The error code for failed tags insertion. */
+  TAGS_INSERTION_FAILED(
+      "TAGS_INSERTION_FAILED",
+      "Failed to insert tags for experiment",
+      HttpStatus.SC_INTERNAL_SERVER_ERROR),
+
+  /** The error code for failed owner insertion. */
+  OWNER_INSERTION_FAILED(
+      "OWNER_INSERTION_FAILED",
+      "Failed to insert owner for experiment",
+      HttpStatus.SC_INTERNAL_SERVER_ERROR),
+
+  /** The error code for failed update log insertion. */
+  UPDATE_LOG_INSERTION_FAILED(
+      "UPDATE_LOG_INSERTION_FAILED",
+      "Failed to insert update log for experiment",
+      HttpStatus.SC_INTERNAL_SERVER_ERROR),
+
+  /** The error code for failed analysis insertion. */
+  ANALYSIS_INSERTION_FAILED(
+      "ANALYSIS_INSERTION_FAILED",
+      "Failed to insert analysis data for experiment",
+      HttpStatus.SC_INTERNAL_SERVER_ERROR),
+
+  /* Experiment Operation Errors */
+
+  /** The error code for failed experiment creation. */
+  EXPERIMENT_CREATION_FAILED(
+      "EXPERIMENT_CREATION_FAILED",
+      "Failed to create experiment. Please check your request and try again.",
+      HttpStatus.SC_INTERNAL_SERVER_ERROR),
+
+  /** The error code for failed experiment update. */
+  EXPERIMENT_UPDATE_FAILED(
+      "EXPERIMENT_UPDATE_FAILED",
+      "Failed to update experiment. Please check your request and try again.",
+      HttpStatus.SC_INTERNAL_SERVER_ERROR);
 
   /** The error code. */
   private final String errorCode;
