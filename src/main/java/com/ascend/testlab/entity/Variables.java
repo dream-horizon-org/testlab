@@ -5,6 +5,7 @@ import com.ascend.testlab.constants.Constants;
 import com.ascend.testlab.constants.enums.DataTypeEnum;
 import com.ascend.testlab.exception.ErrorMessages;
 import com.ascend.testlab.validation.annotations.ValidVariableDataType;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
 
@@ -22,12 +23,15 @@ import lombok.Data;
 @ValidVariableDataType
 public class Variables {
 
+  @JsonProperty("key")
   @NotBlank(message = "Variable key cannot be blank")
   private String key;
 
+  @JsonProperty("value")
   @NotBlank(message = "Variable value cannot be blank")
   private String value;
 
+  @JsonProperty("data_type")
   @NotBlank(message = "Variable dataType cannot be blank")
   @ValidEnumValue(
       enumClass = DataTypeEnum.class,

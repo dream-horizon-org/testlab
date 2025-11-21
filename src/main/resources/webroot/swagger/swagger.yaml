@@ -402,7 +402,7 @@ components:
             $ref: '#/components/schemas/Condition'
     Variables:
       required:
-      - dataType
+      - data_type
       - key
       - value
       type: object
@@ -411,14 +411,14 @@ components:
           type: string
         value:
           type: string
-        dataType:
+        data_type:
           type: string
     Variant:
       required:
       - variables
       type: object
       properties:
-        displayName:
+        display_name:
           type: string
         variables:
           type: array
