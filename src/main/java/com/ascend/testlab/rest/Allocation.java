@@ -4,6 +4,9 @@ import com.ascend.testlab.config.ApplicationConfig;
 import com.ascend.testlab.constants.web.WebConstants;
 import com.ascend.testlab.dto.ResponseEntity;
 import com.ascend.testlab.dto.request.AllocationRequest;
+import com.ascend.testlab.dto.response.AllocationResponse;
+import com.ascend.testlab.dto.response.FilterExperimentsResponse;
+import com.ascend.testlab.dto.response.GetAllocationsResponse;
 import com.ascend.testlab.service.AllocationService;
 import com.google.inject.Inject;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -52,13 +55,13 @@ public class Allocation {
       content = @Content(schema = @Schema(implementation = ResponseEntity.Failure.class)))
   @ApiResponse(
       responseCode = "401",
-      description = "Bad Request due to invalid api-key",
+      description = "Bad Request due to invalid project-key",
       content = @Content(schema = @Schema(implementation = ResponseEntity.Failure.class)))
   @ApiResponse(
       responseCode = "500",
       description = "Internal Server Error",
       content = @Content(schema = @Schema(implementation = ResponseEntity.Failure.class)))
-  public CompletionStage<Response> allocationHandle(
+  public CompletionStage<ResponseEntity.Success<AllocationResponse>> allocationHandle(
       @HeaderParam(WebConstants.PROJECT_KEY_HEADER) String projectKey,
       @Valid @NotNull AllocationRequest assignRequest) {
 
@@ -69,7 +72,6 @@ public class Allocation {
     return allocationService
         .allotExperiments(effectiveProjectKey, assignRequest)
         .map(ResponseEntity.Success::new)
-        .map(successData -> Response.ok(successData).build())
         .toCompletionStage();
   }
 
@@ -88,13 +90,13 @@ public class Allocation {
       content = @Content(schema = @Schema(implementation = ResponseEntity.Failure.class)))
   @ApiResponse(
       responseCode = "401",
-      description = "Bad Request due to invalid api-key",
+      description = "Bad Request due to invalid project-key",
       content = @Content(schema = @Schema(implementation = ResponseEntity.Failure.class)))
   @ApiResponse(
       responseCode = "500",
       description = "Internal Server Error",
       content = @Content(schema = @Schema(implementation = ResponseEntity.Failure.class)))
-  public CompletionStage<Response> getAllocationHandle(
+  public CompletionStage<ResponseEntity.Success<GetAllocationsResponse>> getAllocationHandle(
       @HeaderParam(WebConstants.PROJECT_KEY_HEADER) String projectKey,
       @HeaderParam(WebConstants.USER_ID_HEADER) String userId) {
 
@@ -104,7 +106,6 @@ public class Allocation {
     return allocationService
         .getAllocations(userId, effectiveProjectKey)
         .map(ResponseEntity.Success::new)
-        .map(successData -> Response.ok(successData).build())
         .toCompletionStage();
   }
 }
