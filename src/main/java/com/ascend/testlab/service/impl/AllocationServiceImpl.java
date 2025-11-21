@@ -534,7 +534,6 @@ public class AllocationServiceImpl implements AllocationService {
                                         experimentId);
                                 return Single.just(currentAssignment);
                             }
-                            log.debug("New variant {} old variant {} for reallocation", newVariant, currentAssignment.getVariant());
 
                             UserExperimentMap newAssignment =
                                     AssignmentBuilder.buildAssignment(

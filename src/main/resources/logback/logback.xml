@@ -5,7 +5,7 @@
     </encoder>
   </appender>
 
-  <logger name="com.ascend" level="debug" additivity="false">
+  <logger name="com.ascend" level="info" additivity="false">
     <appender-ref ref="ConsoleAppender"/>
   </logger>
 

@@ -54,7 +54,7 @@ public enum ErrorEnum implements RestError {
 
   NO_ALLOTMENT_FOUND(
             "NO_ALLOTMENT_FOUND",
-            "No assignment found for given user use overrides to allot variant",
+            "No assignment found for given user, use overrides to allot variant",
             HttpStatus.SC_BAD_REQUEST),
     INVALID_ALLOTMENT_FOUND(
             "INVALID_ALLOTMENT_FOUND",

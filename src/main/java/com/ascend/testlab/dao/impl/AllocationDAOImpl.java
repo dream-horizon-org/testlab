@@ -1045,11 +1045,10 @@ public class AllocationDAOImpl implements AllocationDAO {
   }
 
   /**
-   * Logs a reallocation event with PK (projectKey, userId, experimentId) in a new set
-   * "reallocationLog". Creates a log entry containing old variant, new variant, reason, and
-   * timestamp.
+   * Logs a reallocation event in the "reallocationLog" set. Creates a log entry with PK as userId
+   * and stores reallocation details in 3 separate bins: experimentId, timestamp, and reallocation JSON.
    *
-   * @param userId user identifier
+   * @param userId user identifier (used as PK)
    * @param projectKey project identifier
    * @param experimentId experiment identifier
    * @param oldVariantName old variant name
@@ -1066,48 +1065,45 @@ public class AllocationDAOImpl implements AllocationDAO {
       String reason) {
 
     try {
-      // Create composite key: projectKey#userId#experimentId
-      String compositeKey = projectKey + "#" + userId + "#" + experimentId.toString();
-
       String set =
           CommonUtil.getSetName(aerospikeConfig.getReallocationLogSet(), projectKey);
-      Key key = new Key(aerospikeConfig.getNamespace(), set, compositeKey);
+      Key key = new Key(aerospikeConfig.getNamespace(), set, userId);
 
       WritePolicy policy = new WritePolicy();
       policy.sendKey = true;
-      policy.expiration = -1; // Persist indefinitely
+      policy.expiration = -1;
 
-      // Create log entry as a map
-      Map<String, Object> logEntry = new HashMap<>();
-      logEntry.put("userId", userId);
-      logEntry.put("experimentId", experimentId.toString());
-      logEntry.put("oldVariant", oldVariantName);
-      logEntry.put("newVariant", newVariantName);
-      logEntry.put("reason", reason != null ? reason : "No reason provided");
-      logEntry.put("timestamp", System.currentTimeMillis());
+      // Create reallocation data map for JSON bin
+      Map<String, Object> reallocationData = new HashMap<>();
+      reallocationData.put("oldVariant", oldVariantName);
+      reallocationData.put("newVariant", newVariantName);
+      reallocationData.put("reason", reason != null ? reason : "No reason provided");
 
-      String logEntryJson = objectMapper.writeValueAsString(logEntry);
+      String reallocationJson = objectMapper.writeValueAsString(reallocationData);
+      long timestamp = System.currentTimeMillis();
 
-      Bin logBin = new Bin(aerospikeConfig.getReallocationLogBin(), logEntryJson);
+      Bin experimentIdBin = new Bin("experimentId", experimentId.toString());
+      Bin timestampBin = new Bin("timestamp", timestamp);
+      Bin jsonBin = new Bin(aerospikeConfig.getReallocationLogBin(), reallocationJson);
 
       return aerospikeClient
-          .put(policy, key, logBin)
+          .put(policy, key, experimentIdBin, timestampBin, jsonBin)
           .map(
               result -> {
                 log.info(
-                    "Successfully logged reallocation for user {} experiment {} (PK: {})",
+                    "Successfully logged reallocation for user {} experiment {} at timestamp {}",
                     userId,
                     experimentId,
-                    compositeKey);
+                    timestamp);
                 return true;
               })
           .onErrorResumeNext(
               error -> {
-                log.error("Failed to log reallocation event", error);
+                log.error("Failed to log reallocation event for user {}", userId, error);
                 return Single.just(false);
               });
     } catch (Exception e) {
-      log.error("Error serializing reallocation log", e);
+      log.error("Error serializing reallocation log for user {}", userId, e);
       return Single.just(false);
     }
   }
