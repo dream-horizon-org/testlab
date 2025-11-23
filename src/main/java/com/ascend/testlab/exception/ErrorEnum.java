@@ -33,6 +33,18 @@ public enum ErrorEnum implements RestError {
       "Tags Listing failed due to: %s",
       HttpStatus.SC_INTERNAL_SERVER_ERROR),
 
+  /** The error code for experiment key availability check failed. */
+  REST_EXPERIMENT_KEY_CHECK_FAILED(
+      "testlab_REST_EXPERIMENT_KEY_CHECK_FAILED",
+      "Failed to check experiment key availability",
+      HttpStatus.SC_INTERNAL_SERVER_ERROR),
+
+  /** The error code for get experiment history failed. * */
+  REST_FETCH_EXPERIMENT_HISTORY_FAILED(
+      "testlab_REST_GET_EXPERIMENT_HISTORY_FAILED",
+      "Failed to fetch experiment history due to: %s",
+      HttpStatus.SC_INTERNAL_SERVER_ERROR),
+
   /** The error code for getting experiment by ID failed. */
   REST_GET_EXPERIMENT_BY_ID_FAILED(
       "testlab_REST_GET_EXPERIMENT_BY_ID_FAILED",

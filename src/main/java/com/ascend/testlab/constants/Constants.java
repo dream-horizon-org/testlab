@@ -40,6 +40,9 @@ public final class Constants {
   /** The delimiter for apostrophe. */
   public static final String APOSTROPHE = "'";
 
+  /** The maximum length for experiment key. */
+  public static final int MAX_EXPERIMENT_KEY_LENGTH = 255;
+
   public static final String GET_TYPE = "getType";
   public static final String GET_NAME = "getName";
 }

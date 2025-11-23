@@ -4,7 +4,7 @@ import com.ascend.testlab.constants.web.WebConstants;
 import com.ascend.testlab.dto.ResponseEntity;
 import com.ascend.testlab.dto.response.TagsResponse;
 import com.ascend.testlab.exception.ErrorMessages;
-import com.ascend.testlab.service.TagsService;
+import com.ascend.testlab.service.AdminService;
 import com.google.inject.Inject;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -24,23 +24,23 @@ import java.util.concurrent.CompletionStage;
  * @author Nithya sree
  * @version 1.0
  * @since 1.0
- * @see TagsService
+ * @see AdminService
  * @see TagsResponse
  */
 @Path("/v1/experiments/tags")
 public class Tags {
 
-  /** The tags service. */
-  private final TagsService tagsService;
+  /** The admin service. */
+  private final AdminService adminService;
 
   /**
    * Constructor for the Tags class.
    *
-   * @param tagsService the tags service
+   * @param adminService the admin service
    */
   @Inject
-  public Tags(TagsService tagsService) {
-    this.tagsService = tagsService;
+  public Tags(AdminService adminService) {
+    this.adminService = adminService;
   }
 
   /**
@@ -74,6 +74,6 @@ public class Tags {
                       .PROJECT_KEY_MISSING) // TODO: use default here & in compose, remove check
           String projectKey) {
 
-    return tagsService.getTags(projectKey).map(ResponseEntity.Success::new).toCompletionStage();
+    return adminService.getTags(projectKey).map(ResponseEntity.Success::new).toCompletionStage();
   }
 }

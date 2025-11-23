@@ -5,7 +5,6 @@ import com.ascend.testlab.constants.web.WebConstants;
 import com.ascend.testlab.dto.ResponseEntity;
 import com.ascend.testlab.dto.request.AllocationRequest;
 import com.ascend.testlab.dto.response.AllocationResponse;
-import com.ascend.testlab.dto.response.FilterExperimentsResponse;
 import com.ascend.testlab.dto.response.GetAllocationsResponse;
 import com.ascend.testlab.service.AllocationService;
 import com.google.inject.Inject;
@@ -16,7 +15,6 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
-import jakarta.ws.rs.core.Response;
 import java.util.concurrent.CompletionStage;
 import org.apache.commons.lang3.StringUtils;
 

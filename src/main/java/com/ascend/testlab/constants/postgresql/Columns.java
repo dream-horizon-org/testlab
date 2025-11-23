@@ -76,6 +76,18 @@ public final class Columns {
   /** Column name for updated_at. */
   public static final String UPDATED_AT = "updated_at";
 
+  /** Column name for updated_by. */
+  public static final String UPDATED_BY = "updated_by";
+
+  /** Column name for previous_data. */
+  public static final String PREVIOUS_DATA = "previous_data";
+
+  /** Column name for current_data. */
+  public static final String CURRENT_DATA = "current_data";
+
+  /** Column name for tag. */
+  public static final String TAG = "tag";
+
   /** Column name for tags (aggregated). */
   public static final String TAGS = "tags";
 
