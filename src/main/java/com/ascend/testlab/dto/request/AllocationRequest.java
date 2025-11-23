@@ -1,5 +1,6 @@
 package com.ascend.testlab.dto.request;
 
+import com.ascend.testlab.dto.entity.allocation.Attributes;
 import com.ascend.testlab.exception.ErrorEnum;
 import com.dream11.rest.util.ExceptionUtil;
 import com.fasterxml.jackson.annotation.JsonProperty;

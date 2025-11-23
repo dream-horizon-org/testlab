@@ -7,10 +7,11 @@ import com.ascend.testlab.dao.ExperimentDAO;
 import com.ascend.testlab.dao.mapper.ExperimentMapper;
 import com.ascend.testlab.dao.querybuilder.core.ParameterizedQuery;
 import com.ascend.testlab.dao.querybuilder.factory.FilterExperimentsQueryFactory;
-import com.ascend.testlab.dto.entity.Experiment;
+import com.ascend.testlab.dto.entity.experiment.Experiment;
 import com.ascend.testlab.dto.request.FilterExperimentsRequest;
 import com.ascend.testlab.dto.response.FilterExperimentsResponse;
 import com.ascend.testlab.dto.response.PaginationMeta;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.inject.Inject;
 import io.reactivex.rxjava3.core.Maybe;
 import io.reactivex.rxjava3.core.Single;
@@ -31,6 +32,7 @@ import lombok.extern.slf4j.Slf4j;
 public class ExperimentDAOImpl implements ExperimentDAO {
 
   private final PgReaderClient pgReaderClient;
+  private final ObjectMapper objectMapper;
 
   /**
    * Constructs a new ExperimentDAOImpl.
@@ -38,8 +40,9 @@ public class ExperimentDAOImpl implements ExperimentDAO {
    * @param pgReaderClient the PostgreSQL reader client
    */
   @Inject
-  public ExperimentDAOImpl(PgReaderClient pgReaderClient) {
+  public ExperimentDAOImpl(PgReaderClient pgReaderClient, ObjectMapper objectMapper) {
     this.pgReaderClient = pgReaderClient;
+    this.objectMapper = objectMapper;
   }
 
   /** {@inheritDoc} */
@@ -48,7 +51,7 @@ public class ExperimentDAOImpl implements ExperimentDAO {
     return pgReaderClient.fetchOne(
         ReadQuery.GET_EXPERIMENT,
         Tuple.of(projectKey, experimentId),
-        ExperimentMapper::mapRowToExperiment);
+        row -> ExperimentMapper.mapRowToExperiment(row, objectMapper));
   }
 
   /** {@inheritDoc} */
@@ -78,7 +81,9 @@ public class ExperimentDAOImpl implements ExperimentDAO {
     List<Experiment> experiments =
         (rows.isEmpty())
             ? List.of()
-            : rows.stream().map(ExperimentMapper::mapRowToExperiment).toList();
+            : rows.stream()
+                .map(row -> ExperimentMapper.mapRowToExperiment(row, objectMapper))
+                .toList();
 
     response.setExperiments(experiments);
 

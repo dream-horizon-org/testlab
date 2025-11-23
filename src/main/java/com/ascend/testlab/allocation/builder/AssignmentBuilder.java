@@ -1,10 +1,13 @@
 package com.ascend.testlab.allocation.builder;
 
 import com.ascend.testlab.constants.enums.AllocationStatus;
-import com.ascend.testlab.dto.response.UserExperimentMap;
-import com.ascend.testlab.entity.Experiment;
-import com.ascend.testlab.entity.Variant;
+import com.ascend.testlab.dto.entity.allocation.UserExperimentMap;
+import com.ascend.testlab.dto.entity.experiment.Experiment;
+import com.ascend.testlab.dto.entity.experiment.Variant;
+import java.time.Clock;
+import java.time.Instant;
 import java.util.Objects;
+import lombok.experimental.UtilityClass;
 
 /**
  * Builder class for creating UserExperimentMap instances. Provides a consistent way to build
@@ -14,7 +17,8 @@ import java.util.Objects;
  * @version 1.0
  * @since 1.0
  */
-public class AssignmentBuilder {
+@UtilityClass
+public final class AssignmentBuilder {
 
   /**
    * Creates a UserExperimentMap from experiment and variant
@@ -28,13 +32,14 @@ public class AssignmentBuilder {
       throw new IllegalArgumentException("Experiment and variant cannot be null");
     }
 
-    if (Objects.isNull(experiment.getVariant()) || experiment.getVariant().isEmpty()) {
+    if (Objects.isNull(experiment.getVariants()) || experiment.getVariants().isEmpty()) {
       throw new IllegalArgumentException(
-          "Experiment variant map cannot be null or empty for experiment: "
-              + experiment.getExperimentId());
+          String.format(
+              "Experiment variant map cannot be null or empty for experiment: %s",
+              experiment.getExperimentId()));
     }
 
-    Variant variant = experiment.getVariant().get(variantName);
+    Variant variant = experiment.getVariants().get(variantName);
 
     if (Objects.isNull(variant)) {
       throw new IllegalArgumentException(
@@ -49,7 +54,7 @@ public class AssignmentBuilder {
         .variant(variant)
         .variantName(variantName)
         .status(AllocationStatus.ASSIGNED.name())
-        .assignedAt(System.currentTimeMillis())
+        .assignedAt(Instant.now(Clock.systemUTC()).toEpochMilli())
         .build();
   }
 }

@@ -460,7 +460,7 @@ class AllocationIT {
                 + "assignment_domain, variants, variant_weights, cohorts, overrides, exposure, threshold, "
                 + "start_time, end_time, experiment_key, created_by) "
                 + "VALUES ('%s', '%s', '%s', 'Test experiment description', 'LIVE', 'A/B', 'RANDOM', "
-                + "'COHORT', %s::jsonb, %s::jsonb, '{}'::varchar[], '', 100, 1000, "
+                + "'COHORT', %s::jsonb, %s::jsonb, '{}'::varchar[], NULL, 100, 1000, "
                 + "EXTRACT(EPOCH FROM NOW()) * 1000, EXTRACT(EPOCH FROM NOW() + INTERVAL '30 days') * 1000, "
                 + "'%s', 'test-user');",
             projectKey,

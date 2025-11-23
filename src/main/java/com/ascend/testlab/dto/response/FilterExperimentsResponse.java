@@ -1,6 +1,6 @@
 package com.ascend.testlab.dto.response;
 
-import com.ascend.testlab.dto.entity.Experiment;
+import com.ascend.testlab.dto.entity.experiment.Experiment;
 import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Data;

@@ -1,7 +1,7 @@
 package com.ascend.testlab.dao;
 
-import com.ascend.testlab.dto.response.UserExperimentMap;
-import com.ascend.testlab.entity.Experiment;
+import com.ascend.testlab.dto.entity.allocation.UserExperimentMap;
+import com.ascend.testlab.dto.entity.experiment.Experiment;
 import io.reactivex.rxjava3.core.Single;
 import java.util.List;
 import java.util.Map;

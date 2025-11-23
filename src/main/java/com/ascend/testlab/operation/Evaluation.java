@@ -1,6 +1,6 @@
 package com.ascend.testlab.operation;
 
-import com.ascend.testlab.constants.attributes.RelationalOperator;
+import com.ascend.testlab.constants.enums.RelationalOperator;
 
 @FunctionalInterface
 public interface Evaluation {

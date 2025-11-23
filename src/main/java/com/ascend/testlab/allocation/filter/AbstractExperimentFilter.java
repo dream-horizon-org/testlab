@@ -1,7 +1,6 @@
 package com.ascend.testlab.allocation.filter;
 
-import com.ascend.testlab.allocation.filter.experimentFilter.ExperimentFilter;
-import com.ascend.testlab.entity.Experiment;
+import com.ascend.testlab.dto.entity.experiment.Experiment;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 
@@ -16,14 +15,17 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public abstract class AbstractExperimentFilter implements ExperimentFilter {
 
+  /** Next filter in the chain */
   protected ExperimentFilter nextFilter;
 
+  /** {@inheritDoc} */
   @Override
   public ExperimentFilter setNext(ExperimentFilter nextFilter) {
     this.nextFilter = nextFilter;
     return nextFilter;
   }
 
+  /** {@inheritDoc} */
   @Override
   public List<Experiment> filter(List<Experiment> experiments) {
     List<Experiment> filtered = applyFilter(experiments);

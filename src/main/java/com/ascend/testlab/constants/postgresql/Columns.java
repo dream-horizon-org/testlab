@@ -22,6 +22,9 @@ public final class Columns {
   /** Column name for name. */
   public static final String NAME = "name";
 
+  /** Column name for experiment_key. */
+  public static final String EXPERIMENT_KEY = "experiment_key";
+
   /** Column name for description. */
   public static final String DESCRIPTION = "description";
 
@@ -43,8 +46,8 @@ public final class Columns {
   /** Column name for variant_weights. */
   public static final String VARIANT_WEIGHTS = "variant_weights";
 
-  /** Column name for assignment_strategy. */
-  public static final String ASSIGNMENT_STRATEGY = "assignment_strategy";
+  /** Column name for distribution_strategy. */
+  public static final String DISTRIBUTION_STRATEGY = "distribution_strategy";
 
   /** Column name for overrides. */
   public static final String OVERRIDES = "overrides";
@@ -100,9 +103,6 @@ public final class Columns {
   /** Column name for assignment_domain. */
   public static final String ASSIGNMENT_DOMAIN = "assignment_domain";
 
-  /** Column name for distribution_strategy. */
-  public static final String DISTRIBUTION_STRATEGY = "distribution_strategy";
-
   /** Column name for variants. */
-  public static final String VARIANT = "variants";
+  public static final String VARIANTS = "variants";
 }

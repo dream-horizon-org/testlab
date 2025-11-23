@@ -16,26 +16,17 @@ import com.ascend.testlab.client.aerospike.AerospikeClient;
 import com.ascend.testlab.client.postgresql.PgReaderClient;
 import com.ascend.testlab.config.AerospikeConfig;
 import com.ascend.testlab.constants.Constants;
-import com.ascend.testlab.constants.enums.DistributionStrategy;
-import com.ascend.testlab.constants.postgresql.Columns;
 import com.ascend.testlab.constants.postgresql.ReadQuery;
 import com.ascend.testlab.dao.AllocationDAO;
-import com.ascend.testlab.dto.response.UserExperimentMap;
-import com.ascend.testlab.entity.AssignmentDomain;
-import com.ascend.testlab.entity.Experiment;
-import com.ascend.testlab.entity.RuleAttributes;
-import com.ascend.testlab.entity.Variant;
-import com.ascend.testlab.entity.variantWeights.CohortVariantWeights;
-import com.ascend.testlab.entity.variantWeights.StratifiedVariantWeights;
-import com.ascend.testlab.entity.variantWeights.VariantWeights;
+import com.ascend.testlab.dao.mapper.ExperimentMapper;
+import com.ascend.testlab.dto.entity.allocation.UserExperimentMap;
+import com.ascend.testlab.dto.entity.experiment.Experiment;
 import com.ascend.testlab.util.CommonUtil;
-import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.inject.Inject;
 import io.reactivex.rxjava3.core.Observable;
 import io.reactivex.rxjava3.core.Single;
 import io.vertx.core.json.JsonObject;
-import io.vertx.rxjava3.sqlclient.Row;
 import io.vertx.rxjava3.sqlclient.Tuple;
 import java.util.*;
 import lombok.extern.slf4j.Slf4j;
@@ -86,7 +77,7 @@ public class AllocationDAOImpl implements AllocationDAO {
         .fetchAll(
             ReadQuery.GET_EXPERIMENTS_FROM_KEY,
             Tuple.tuple().addString(projectKey).addArrayOfString(experimentKeysArray),
-            this::mapRowToExperiment)
+            row -> ExperimentMapper.mapRowToExperiment(row, objectMapper))
         .doOnSuccess(
             experiments ->
                 log.debug(
@@ -210,7 +201,7 @@ public class AllocationDAOImpl implements AllocationDAO {
         .fetchAll(
             ReadQuery.GET_CONCLUDED_EXPERIMENTS,
             Tuple.tuple().addString(projectKey),
-            this::mapRowToExperiment)
+            row -> ExperimentMapper.mapRowToExperiment(row, objectMapper))
         .doOnSuccess(
             experiments ->
                 log.debug(
@@ -433,14 +424,14 @@ public class AllocationDAOImpl implements AllocationDAO {
 
   private Single<Long> getTotalVariantCount(String projectKey, Experiment experiment) {
 
-    if (Objects.isNull(experiment.getVariant()) || experiment.getVariant().isEmpty()) {
+    if (Objects.isNull(experiment.getVariants()) || experiment.getVariants().isEmpty()) {
       log.debug("No variants found for experiment {}", experiment.getExperimentId());
       return Single.just(0L);
     }
     BatchPolicy batchPolicy = new BatchPolicy();
     batchPolicy.sendKey = true;
     List<Key> keys = new ArrayList<>();
-    for (String variantName : experiment.getVariant().keySet()) {
+    for (String variantName : experiment.getVariants().keySet()) {
       String asKey = experiment.getExperimentId().toString() + Constants.COLON + variantName;
       Key key =
           new Key(
@@ -459,64 +450,6 @@ public class AllocationDAOImpl implements AllocationDAO {
                     .map(rec -> rec.getLong(aerospikeConfig.getVariantCountBin()))
                     .reduce(0L, Long::sum))
         .onErrorReturnItem(0L);
-  }
-
-  private Experiment mapRowToExperiment(Row row) {
-    try {
-      UUID experimentId = UUID.fromString(row.getString(Columns.EXPERIMENT_ID));
-      String projectKey = row.getString(Columns.PROJECT_KEY);
-
-      String assignmentDomainStr = row.getString(Columns.ASSIGNMENT_DOMAIN);
-      AssignmentDomain assignmentDomain = AssignmentDomain.valueOf(assignmentDomainStr);
-
-      JsonObject variantWeightsJson = row.getJsonObject(Columns.VARIANT_WEIGHTS);
-      VariantWeights variantWeights =
-          deserializeVariantWeights(variantWeightsJson, assignmentDomain, experimentId);
-
-      String ruleAttributesJson =
-          Objects.isNull(row.getJson(Columns.RULE_ATTRIBUTES))
-              ? null
-              : row.getJson(Columns.RULE_ATTRIBUTES).toString();
-      List<RuleAttributes> ruleAttributes =
-          ruleAttributesJson != null
-              ? objectMapper.readValue(ruleAttributesJson, new TypeReference<>() {})
-              : null;
-
-      String overridesJson = row.getString(Columns.OVERRIDES);
-      List<String> overrides = Arrays.asList(overridesJson.split(","));
-
-      String distributionStrategyStr = row.getString(Columns.DISTRIBUTION_STRATEGY);
-      DistributionStrategy distributionStrategy =
-          distributionStrategyStr != null
-              ? DistributionStrategy.valueOf(distributionStrategyStr)
-              : DistributionStrategy.RANDOM;
-
-      JsonObject variantJson = row.getJsonObject(Columns.VARIANT);
-      TypeReference<Map<String, Variant>> typeRef = new TypeReference<>() {};
-      Map<String, Variant> variants = objectMapper.readValue(variantJson.toString(), typeRef);
-
-      return Experiment.builder()
-          .experimentId(experimentId)
-          .projectKey(projectKey)
-          .name(row.getString(Columns.NAME))
-          .description(row.getString(Columns.DESCRIPTION))
-          .status(row.getString(Columns.STATUS))
-          .cohorts(Arrays.asList(row.getArrayOfStrings(Columns.COHORTS)))
-          .variantWeights(variantWeights)
-          .variant(variants)
-          .ruleAttributes(ruleAttributes)
-          .startTime(row.getLong(Columns.START_TIME))
-          .overrides(overrides)
-          .endTime(row.getLong(Columns.END_TIME))
-          .exposure(row.getInteger(Columns.EXPOSURE))
-          .threshold(row.getLong(Columns.THRESHOLD))
-          .distributionStrategy(distributionStrategy)
-          .assignmentDomain(assignmentDomain)
-          .build();
-    } catch (Exception e) {
-      log.error("Error mapping row to Experiment", e);
-      return null;
-    }
   }
 
   @Override
@@ -750,55 +683,5 @@ public class AllocationDAOImpl implements AllocationDAO {
                     successCount[0],
                     failureCount[0],
                     error));
-  }
-
-  /**
-   * Deserializes variant weights JSON into the appropriate VariantWeights subclass based on
-   * assignment domain.
-   *
-   * @param variantWeightsJson the JSON object containing variant weights
-   * @param assignmentDomain the assignment domain type
-   * @param experimentId experiment ID for logging
-   * @return appropriate VariantWeights implementation
-   */
-  private VariantWeights deserializeVariantWeights(
-      JsonObject variantWeightsJson, AssignmentDomain assignmentDomain, UUID experimentId) {
-
-    if (Objects.isNull(variantWeightsJson)) {
-      log.warn("Null variant weights JSON for experiment {}", experimentId);
-      return null;
-    }
-
-    try {
-      String jsonString = variantWeightsJson.toString();
-
-      switch (assignmentDomain) {
-        case STRATIFIED:
-          StratifiedVariantWeights manualWeights =
-              objectMapper.readValue(jsonString, StratifiedVariantWeights.class);
-          log.debug(
-              "Deserialized StratifiedVariantWeights for experiment {}: {}",
-              experimentId,
-              manualWeights);
-          return manualWeights;
-
-        case COHORT:
-          CohortVariantWeights cohortWeights =
-              objectMapper.readValue(jsonString, CohortVariantWeights.class);
-          log.debug(
-              "Deserialized CohortVariantWeights for experiment {}: {}",
-              experimentId,
-              cohortWeights);
-          return cohortWeights;
-      }
-    } catch (Exception e) {
-      log.error(
-          "Error deserializing variant weights for experiment {} with domain {}",
-          experimentId,
-          assignmentDomain,
-          e);
-      return null;
-    }
-    return null;
   }
 }

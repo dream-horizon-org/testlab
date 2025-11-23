@@ -420,6 +420,33 @@ components:
       properties:
         data:
           $ref: '#/components/schemas/ExperimentKeyAvailabilityResponse'
+    CohortVariantWeights:
+      type: object
+      allOf:
+      - $ref: '#/components/schemas/VariantWeights'
+      - type: object
+        properties:
+          weights:
+            type: object
+            additionalProperties:
+              type: number
+              format: double
+    Condition:
+      required:
+      - operand
+      - operandDataType
+      - operator
+      - value
+      type: object
+      properties:
+        operand:
+          type: string
+        operandDataType:
+          type: string
+        operator:
+          type: string
+        value:
+          type: string
     Experiment:
       type: object
       properties:
@@ -429,6 +456,8 @@ components:
         projectKey:
           type: string
         name:
+          type: string
+        key:
           type: string
         description:
           type: string
@@ -459,16 +488,29 @@ components:
           items:
             type: string
         variantWeights:
-          $ref: '#/components/schemas/JsonObject'
-        assignmentStrategy:
+          $ref: '#/components/schemas/VariantWeights'
+        variants:
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/Variant'
+        ruleAttributes:
+          type: array
+          items:
+            $ref: '#/components/schemas/RuleAttributes'
+        distributionStrategy:
           type: string
           enum:
-          - RANDOM
           - ROUND_ROBIN
+          - RANDOM
+        assignmentDomain:
+          type: string
+          enum:
+          - STRATIFIED
+          - COHORT
         overrides:
-          $ref: '#/components/schemas/JsonObject'
-        ruleAttributes:
-          $ref: '#/components/schemas/JsonObject'
+          type: array
+          items:
+            type: string
         winningVariant:
           $ref: '#/components/schemas/JsonObject'
         exposure:
@@ -492,9 +534,13 @@ components:
           type: string
           format: date-time
         tags:
-          type: string
-        owner:
-          type: string
+          type: array
+          items:
+            type: string
+        owners:
+          type: array
+          items:
+            type: string
     FilterExperimentsResponse:
       type: object
       properties:
@@ -525,11 +571,44 @@ components:
         totalCount:
           type: integer
           format: int32
+    RuleAttributes:
+      required:
+      - name
+      type: object
+      properties:
+        name:
+          type: string
+        conditions:
+          type: array
+          items:
+            $ref: '#/components/schemas/Condition'
+    StratifiedVariantWeights:
+      type: object
+      allOf:
+      - $ref: '#/components/schemas/VariantWeights'
+      - type: object
+        properties:
+          weights:
+            type: object
+            additionalProperties:
+              type: array
+              items:
+                type: string
     SuccessFilterExperimentsResponse:
       type: object
       properties:
         data:
           $ref: '#/components/schemas/FilterExperimentsResponse'
+    VariantWeights:
+      type: object
+      properties:
+        type:
+          type: string
+          enum:
+          - STRATIFIED
+          - COHORT
+      discriminator:
+        propertyName: type
     SuccessExperiment:
       type: object
       properties:

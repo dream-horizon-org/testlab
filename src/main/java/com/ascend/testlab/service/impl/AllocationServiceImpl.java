@@ -1,17 +1,17 @@
 package com.ascend.testlab.service.impl;
 
 import com.ascend.testlab.allocation.builder.AssignmentBuilder;
-import com.ascend.testlab.allocation.filter.ExperimentFilterChainBuilder;
-import com.ascend.testlab.allocation.filter.experimentFilter.ExperimentFilter;
-import com.ascend.testlab.allocation.helper.VariantSelector;
+import com.ascend.testlab.allocation.builder.ExperimentFilterChainBuilder;
+import com.ascend.testlab.allocation.filter.ExperimentFilter;
+import com.ascend.testlab.allocation.selector.VariantSelector;
 import com.ascend.testlab.constants.Constants;
 import com.ascend.testlab.constants.enums.AllocationStatus;
 import com.ascend.testlab.dao.AllocationDAO;
+import com.ascend.testlab.dto.entity.allocation.UserExperimentMap;
+import com.ascend.testlab.dto.entity.experiment.Experiment;
 import com.ascend.testlab.dto.request.AllocationRequest;
 import com.ascend.testlab.dto.response.AllocationResponse;
 import com.ascend.testlab.dto.response.GetAllocationsResponse;
-import com.ascend.testlab.dto.response.UserExperimentMap;
-import com.ascend.testlab.entity.Experiment;
 import com.ascend.testlab.service.AllocationService;
 import com.ascend.testlab.service.CohortService;
 import com.fasterxml.jackson.core.type.TypeReference;

@@ -6,7 +6,7 @@ import static org.mockito.Mockito.*;
 import com.ascend.testlab.constants.enums.ExperimentStatus;
 import com.ascend.testlab.constants.enums.ExperimentType;
 import com.ascend.testlab.dao.ExperimentDAO;
-import com.ascend.testlab.dto.entity.Experiment;
+import com.ascend.testlab.dto.entity.experiment.Experiment;
 import com.ascend.testlab.dto.request.FilterExperimentsRequest;
 import com.ascend.testlab.dto.response.FilterExperimentsResponse;
 import com.ascend.testlab.dto.response.PaginationMeta;
@@ -727,8 +727,8 @@ public class ExperimentServiceTest {
         .createdBy("test-user")
         .createdAt(Instant.now())
         .updatedAt(Instant.now())
-        .tags("tag1,tag2")
-        .owner("owner1")
+        .tags(List.of("tag1", "tag2"))
+        .owners(List.of("owner1"))
         .build();
   }
 

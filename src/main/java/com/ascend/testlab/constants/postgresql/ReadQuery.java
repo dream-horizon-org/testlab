@@ -82,12 +82,9 @@ public final class ReadQuery {
    */
   public static final String GET_EXPERIMENT =
       """
-      SELECT e.project_key, e.experiment_id, e.name, e.description, e.hypothesis, e.status, e.type,
-             e.guardrail_health_status, e.cohorts, e.variant_weights, e.assignment_strategy, e.overrides,
-             e.rule_attributes, e.winning_variant, e.exposure, e.threshold, e.start_time, e.end_time,
-             e.created_by, e.created_at, e.updated_at,
-             string_agg(DISTINCT t.tag, ',') as tags,
-             string_agg(DISTINCT o.owner, ',') as owners
+      SELECT e.*,
+             array_agg(DISTINCT t.tag) as tags,
+             array_agg(DISTINCT o.owner) as owners
       FROM experiment.experiments e
       LEFT JOIN experiment.tags t ON e.project_key = t.project_key AND e.experiment_id = t.experiment_id
       LEFT JOIN experiment.owners o ON e.project_key = o.project_key AND e.experiment_id = o.experiment_id
@@ -146,12 +143,9 @@ public final class ReadQuery {
    */
   public static final String FILTER_EXPERIMENT =
       """
-      SELECT e.project_key, e.experiment_id, e.name, e.description, e.hypothesis, e.status, e.type,
-             e.guardrail_health_status, e.cohorts, e.variant_weights, e.assignment_strategy, e.overrides,
-             e.rule_attributes, e.winning_variant, e.exposure, e.threshold, e.start_time, e.end_time,
-             e.created_by, e.created_at, e.updated_at,
-             string_agg(DISTINCT t.tag, ',') as tags,
-             string_agg(DISTINCT o.owner, ',') as owners,
+      SELECT e.*,
+             array_agg(DISTINCT t.tag) as tags,
+             array_agg(DISTINCT o.owner) as owners,
              COUNT(*) OVER() as total_count
       FROM experiment.experiments e
       LEFT JOIN experiment.tags t ON e.project_key = t.project_key AND e.experiment_id = t.experiment_id

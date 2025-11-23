@@ -8,6 +8,10 @@ package com.ascend.testlab.constants.enums;
  * @since 1.0
  */
 public enum DistributionStrategy {
+
+  /** Round-robin distribution strategy for variant allocation. */
   ROUND_ROBIN,
-  RANDOM;
+
+  /** Random distribution strategy for variant allocation. */
+  RANDOM
 }
