@@ -3,6 +3,7 @@ package com.ascend.testlab.rest;
 import com.ascend.testlab.Setup;
 import com.ascend.testlab.constants.web.WebConstants;
 import com.ascend.testlab.exception.ErrorMessages;
+import com.ascend.testlab.util.CommonUtil;
 import com.ascend.testlab.util.TestUtil;
 import io.restassured.response.ValidatableResponse;
 import java.util.Map;
@@ -313,7 +314,7 @@ class FilterExperimentsIT {
     response.statusCode(HttpStatus.SC_OK);
     response.body("data.experiments", Matchers.notNullValue());
     response.body("data.experiments.size()", Matchers.equalTo(2));
-    response.body("data.pagination.pageSize", Matchers.equalTo(100));
+    response.body("data.pagination.pageSize", Matchers.equalTo(2));
   }
 
   @Test
@@ -444,7 +445,7 @@ class FilterExperimentsIT {
 
     response.statusCode(HttpStatus.SC_OK);
     response.body("data.pagination.currentPage", Matchers.equalTo(1));
-    response.body("data.pagination.pageSize", Matchers.equalTo(20));
+    response.body("data.pagination.pageSize", Matchers.equalTo(2));
   }
 
   @Test
@@ -785,15 +786,16 @@ class FilterExperimentsIT {
    */
   private static void seedExperiment(
       String projectKey, String experimentId, String name, String status, String type) {
+    String experimentKey = CommonUtil.getExperimentKey(name);
     String insert =
         String.format(
             "INSERT INTO experiment.experiments ("
-                + "project_key, experiment_id, name, description, hypothesis, status, type, "
+                + "project_key, experiment_id, name, experiment_key, description, hypothesis, status, type, "
                 + "guardrail_health_status, cohorts, variant_weights, assignment_strategy, "
                 + "overrides, rule_attributes, winning_variant, exposure, threshold, "
                 + "start_time, end_time, created_by, created_at, updated_at, name_tsvector"
                 + ") VALUES ("
-                + "'%s', '%s', '%s', 'Test Description', 'Test Hypothesis', "
+                + "'%s', '%s', '%s', '%s', 'Test Description', 'Test Hypothesis', "
                 + "'%s', '%s', 'PASSED', "
                 + "ARRAY['all_users'], '{\"control\": 50, \"variant_a\": 50}'::jsonb, "
                 + "'RANDOM', NULL::jsonb, NULL::jsonb, NULL::jsonb, "
@@ -803,7 +805,7 @@ class FilterExperimentsIT {
                 + "'test@example.com', NOW(), NOW(), "
                 + "to_tsvector('simple', '%s')"
                 + ") ON CONFLICT (project_key, experiment_id) DO NOTHING;",
-            projectKey, experimentId, name, status, type, name);
+            projectKey, experimentId, name, experimentKey, status, type, name);
     try {
       TestUtil.executeSQLStatement(TestUtil.getDatabaseConnection(), insert);
     } catch (Exception e) {

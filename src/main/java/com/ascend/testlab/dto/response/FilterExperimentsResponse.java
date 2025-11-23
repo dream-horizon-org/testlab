@@ -3,7 +3,6 @@ package com.ascend.testlab.dto.response;
 import com.ascend.testlab.dto.entity.Experiment;
 import java.util.List;
 import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
@@ -21,15 +20,4 @@ public class FilterExperimentsResponse {
 
   private List<Experiment> experiments;
   private PaginationMeta pagination;
-
-  /** Metadata class for pagination information. */
-  @Data
-  @NoArgsConstructor
-  @AllArgsConstructor
-  @Builder
-  public static class PaginationMeta {
-    private int currentPage;
-    private int pageSize;
-    private int totalCount;
-  }
 }
