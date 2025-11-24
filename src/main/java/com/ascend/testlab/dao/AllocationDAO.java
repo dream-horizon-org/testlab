@@ -2,6 +2,7 @@ package com.ascend.testlab.dao;
 
 import com.ascend.testlab.dto.entity.allocation.UserExperimentMap;
 import com.ascend.testlab.dto.entity.experiment.Experiment;
+import com.ascend.testlab.dto.request.ReallocateRequest;
 import io.reactivex.rxjava3.core.Single;
 import java.util.List;
 import java.util.Map;
@@ -32,6 +33,33 @@ public interface AllocationDAO {
    * @return list of user experiment mappings
    */
   Single<List<UserExperimentMap>> getAllocations(String userId, String projectKey);
+
+  /**
+   * Fetches experiment by id from Aerospike Throws error if no experiment found
+   *
+   * @param projectKey project identifier
+   * @param experimentId experiment identifier
+   * @return experiment object
+   */
+  Single<Experiment> fetchExperiment(String projectKey, String experimentId);
+
+  /**
+   * Transactionally reallocates a user to a new variant for an experiment. Handles decrementing the
+   * old variant count, incrementing the new variant count, updating user assignment, and logging
+   * the reallocation. If any step fails, appropriate rollback is performed.
+   *
+   * @param projectKey project identifier
+   * @param oldVariantName the old variant name (null if user had no previous assignment)
+   * @param newVariantAssignment the new user experiment map with updated variant
+   * @param reallocateRequest request object containing userId, experimentId, and reason for
+   *     reallocation
+   * @return the updated user experiment map on success
+   */
+  Single<UserExperimentMap> reallocateUserVariant(
+      String projectKey,
+      String oldVariantName,
+      UserExperimentMap newVariantAssignment,
+      ReallocateRequest reallocateRequest);
 
   /**
    * Fetches user's current experiment allocations from Aerospike

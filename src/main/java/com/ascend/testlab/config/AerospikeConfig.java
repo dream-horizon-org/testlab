@@ -59,6 +59,9 @@ public class AerospikeConfig {
   /** The Aerospike set name for storing variant counts. */
   private String variantCountSet;
 
+  /** The Aerospike set name for storing reallocation logs. */
+  private String reallocationLogSet;
+
   /** The Aerospike set name for storing user locks. */
   private String userLockSet;
 
