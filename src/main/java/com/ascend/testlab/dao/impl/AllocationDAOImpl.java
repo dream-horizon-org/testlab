@@ -651,7 +651,7 @@ public class AllocationDAOImpl implements AllocationDAO {
                   .map(
                       record -> {
                         Long count =
-                            record != null
+                            Objects.nonNull(record)
                                 ? record.getLong(aerospikeConfig.getVariantCountBin())
                                 : 1L;
                         results.put(keyStr, count);
@@ -804,54 +804,57 @@ public class AllocationDAOImpl implements AllocationDAO {
     return decrementAndIncrementVariantCounts(
             projectKey, reallocateRequest.getExperimentId(), oldVariant, newVariantName)
         .flatMap(
-            countUpdated -> updateUserAssignmentInAerospike(
-                    reallocateRequest.getUserId(),
-                    projectKey,
-                    reallocateRequest.getExperimentId(),
-                    newVariantAssignment)
-                .flatMap(
-                    assignmentUpdated -> {
-                      if (!assignmentUpdated) {
-                        log.error(
-                            "Failed to update user assignment, rolling back variant counts");
-                        Map<String, String> rollbackMap = new HashMap<>();
-                        if (oldVariant != null) {
-                          rollbackMap.put(
-                              reallocateRequest.getExperimentId() + Constants.COLON + oldVariant,
-                              oldVariant);
-                        }
-                        rollbackMap.put(
-                            reallocateRequest.getExperimentId()
-                                + Constants.COLON
-                                + newVariantName,
-                            newVariantName);
+            countUpdated ->
+                updateUserAssignmentInAerospike(
+                        reallocateRequest.getUserId(),
+                        projectKey,
+                        reallocateRequest.getExperimentId(),
+                        newVariantAssignment)
+                    .flatMap(
+                        assignmentUpdated -> {
+                          if (!assignmentUpdated) {
+                            log.error(
+                                "Failed to update user assignment, rolling back variant counts");
+                            Map<String, String> rollbackMap = new HashMap<>();
+                            if (oldVariant != null) {
+                              rollbackMap.put(
+                                  reallocateRequest.getExperimentId()
+                                      + Constants.COLON
+                                      + oldVariant,
+                                  oldVariant);
+                            }
+                            rollbackMap.put(
+                                reallocateRequest.getExperimentId()
+                                    + Constants.COLON
+                                    + newVariantName,
+                                newVariantName);
 
-                        return rollbackVariantCounts(projectKey, rollbackMap)
-                            .flatMap(
-                                rbSuccess ->
-                                    Single.error(
-                                        new RuntimeException(
-                                            "Failed to update user assignment")));
-                      }
+                            return rollbackVariantCounts(projectKey, rollbackMap)
+                                .flatMap(
+                                    rbSuccess ->
+                                        Single.error(
+                                            new RuntimeException(
+                                                "Failed to update user assignment")));
+                          }
 
-                      return logReallocation(
-                              reallocateRequest.getUserId(),
-                              projectKey,
-                              reallocateRequest.getExperimentId(),
-                              oldVariant,
-                              newVariantName,
-                              reallocateRequest.getReason())
-                          .flatMap(logResult -> Single.just(newVariantAssignment))
-                          .onErrorResumeNext(
-                              logError -> {
-                                log.warn(
-                                    "Failed to log reallocation for user {} experiment {}, but reallocation succeeded",
-                                    reallocateRequest.getUserId(),
-                                    reallocateRequest.getExperimentId(),
-                                    logError);
-                                return Single.just(newVariantAssignment);
-                              });
-                    }))
+                          return logReallocation(
+                                  reallocateRequest.getUserId(),
+                                  projectKey,
+                                  reallocateRequest.getExperimentId(),
+                                  oldVariant,
+                                  newVariantName,
+                                  reallocateRequest.getReason())
+                              .flatMap(logResult -> Single.just(newVariantAssignment))
+                              .onErrorResumeNext(
+                                  logError -> {
+                                    log.warn(
+                                        "Failed to log reallocation for user {} experiment {}, but reallocation succeeded",
+                                        reallocateRequest.getUserId(),
+                                        reallocateRequest.getExperimentId(),
+                                        logError);
+                                    return Single.just(newVariantAssignment);
+                                  });
+                        }))
         .doOnSuccess(
             result ->
                 log.info(
@@ -889,7 +892,7 @@ public class AllocationDAOImpl implements AllocationDAO {
 
     // First, decrement old variant
     Single<Long> decrementSingle = decrementVariantCount(projectKey, experimentId, oldVariantName);
-    
+
     return decrementSingle.flatMap(
         oldCount -> {
           // Then increment new variant
