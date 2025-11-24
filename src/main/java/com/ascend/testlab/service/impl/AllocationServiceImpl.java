@@ -464,7 +464,7 @@ public class AllocationServiceImpl implements AllocationService {
             lockAcquired -> {
               if (!lockAcquired) {
                 log.warn("Failed to acquire lock for user {}, cannot reallocate", userId);
-                throw ExceptionUtil.getException(ErrorEnum.REALLOCATION_LOCK_ACQUISITION_FAILED);
+                throw ExceptionUtil.getException(ErrorEnum.REALLOCATION__FAILED);
               }
               log.debug("Lock acquired for user {} reallocation", userId);
 
@@ -530,15 +530,6 @@ public class AllocationServiceImpl implements AllocationService {
                       currentAssignment.getVariantName(),
                       newAssignment,
                       reallocateRequest)
-                  .doOnSuccess(
-                      result ->
-                          log.info(
-                              "Successfully reallocated user {} from variant {} to variant {} for experiment {}. Reason: {}",
-                              reallocateRequest.getUserId(),
-                              currentAssignment.getVariantName(),
-                              newVariant.getVariantName(),
-                              experimentId,
-                              reallocateRequest.getReason()))
                   .doOnError(
                       error ->
                           log.error(

@@ -26,7 +26,7 @@ public interface AllocationDAO {
   Single<List<Experiment>> fetchActiveExperiments(String projectKey, List<String> experimentKeys);
 
   /**
-   * Fetches experiment by id from Aerospike
+   * Fetches experiment by id from Aerospike Throws error if no experiment found
    *
    * @param projectKey project identifier
    * @param experimentId experiment identifier

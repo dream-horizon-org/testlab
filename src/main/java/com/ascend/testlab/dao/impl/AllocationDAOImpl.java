@@ -112,9 +112,6 @@ public class AllocationDAOImpl implements AllocationDAO {
             Tuple.of(projectKey, experimentId),
             this::mapRowToExperiment)
         .switchIfEmpty(Single.error(ExceptionUtil.getException(ErrorEnum.EXPERIMENT_NOT_FOUND)))
-        .doOnSuccess(
-            experiment ->
-                log.debug("Fetched experiment {} for project {}", experimentId, projectKey))
         .doOnError(
             error ->
                 log.error(
@@ -855,14 +852,6 @@ public class AllocationDAOImpl implements AllocationDAO {
                                     return Single.just(newVariantAssignment);
                                   });
                         }))
-        .doOnSuccess(
-            result ->
-                log.info(
-                    "Successfully reallocated user {} from variant {} to variant {} for experiment {}",
-                    reallocateRequest.getUserId(),
-                    oldVariant,
-                    newVariantName,
-                    reallocateRequest.getExperimentId()))
         .doOnError(
             error ->
                 log.error(

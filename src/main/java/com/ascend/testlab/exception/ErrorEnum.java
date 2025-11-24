@@ -93,10 +93,10 @@ public enum ErrorEnum implements RestError {
       "INVALID_EXPERIMENT_TYPE", "Experiment type is not valid", HttpStatus.SC_BAD_REQUEST),
 
   /** The error code for failing to acquire lock during reallocation. */
-  REALLOCATION_LOCK_ACQUISITION_FAILED(
-      "REALLOCATION_LOCK_ACQUISITION_FAILED",
-      "Failed to acquire lock for user reallocation. Please retry after some time",
-      HttpStatus.SC_CONFLICT),
+  REALLOCATION__FAILED(
+      "REALLOCATION__FAILED",
+      "Failed to reallocate user experiment",
+      HttpStatus.SC_INTERNAL_SERVER_ERROR),
 
   /** The error code for invalid variant in reallocation request. */
   INVALID_VARIANT(

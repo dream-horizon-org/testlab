@@ -123,10 +123,6 @@ public class Allocation {
       description = "Bad Request - invalid/missing body params or header",
       content = @Content(schema = @Schema(implementation = ResponseEntity.Failure.class)))
   @ApiResponse(
-      responseCode = "409",
-      description = "Conflict - Failed to acquire lock for reallocation",
-      content = @Content(schema = @Schema(implementation = ResponseEntity.Failure.class)))
-  @ApiResponse(
       responseCode = "404",
       description = "Not Found - Experiment or user assignment not found",
       content = @Content(schema = @Schema(implementation = ResponseEntity.Failure.class)))
