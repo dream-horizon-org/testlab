@@ -24,8 +24,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 /**
  * Comprehensive unit tests for AllocationService reallocate functionality.
  *
- * <p>Tests the PUT /v1/allocations endpoint which reassigns users to different experiment
- * variants.
+ * <p>Tests the PUT /v1/allocations endpoint which reassigns users to different experiment variants.
  *
  * @author Anudeep Reddy
  * @version 1.0
@@ -49,8 +48,7 @@ public class AllocationTest {
   @BeforeEach
   void setUp() {
     ObjectMapper objectMapper = new ObjectMapper();
-    allocationService =
-        new AllocationServiceImpl(allocationDAO, cohortService, objectMapper);
+    allocationService = new AllocationServiceImpl(allocationDAO, cohortService, objectMapper);
   }
 
   @Nested
@@ -62,8 +60,7 @@ public class AllocationTest {
     void testConstructorWithValidDependencies() {
       // Act
       AllocationServiceImpl service =
-          new AllocationServiceImpl(
-              allocationDAO, cohortService, new ObjectMapper());
+          new AllocationServiceImpl(allocationDAO, cohortService, new ObjectMapper());
 
       // Assert
       assertNotNull(service);
@@ -73,8 +70,7 @@ public class AllocationTest {
     @DisplayName("Should handle null ObjectMapper")
     void testConstructorWithNullObjectMapper() {
       // Act
-      AllocationServiceImpl service =
-          new AllocationServiceImpl(allocationDAO, cohortService, null);
+      AllocationServiceImpl service = new AllocationServiceImpl(allocationDAO, cohortService, null);
 
       // Assert
       assertNotNull(service);
@@ -117,8 +113,7 @@ public class AllocationTest {
       testObserver.assertComplete();
       testObserver.assertNoErrors();
       testObserver.assertValueCount(1);
-      testObserver.assertValue(
-          result -> result.getVariantName().equals(TREATMENT_VARIANT));
+      testObserver.assertValue(result -> result.getVariantName().equals(TREATMENT_VARIANT));
       verify(allocationDAO, times(1))
           .reallocateUserVariant(
               eq(PROJECT_KEY), eq(CONTROL_VARIANT), any(UserExperimentMap.class), eq(request));
@@ -158,11 +153,10 @@ public class AllocationTest {
       testObserver.assertNoErrors();
       verify(allocationDAO, times(1))
           .reallocateUserVariant(
-              eq(PROJECT_KEY), anyString(), any(UserExperimentMap.class),
-              argThat(
-                  req ->
-                      req.getReason() != null
-                          && req.getReason().equals(auditReason)));
+              eq(PROJECT_KEY),
+              anyString(),
+              any(UserExperimentMap.class),
+              argThat(req -> req.getReason() != null && req.getReason().equals(auditReason)));
     }
 
     @Test
@@ -233,8 +227,7 @@ public class AllocationTest {
       // Assert
       testObserver.assertComplete();
       testObserver.assertNoErrors();
-      testObserver.assertValue(
-          result -> result.getExperimentId().equals(EXPERIMENT_ID));
+      testObserver.assertValue(result -> result.getExperimentId().equals(EXPERIMENT_ID));
     }
   }
 
@@ -285,8 +278,8 @@ public class AllocationTest {
 
       when(allocationDAO.reallocateUserVariant(
               eq(PROJECT_KEY), anyString(), any(UserExperimentMap.class), eq(request)))
-          .thenReturn(Single.error(
-              new IllegalArgumentException("Variant not found in experiment")));
+          .thenReturn(
+              Single.error(new IllegalArgumentException("Variant not found in experiment")));
 
       // Act
       TestObserver<UserExperimentMap> testObserver =
@@ -661,7 +654,10 @@ public class AllocationTest {
       testObserver2.assertNoErrors();
       verify(allocationDAO, times(2))
           .reallocateUserVariant(
-              eq(PROJECT_KEY), anyString(), any(UserExperimentMap.class), any(ReallocateRequest.class));
+              eq(PROJECT_KEY),
+              anyString(),
+              any(UserExperimentMap.class),
+              any(ReallocateRequest.class));
     }
 
     @Test
@@ -696,7 +692,10 @@ public class AllocationTest {
               .build();
 
       when(allocationDAO.reallocateUserVariant(
-              eq(PROJECT_KEY), anyString(), any(UserExperimentMap.class), any(ReallocateRequest.class)))
+              eq(PROJECT_KEY),
+              anyString(),
+              any(UserExperimentMap.class),
+              any(ReallocateRequest.class)))
           .thenReturn(Single.just(response));
 
       // Act
@@ -710,7 +709,10 @@ public class AllocationTest {
       testObserver2.assertComplete();
       verify(allocationDAO, times(2))
           .reallocateUserVariant(
-              eq(PROJECT_KEY), anyString(), any(UserExperimentMap.class), any(ReallocateRequest.class));
+              eq(PROJECT_KEY),
+              anyString(),
+              any(UserExperimentMap.class),
+              any(ReallocateRequest.class));
     }
   }
 
@@ -790,8 +792,7 @@ public class AllocationTest {
       // Assert
       testObserver.assertComplete();
       testObserver.assertNoErrors();
-      testObserver.assertValue(
-          result -> result.getVariantName().equals(TREATMENT_VARIANT));
+      testObserver.assertValue(result -> result.getVariantName().equals(TREATMENT_VARIANT));
     }
 
     @Test
@@ -825,8 +826,7 @@ public class AllocationTest {
       // Assert
       testObserver.assertComplete();
       testObserver.assertNoErrors();
-      testObserver.assertValue(
-          result -> result.getStatus().equals("REALLOCATED"));
+      testObserver.assertValue(result -> result.getStatus().equals("REALLOCATED"));
     }
   }
 
@@ -868,7 +868,9 @@ public class AllocationTest {
       testObserver.assertNoErrors();
       verify(allocationDAO, times(1))
           .reallocateUserVariant(
-              eq(PROJECT_KEY), anyString(), any(UserExperimentMap.class),
+              eq(PROJECT_KEY),
+              anyString(),
+              any(UserExperimentMap.class),
               argThat(req -> req.getReason().equals(reason)));
     }
 
@@ -942,8 +944,7 @@ public class AllocationTest {
       // Assert
       testObserver.assertComplete();
       testObserver.assertNoErrors();
-      testObserver.assertValue(
-          result -> result.getVariantName().equals(CONTROL_VARIANT));
+      testObserver.assertValue(result -> result.getVariantName().equals(CONTROL_VARIANT));
     }
 
     @Test
@@ -1014,6 +1015,4 @@ public class AllocationTest {
       testObserver.assertNoErrors();
     }
   }
-
 }
-

@@ -35,7 +35,7 @@ public interface AllocationDAO {
   Single<List<UserExperimentMap>> getAllocations(String userId, String projectKey);
 
   /**
-   * Fetches experiment by id from Aerospike Throws error if no experiment found
+   * Fetches active experiment by id from Aerospike Throws error if no experiment found
    *
    * @param projectKey project identifier
    * @param experimentId experiment identifier

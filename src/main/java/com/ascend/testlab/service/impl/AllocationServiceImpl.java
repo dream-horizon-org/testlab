@@ -159,7 +159,7 @@ public class AllocationServiceImpl implements AllocationService {
             allocationDAO.getAllocations(reallocateRequest.getUserId(), projectKey),
             (experiment, userAssignments) -> {
               if (Objects.isNull(experiment) || Objects.isNull(experiment.getExperimentId())) {
-                throw ExceptionUtil.getException(ErrorEnum.EXPERIMENT_NOT_FOUND);
+                throw ExceptionUtil.getException(ErrorEnum.ACTIVE_EXPERIMENT_NOT_FOUND);
               }
               log.debug("Fetched experiment {} for reallocation", experiment);
               UserExperimentMap currentAssignment =

@@ -102,6 +102,12 @@ public enum ErrorEnum implements RestError {
       "Experiment not found for the given experimentId",
       HttpStatus.SC_NOT_FOUND),
 
+  /** The error code when active experiment is not found. */
+  ACTIVE_EXPERIMENT_NOT_FOUND(
+      "ACTIVE_EXPERIMENT_NOT_FOUND",
+      "Active Experiment not found for the given experimentId",
+      HttpStatus.SC_NOT_FOUND),
+
   /** The error code for validating experiment status failed. */
   INVALID_EXPERIMENT_STATUS(
       "INVALID_EXPERIMENT_STATUS", "Experiment status is not valid", HttpStatus.SC_BAD_REQUEST),

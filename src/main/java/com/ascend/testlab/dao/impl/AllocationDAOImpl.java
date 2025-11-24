@@ -405,7 +405,10 @@ public class AllocationDAOImpl implements AllocationDAO {
       // Append entry to the entries list
       return aerospikeClient
           .operate(
-              policy, key, ListOperation.append(new ListPolicy(), "entries", Value.get(entryJson)))
+              policy,
+              key,
+              ListOperation.append(
+                  new ListPolicy(), aerospikeConfig.getReallocationLogBin(), Value.get(entryJson)))
           .map(
               result -> {
                 log.info(
