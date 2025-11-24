@@ -414,7 +414,7 @@ public class ResponseEntityTest {
       List<String> list = Arrays.asList("a", "b", "c");
 
       // Act
-      ResponseEntity.Success<java.util.List<String>> success = new ResponseEntity.Success<>(list);
+      ResponseEntity.Success<List<String>> success = new ResponseEntity.Success<>(list);
 
       // Assert
       assertNotNull(success);

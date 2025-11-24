@@ -12,6 +12,7 @@ import com.ascend.testlab.dao.querybuilder.factory.FilterExperimentsQueryFactory
 import com.ascend.testlab.dto.entity.Experiment;
 import com.ascend.testlab.dto.request.FilterExperimentsRequest;
 import com.ascend.testlab.dto.response.FilterExperimentsResponse;
+import com.ascend.testlab.dto.response.PaginationMeta;
 import com.google.inject.Inject;
 import io.reactivex.rxjava3.core.Maybe;
 import io.reactivex.rxjava3.core.Single;
@@ -87,10 +88,10 @@ public class ExperimentDAOImpl implements ExperimentDAO {
 
     response.setExperiments(experiments);
 
-    FilterExperimentsResponse.PaginationMeta paginationMeta;
+    PaginationMeta paginationMeta;
     paginationMeta =
-        FilterExperimentsResponse.PaginationMeta.builder()
-            .pageSize(req.getLimit())
+        PaginationMeta.builder()
+            .pageSize(experiments.size())
             .currentPage(req.getPage())
             .totalCount(totalCount)
             .build();
