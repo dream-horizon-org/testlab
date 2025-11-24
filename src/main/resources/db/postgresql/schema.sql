@@ -13,7 +13,8 @@ CREATE TYPE experiment.experiment_strategy AS ENUM ('RANDOM','ROUND_ROBIN');
 CREATE TABLE IF NOT EXISTS experiment.experiments (
     project_key          VARCHAR(255) NOT NULL,
     experiment_id       VARCHAR(36) NOT NULL,
-    name                VARCHAR(64) NOT NULL,
+    name                VARCHAR(255) NOT NULL,
+    experiment_key      VARCHAR(255) NOT NULL,
     description         VARCHAR(255),
     hypothesis          TEXT,
     status              experiment.experiment_status NOT NULL,
@@ -34,7 +35,7 @@ CREATE TABLE IF NOT EXISTS experiment.experiments (
     updated_at  TIMESTAMPTZ   NOT NULL DEFAULT CURRENT_TIMESTAMP,
     name_tsvector       TSVECTOR,
     PRIMARY KEY ( project_key, experiment_id),
-    CONSTRAINT name_unique_check UNIQUE (project_key, name)
+    CONSTRAINT experiment_key_unique_check UNIQUE (project_key, experiment_key)
 ) PARTITION BY LIST (project_key);
 
 CREATE INDEX idx_name_tsvector ON experiment.experiments USING GIN (name_tsvector);
@@ -68,7 +69,7 @@ CREATE TABLE IF NOT EXISTS experiment.experiment_update_log (
     updated_by     VARCHAR(255),
     created_at     TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at     TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    PRIMARY KEY (project_key, experiment_id)
+    PRIMARY KEY (project_key, experiment_id, created_at)
 ) PARTITION BY LIST (project_key);
 
 CREATE TABLE IF NOT EXISTS experiment.experiment_analysis (

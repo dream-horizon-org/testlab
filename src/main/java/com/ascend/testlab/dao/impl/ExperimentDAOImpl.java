@@ -10,6 +10,7 @@ import com.ascend.testlab.dao.querybuilder.factory.FilterExperimentsQueryFactory
 import com.ascend.testlab.dto.entity.Experiment;
 import com.ascend.testlab.dto.request.FilterExperimentsRequest;
 import com.ascend.testlab.dto.response.FilterExperimentsResponse;
+import com.ascend.testlab.dto.response.PaginationMeta;
 import com.google.inject.Inject;
 import io.reactivex.rxjava3.core.Maybe;
 import io.reactivex.rxjava3.core.Single;
@@ -87,8 +88,7 @@ public class ExperimentDAOImpl implements ExperimentDAO {
 
     response.setExperiments(experiments);
 
-    FilterExperimentsResponse.PaginationMeta paginationMeta =
-        setPaginationInResponse(req, totalCount, rows.size());
+    PaginationMeta paginationMeta = setPaginationInResponse(req, totalCount, rows.size());
 
     response.setPagination(paginationMeta);
 
@@ -109,14 +109,14 @@ public class ExperimentDAOImpl implements ExperimentDAO {
         .onErrorReturnItem(0);
   }
 
-  private FilterExperimentsResponse.PaginationMeta setPaginationInResponse(
+  private PaginationMeta setPaginationInResponse(
       FilterExperimentsRequest req, Integer totalCount, Integer rowCount) {
     int currentPage = req.getPage();
     int pageSize = rowCount;
     int offset = (currentPage - 1) * req.getLimit();
     boolean hasNextPage = pageSize == req.getLimit() && (offset + pageSize) <= totalCount;
 
-    return FilterExperimentsResponse.PaginationMeta.builder()
+    return PaginationMeta.builder()
         .pageSize(pageSize)
         .currentPage(req.getPage())
         .totalCount(totalCount)

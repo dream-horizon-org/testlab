@@ -53,4 +53,26 @@ public final class CommonUtil {
   public static List<String> separateCommaSeparatedString(String values) {
     return Stream.of(values.split(Constants.COMMA)).map(String::trim).toList();
   }
+
+  /**
+   * Generates a standardized experiment key by replacing spaces and hyphens with underscores and
+   * converting to lowercase.
+   *
+   * @param experimentName the original experiment name
+   * @return the standardized experiment key
+   */
+  public static String getExperimentKey(String experimentName) {
+    return experimentName.replaceAll("[\\s-]+", Constants.UNDER_SCORE).toLowerCase();
+  }
+
+  /**
+   * Calculates the offset for pagination based on page number and limit.
+   *
+   * @param page the page number (1-based)
+   * @param limit the number of items per page
+   * @return the offset value to use in SQL queries
+   */
+  public static int calculateOffset(int page, int limit) {
+    return (page - 1) * limit;
+  }
 }

@@ -65,7 +65,8 @@ public final class WebConstants {
   /** The path parameter name for experiment ID. */
   public static final String EXPERIMENT_ID = "experimentId";
 
-  /* Query Parameters */
+  /* Query Parameter Constants */
+
   /** The query parameter name for experiment status filter. */
   public static final String EXPERIMENT_STATUS = "status";
 
@@ -81,7 +82,11 @@ public final class WebConstants {
   /** The query parameter name for name filter. */
   public static final String NAME = "name";
 
-  /* Pagination */
+  /** The query parameter name for experiment key. */
+  public static final String EXPERIMENT_KEY = "experimentKey";
+
+  /* Pagination Parameter Constants */
+
   /** The query parameter name for page number. */
   public static final String PAGE = "page";
 
