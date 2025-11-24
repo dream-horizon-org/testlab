@@ -5,6 +5,7 @@ import com.ascend.testlab.constants.web.WebConstants;
 import com.ascend.testlab.dto.ResponseEntity;
 import com.ascend.testlab.dto.request.AllocationRequest;
 import com.ascend.testlab.dto.request.ReallocateRequest;
+import com.ascend.testlab.dto.response.UserExperimentMap;
 import com.ascend.testlab.service.AllocationService;
 import com.google.inject.Inject;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -15,8 +16,6 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
-
-import java.net.URI;
 import java.util.concurrent.CompletionStage;
 import org.apache.commons.lang3.StringUtils;
 
@@ -111,36 +110,38 @@ public class Allocation {
         .toCompletionStage();
   }
 
-    @PUT
-    @Path("/allocations")
-    @Consumes(MediaType.APPLICATION_JSON)
-    @Produces(MediaType.APPLICATION_JSON)
-    @ApiResponse(
-            responseCode = "200",
-            description = "Successful Reassignment",
-            content = @Content(schema = @Schema(implementation = ResponseEntity.Success.class)))
-    @ApiResponse(
-            responseCode = "400",
-            description = "Bad Request due to invalid/missing body params / header",
-            content = @Content(schema = @Schema(implementation = ResponseEntity.Failure.class)))
-    @ApiResponse(
-            responseCode = "404",
-            description = "Experiment or user assignment not found",
-            content = @Content(schema = @Schema(implementation = ResponseEntity.Failure.class)))
-    @ApiResponse(
-            responseCode = "500",
-            description = "Internal Server Error",
-            content = @Content(schema = @Schema(implementation = ResponseEntity.Failure.class)))
-    public CompletionStage<Response> handle(
-            @HeaderParam(WebConstants.PROJECT_KEY_HEADER) @DefaultValue(WebConstants.DEFAULT_PROJECT_KEY)
-            String projectKey,
-            @Valid ReallocateRequest reallocateRequest) {
+  @PUT
+  @Path("/allocations")
+  @Consumes(MediaType.APPLICATION_JSON)
+  @Produces(MediaType.APPLICATION_JSON)
+  @ApiResponse(
+      responseCode = "200",
+      description = "Successfully reallocated user to new variant",
+      content = @Content(schema = @Schema(implementation = ResponseEntity.Success.class)))
+  @ApiResponse(
+      responseCode = "400",
+      description = "Bad Request - invalid/missing body params or header",
+      content = @Content(schema = @Schema(implementation = ResponseEntity.Failure.class)))
+  @ApiResponse(
+      responseCode = "409",
+      description = "Conflict - Failed to acquire lock for reallocation",
+      content = @Content(schema = @Schema(implementation = ResponseEntity.Failure.class)))
+  @ApiResponse(
+      responseCode = "404",
+      description = "Not Found - Experiment or user assignment not found",
+      content = @Content(schema = @Schema(implementation = ResponseEntity.Failure.class)))
+  @ApiResponse(
+      responseCode = "500",
+      description = "Internal Server Error",
+      content = @Content(schema = @Schema(implementation = ResponseEntity.Failure.class)))
+  public CompletionStage<ResponseEntity.Success<UserExperimentMap>> reAllocateExperimentHandle(
+      @HeaderParam(WebConstants.PROJECT_KEY_HEADER) @DefaultValue(WebConstants.DEFAULT_PROJECT_KEY)
+          String projectKey,
+      @Valid @NotNull ReallocateRequest reallocateRequest) {
 
-      reallocateRequest.validate();
-        return allocationService
-                .reallocateExperiment(projectKey, reallocateRequest)
-                .map(ResponseEntity.Success::new)
-                .map(successData -> Response.ok(successData).build())
-                .toCompletionStage();
-    }
+    return allocationService
+        .reallocateExperiment(projectKey, reallocateRequest)
+        .map(ResponseEntity.Success::new)
+        .toCompletionStage();
+  }
 }

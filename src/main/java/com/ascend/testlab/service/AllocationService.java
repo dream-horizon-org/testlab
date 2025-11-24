@@ -37,15 +37,15 @@ public interface AllocationService {
    */
   Single<GetAllocationsResponse> getAllocations(String userId, String projectKey);
 
-
-    /**
-     * Reassigns an experiment allocation for a user within the given project.
-     *
-     * @param projectKey the project identifier to scope the reallocation
-     * @param reallocateRequest the reallocation request containing user, experiment and any
-     *     reallocation parameters
-     * @return a Single that emits a UserExperimentMap representing the updated mapping after
-     *     reallocation
-     */
-    Single<UserExperimentMap> reallocateExperiment(String projectKey, ReallocateRequest reallocateRequest);
+  /**
+   * Reassigns an experiment allocation for a user within the given project.
+   *
+   * @param projectKey the project identifier to scope the reallocation
+   * @param reallocateRequest the reallocation request containing user, experiment and any
+   *     reallocation parameters
+   * @return a Single that emits a UserExperimentMap representing the updated mapping after
+   *     reallocation
+   */
+  Single<UserExperimentMap> reallocateExperiment(
+      String projectKey, ReallocateRequest reallocateRequest);
 }

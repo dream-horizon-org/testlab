@@ -5,6 +5,8 @@ import com.aerospike.client.Key;
 import com.aerospike.client.Operation;
 import com.aerospike.client.Record;
 import com.aerospike.client.Value;
+import com.aerospike.client.cdt.ListOperation;
+import com.aerospike.client.cdt.ListPolicy;
 import com.aerospike.client.cdt.MapOperation;
 import com.aerospike.client.cdt.MapOrder;
 import com.aerospike.client.cdt.MapPolicy;
@@ -20,6 +22,8 @@ import com.ascend.testlab.constants.enums.DistributionStrategy;
 import com.ascend.testlab.constants.postgresql.Columns;
 import com.ascend.testlab.constants.postgresql.ReadQuery;
 import com.ascend.testlab.dao.AllocationDAO;
+import com.ascend.testlab.dto.request.ReallocateRequest;
+import com.ascend.testlab.dto.response.ReallocationLogEntry;
 import com.ascend.testlab.dto.response.UserExperimentMap;
 import com.ascend.testlab.entity.AssignmentDomain;
 import com.ascend.testlab.entity.Experiment;
@@ -28,7 +32,9 @@ import com.ascend.testlab.entity.Variant;
 import com.ascend.testlab.entity.variantWeights.CohortVariantWeights;
 import com.ascend.testlab.entity.variantWeights.ManualVariantWeights;
 import com.ascend.testlab.entity.variantWeights.VariantWeights;
+import com.ascend.testlab.exception.ErrorEnum;
 import com.ascend.testlab.util.CommonUtil;
+import com.dream11.rest.util.ExceptionUtil;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.inject.Inject;
@@ -98,24 +104,25 @@ public class AllocationDAOImpl implements AllocationDAO {
             });
   }
 
-    @Override
-    public Single<List<Experiment>> fetchActiveExperiments(
-            String projectKey) {
-        return pgReaderClient
-                .fetchAll(
-                        ReadQuery.GET_LIVE_EXPERIMENTS,
-                        Tuple.tuple().addString(projectKey),
-                        this::mapRowToExperiment)
-                .doOnSuccess(
-                        experiments ->
-                                log.debug(
-                                        "Fetched {} active experiments for tenant {}", experiments.size(), projectKey))
-                .onErrorReturn(
-                        error -> {
-                            log.error("Error fetching active experiments for tenant {}", projectKey, error);
-                            return new ArrayList<>();
-                        });
-    }
+  @Override
+  public Single<Experiment> fetchExperiment(String projectKey, String experimentId) {
+    return pgReaderClient
+        .fetchOne(
+            ReadQuery.GET_LIVE_EXPERIMENT,
+            Tuple.of(projectKey, experimentId),
+            this::mapRowToExperiment)
+        .switchIfEmpty(Single.error(ExceptionUtil.getException(ErrorEnum.EXPERIMENT_NOT_FOUND)))
+        .doOnSuccess(
+            experiment ->
+                log.debug("Fetched experiment {} for project {}", experimentId, projectKey))
+        .doOnError(
+            error ->
+                log.error(
+                    "Error fetching experiment {} for project {}",
+                    experimentId,
+                    projectKey,
+                    error));
+  }
 
   /** {@inheritDoc} */
   @Override
@@ -414,11 +421,11 @@ public class AllocationDAOImpl implements AllocationDAO {
    * @return the new count after decrement
    */
   private Single<Long> decrementVariantCount(
-      String projectKey, UUID experimentId, String variantName) {
+      String projectKey, String experimentId, String variantName) {
 
     log.debug("Decrementing variant count for experiment {} variant {}", experimentId, variantName);
 
-    String asKey = experimentId.toString() + Constants.COLON + variantName;
+    String asKey = experimentId + Constants.COLON + variantName;
     Key key =
         new Key(
             aerospikeConfig.getNamespace(),
@@ -772,109 +779,93 @@ public class AllocationDAOImpl implements AllocationDAO {
   }
 
   /**
-   * Transactionally reallocates a user to a new variant. Handles:
-   * 1. Decrementing the old variant count (if exists)
-   * 2. Incrementing the new variant count
-   * 3. Updating the user's assignment in Aerospike
-   * 4. Logging the reallocation with PK (projectKey, userId, experimentId)
+   * Transactionally reallocates a user to a new variant. Handles: 1. Decrementing the old variant
+   * count (if exists) 2. Incrementing the new variant count 3. Updating the user's assignment in
+   * Aerospike 4. Logging the reallocation with PK (projectKey, userId, experimentId)
    *
-   * If any step fails after variant counts are modified, appropriate rollbacks are performed.
+   * <p>If any step fails after variant counts are modified, appropriate rollbacks are performed.
    *
-   * @param userId user identifier
    * @param projectKey project identifier
-   * @param experimentId experiment identifier as string
-   * @param oldVariantName the old variant name (null if user had no previous assignment)
+   * @param oldVariant the old variant name (null if user had no previous assignment)
    * @param newVariantAssignment the new user experiment map with updated variant
-   * @param reason the reason for reallocation
+   * @param reallocateRequest request object containing userId, experimentId, and reason for
+   *     reallocation
    * @return the updated user experiment map on success
    */
   @Override
   public Single<UserExperimentMap> reallocateUserVariant(
-      String userId,
       String projectKey,
-      String experimentId,
-      String oldVariantName,
+      String oldVariant,
       UserExperimentMap newVariantAssignment,
-      String reason) {
+      ReallocateRequest reallocateRequest) {
 
-    UUID experimentUuid = UUID.fromString(experimentId);
-    String newVariantName = newVariantAssignment.getVariant().getDisplayName();
+    String newVariantName = newVariantAssignment.getVariantName();
 
-    log.info(
-        "Starting reallocation for user {} experiment {} from variant {} to variant {}",
-        userId,
-        experimentId,
-        oldVariantName,
-        newVariantName);
-
-    // Step 1: Decrement old variant count (if exists) and increment new variant count
-    return decrementAndIncrementVariantCounts(projectKey, experimentUuid, oldVariantName, newVariantName)
+    return decrementAndIncrementVariantCounts(
+            projectKey, reallocateRequest.getExperimentId(), oldVariant, newVariantName)
         .flatMap(
-            countUpdateResult -> {
-              if (!((Boolean) countUpdateResult.get("success"))) {
-                return Single.error(
-                    new RuntimeException("Failed to update variant counts"));
-              }
-
-              // Step 2: Update user's assignment in Aerospike
-              return updateUserAssignmentInAerospike(
-                      userId, projectKey, experimentUuid, newVariantAssignment)
-                  .flatMap(
-                      assignmentUpdated -> {
-                        if (!assignmentUpdated) {
-                          // Rollback variant counts on assignment update failure
-                          log.error(
-                              "Failed to update user assignment, rolling back variant counts");
-                          Map<String, String> rollbackMap = new HashMap<>();
-                          if (oldVariantName != null) {
-                            rollbackMap.put(
-                                experimentUuid + Constants.COLON + oldVariantName, oldVariantName);
-                          }
+            countUpdated -> updateUserAssignmentInAerospike(
+                    reallocateRequest.getUserId(),
+                    projectKey,
+                    reallocateRequest.getExperimentId(),
+                    newVariantAssignment)
+                .flatMap(
+                    assignmentUpdated -> {
+                      if (!assignmentUpdated) {
+                        log.error(
+                            "Failed to update user assignment, rolling back variant counts");
+                        Map<String, String> rollbackMap = new HashMap<>();
+                        if (oldVariant != null) {
                           rollbackMap.put(
-                              experimentUuid + Constants.COLON + newVariantName, newVariantName);
-
-                          return rollbackVariantCounts(projectKey, rollbackMap)
-                              .flatMap(
-                                  rbSuccess ->
-                                      Single.error(
-                                          new RuntimeException(
-                                              "Failed to update user assignment")));
+                              reallocateRequest.getExperimentId() + Constants.COLON + oldVariant,
+                              oldVariant);
                         }
+                        rollbackMap.put(
+                            reallocateRequest.getExperimentId()
+                                + Constants.COLON
+                                + newVariantName,
+                            newVariantName);
 
-                        // Step 3: Log the reallocation
-                        return logReallocation(
-                                userId,
-                                projectKey,
-                                experimentUuid,
-                                oldVariantName,
-                                newVariantName,
-                                reason)
-                            .flatMap(logResult -> Single.just(newVariantAssignment))
-                            .onErrorResumeNext(
-                                logError -> {
-                                  log.warn(
-                                      "Failed to log reallocation for user {} experiment {}, but reallocation succeeded",
-                                      userId,
-                                      experimentId,
-                                      logError);
-                                  return Single.just(newVariantAssignment);
-                                });
-                      });
-            })
+                        return rollbackVariantCounts(projectKey, rollbackMap)
+                            .flatMap(
+                                rbSuccess ->
+                                    Single.error(
+                                        new RuntimeException(
+                                            "Failed to update user assignment")));
+                      }
+
+                      return logReallocation(
+                              reallocateRequest.getUserId(),
+                              projectKey,
+                              reallocateRequest.getExperimentId(),
+                              oldVariant,
+                              newVariantName,
+                              reallocateRequest.getReason())
+                          .flatMap(logResult -> Single.just(newVariantAssignment))
+                          .onErrorResumeNext(
+                              logError -> {
+                                log.warn(
+                                    "Failed to log reallocation for user {} experiment {}, but reallocation succeeded",
+                                    reallocateRequest.getUserId(),
+                                    reallocateRequest.getExperimentId(),
+                                    logError);
+                                return Single.just(newVariantAssignment);
+                              });
+                    }))
         .doOnSuccess(
             result ->
                 log.info(
                     "Successfully reallocated user {} from variant {} to variant {} for experiment {}",
-                    userId,
-                    oldVariantName,
+                    reallocateRequest.getUserId(),
+                    oldVariant,
                     newVariantName,
-                    experimentId))
+                    reallocateRequest.getExperimentId()))
         .doOnError(
             error ->
                 log.error(
                     "Error during reallocation for user {} experiment {}",
-                    userId,
-                    experimentId,
+                    reallocateRequest.getUserId(),
+                    reallocateRequest.getExperimentId(),
                     error));
   }
 
@@ -887,71 +878,63 @@ public class AllocationDAOImpl implements AllocationDAO {
    * @param experimentId experiment identifier
    * @param oldVariantName old variant name (may be null)
    * @param newVariantName new variant name
-   * @return map with success status
+   * @return true if variant counts updated successfully
    */
-  private Single<Map<String, Object>> decrementAndIncrementVariantCounts(
-      String projectKey, UUID experimentId, String oldVariantName, String newVariantName) {
+  private Single<Boolean> decrementAndIncrementVariantCounts(
+      String projectKey, String experimentId, String oldVariantName, String newVariantName) {
 
     WritePolicy policy = new WritePolicy();
     policy.expiration = -1;
     policy.sendKey = true;
 
-    // First, decrement old variant (if exists)
-    Single<Long> decrementSingle =
-        (oldVariantName != null)
-            ? decrementVariantCount(projectKey, experimentId, oldVariantName)
-            : Single.just(0L);
+    // First, decrement old variant
+    Single<Long> decrementSingle = decrementVariantCount(projectKey, experimentId, oldVariantName);
+    
+    return decrementSingle.flatMap(
+        oldCount -> {
+          // Then increment new variant
+          String newKey = experimentId + Constants.COLON + newVariantName;
+          Key key =
+              new Key(
+                  aerospikeConfig.getNamespace(),
+                  CommonUtil.getSetName(aerospikeConfig.getVariantCountSet(), projectKey),
+                  newKey);
 
-    return decrementSingle
-        .flatMap(
-            oldCount -> {
-              // Then increment new variant
-              String newKey = experimentId.toString() + Constants.COLON + newVariantName;
-              Key key =
-                  new Key(
-                      aerospikeConfig.getNamespace(),
-                      CommonUtil.getSetName(aerospikeConfig.getVariantCountSet(), projectKey),
-                      newKey);
+          Operation incrementOp = Operation.add(new Bin(aerospikeConfig.getVariantCountBin(), 1));
+          Operation getOp = Operation.get(aerospikeConfig.getVariantCountBin());
 
-              Operation incrementOp =
-                  Operation.add(new Bin(aerospikeConfig.getVariantCountBin(), 1));
-              Operation getOp = Operation.get(aerospikeConfig.getVariantCountBin());
+          return aerospikeClient
+              .operate(policy, key, incrementOp, getOp)
+              .map(
+                  record -> {
+                    Long newCount =
+                        record != null ? record.getLong(aerospikeConfig.getVariantCountBin()) : 1L;
+                    log.debug(
+                        "Variant counts updated: old_count={}, new_count={}, key={}",
+                        oldCount,
+                        newCount,
+                        newKey);
+                    return true;
+                  })
+              .onErrorResumeNext(
+                  error -> {
+                    log.error(
+                        "Failed to increment new variant count for key: {}, rolling back decrement",
+                        newKey);
 
-              return aerospikeClient
-                  .operate(policy, key, incrementOp, getOp)
-                  .map(
-                      record -> {
-                        Long newCount =
-                            record != null
-                                ? record.getLong(aerospikeConfig.getVariantCountBin())
-                                : 1L;
-                        log.debug(
-                            "Incremented new variant count for {} to {}", newKey, newCount);
-
-                        Map<String, Object> result = new HashMap<>();
-                        result.put("success", true);
-                        result.put("oldCount", oldCount);
-                        result.put("newCount", newCount);
-                        return result;
-                      })
-                  .onErrorResumeNext(
-                      error -> {
-                        log.error(
-                            "Failed to increment new variant count, rolling back decrement");
-
-                        if (oldVariantName != null) {
-                          return incrementVariantCountForRollback(
-                                  projectKey, experimentId, oldVariantName)
-                              .flatMap(
-                                  rbSuccess ->
-                                      Single.error(
-                                          new RuntimeException(
-                                              "Failed to increment new variant count", error)));
-                        }
-                        return Single.error(
-                            new RuntimeException("Failed to increment new variant count", error));
-                      });
-            });
+                    if (oldVariantName != null) {
+                      return incrementVariantCountForRollback(
+                              projectKey, experimentId, oldVariantName)
+                          .flatMap(
+                              rbSuccess ->
+                                  Single.error(
+                                      new RuntimeException(
+                                          "Failed to increment new variant count", error)));
+                    }
+                    return Single.error(
+                        new RuntimeException("Failed to increment new variant count", error));
+                  });
+        });
   }
 
   /**
@@ -963,17 +946,16 @@ public class AllocationDAOImpl implements AllocationDAO {
    * @return true if successful
    */
   private Single<Boolean> incrementVariantCountForRollback(
-      String projectKey, UUID experimentId, String variantName) {
+      String projectKey, String experimentId, String variantName) {
 
-    String key = experimentId.toString() + Constants.COLON + variantName;
+    String key = experimentId + Constants.COLON + variantName;
     Key asKey =
         new Key(
             aerospikeConfig.getNamespace(),
             CommonUtil.getSetName(aerospikeConfig.getVariantCountSet(), projectKey),
             key);
 
-    Operation incrementOp =
-        Operation.add(new Bin(aerospikeConfig.getVariantCountBin(), 1));
+    Operation incrementOp = Operation.add(new Bin(aerospikeConfig.getVariantCountBin(), 1));
     Operation getOp = Operation.get(aerospikeConfig.getVariantCountBin());
     WritePolicy policy = new WritePolicy();
     policy.sendKey = true;
@@ -998,7 +980,7 @@ public class AllocationDAOImpl implements AllocationDAO {
    * @return true if update successful
    */
   private Single<Boolean> updateUserAssignmentInAerospike(
-      String userId, String projectKey, UUID experimentId, UserExperimentMap newAssignment) {
+      String userId, String projectKey, String experimentId, UserExperimentMap newAssignment) {
 
     String set = CommonUtil.getSetName(aerospikeConfig.getUserAllocationsSet(), projectKey);
     Key key = new Key(aerospikeConfig.getNamespace(), set, userId);
@@ -1007,10 +989,7 @@ public class AllocationDAOImpl implements AllocationDAO {
     policy.sendKey = true;
     policy.expiration = -1;
 
-    String expId = experimentId.toString();
-    
     try {
-      // Use objectMapper for proper serialization of nested objects (especially Variant)
       String valueMap = objectMapper.writeValueAsString(newAssignment);
 
       MapPolicy mapPolicy = new MapPolicy(MapOrder.UNORDERED, MapWriteMode.UPDATE);
@@ -1022,11 +1001,14 @@ public class AllocationDAOImpl implements AllocationDAO {
               MapOperation.put(
                   mapPolicy,
                   aerospikeConfig.getAllocationMapBin(),
-                  Value.get(expId),
+                  Value.get(experimentId),
                   Value.get(valueMap)))
           .map(
               result -> {
-                log.debug("Successfully updated user assignment for user {} experiment {}", userId, expId);
+                log.debug(
+                    "Successfully updated user assignment for user {} experiment {}",
+                    userId,
+                    experimentId);
                 return true;
               })
           .onErrorResumeNext(
@@ -1039,16 +1021,20 @@ public class AllocationDAOImpl implements AllocationDAO {
                 return Single.just(false);
               });
     } catch (Exception e) {
-      log.error("Failed to serialize assignment for update - user {} experiment {}", userId, experimentId, e);
+      log.error(
+          "Failed to serialize assignment for update - user {} experiment {}",
+          userId,
+          experimentId,
+          e);
       return Single.just(false);
     }
   }
 
   /**
-   * Logs a reallocation event in the "reallocationLog" set. Creates a log entry with PK as userId
-   * and stores reallocation details in 3 separate bins: experimentId, timestamp, and reallocation JSON.
+   * Logs a reallocation event using composite key (userId_experimentId). Appends entry to the
+   * entries list for efficient querying by experiment.
    *
-   * @param userId user identifier (used as PK)
+   * @param userId user identifier
    * @param projectKey project identifier
    * @param experimentId experiment identifier
    * @param oldVariantName old variant name
@@ -1059,51 +1045,63 @@ public class AllocationDAOImpl implements AllocationDAO {
   private Single<Boolean> logReallocation(
       String userId,
       String projectKey,
-      UUID experimentId,
+      String experimentId,
       String oldVariantName,
       String newVariantName,
       String reason) {
 
     try {
-      String set =
-          CommonUtil.getSetName(aerospikeConfig.getReallocationLogSet(), projectKey);
-      Key key = new Key(aerospikeConfig.getNamespace(), set, userId);
+      String set = CommonUtil.getSetName(aerospikeConfig.getReallocationLogSet(), projectKey);
+      String compositeKey = userId + Constants.UNDER_SCORE + experimentId;
+      Key key = new Key(aerospikeConfig.getNamespace(), set, compositeKey);
 
       WritePolicy policy = new WritePolicy();
       policy.sendKey = true;
       policy.expiration = -1;
 
-      // Create reallocation data map for JSON bin
-      Map<String, Object> reallocationData = new HashMap<>();
-      reallocationData.put("oldVariant", oldVariantName);
-      reallocationData.put("newVariant", newVariantName);
-      reallocationData.put("reason", reason != null ? reason : "No reason provided");
+      ReallocationLogEntry entry =
+          ReallocationLogEntry.builder()
+              .timestamp(System.currentTimeMillis())
+              .oldVariant(oldVariantName)
+              .newVariant(newVariantName)
+              .reason(reason)
+              .changedBy("system")
+              .build();
 
-      String reallocationJson = objectMapper.writeValueAsString(reallocationData);
-      long timestamp = System.currentTimeMillis();
+      String entryJson = objectMapper.writeValueAsString(entry);
 
-      Bin experimentIdBin = new Bin("experimentId", experimentId.toString());
-      Bin timestampBin = new Bin("timestamp", timestamp);
-      Bin jsonBin = new Bin(aerospikeConfig.getReallocationLogBin(), reallocationJson);
+      if (entryJson == null || entryJson.isEmpty()) {
+        log.error(
+            "Serialized reallocation log is empty for user: {} experiment: {}",
+            userId,
+            experimentId);
+        return Single.just(false);
+      }
 
+      // Append entry to the entries list
       return aerospikeClient
-          .put(policy, key, experimentIdBin, timestampBin, jsonBin)
+          .operate(
+              policy, key, ListOperation.append(new ListPolicy(), "entries", Value.get(entryJson)))
           .map(
               result -> {
                 log.info(
-                    "Successfully logged reallocation for user {} experiment {} at timestamp {}",
+                    "Successfully logged reallocation for user: {} experiment: {} (key: {})",
                     userId,
                     experimentId,
-                    timestamp);
+                    compositeKey);
                 return true;
               })
-          .onErrorResumeNext(
-              error -> {
-                log.error("Failed to log reallocation event for user {}", userId, error);
-                return Single.just(false);
-              });
+          .doOnError(
+              error ->
+                  log.error(
+                      "Failed to log reallocation to Aerospike for user: {} experiment: {}, "
+                          + "error: {}",
+                      userId,
+                      experimentId,
+                      error.getClass().getSimpleName(),
+                      error));
     } catch (Exception e) {
-      log.error("Error serializing reallocation log for user {}", userId, e);
+      log.error("Error serializing reallocation log for user: {}", userId, e);
       return Single.just(false);
     }
   }

@@ -1,5 +1,6 @@
 package com.ascend.testlab.dao;
 
+import com.ascend.testlab.dto.request.ReallocateRequest;
 import com.ascend.testlab.dto.response.UserExperimentMap;
 import com.ascend.testlab.entity.Experiment;
 import io.reactivex.rxjava3.core.Single;
@@ -24,14 +25,14 @@ public interface AllocationDAO {
    */
   Single<List<Experiment>> fetchActiveExperiments(String projectKey, List<String> experimentKeys);
 
-
-    /**
-     * Fetches all active experiments for a given tenant
-     *
-     * @param projectKey project identifier
-     * @return list of active experiments
-     */
-  Single<List<Experiment>> fetchActiveExperiments(String projectKey);
+  /**
+   * Fetches experiment by id from Aerospike
+   *
+   * @param projectKey project identifier
+   * @param experimentId experiment identifier
+   * @return experiment object
+   */
+  Single<Experiment> fetchExperiment(String projectKey, String experimentId);
 
   /**
    * Fetches user's current experiment allocations from Aerospike
@@ -103,23 +104,20 @@ public interface AllocationDAO {
       Map<String, String> variantCountMap);
 
   /**
-   * Transactionally reallocates a user to a new variant for an experiment. Handles decrementing
-   * the old variant count, incrementing the new variant count, updating user assignment, and logging
+   * Transactionally reallocates a user to a new variant for an experiment. Handles decrementing the
+   * old variant count, incrementing the new variant count, updating user assignment, and logging
    * the reallocation. If any step fails, appropriate rollback is performed.
    *
-   * @param userId user identifier
    * @param projectKey project identifier
-   * @param experimentId experiment identifier
    * @param oldVariantName the old variant name (null if user had no previous assignment)
    * @param newVariantAssignment the new user experiment map with updated variant
-   * @param reason the reason for reallocation
+   * @param reallocateRequest request object containing userId, experimentId, and reason for
+   *     reallocation
    * @return the updated user experiment map on success
    */
   Single<UserExperimentMap> reallocateUserVariant(
-      String userId,
       String projectKey,
-      String experimentId,
       String oldVariantName,
       UserExperimentMap newVariantAssignment,
-      String reason);
+      ReallocateRequest reallocateRequest);
 }

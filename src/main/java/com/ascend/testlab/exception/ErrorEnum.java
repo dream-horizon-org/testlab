@@ -53,13 +53,13 @@ public enum ErrorEnum implements RestError {
       HttpStatus.SC_BAD_REQUEST),
 
   NO_ALLOTMENT_FOUND(
-            "NO_ALLOTMENT_FOUND",
-            "No assignment found for given user, use overrides to allot variant",
-            HttpStatus.SC_BAD_REQUEST),
-    INVALID_ALLOTMENT_FOUND(
-            "INVALID_ALLOTMENT_FOUND",
-            "Invalid Allotment found",
-            HttpStatus.SC_BAD_REQUEST),
+      "NO_ALLOTMENT_FOUND",
+      "No assignment found for given user, use overrides to allot variant",
+      HttpStatus.SC_NOT_FOUND),
+  INVALID_VARIANT_FOUND(
+      "INVALID_VARIANT_FOUND", "Invalid variant found in request", HttpStatus.SC_BAD_REQUEST),
+  VARIANT_ALREADY_ASSIGNED(
+      "VARIANT_ALREADY_ASSIGNED", "Given variant already assigned", HttpStatus.SC_BAD_REQUEST),
 
   INVALID_ALLOCATION_REQUEST(
       "INVALID_ALLOCATION_REQUEST", "Allocation Request is invalid", HttpStatus.SC_BAD_REQUEST),
@@ -90,7 +90,19 @@ public enum ErrorEnum implements RestError {
 
   /** The error code for validating experiment type failed. */
   INVALID_EXPERIMENT_TYPE(
-      "INVALID_EXPERIMENT_TYPE", "Experiment type is not valid", HttpStatus.SC_BAD_REQUEST);
+      "INVALID_EXPERIMENT_TYPE", "Experiment type is not valid", HttpStatus.SC_BAD_REQUEST),
+
+  /** The error code for failing to acquire lock during reallocation. */
+  REALLOCATION_LOCK_ACQUISITION_FAILED(
+      "REALLOCATION_LOCK_ACQUISITION_FAILED",
+      "Failed to acquire lock for user reallocation. Please retry after some time",
+      HttpStatus.SC_CONFLICT),
+
+  /** The error code for invalid variant in reallocation request. */
+  INVALID_VARIANT(
+      "INVALID_VARIANT",
+      "Requested variant not found in the experiment",
+      HttpStatus.SC_BAD_REQUEST);
 
   /** The error code. */
   private final String errorCode;
