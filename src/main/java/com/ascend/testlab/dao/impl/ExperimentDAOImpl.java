@@ -127,7 +127,7 @@ public class ExperimentDAOImpl implements ExperimentDAO {
                                   pgWriterClient.execute(
                                       sqlConnection,
                                       WriteQuery.UPDATE_EXPERIMENT_LOG,
-                                      tuple.addJsonObject(previous_data_json)))
+                                      tuple.addJsonObject(previous_data_json).addJsonObject(null)))
                           .toMaybe());
             });
   }

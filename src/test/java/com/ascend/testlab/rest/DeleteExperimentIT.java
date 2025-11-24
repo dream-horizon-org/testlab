@@ -40,13 +40,15 @@ class DeleteExperimentIT {
     try {
       createPartitionForProject();
       seedExperiment();
+      seedExperimentUpdateLog();
 
       ValidatableResponse response =
           TestUtil.executeRequest(null, headers, queryParams, spec -> spec.delete(route));
 
       response.statusCode(HttpStatus.SC_OK);
       response.contentType(WebConstants.APPLICATION_JSON);
-      response.body("data", Matchers.equalTo(true));
+      response.body("data.success", Matchers.equalTo(true));
+      response.body("data.experimentId", Matchers.equalTo(EXPERIMENT_ID));
     } finally {
       TestUtil.dropTestPartition("experiments", PROJECT_KEY);
     }
@@ -110,6 +112,7 @@ class DeleteExperimentIT {
   private void createPartitionForProject() {
     try {
       TestUtil.createPartitionForProject("experiments", PROJECT_KEY);
+      TestUtil.createPartitionForProject("experiment_update_log", PROJECT_KEY);
     } catch (Exception e) {
       throw new RuntimeException("Failed creating partition for tests on table 'experiments'", e);
     }
@@ -139,6 +142,22 @@ class DeleteExperimentIT {
       TestUtil.executeSQLStatement(TestUtil.getDatabaseConnection(), insert);
     } catch (Exception e) {
       throw new RuntimeException("Failed seeding experiment for tests", e);
+    }
+  }
+
+  private void seedExperimentUpdateLog() {
+    String insert =
+        String.format(
+            "INSERT INTO experiment.experiment_update_log ("
+                + "project_key, experiment_id, previous_data, current_data"
+                + ") VALUES ("
+                + "'%s', '%s', '{\"control\": 50, \"variant_a\": 50}'::jsonb, '{\"control\": 50, \"variant_a\": 50}'::jsonb "
+                + ");",
+            PROJECT_KEY, EXPERIMENT_ID);
+    try {
+      TestUtil.executeSQLStatement(TestUtil.getDatabaseConnection(), insert);
+    } catch (Exception e) {
+      throw new RuntimeException("Failed seeding experiment update log for tests", e);
     }
   }
 }

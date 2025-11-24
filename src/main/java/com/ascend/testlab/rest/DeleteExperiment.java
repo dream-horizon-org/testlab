@@ -2,6 +2,7 @@ package com.ascend.testlab.rest;
 
 import com.ascend.testlab.constants.web.WebConstants;
 import com.ascend.testlab.dto.ResponseEntity;
+import com.ascend.testlab.dto.response.DeleteExperimentResponse;
 import com.ascend.testlab.exception.ErrorMessages;
 import com.ascend.testlab.service.ExperimentService;
 import com.google.inject.Inject;
@@ -60,8 +61,8 @@ public class DeleteExperiment {
    *
    * @param projectKey the project Key (required, passed as header parameter "x-project-key")
    * @param experimentId the experiment ID (required, passed as query parameter "experimentId")
-   * @return a CompletionStage containing a successful response with a boolean value (true if
-   *     deletion was successful), or a failure response if the project key is missing, the
+   * @return a CompletionStage containing a successful response with DeleteExperimentResponse
+   *     containing deletion details, or a failure response if the project key is missing, the
    *     experiment ID is invalid, or the experiment does not exist
    */
   @DELETE
@@ -79,7 +80,7 @@ public class DeleteExperiment {
       content = @Content(schema = @Schema(implementation = ResponseEntity.Failure.class)),
       responseCode = "500",
       description = "Internal Server Error")
-  public CompletionStage<ResponseEntity.Success<Boolean>> handle(
+  public CompletionStage<ResponseEntity.Success<DeleteExperimentResponse>> handle(
       @HeaderParam(WebConstants.PROJECT_KEY_HEADER)
           @NotBlank(message = ErrorMessages.PROJECT_KEY_MISSING)
           String projectKey,
