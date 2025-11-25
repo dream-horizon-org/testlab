@@ -58,41 +58,6 @@ public final class WriteQuery {
       WHERE project_key = $1 AND experiment_id = $2
       """;
 
-  public static final String CREATE_EXPERIMENTS_PARTITION =
-      """
-      CREATE TABLE IF NOT EXISTS experiments_%s
-      PARTITION OF experiments
-      FOR VALUES IN ('%s')
-      """;
-
-  public static final String CREATE_TAGS_PARTITION =
-      """
-      CREATE TABLE IF NOT EXISTS experiment.tags_%s
-      PARTITION OF experiment.tags
-      FOR VALUES IN ('%s')
-      """;
-
-  public static final String CREATE_OWNERS_PARTITION =
-      """
-      CREATE TABLE IF NOT EXISTS experiment.owners_%s
-      PARTITION OF experiment.owners
-      FOR VALUES IN ('%s')
-      """;
-
-  public static final String CREATE_UPDATE_LOG_PARTITION =
-      """
-      CREATE TABLE IF NOT EXISTS experiment.experiment_update_log_%s
-      PARTITION OF experiment.experiment_update_log
-      FOR VALUES IN ('%s')
-      """;
-
-  public static final String CREATE_ANALYSIS_PARTITION =
-      """
-      CREATE TABLE IF NOT EXISTS experiment.experiment_analysis_%s
-      PARTITION OF experiment.experiment_analysis
-      FOR VALUES IN ('%s')
-      """;
-
   public static final String INSERT_EXPERIMENT_UPDATE_LOG =
       """
       INSERT INTO experiment.experiment_update_log (
