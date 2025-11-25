@@ -13,6 +13,8 @@ import com.ascend.testlab.dto.entity.Experiment;
 import com.ascend.testlab.dto.request.FilterExperimentsRequest;
 import com.ascend.testlab.dto.response.FilterExperimentsResponse;
 import com.ascend.testlab.dto.response.PaginationMeta;
+import com.ascend.testlab.exception.ErrorEnum;
+import com.dream11.rest.exception.RestException;
 import com.google.inject.Inject;
 import io.reactivex.rxjava3.core.Maybe;
 import io.reactivex.rxjava3.core.Single;
@@ -103,29 +105,31 @@ public class ExperimentDAOImpl implements ExperimentDAO {
 
   /** {@inheritDoc} */
   @Override
-  public Maybe<Boolean> deleteExperiment(String projectKey, Experiment experiment) {
+  public Single<Boolean> deleteExperiment(String projectKey, Experiment experiment) {
     Tuple tuple = Tuple.of(projectKey, experiment.getExperimentId().toString());
 
     JsonObject previous_data_json = JsonObject.mapFrom(experiment);
 
-    return pgWriterClient.executeWithTransaction(
-        (sqlConnection) ->
-            pgWriterClient
-                .execute(sqlConnection, WriteQuery.DELETE_EXPERIMENT_BY_ID, tuple)
-                .flatMap(
-                    delExp ->
-                        pgWriterClient.execute(
-                            sqlConnection, WriteQuery.DELETE_TAG_FOR_EXPERIMENT, tuple))
-                .flatMap(
-                    delTag ->
-                        pgWriterClient.execute(
-                            sqlConnection, WriteQuery.DELETE_OWNER_FOR_EXPERIMENT, tuple))
-                .flatMap(
-                    delOwner ->
-                        pgWriterClient.execute(
-                            sqlConnection,
-                            WriteQuery.INSERT_EXPERIMENT_UPDATE_LOG,
-                            tuple.addJsonObject(previous_data_json).addJsonObject(null)))
-                .toMaybe());
+    return pgWriterClient
+        .executeWithTransaction(
+            (sqlConnection) ->
+                pgWriterClient
+                    .execute(sqlConnection, WriteQuery.DELETE_EXPERIMENT_BY_ID, tuple)
+                    .flatMap(
+                        delExp ->
+                            pgWriterClient.execute(
+                                sqlConnection, WriteQuery.DELETE_TAG_FOR_EXPERIMENT, tuple))
+                    .flatMap(
+                        delTag ->
+                            pgWriterClient.execute(
+                                sqlConnection, WriteQuery.DELETE_OWNER_FOR_EXPERIMENT, tuple))
+                    .flatMap(
+                        delOwner ->
+                            pgWriterClient.execute(
+                                sqlConnection,
+                                WriteQuery.INSERT_EXPERIMENT_UPDATE_LOG,
+                                tuple.addJsonObject(previous_data_json).addJsonObject(null)))
+                    .toMaybe())
+        .switchIfEmpty(Single.error(new RestException(ErrorEnum.REST_DELETE_EXPERIMENT_FAILED)));
   }
 }

@@ -658,7 +658,7 @@ public class ExperimentServiceTest {
       // Arrange
       when(experimentDAO.getExperiment(PROJECT_KEY, EXPERIMENT_ID))
           .thenReturn(Maybe.just(experiment));
-      when(experimentDAO.deleteExperiment(PROJECT_KEY, experiment)).thenReturn(Maybe.just(true));
+      when(experimentDAO.deleteExperiment(PROJECT_KEY, experiment)).thenReturn(Single.just(true));
 
       // Act
       TestObserver<Boolean> testObserver =
@@ -679,7 +679,7 @@ public class ExperimentServiceTest {
       // Arrange
       when(experimentDAO.getExperiment(PROJECT_KEY, EXPERIMENT_ID))
           .thenReturn(Maybe.just(experiment));
-      when(experimentDAO.deleteExperiment(PROJECT_KEY, experiment)).thenReturn(Maybe.just(true));
+      when(experimentDAO.deleteExperiment(PROJECT_KEY, experiment)).thenReturn(Single.just(true));
 
       // Act
       TestObserver<Boolean> testObserver =
@@ -745,8 +745,7 @@ public class ExperimentServiceTest {
     }
 
     @Test
-    @DisplayName(
-        "Should propagate RestException from getExperiment when getExperiment wraps RuntimeException")
+    @DisplayName("Should propagate RestException when getExperiment throws error")
     void testDeleteExperimentGetExperimentRuntimeException() {
       // Arrange
       RuntimeException runtimeException = new RuntimeException("Database connection failed");
@@ -768,7 +767,7 @@ public class ExperimentServiceTest {
               error instanceof RestException
                   && ((RestException) error)
                       .getErrorCode()
-                      .equals(ErrorEnum.REST_GET_EXPERIMENT_BY_ID_FAILED.getErrorCode()));
+                      .equals(ErrorEnum.REST_DELETE_EXPERIMENT_FAILED.getErrorCode()));
       verify(experimentDAO, times(1)).getExperiment(PROJECT_KEY, EXPERIMENT_ID);
       verify(experimentDAO, never()).deleteExperiment(anyString(), any(Experiment.class));
     }
@@ -782,7 +781,7 @@ public class ExperimentServiceTest {
       when(experimentDAO.getExperiment(PROJECT_KEY, EXPERIMENT_ID))
           .thenReturn(Maybe.just(experiment));
       when(experimentDAO.deleteExperiment(PROJECT_KEY, experiment))
-          .thenReturn(Maybe.error(runtimeException));
+          .thenReturn(Single.error(runtimeException));
 
       // Act
       TestObserver<Boolean> testObserver =
@@ -810,7 +809,7 @@ public class ExperimentServiceTest {
       when(experimentDAO.getExperiment(PROJECT_KEY, EXPERIMENT_ID))
           .thenReturn(Maybe.just(experiment));
       when(experimentDAO.deleteExperiment(PROJECT_KEY, experiment))
-          .thenReturn(Maybe.error(restException));
+          .thenReturn(Single.error(restException));
 
       // Act
       TestObserver<Boolean> testObserver =
@@ -847,7 +846,7 @@ public class ExperimentServiceTest {
           .thenReturn(Maybe.just(experiment));
       when(experimentDAO.filterExperiments(PROJECT_KEY, request))
           .thenReturn(Single.just(filterResponse));
-      when(experimentDAO.deleteExperiment(PROJECT_KEY, experiment)).thenReturn(Maybe.just(true));
+      when(experimentDAO.deleteExperiment(PROJECT_KEY, experiment)).thenReturn(Single.just(true));
 
       // Act
       TestObserver<Experiment> getObserver =
@@ -880,7 +879,7 @@ public class ExperimentServiceTest {
           .thenReturn(Maybe.just(experiment));
       when(experimentDAO.filterExperiments(PROJECT_KEY, request))
           .thenReturn(Single.just(filterResponse));
-      when(experimentDAO.deleteExperiment(PROJECT_KEY, experiment)).thenReturn(Maybe.just(true));
+      when(experimentDAO.deleteExperiment(PROJECT_KEY, experiment)).thenReturn(Single.just(true));
 
       // Act
       TestObserver<Experiment> testObserver1 =

@@ -96,8 +96,10 @@ public class ExperimentServiceImpl implements ExperimentService {
   /** {@inheritDoc}* */
   @Override
   public Single<Boolean> deleteExperiment(String projectKey, String experimentId) {
-    return getExperiment(projectKey, experimentId)
-        .flatMap(experiment -> experimentDAO.deleteExperiment(projectKey, experiment).toSingle())
+    return experimentDAO
+        .getExperiment(projectKey, experimentId)
+        .switchIfEmpty(Single.error(new RestException(ErrorEnum.EXPERIMENT_NOT_FOUND)))
+        .flatMap(experiment -> experimentDAO.deleteExperiment(projectKey, experiment))
         .onErrorResumeNext(
             err -> {
               log.error(
