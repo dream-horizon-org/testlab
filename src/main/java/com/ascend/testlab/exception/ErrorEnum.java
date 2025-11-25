@@ -64,10 +64,6 @@ public enum ErrorEnum implements RestError {
       HttpStatus.SC_INTERNAL_SERVER_ERROR),
 
   /* Client Errors */
-  /** The error code when experiment id provided is invalid. */
-  EXPERIMENT_ID_INVALID(
-      "EXPERIMENT_ID_INVALID", "Experiment Id provided is invalid.", HttpStatus.SC_BAD_REQUEST),
-
   /** The error code when experiment is not found. */
   EXPERIMENT_NOT_FOUND(
       "EXPERIMENT_NOT_FOUND",

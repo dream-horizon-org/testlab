@@ -2,13 +2,12 @@ package com.ascend.testlab.rest;
 
 import com.ascend.testlab.constants.web.WebConstants;
 import com.ascend.testlab.dto.ResponseEntity;
-import com.ascend.testlab.dto.response.DeleteExperimentResponse;
 import com.ascend.testlab.exception.ErrorMessages;
 import com.ascend.testlab.service.ExperimentService;
-import com.google.inject.Inject;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import jakarta.inject.Inject;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
@@ -28,7 +27,7 @@ import lombok.extern.slf4j.Slf4j;
  * @since 1.0
  * @see ExperimentService
  */
-@Path(WebConstants.DELETE_EXPERIMENT_PATH)
+@Path(WebConstants.GET_EXPERIMENT_PATH)
 @Slf4j
 public class DeleteExperiment {
 
@@ -56,7 +55,7 @@ public class DeleteExperiment {
    *   <li>Deletes the experiment record from the experiments table
    *   <li>Removes associated tags from the experiment_tags table
    *   <li>Removes owner mappings from the experiment_owners table
-   *   <li>Logs the deletion with previous experiment data in the experiment_log table
+   *   <li>Logs the deletion with previous experiment data in the experiment_update_log table
    * </ul>
    *
    * @param projectKey the project Key (required, passed as header parameter "x-project-key")
@@ -78,13 +77,17 @@ public class DeleteExperiment {
       description = "Project id is missing or Experiment id is invalid")
   @ApiResponse(
       content = @Content(schema = @Schema(implementation = ResponseEntity.Failure.class)),
+      responseCode = "404",
+      description = "Experiment not found")
+  @ApiResponse(
+      content = @Content(schema = @Schema(implementation = ResponseEntity.Failure.class)),
       responseCode = "500",
       description = "Internal Server Error")
-  public CompletionStage<ResponseEntity.Success<DeleteExperimentResponse>> handle(
+  public CompletionStage<ResponseEntity.Success<Boolean>> handle(
       @HeaderParam(WebConstants.PROJECT_KEY_HEADER)
           @NotBlank(message = ErrorMessages.PROJECT_KEY_MISSING)
           String projectKey,
-      @QueryParam(WebConstants.EXPERIMENT_ID)
+      @PathParam(WebConstants.EXPERIMENT_ID)
           @NotBlank(message = ErrorMessages.EXPERIMENT_ID_MISSING)
           String experimentId) {
     return experimentService

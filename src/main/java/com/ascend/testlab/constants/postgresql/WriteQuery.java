@@ -24,7 +24,10 @@ public final class WriteQuery {
   public static final String DELETE_OWNER_FOR_EXPERIMENT =
       "DELETE FROM experiment.owners WHERE project_key = $1 AND experiment_id = $2;";
 
-  /** Query to update the experiment update log with previous and current data. */
-  public static final String UPDATE_EXPERIMENT_LOG =
-      "UPDATE experiment.experiment_update_log SET previous_data = $3, current_data = $4 WHERE project_key = $1 AND experiment_id = $2;";
+  /** Query to insert the experiment update log with previous and current data. */
+  public static final String INSERT_EXPERIMENT_UPDATE_LOG =
+      """
+         INSERT INTO experiment.experiment_update_log ( project_key, experiment_id, previous_data,
+         current_data ) VALUES ( $1, $2, $3, $4);
+         """;
 }

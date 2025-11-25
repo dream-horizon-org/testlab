@@ -422,9 +422,6 @@ class ExperimentDAOTest {
       Experiment experiment = createMockExperiment();
       SqlConnection mockConnection = mock(SqlConnection.class);
 
-      when(pgReaderClient.fetchOne(
-              eq(ReadQuery.GET_EXPERIMENT), any(Tuple.class), any(Function.class)))
-          .thenReturn(Maybe.just(experiment));
       when(pgWriterClient.executeWithTransaction(any()))
           .thenAnswer(
               invocation -> {
@@ -441,19 +438,17 @@ class ExperimentDAOTest {
               eq(mockConnection), eq(WriteQuery.DELETE_OWNER_FOR_EXPERIMENT), any(Tuple.class)))
           .thenReturn(Single.just(true));
       when(pgWriterClient.execute(
-              eq(mockConnection), eq(WriteQuery.UPDATE_EXPERIMENT_LOG), any(Tuple.class)))
+              eq(mockConnection), eq(WriteQuery.INSERT_EXPERIMENT_UPDATE_LOG), any(Tuple.class)))
           .thenReturn(Single.just(true));
 
       // Act
       TestObserver<Boolean> testObserver =
-          experimentDAO.deleteExperiment(PROJECT_KEY, EXPERIMENT_ID).test();
+          experimentDAO.deleteExperiment(PROJECT_KEY, experiment).test();
 
       // Assert
       testObserver.assertComplete();
       testObserver.assertNoErrors();
       testObserver.assertValue(true);
-      verify(pgReaderClient, times(1))
-          .fetchOne(eq(ReadQuery.GET_EXPERIMENT), any(Tuple.class), any(Function.class));
       verify(pgWriterClient, times(1)).executeWithTransaction(any());
       verify(pgWriterClient, times(1))
           .execute(eq(mockConnection), eq(WriteQuery.DELETE_EXPERIMENT_BY_ID), any(Tuple.class));
@@ -463,49 +458,27 @@ class ExperimentDAOTest {
           .execute(
               eq(mockConnection), eq(WriteQuery.DELETE_OWNER_FOR_EXPERIMENT), any(Tuple.class));
       verify(pgWriterClient, times(1))
-          .execute(eq(mockConnection), eq(WriteQuery.UPDATE_EXPERIMENT_LOG), any(Tuple.class));
+          .execute(
+              eq(mockConnection), eq(WriteQuery.INSERT_EXPERIMENT_UPDATE_LOG), any(Tuple.class));
       testContext.completeNow();
     }
 
     @Test
-    @DisplayName("Should return empty when experiment not found")
-    void testDeleteExperimentNotFound(VertxTestContext testContext) {
+    @DisplayName("Should handle error when transaction fails")
+    void testDeleteExperimentTransactionError(VertxTestContext testContext) {
       // Arrange
-      when(pgReaderClient.fetchOne(
-              eq(ReadQuery.GET_EXPERIMENT), any(Tuple.class), any(Function.class)))
-          .thenReturn(Maybe.empty());
+      Experiment experiment = createMockExperiment();
+      RuntimeException expectedException = new RuntimeException("Transaction failed");
+
+      when(pgWriterClient.executeWithTransaction(any())).thenReturn(Maybe.error(expectedException));
 
       // Act
       TestObserver<Boolean> testObserver =
-          experimentDAO.deleteExperiment(PROJECT_KEY, EXPERIMENT_ID).test();
-
-      // Assert
-      testObserver.assertNoErrors();
-      testObserver.assertResult();
-      verify(pgReaderClient, times(1))
-          .fetchOne(eq(ReadQuery.GET_EXPERIMENT), any(Tuple.class), any(Function.class));
-      verify(pgWriterClient, never()).executeWithTransaction(any());
-      testContext.completeNow();
-    }
-
-    @Test
-    @DisplayName("Should handle error when getExperiment fails")
-    void testDeleteExperimentGetExperimentError(VertxTestContext testContext) {
-      // Arrange
-      RuntimeException expectedException = new RuntimeException("Database connection failed");
-      when(pgReaderClient.fetchOne(
-              eq(ReadQuery.GET_EXPERIMENT), any(Tuple.class), any(Function.class)))
-          .thenReturn(Maybe.error(expectedException));
-
-      // Act
-      TestObserver<Boolean> testObserver =
-          experimentDAO.deleteExperiment(PROJECT_KEY, EXPERIMENT_ID).test();
+          experimentDAO.deleteExperiment(PROJECT_KEY, experiment).test();
 
       // Assert
       testObserver.assertError(RuntimeException.class);
-      verify(pgReaderClient, times(1))
-          .fetchOne(eq(ReadQuery.GET_EXPERIMENT), any(Tuple.class), any(Function.class));
-      verify(pgWriterClient, never()).executeWithTransaction(any());
+      verify(pgWriterClient, times(1)).executeWithTransaction(any());
       testContext.completeNow();
     }
 
@@ -517,9 +490,6 @@ class ExperimentDAOTest {
       SqlConnection mockConnection = mock(SqlConnection.class);
       RuntimeException expectedException = new RuntimeException("Delete failed");
 
-      when(pgReaderClient.fetchOne(
-              eq(ReadQuery.GET_EXPERIMENT), any(Tuple.class), any(Function.class)))
-          .thenReturn(Maybe.just(experiment));
       when(pgWriterClient.executeWithTransaction(any()))
           .thenAnswer(
               invocation -> {
@@ -532,12 +502,10 @@ class ExperimentDAOTest {
 
       // Act
       TestObserver<Boolean> testObserver =
-          experimentDAO.deleteExperiment(PROJECT_KEY, EXPERIMENT_ID).test();
+          experimentDAO.deleteExperiment(PROJECT_KEY, experiment).test();
 
       // Assert
       testObserver.assertError(RuntimeException.class);
-      verify(pgReaderClient, times(1))
-          .fetchOne(eq(ReadQuery.GET_EXPERIMENT), any(Tuple.class), any(Function.class));
       verify(pgWriterClient, times(1)).executeWithTransaction(any());
       verify(pgWriterClient, times(1))
           .execute(eq(mockConnection), eq(WriteQuery.DELETE_EXPERIMENT_BY_ID), any(Tuple.class));
@@ -554,9 +522,6 @@ class ExperimentDAOTest {
       SqlConnection mockConnection = mock(SqlConnection.class);
       RuntimeException expectedException = new RuntimeException("Delete tag failed");
 
-      when(pgReaderClient.fetchOne(
-              eq(ReadQuery.GET_EXPERIMENT), any(Tuple.class), any(Function.class)))
-          .thenReturn(Maybe.just(experiment));
       when(pgWriterClient.executeWithTransaction(any()))
           .thenAnswer(
               invocation -> {
@@ -572,12 +537,10 @@ class ExperimentDAOTest {
 
       // Act
       TestObserver<Boolean> testObserver =
-          experimentDAO.deleteExperiment(PROJECT_KEY, EXPERIMENT_ID).test();
+          experimentDAO.deleteExperiment(PROJECT_KEY, experiment).test();
 
       // Assert
       testObserver.assertError(RuntimeException.class);
-      verify(pgReaderClient, times(1))
-          .fetchOne(eq(ReadQuery.GET_EXPERIMENT), any(Tuple.class), any(Function.class));
       verify(pgWriterClient, times(1)).executeWithTransaction(any());
       verify(pgWriterClient, times(1))
           .execute(eq(mockConnection), eq(WriteQuery.DELETE_EXPERIMENT_BY_ID), any(Tuple.class));
@@ -597,9 +560,6 @@ class ExperimentDAOTest {
       SqlConnection mockConnection = mock(SqlConnection.class);
       RuntimeException expectedException = new RuntimeException("Delete owner failed");
 
-      when(pgReaderClient.fetchOne(
-              eq(ReadQuery.GET_EXPERIMENT), any(Tuple.class), any(Function.class)))
-          .thenReturn(Maybe.just(experiment));
       when(pgWriterClient.executeWithTransaction(any()))
           .thenAnswer(
               invocation -> {
@@ -618,12 +578,10 @@ class ExperimentDAOTest {
 
       // Act
       TestObserver<Boolean> testObserver =
-          experimentDAO.deleteExperiment(PROJECT_KEY, EXPERIMENT_ID).test();
+          experimentDAO.deleteExperiment(PROJECT_KEY, experiment).test();
 
       // Assert
       testObserver.assertError(RuntimeException.class);
-      verify(pgReaderClient, times(1))
-          .fetchOne(eq(ReadQuery.GET_EXPERIMENT), any(Tuple.class), any(Function.class));
       verify(pgWriterClient, times(1)).executeWithTransaction(any());
       verify(pgWriterClient, times(1))
           .execute(eq(mockConnection), eq(WriteQuery.DELETE_EXPERIMENT_BY_ID), any(Tuple.class));
@@ -633,21 +591,19 @@ class ExperimentDAOTest {
           .execute(
               eq(mockConnection), eq(WriteQuery.DELETE_OWNER_FOR_EXPERIMENT), any(Tuple.class));
       verify(pgWriterClient, never())
-          .execute(eq(mockConnection), eq(WriteQuery.UPDATE_EXPERIMENT_LOG), any(Tuple.class));
+          .execute(
+              eq(mockConnection), eq(WriteQuery.INSERT_EXPERIMENT_UPDATE_LOG), any(Tuple.class));
       testContext.completeNow();
     }
 
     @Test
-    @DisplayName("Should handle error when update log fails")
-    void testDeleteExperimentUpdateLogError(VertxTestContext testContext) {
+    @DisplayName("Should handle error when insert log fails")
+    void testDeleteExperimentInsertLogError(VertxTestContext testContext) {
       // Arrange
       Experiment experiment = createMockExperiment();
       SqlConnection mockConnection = mock(SqlConnection.class);
-      RuntimeException expectedException = new RuntimeException("Update log failed");
+      RuntimeException expectedException = new RuntimeException("Insert log failed");
 
-      when(pgReaderClient.fetchOne(
-              eq(ReadQuery.GET_EXPERIMENT), any(Tuple.class), any(Function.class)))
-          .thenReturn(Maybe.just(experiment));
       when(pgWriterClient.executeWithTransaction(any()))
           .thenAnswer(
               invocation -> {
@@ -664,17 +620,15 @@ class ExperimentDAOTest {
               eq(mockConnection), eq(WriteQuery.DELETE_OWNER_FOR_EXPERIMENT), any(Tuple.class)))
           .thenReturn(Single.just(true));
       when(pgWriterClient.execute(
-              eq(mockConnection), eq(WriteQuery.UPDATE_EXPERIMENT_LOG), any(Tuple.class)))
+              eq(mockConnection), eq(WriteQuery.INSERT_EXPERIMENT_UPDATE_LOG), any(Tuple.class)))
           .thenReturn(Single.error(expectedException));
 
       // Act
       TestObserver<Boolean> testObserver =
-          experimentDAO.deleteExperiment(PROJECT_KEY, EXPERIMENT_ID).test();
+          experimentDAO.deleteExperiment(PROJECT_KEY, experiment).test();
 
       // Assert
       testObserver.assertError(RuntimeException.class);
-      verify(pgReaderClient, times(1))
-          .fetchOne(eq(ReadQuery.GET_EXPERIMENT), any(Tuple.class), any(Function.class));
       verify(pgWriterClient, times(1)).executeWithTransaction(any());
       verify(pgWriterClient, times(1))
           .execute(eq(mockConnection), eq(WriteQuery.DELETE_EXPERIMENT_BY_ID), any(Tuple.class));
@@ -684,7 +638,8 @@ class ExperimentDAOTest {
           .execute(
               eq(mockConnection), eq(WriteQuery.DELETE_OWNER_FOR_EXPERIMENT), any(Tuple.class));
       verify(pgWriterClient, times(1))
-          .execute(eq(mockConnection), eq(WriteQuery.UPDATE_EXPERIMENT_LOG), any(Tuple.class));
+          .execute(
+              eq(mockConnection), eq(WriteQuery.INSERT_EXPERIMENT_UPDATE_LOG), any(Tuple.class));
       testContext.completeNow();
     }
   }
@@ -725,7 +680,7 @@ class ExperimentDAOTest {
               eq(mockConnection), eq(WriteQuery.DELETE_OWNER_FOR_EXPERIMENT), any(Tuple.class)))
           .thenReturn(Single.just(true));
       when(pgWriterClient.execute(
-              eq(mockConnection), eq(WriteQuery.UPDATE_EXPERIMENT_LOG), any(Tuple.class)))
+              eq(mockConnection), eq(WriteQuery.INSERT_EXPERIMENT_UPDATE_LOG), any(Tuple.class)))
           .thenReturn(Single.just(true));
 
       // Act
@@ -734,14 +689,14 @@ class ExperimentDAOTest {
       TestObserver<FilterExperimentsResponse> filterObserver =
           experimentDAO.filterExperiments(PROJECT_KEY, request).test();
       TestObserver<Boolean> deleteObserver =
-          experimentDAO.deleteExperiment(PROJECT_KEY, EXPERIMENT_ID).test();
+          experimentDAO.deleteExperiment(PROJECT_KEY, experiment).test();
 
       // Assert
       getObserver.assertComplete().assertNoErrors();
       filterObserver.assertComplete().assertNoErrors();
       deleteObserver.assertComplete().assertNoErrors();
 
-      verify(pgReaderClient, times(2))
+      verify(pgReaderClient, times(1))
           .fetchOne(eq(ReadQuery.GET_EXPERIMENT), any(Tuple.class), any(Function.class));
       verify(pgReaderClient, times(1)).fetchAll(anyString(), any(Tuple.class), any(Function.class));
       verify(pgWriterClient, times(1)).executeWithTransaction(any());

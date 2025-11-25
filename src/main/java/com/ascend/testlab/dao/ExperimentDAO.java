@@ -33,8 +33,8 @@ public interface ExperimentDAO {
    * Delete experiment and related data for the provided projectKey and experimentId
    *
    * @param projectKey the project Key
-   * @param experimentId the experiment Id
-   * @return a Single boolean value
+   * @param experiment the experiment data
+   * @return a Single
    */
-  Maybe<Boolean> deleteExperiment(String projectKey, String experimentId);
+  Maybe<Boolean> deleteExperiment(String projectKey, Experiment experiment);
 }

@@ -20,7 +20,7 @@ class DeleteExperimentIT {
   private static final String PROJECT_KEY = "delete_exp_it";
   private static final String EXPERIMENT_ID = "22222222-2222-2222-2222-222222222222";
   private static final String INVALID_EXPERIMENT_ID = "00000000-0000-0000-0000-000000000000";
-  private final String route = WebConstants.DELETE_EXPERIMENT_PATH;
+  private final String route = WebConstants.GET_EXPERIMENT_PATH;
 
   @BeforeAll
   public static void initialize() {
@@ -35,7 +35,6 @@ class DeleteExperimentIT {
   @Test
   void testDeleteExperiment_Success_WithSeededData() {
     Map<String, String> headers = Map.of(WebConstants.PROJECT_KEY_HEADER, PROJECT_KEY);
-    Map<String, String> queryParams = Map.of(WebConstants.EXPERIMENT_ID, EXPERIMENT_ID);
 
     try {
       createPartitionForProject();
@@ -43,12 +42,11 @@ class DeleteExperimentIT {
       seedExperimentUpdateLog();
 
       ValidatableResponse response =
-          TestUtil.executeRequest(null, headers, queryParams, spec -> spec.delete(route));
+          TestUtil.executeRequest(null, headers, null, spec -> spec.delete(route, EXPERIMENT_ID));
 
       response.statusCode(HttpStatus.SC_OK);
       response.contentType(WebConstants.APPLICATION_JSON);
-      response.body("data.success", Matchers.equalTo(true));
-      response.body("data.experimentId", Matchers.equalTo(EXPERIMENT_ID));
+      response.body("data", Matchers.equalTo(true));
     } finally {
       TestUtil.dropTestPartition("experiments", PROJECT_KEY);
     }
@@ -57,20 +55,18 @@ class DeleteExperimentIT {
   @Test
   void testDeleteExperiment_NotFound() {
     Map<String, String> headers = Map.of(WebConstants.PROJECT_KEY_HEADER, PROJECT_KEY);
-    Map<String, String> queryParams = Map.of(WebConstants.EXPERIMENT_ID, INVALID_EXPERIMENT_ID);
 
     ValidatableResponse response =
-        TestUtil.executeRequest(null, headers, queryParams, spec -> spec.delete(route));
+        TestUtil.executeRequest(
+            null, headers, null, spec -> spec.delete(route, INVALID_EXPERIMENT_ID));
 
     response.statusCode(HttpStatus.SC_BAD_REQUEST);
   }
 
   @Test
   void testDeleteExperiment_MissingHeader_BadRequest() {
-    Map<String, String> queryParams = Map.of(WebConstants.EXPERIMENT_ID, EXPERIMENT_ID);
-
     ValidatableResponse response =
-        TestUtil.executeRequest(null, null, queryParams, spec -> spec.delete(route));
+        TestUtil.executeRequest(null, null, null, spec -> spec.delete(route, EXPERIMENT_ID));
 
     response.statusCode(HttpStatus.SC_BAD_REQUEST);
   }
@@ -78,10 +74,9 @@ class DeleteExperimentIT {
   @Test
   void testDeleteExperiment_BlankHeader_BadRequest() {
     Map<String, String> headers = Map.of(WebConstants.PROJECT_KEY_HEADER, "   ");
-    Map<String, String> queryParams = Map.of(WebConstants.EXPERIMENT_ID, EXPERIMENT_ID);
 
     ValidatableResponse response =
-        TestUtil.executeRequest(null, headers, queryParams, spec -> spec.delete(route));
+        TestUtil.executeRequest(null, headers, null, spec -> spec.delete(route, EXPERIMENT_ID));
 
     response.statusCode(HttpStatus.SC_BAD_REQUEST);
     response.body(Matchers.containsString(ErrorMessages.PROJECT_KEY_MISSING));
@@ -90,10 +85,9 @@ class DeleteExperimentIT {
   @Test
   void testDeleteExperiment_InvalidProjectKey_NotFound() {
     Map<String, String> headers = Map.of(WebConstants.PROJECT_KEY_HEADER, "invalid-project-id");
-    Map<String, String> queryParams = Map.of(WebConstants.EXPERIMENT_ID, EXPERIMENT_ID);
 
     ValidatableResponse response =
-        TestUtil.executeRequest(null, headers, queryParams, spec -> spec.delete(route));
+        TestUtil.executeRequest(null, headers, null, spec -> spec.delete(route, EXPERIMENT_ID));
 
     // Should return not found since experiment doesn't exist for this project
     response.statusCode(HttpStatus.SC_BAD_REQUEST);
@@ -104,7 +98,7 @@ class DeleteExperimentIT {
     Map<String, String> headers = Map.of(WebConstants.PROJECT_KEY_HEADER, PROJECT_KEY);
 
     ValidatableResponse response =
-        TestUtil.executeRequest(null, headers, null, spec -> spec.delete(route));
+        TestUtil.executeRequest(null, headers, null, spec -> spec.delete(route, " "));
 
     response.statusCode(HttpStatus.SC_BAD_REQUEST);
   }
@@ -122,12 +116,12 @@ class DeleteExperimentIT {
     String insert =
         String.format(
             "INSERT INTO experiment.experiments ("
-                + "project_key, experiment_id, name, description, hypothesis, status, type, "
+                + "project_key, experiment_id, name, experiment_key, description, hypothesis, status, type, "
                 + "guardrail_health_status, cohorts, variant_weights, assignment_strategy, "
                 + "overrides, rule_attributes, winning_variant, exposure, threshold, "
                 + "start_time, end_time, created_by, created_at, updated_at, name_tsvector"
                 + ") VALUES ("
-                + "'%s', '%s', 'Test Experiment', 'Test Description', 'Test Hypothesis', "
+                + "'%s', '%s', 'Test Experiment', 'Test-Experiment', 'Test Description', 'Test Hypothesis', "
                 + "'LIVE', 'A/B', 'NO_CHECKS_AVAILABLE', "
                 + "ARRAY['all_users'], '{\"control\": 50, \"variant_a\": 50}'::jsonb, "
                 + "'RANDOM', NULL::jsonb, NULL::jsonb, NULL::jsonb, "

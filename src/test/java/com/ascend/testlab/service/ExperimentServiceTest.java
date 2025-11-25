@@ -8,7 +8,6 @@ import com.ascend.testlab.constants.enums.ExperimentType;
 import com.ascend.testlab.dao.ExperimentDAO;
 import com.ascend.testlab.dto.entity.Experiment;
 import com.ascend.testlab.dto.request.FilterExperimentsRequest;
-import com.ascend.testlab.dto.response.DeleteExperimentResponse;
 import com.ascend.testlab.dto.response.FilterExperimentsResponse;
 import com.ascend.testlab.dto.response.PaginationMeta;
 import com.ascend.testlab.exception.ErrorEnum;
@@ -651,53 +650,61 @@ public class ExperimentServiceTest {
   @Nested
   @DisplayName("Delete Experiment Success Tests")
   class DeleteExperimentSuccessTests {
+    Experiment experiment = createMockExperiment();
 
     @Test
     @DisplayName("Should return true when experiment is deleted successfully")
     void testDeleteExperimentSuccess() {
       // Arrange
-      when(experimentDAO.deleteExperiment(PROJECT_KEY, EXPERIMENT_ID)).thenReturn(Maybe.just(true));
+      when(experimentDAO.getExperiment(PROJECT_KEY, EXPERIMENT_ID))
+          .thenReturn(Maybe.just(experiment));
+      when(experimentDAO.deleteExperiment(PROJECT_KEY, experiment)).thenReturn(Maybe.just(true));
 
       // Act
-      TestObserver<DeleteExperimentResponse> testObserver =
+      TestObserver<Boolean> testObserver =
           experimentService.deleteExperiment(PROJECT_KEY, EXPERIMENT_ID).test();
 
       // Assert
       testObserver.assertComplete();
       testObserver.assertNoErrors();
       testObserver.assertValueCount(1);
-      testObserver.assertValue(DeleteExperimentResponse::isSuccess);
-      verify(experimentDAO, times(1)).deleteExperiment(PROJECT_KEY, EXPERIMENT_ID);
+      testObserver.assertValue(true);
+      verify(experimentDAO, times(1)).getExperiment(PROJECT_KEY, EXPERIMENT_ID);
+      verify(experimentDAO, times(1)).deleteExperiment(PROJECT_KEY, experiment);
     }
 
     @Test
-    @DisplayName("Should call DAO method exactly once for deleteExperiment")
+    @DisplayName("Should call DAO methods correctly for deleteExperiment")
     void testDeleteExperimentDAOCalledOnce() {
       // Arrange
-      when(experimentDAO.deleteExperiment(PROJECT_KEY, EXPERIMENT_ID)).thenReturn(Maybe.just(true));
+      when(experimentDAO.getExperiment(PROJECT_KEY, EXPERIMENT_ID))
+          .thenReturn(Maybe.just(experiment));
+      when(experimentDAO.deleteExperiment(PROJECT_KEY, experiment)).thenReturn(Maybe.just(true));
 
       // Act
-      TestObserver<DeleteExperimentResponse> testObserver =
+      TestObserver<Boolean> testObserver =
           experimentService.deleteExperiment(PROJECT_KEY, EXPERIMENT_ID).test();
 
       // Assert
       testObserver.assertComplete();
-      verify(experimentDAO, times(1)).deleteExperiment(PROJECT_KEY, EXPERIMENT_ID);
+      verify(experimentDAO, times(1)).getExperiment(PROJECT_KEY, EXPERIMENT_ID);
+      verify(experimentDAO, times(1)).deleteExperiment(PROJECT_KEY, experiment);
     }
   }
 
   @Nested
   @DisplayName("Delete Experiment Error Handling Tests")
   class DeleteExperimentErrorHandlingTests {
+    Experiment experiment = createMockExperiment();
 
     @Test
-    @DisplayName("Should return EXPERIMENT_ID_INVALID when experiment not found")
+    @DisplayName("Should return EXPERIMENT_NOT_FOUND when experiment not found in getExperiment")
     void testDeleteExperimentNotFound() {
       // Arrange
-      when(experimentDAO.deleteExperiment(PROJECT_KEY, EXPERIMENT_ID)).thenReturn(Maybe.empty());
+      when(experimentDAO.getExperiment(PROJECT_KEY, EXPERIMENT_ID)).thenReturn(Maybe.empty());
 
       // Act
-      TestObserver<DeleteExperimentResponse> testObserver =
+      TestObserver<Boolean> testObserver =
           experimentService.deleteExperiment(PROJECT_KEY, EXPERIMENT_ID).test();
 
       // Assert
@@ -709,48 +716,76 @@ public class ExperimentServiceTest {
             if (error instanceof RestException restException) {
               return restException
                   .getErrorCode()
-                  .equals(ErrorEnum.EXPERIMENT_ID_INVALID.getErrorCode());
+                  .equals(ErrorEnum.EXPERIMENT_NOT_FOUND.getErrorCode());
             }
             return false;
           });
-      verify(experimentDAO, times(1)).deleteExperiment(PROJECT_KEY, EXPERIMENT_ID);
+      verify(experimentDAO, times(1)).getExperiment(PROJECT_KEY, EXPERIMENT_ID);
+      verify(experimentDAO, never()).deleteExperiment(anyString(), any(Experiment.class));
     }
 
     @Test
-    @DisplayName("Should propagate RestException as-is")
-    void testDeleteExperimentRestException() {
+    @DisplayName("Should propagate RestException when getExperiment fails")
+    void testDeleteExperimentGetExperimentRestException() {
       // Arrange
-      RestException restException = new RestException(ErrorEnum.REST_DELETE_EXPERIMENT_FAILED);
-      when(experimentDAO.deleteExperiment(PROJECT_KEY, EXPERIMENT_ID))
+      RestException restException = new RestException(ErrorEnum.REST_GET_EXPERIMENT_BY_ID_FAILED);
+      when(experimentDAO.getExperiment(PROJECT_KEY, EXPERIMENT_ID))
           .thenReturn(Maybe.error(restException));
 
       // Act
-      TestObserver<DeleteExperimentResponse> testObserver =
+      TestObserver<Boolean> testObserver =
           experimentService.deleteExperiment(PROJECT_KEY, EXPERIMENT_ID).test();
 
       // Assert
       testObserver.assertError(RestException.class);
       testObserver.assertNotComplete();
       testObserver.assertValueCount(0);
-      testObserver.assertError(
-          error ->
-              error instanceof RestException
-                  && ((RestException) error)
-                      .getErrorCode()
-                      .equals(ErrorEnum.REST_DELETE_EXPERIMENT_FAILED.getErrorCode()));
-      verify(experimentDAO, times(1)).deleteExperiment(PROJECT_KEY, EXPERIMENT_ID);
+      verify(experimentDAO, times(1)).getExperiment(PROJECT_KEY, EXPERIMENT_ID);
+      verify(experimentDAO, never()).deleteExperiment(anyString(), any(Experiment.class));
     }
 
     @Test
-    @DisplayName("Should wrap RuntimeException in REST_DELETE_EXPERIMENT_FAILED")
-    void testDeleteExperimentRuntimeException() {
+    @DisplayName(
+        "Should propagate RestException from getExperiment when getExperiment wraps RuntimeException")
+    void testDeleteExperimentGetExperimentRuntimeException() {
       // Arrange
       RuntimeException runtimeException = new RuntimeException("Database connection failed");
-      when(experimentDAO.deleteExperiment(PROJECT_KEY, EXPERIMENT_ID))
+      when(experimentDAO.getExperiment(PROJECT_KEY, EXPERIMENT_ID))
           .thenReturn(Maybe.error(runtimeException));
 
       // Act
-      TestObserver<DeleteExperimentResponse> testObserver =
+      TestObserver<Boolean> testObserver =
+          experimentService.deleteExperiment(PROJECT_KEY, EXPERIMENT_ID).test();
+
+      // Assert
+      testObserver.assertError(RestException.class);
+      testObserver.assertNotComplete();
+      testObserver.assertValueCount(0);
+      // getExperiment wraps RuntimeException in REST_GET_EXPERIMENT_BY_ID_FAILED,
+      // and ErrorEnum.handleException preserves the original RestException
+      testObserver.assertError(
+          error ->
+              error instanceof RestException
+                  && ((RestException) error)
+                      .getErrorCode()
+                      .equals(ErrorEnum.REST_GET_EXPERIMENT_BY_ID_FAILED.getErrorCode()));
+      verify(experimentDAO, times(1)).getExperiment(PROJECT_KEY, EXPERIMENT_ID);
+      verify(experimentDAO, never()).deleteExperiment(anyString(), any(Experiment.class));
+    }
+
+    @Test
+    @DisplayName(
+        "Should wrap RuntimeException from deleteExperiment in REST_DELETE_EXPERIMENT_FAILED")
+    void testDeleteExperimentDeleteRuntimeException() {
+      // Arrange
+      RuntimeException runtimeException = new RuntimeException("Delete operation failed");
+      when(experimentDAO.getExperiment(PROJECT_KEY, EXPERIMENT_ID))
+          .thenReturn(Maybe.just(experiment));
+      when(experimentDAO.deleteExperiment(PROJECT_KEY, experiment))
+          .thenReturn(Maybe.error(runtimeException));
+
+      // Act
+      TestObserver<Boolean> testObserver =
           experimentService.deleteExperiment(PROJECT_KEY, EXPERIMENT_ID).test();
 
       // Assert
@@ -763,7 +798,36 @@ public class ExperimentServiceTest {
                   && ((RestException) error)
                       .getErrorCode()
                       .equals(ErrorEnum.REST_DELETE_EXPERIMENT_FAILED.getErrorCode()));
-      verify(experimentDAO, times(1)).deleteExperiment(PROJECT_KEY, EXPERIMENT_ID);
+      verify(experimentDAO, times(1)).getExperiment(PROJECT_KEY, EXPERIMENT_ID);
+      verify(experimentDAO, times(1)).deleteExperiment(PROJECT_KEY, experiment);
+    }
+
+    @Test
+    @DisplayName("Should propagate RestException from deleteExperiment")
+    void testDeleteExperimentDeleteRestException() {
+      // Arrange
+      RestException restException = new RestException(ErrorEnum.REST_DELETE_EXPERIMENT_FAILED);
+      when(experimentDAO.getExperiment(PROJECT_KEY, EXPERIMENT_ID))
+          .thenReturn(Maybe.just(experiment));
+      when(experimentDAO.deleteExperiment(PROJECT_KEY, experiment))
+          .thenReturn(Maybe.error(restException));
+
+      // Act
+      TestObserver<Boolean> testObserver =
+          experimentService.deleteExperiment(PROJECT_KEY, EXPERIMENT_ID).test();
+
+      // Assert
+      testObserver.assertError(RestException.class);
+      testObserver.assertNotComplete();
+      testObserver.assertValueCount(0);
+      testObserver.assertError(
+          error ->
+              error instanceof RestException
+                  && ((RestException) error)
+                      .getErrorCode()
+                      .equals(ErrorEnum.REST_DELETE_EXPERIMENT_FAILED.getErrorCode()));
+      verify(experimentDAO, times(1)).getExperiment(PROJECT_KEY, EXPERIMENT_ID);
+      verify(experimentDAO, times(1)).deleteExperiment(PROJECT_KEY, experiment);
     }
   }
 
@@ -783,14 +847,14 @@ public class ExperimentServiceTest {
           .thenReturn(Maybe.just(experiment));
       when(experimentDAO.filterExperiments(PROJECT_KEY, request))
           .thenReturn(Single.just(filterResponse));
-      when(experimentDAO.deleteExperiment(PROJECT_KEY, EXPERIMENT_ID)).thenReturn(Maybe.just(true));
+      when(experimentDAO.deleteExperiment(PROJECT_KEY, experiment)).thenReturn(Maybe.just(true));
 
       // Act
       TestObserver<Experiment> getObserver =
           experimentService.getExperiment(PROJECT_KEY, EXPERIMENT_ID).test();
       TestObserver<FilterExperimentsResponse> filterObserver =
           experimentService.filterExperiments(PROJECT_KEY, request).test();
-      TestObserver<DeleteExperimentResponse> deleteObserver =
+      TestObserver<Boolean> deleteObserver =
           experimentService.deleteExperiment(PROJECT_KEY, EXPERIMENT_ID).test();
 
       // Assert
@@ -798,9 +862,10 @@ public class ExperimentServiceTest {
       filterObserver.assertComplete().assertNoErrors();
       deleteObserver.assertComplete().assertNoErrors();
 
-      verify(experimentDAO, times(1)).getExperiment(PROJECT_KEY, EXPERIMENT_ID);
+      // getExperiment is called once for getExperiment and once for deleteExperiment
+      verify(experimentDAO, times(2)).getExperiment(PROJECT_KEY, EXPERIMENT_ID);
       verify(experimentDAO, times(1)).filterExperiments(PROJECT_KEY, request);
-      verify(experimentDAO, times(1)).deleteExperiment(PROJECT_KEY, EXPERIMENT_ID);
+      verify(experimentDAO, times(1)).deleteExperiment(PROJECT_KEY, experiment);
     }
 
     @Test
@@ -815,7 +880,7 @@ public class ExperimentServiceTest {
           .thenReturn(Maybe.just(experiment));
       when(experimentDAO.filterExperiments(PROJECT_KEY, request))
           .thenReturn(Single.just(filterResponse));
-      when(experimentDAO.deleteExperiment(PROJECT_KEY, EXPERIMENT_ID)).thenReturn(Maybe.just(true));
+      when(experimentDAO.deleteExperiment(PROJECT_KEY, experiment)).thenReturn(Maybe.just(true));
 
       // Act
       TestObserver<Experiment> testObserver1 =
@@ -824,7 +889,7 @@ public class ExperimentServiceTest {
           experimentService.getExperiment(PROJECT_KEY, EXPERIMENT_ID).test();
       TestObserver<FilterExperimentsResponse> testObserver3 =
           experimentService.filterExperiments(PROJECT_KEY, request).test();
-      TestObserver<DeleteExperimentResponse> testObserver4 =
+      TestObserver<Boolean> testObserver4 =
           experimentService.deleteExperiment(PROJECT_KEY, EXPERIMENT_ID).test();
 
       // Assert
@@ -832,6 +897,12 @@ public class ExperimentServiceTest {
       testObserver2.assertComplete();
       testObserver3.assertComplete();
       testObserver4.assertComplete();
+
+      // getExperiment is called 3 times: twice for getExperiment calls and once for
+      // deleteExperiment
+      verify(experimentDAO, times(3)).getExperiment(PROJECT_KEY, EXPERIMENT_ID);
+      verify(experimentDAO, times(1)).filterExperiments(PROJECT_KEY, request);
+      verify(experimentDAO, times(1)).deleteExperiment(PROJECT_KEY, experiment);
     }
   }
 
