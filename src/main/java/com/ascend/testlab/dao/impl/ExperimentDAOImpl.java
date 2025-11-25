@@ -39,33 +39,124 @@ import java.util.UUID;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * Implementation of ExperimentDAO for PostgreSQL database operations.
+ * Implementation of the ExperimentDAO interface.
  *
- * <p>This class handles all experiment-related database operations including create and update
- * operations with proper type conversions for PostgreSQL-specific types (UUID, JSONB, arrays).
- *
- * @author Ravi Pandey
+ * @author Yashita Bansal
  * @version 1.0
  * @since 1.0
+ * @see ExperimentDAO
  */
 @Slf4j
 public class ExperimentDAOImpl implements ExperimentDAO {
 
-  private final PgWriterClient pgWriterClient;
   private final PgReaderClient pgReaderClient;
-
-  private static final ObjectMapper MAPPER = new ObjectMapper();
+  private final PgWriterClient pgWriterClient;
+  private final ObjectMapper objectMapper;
 
   /**
-   * Constructs ExperimentDAOImpl with PostgreSQL clients.
+   * Constructs a new ExperimentDAOImpl.
    *
-   * @param pgWriterClient PostgreSQL writer client for database operations
-   * @param pgReaderClient PostgreSQL reader client for database operations
+   * @param pgReaderClient the PostgreSQL reader client
+   * @param pgWriterClient the PostgreSQL writer client
+   * @param objectMapper the Jackson ObjectMapper for JSON serialization/deserialization
    */
   @Inject
-  public ExperimentDAOImpl(PgWriterClient pgWriterClient, PgReaderClient pgReaderClient) {
-    this.pgWriterClient = pgWriterClient;
+  public ExperimentDAOImpl(
+      PgReaderClient pgReaderClient, PgWriterClient pgWriterClient, ObjectMapper objectMapper) {
     this.pgReaderClient = pgReaderClient;
+    this.pgWriterClient = pgWriterClient;
+    this.objectMapper = objectMapper;
+  }
+
+  /** {@inheritDoc} */
+  @Override
+  public Maybe<Experiment> getExperiment(String projectKey, String experimentId) {
+    return pgReaderClient.fetchOne(
+        ReadQuery.GET_EXPERIMENT,
+        Tuple.of(projectKey, experimentId),
+        ExperimentMapper::mapRowToExperiment);
+  }
+
+  /** {@inheritDoc} */
+  @Override
+  public Single<FilterExperimentsResponse> filterExperiments(
+      String projectKey, FilterExperimentsRequest req) {
+    ParameterizedQuery parameterizedQuery =
+        FilterExperimentsQueryFactory.buildQuery(projectKey, req);
+
+    return pgReaderClient
+        .fetchAll(parameterizedQuery.query(), parameterizedQuery.tuple(), row -> row)
+        .map(rows -> mapRowsToFilteredExperiment(rows, req));
+  }
+
+  /**
+   * Maps database rows to a FilterExperimentsResponse object. Extracts experiment data from rows
+   * and builds pagination metadata.
+   */
+  private FilterExperimentsResponse mapRowsToFilteredExperiment(
+      List<Row> rows, FilterExperimentsRequest req) {
+    FilterExperimentsResponse response = new FilterExperimentsResponse();
+
+    // Extract total count from the first row (all rows have the same total_count value)
+    int totalCount = (rows.isEmpty()) ? 0 : rows.get(0).getInteger(Columns.TOTAL_COUNT);
+
+    // Map all rows to experiments
+    List<Experiment> experiments =
+        (rows.isEmpty())
+            ? List.of()
+            : rows.stream().map(ExperimentMapper::mapRowToExperiment).toList();
+
+    response.setExperiments(experiments);
+
+    PaginationMeta paginationMeta;
+    paginationMeta =
+        PaginationMeta.builder()
+            .pageSize(experiments.size())
+            .currentPage(req.getPage())
+            .totalCount(totalCount)
+            .build();
+
+    response.setPagination(paginationMeta);
+
+    return response;
+  }
+
+  /** {@inheritDoc} */
+  @Override
+  public Single<Boolean> deleteExperiment(String projectKey, Experiment experiment) {
+    Tuple tuple = Tuple.of(projectKey, experiment.getExperimentId().toString());
+
+    JsonObject previous_data_json = JsonObject.mapFrom(experiment);
+
+    return pgWriterClient
+        .executeWithTransaction(
+            (sqlConnection) ->
+                pgWriterClient
+                    .execute(sqlConnection, WriteQuery.DELETE_EXPERIMENT_BY_ID, tuple)
+                    .flatMap(
+                        delExp ->
+                            pgWriterClient.execute(
+                                sqlConnection, WriteQuery.DELETE_TAG_FOR_EXPERIMENT, tuple))
+                    .flatMap(
+                        delTag ->
+                            pgWriterClient.execute(
+                                sqlConnection, WriteQuery.DELETE_OWNER_FOR_EXPERIMENT, tuple))
+                    .flatMap(
+                        delOwner ->
+                            pgWriterClient.execute(
+                                sqlConnection,
+                                WriteQuery.INSERT_EXPERIMENT_UPDATE_LOG,
+                                tuple.addJsonObject(previous_data_json).addJsonObject(null)))
+                    .map(result -> true))
+        .onErrorResumeNext(
+            err -> {
+              log.error(
+                  "Failed to delete experiment for projectKey: {}, experimentId: {}, error: {}",
+                  projectKey,
+                  experiment.getExperimentId(),
+                  err.getMessage());
+              return Single.error(new RestException(ErrorEnum.REST_DELETE_EXPERIMENT_FAILED, err));
+            });
   }
 
   /**
@@ -104,16 +195,16 @@ public class ExperimentDAOImpl implements ExperimentDAO {
               String winningVariantJson = null;
 
               if (request.getVariantWeights() != null) {
-                variantWeightsJson = MAPPER.writeValueAsString(request.getVariantWeights());
+                variantWeightsJson = objectMapper.writeValueAsString(request.getVariantWeights());
               }
               if (request.getVariants() != null) {
-                variantsJson = MAPPER.writeValueAsString(request.getVariants());
+                variantsJson = objectMapper.writeValueAsString(request.getVariants());
               }
               if (request.getRuleAttributes() != null) {
-                ruleAttributesJson = MAPPER.writeValueAsString(request.getRuleAttributes());
+                ruleAttributesJson = objectMapper.writeValueAsString(request.getRuleAttributes());
               }
               if (request.getWinningVariant() != null) {
-                winningVariantJson = MAPPER.writeValueAsString(request.getWinningVariant());
+                winningVariantJson = objectMapper.writeValueAsString(request.getWinningVariant());
               }
 
               log.debug(
@@ -387,7 +478,7 @@ public class ExperimentDAOImpl implements ExperimentDAO {
    */
   private Map<String, Object> convertRequestMap(Map<String, Object> request) {
     Map<String, Object> requestMap =
-        MAPPER.convertValue(request, new TypeReference<Map<String, Object>>() {});
+        objectMapper.convertValue(request, new TypeReference<Map<String, Object>>() {});
 
     // Handle end_date to end_time conversion
     if (requestMap.get("end_time") == null && requestMap.get("end_date") != null) {
@@ -523,7 +614,7 @@ public class ExperimentDAOImpl implements ExperimentDAO {
    */
   private String serializeToJson(String key, Object value) {
     try {
-      return MAPPER.writeValueAsString(value);
+      return objectMapper.writeValueAsString(value);
     } catch (Exception ex) {
       log.error("Failed to serialize JSONB field {}: {}", key, ex.getMessage());
       throw new RuntimeException("Failed to serialize JSONB field: " + key, ex);
@@ -1269,11 +1360,11 @@ public class ExperimentDAOImpl implements ExperimentDAO {
               // Convert POJOs/Maps directly to JsonObject for JSONB columns
               JsonObject previousDataJson =
                   previousData != null
-                      ? new JsonObject(MAPPER.writeValueAsString(previousData))
+                      ? new JsonObject(objectMapper.writeValueAsString(previousData))
                       : null;
               JsonObject currentDataJson =
                   currentData != null
-                      ? new JsonObject(MAPPER.writeValueAsString(currentData))
+                      ? new JsonObject(objectMapper.writeValueAsString(currentData))
                       : null;
 
               return Tuple.tuple()
@@ -1547,58 +1638,5 @@ public class ExperimentDAOImpl implements ExperimentDAO {
           "DAO: Failed to extract fields from UpdateExperimentRequest: {}", e.getMessage(), e);
       throw new RuntimeException("Failed to extract fields from request", e);
     }
-  }
-
-  /** {@inheritDoc} */
-  @Override
-  public Maybe<Experiment> getExperiment(String projectKey, String experimentId) {
-    return pgReaderClient.fetchOne(
-        ReadQuery.GET_EXPERIMENT,
-        Tuple.of(projectKey, experimentId),
-        ExperimentMapper::mapRowToExperiment);
-  }
-
-  /** {@inheritDoc} */
-  @Override
-  public Single<FilterExperimentsResponse> filterExperiments(
-      String projectKey, FilterExperimentsRequest req) {
-    ParameterizedQuery parameterizedQuery =
-        FilterExperimentsQueryFactory.buildQuery(projectKey, req);
-
-    return pgReaderClient
-        .fetchAll(parameterizedQuery.query(), parameterizedQuery.tuple(), row -> row)
-        .map(rows -> mapRowsToFilteredExperiment(rows, req));
-  }
-
-  /**
-   * Maps database rows to a FilterExperimentsResponse object. Extracts experiment data from rows
-   * and builds pagination metadata.
-   */
-  private FilterExperimentsResponse mapRowsToFilteredExperiment(
-      List<Row> rows, FilterExperimentsRequest req) {
-    FilterExperimentsResponse response = new FilterExperimentsResponse();
-
-    // Extract total count from the first row (all rows have the same total_count value)
-    int totalCount = (rows.isEmpty()) ? 0 : rows.get(0).getInteger(Columns.TOTAL_COUNT);
-
-    // Map all rows to experiments
-    List<Experiment> experiments =
-        (rows.isEmpty())
-            ? List.of()
-            : rows.stream().map(ExperimentMapper::mapRowToExperiment).toList();
-
-    response.setExperiments(experiments);
-
-    PaginationMeta paginationMeta;
-    paginationMeta =
-        PaginationMeta.builder()
-            .pageSize(experiments.size())
-            .currentPage(req.getPage())
-            .totalCount(totalCount)
-            .build();
-
-    response.setPagination(paginationMeta);
-
-    return response;
   }
 }

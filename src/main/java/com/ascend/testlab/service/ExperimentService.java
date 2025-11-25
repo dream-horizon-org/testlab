@@ -11,40 +11,16 @@ import io.reactivex.rxjava3.core.Single;
 import java.util.UUID;
 
 /**
- * Service interface for Experiment business logic.
+ * Interface for experiment operations.
  *
- * <p>Provides methods for creating, updating, and assigning experiments with proper validation and
- * error handling.
- *
- * @author Ravi Pandey
+ * @author Yashita Bansal
  * @version 1.0
  * @since 1.0
+ * @see Experiment
+ * @see FilterExperimentsRequest
+ * @see FilterExperimentsResponse
  */
 public interface ExperimentService {
-
-  /**
-   * Creates a new experiment with validation and error handling.
-   *
-   * @param tenantId tenant identifier for multi-tenancy
-   * @param projectKey project identifier from header
-   * @param request experiment creation request with all experiment details
-   * @return Single emitting CreateExperimentResponse with id, status, and message
-   */
-  Single<CreateExperimentResponse> create(
-      UUID tenantId, String projectKey, CreateExperimentRequest request);
-
-  /**
-   * Updates experiment fields partially with validation.
-   *
-   * @param tenantId tenant identifier for multi-tenancy
-   * @param projectKey project identifier from header
-   * @param experimentId experiment identifier
-   * @param request update experiment request DTO with validated fields
-   * @return Single emitting UpdateExperimentResponse with id, status, and message
-   */
-  Single<UpdateExperimentResponse> update(
-      UUID tenantId, String projectKey, UUID experimentId, UpdateExperimentRequest request);
-
   /**
    * Retrieves a single experiment by project Key and experiment ID.
    *
@@ -73,4 +49,41 @@ public interface ExperimentService {
    */
   Single<FilterExperimentsResponse> filterExperiments(
       String projectKey, FilterExperimentsRequest request);
+
+  /**
+   * Deletes an experiment by project Key and experiment ID.
+   *
+   * <p>Deletes a single experiment and all its associated data including tags and owner mappings.
+   * The deletion is performed in a transaction to ensure data consistency. The previous experiment
+   * data is logged in the experiment_log table for audit purposes.
+   *
+   * @param projectKey the project Key that contains the experiment to delete
+   * @param experimentId the unique identifier of the experiment to delete
+   * @return a Single containing DeleteExperimentResponse with deletion details, or an error if the
+   *     experiment ID is invalid, the experiment does not exist, or on failure
+   */
+  Single<Boolean> deleteExperiment(String projectKey, String experimentId);
+
+  /**
+   * Creates a new experiment with validation and error handling.
+   *
+   * @param tenantId tenant identifier for multi-tenancy
+   * @param projectKey project identifier from header
+   * @param request experiment creation request with all experiment details
+   * @return Single emitting CreateExperimentResponse with id, status, and message
+   */
+  Single<CreateExperimentResponse> create(
+      UUID tenantId, String projectKey, CreateExperimentRequest request);
+
+  /**
+   * Updates experiment fields partially with validation.
+   *
+   * @param tenantId tenant identifier for multi-tenancy
+   * @param projectKey project identifier from header
+   * @param experimentId experiment identifier
+   * @param request update experiment request DTO with validated fields
+   * @return Single emitting UpdateExperimentResponse with id, status, and message
+   */
+  Single<UpdateExperimentResponse> update(
+      UUID tenantId, String projectKey, UUID experimentId, UpdateExperimentRequest request);
 }

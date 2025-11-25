@@ -83,4 +83,16 @@ public final class WriteQuery {
       """;
 
   public static final String UPDATE_EXPERIMENT_PREFIX = "UPDATE experiments SET ";
+
+  /** Query to delete an experiment by project key and experiment ID. */
+  public static final String DELETE_EXPERIMENT_BY_ID =
+      "DELETE FROM experiment.experiments WHERE project_key = $1 AND experiment_id = $2;";
+
+  /** Query to delete all tags associated with an experiment. */
+  public static final String DELETE_TAG_FOR_EXPERIMENT =
+      "DELETE FROM experiment.tags WHERE project_key = $1 AND experiment_id = $2;";
+
+  /** Query to delete all owners associated with an experiment. */
+  public static final String DELETE_OWNER_FOR_EXPERIMENT =
+      "DELETE FROM experiment.owners WHERE project_key = $1 AND experiment_id = $2;";
 }

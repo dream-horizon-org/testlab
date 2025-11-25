@@ -63,8 +63,13 @@ public enum ErrorEnum implements RestError {
       "Filter Experiments failed due to: %s",
       HttpStatus.SC_INTERNAL_SERVER_ERROR),
 
-  /* Client Errors */
+  /** The error code for deleting experiment failed. */
+  REST_DELETE_EXPERIMENT_FAILED(
+      "testlab_REST_DELETE_EXPERIMENT_FAILED",
+      "Delete experiment failed due to: %s",
+      HttpStatus.SC_INTERNAL_SERVER_ERROR),
 
+  /* Client Errors */
   /** The error code when experiment is not found. */
   EXPERIMENT_NOT_FOUND(
       "EXPERIMENT_NOT_FOUND",

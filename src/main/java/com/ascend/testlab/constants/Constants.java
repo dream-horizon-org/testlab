@@ -83,6 +83,53 @@ public final class Constants {
   public static final Set<String> NON_UPDATABLE_FIELDS =
       Set.of("name", "experiment_key", "project_key", "experiment_id", "created_by", "created_at");
 
+  /* State-Based Validation Constants */
+
+  /**
+   * Fields allowed to be updated when experiment is in LIVE state.
+   *
+   * <p>Only metadata and non-critical fields that don't affect experiment behavior.
+   */
+  public static final Set<String> LIVE_STATE_UPDATABLE_FIELDS =
+      Set.of(
+          "description",
+          "hypothesis",
+          "status",
+          "guardrail_health_status",
+          "winning_variant",
+          "exposure",
+          "threshold",
+          "end_time",
+          "tags",
+          "owner",
+          "metrics",
+          "updated_by");
+
+  /**
+   * Fields NOT allowed to be updated when experiment is in LIVE state.
+   *
+   * <p>These fields affect experiment behavior and cannot be changed once experiment is running.
+   */
+  public static final Set<String> LIVE_STATE_NON_UPDATABLE_FIELDS =
+      Set.of(
+          "type",
+          "cohorts",
+          "variant_weights",
+          "variants",
+          "distribution_strategy",
+          "assignment_domain",
+          "overrides",
+          "rule_attributes",
+          "start_time");
+
+  /**
+   * Fields that belong to related tables (not the main experiments table).
+   *
+   * <p>These fields are handled separately in their respective DAOs.
+   */
+  public static final Set<String> NON_EXPERIMENT_TABLE_FIELDS =
+      Set.of("tags", "owner", "metrics", "updated_by");
+
   /** The delimiter for apostrophe. */
   public static final String APOSTROPHE = "'";
 

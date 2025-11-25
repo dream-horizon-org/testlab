@@ -10,6 +10,7 @@ import com.ascend.testlab.constants.enums.ExperimentHealth;
 import com.ascend.testlab.constants.enums.ExperimentStatus;
 import com.ascend.testlab.constants.enums.ExperimentType;
 import com.ascend.testlab.constants.postgresql.ReadQuery;
+import com.ascend.testlab.constants.postgresql.WriteQuery;
 import com.ascend.testlab.dao.impl.ExperimentDAOImpl;
 import com.ascend.testlab.dto.entity.Experiment;
 import com.ascend.testlab.dto.request.CreateExperimentRequest;
@@ -21,6 +22,7 @@ import io.reactivex.rxjava3.observers.TestObserver;
 import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
 import io.vertx.rxjava3.sqlclient.Row;
+import io.vertx.rxjava3.sqlclient.SqlConnection;
 import io.vertx.rxjava3.sqlclient.Tuple;
 import java.time.Instant;
 import java.time.OffsetDateTime;
@@ -55,7 +57,9 @@ public class ExperimentDAOTest {
 
   @BeforeEach
   void setUp() {
-    experimentDAO = new ExperimentDAOImpl(pgWriterClient, pgReaderClient);
+    experimentDAO =
+        new ExperimentDAOImpl(
+            pgReaderClient, pgWriterClient, new com.fasterxml.jackson.databind.ObjectMapper());
     testTenantId = UUID.randomUUID();
     testProjectKey = UUID.randomUUID().toString();
     testExperimentId = UUID.randomUUID();
@@ -75,6 +79,9 @@ public class ExperimentDAOTest {
       // Act
       TestObserver<Long> testObserver =
           experimentDAO.create(testTenantId, testProjectKey, request).test();
+      ExperimentDAO dao =
+          new ExperimentDAOImpl(
+              pgReaderClient, pgWriterClient, new com.fasterxml.jackson.databind.ObjectMapper());
 
       // Assert
       testObserver.assertComplete();
@@ -858,6 +865,7 @@ public class ExperimentDAOTest {
       FilterExperimentsRequest request =
           FilterExperimentsRequest.builder().limit(20).page(1).build();
       List<Row> mockRows = createMockRows(experiment, 1);
+      SqlConnection mockConnection = mock(SqlConnection.class);
 
       doReturn(Maybe.just(experiment))
           .when(pgReaderClient)
@@ -865,20 +873,42 @@ public class ExperimentDAOTest {
       doReturn(Single.just(mockRows))
           .when(pgReaderClient)
           .fetchAll(anyString(), any(Tuple.class), any(Function.class));
+      when(pgWriterClient.executeWithTransaction(any()))
+          .thenAnswer(
+              invocation -> {
+                Function<SqlConnection, Maybe<Boolean>> function = invocation.getArgument(0);
+                return function.apply(mockConnection);
+              });
+      when(pgWriterClient.execute(
+              eq(mockConnection), eq(WriteQuery.DELETE_EXPERIMENT_BY_ID), any(Tuple.class)))
+          .thenReturn(Single.just(true));
+      when(pgWriterClient.execute(
+              eq(mockConnection), eq(WriteQuery.DELETE_TAG_FOR_EXPERIMENT), any(Tuple.class)))
+          .thenReturn(Single.just(true));
+      when(pgWriterClient.execute(
+              eq(mockConnection), eq(WriteQuery.DELETE_OWNER_FOR_EXPERIMENT), any(Tuple.class)))
+          .thenReturn(Single.just(true));
+      when(pgWriterClient.execute(
+              eq(mockConnection), eq(WriteQuery.INSERT_EXPERIMENT_UPDATE_LOG), any(Tuple.class)))
+          .thenReturn(Single.just(true));
 
       // Act
       TestObserver<Experiment> getObserver =
           experimentDAO.getExperiment(PROJECT_KEY, testExperimentId.toString()).test();
       TestObserver<FilterExperimentsResponse> filterObserver =
           experimentDAO.filterExperiments(PROJECT_KEY, request).test();
+      TestObserver<Boolean> deleteObserver =
+          experimentDAO.deleteExperiment(PROJECT_KEY, experiment).test();
 
       // Assert
       getObserver.assertComplete().assertNoErrors();
       filterObserver.assertComplete().assertNoErrors();
+      deleteObserver.assertComplete().assertNoErrors();
 
       verify(pgReaderClient, times(1))
           .fetchOne(eq(ReadQuery.GET_EXPERIMENT), any(Tuple.class), any(Function.class));
       verify(pgReaderClient, times(1)).fetchAll(anyString(), any(Tuple.class), any(Function.class));
+      verify(pgWriterClient, times(1)).executeWithTransaction(any());
       testContext.completeNow();
     }
   }
