@@ -23,6 +23,8 @@ public final class Constants {
   /** The default application environment. */
   public static final String DEFAULT_APP_ENV = "dev";
 
+  public static final String ADMIN = "ADMIN";
+
   /** The maximum number of REST verticles. */
   public static final Integer MAX_NUM_REST_VERTICLES = 16;
 

@@ -184,12 +184,12 @@ public class AllocationServiceImpl implements AllocationService {
               if (Objects.isNull(newVariant)) {
                 throw ExceptionUtil.getException(ErrorEnum.INVALID_VARIANT_FOUND);
               }
-              if (currentAssignment.getVariantName().equals(newVariant.getDisplayName())) {
+              if (currentAssignment.getVariantName().equals(reallocateRequest.getVariantName())) {
                 throw ExceptionUtil.getException(ErrorEnum.VARIANT_ALREADY_ASSIGNED);
               }
 
               UserExperimentMap newAssignment =
-                  AssignmentBuilder.buildAssignment(experiment, newVariant.getDisplayName());
+                  AssignmentBuilder.buildAssignment(experiment, reallocateRequest.getVariantName());
               log.debug("OldAssignment {}", currentAssignment);
               log.debug("NewAssignment {}", newAssignment);
               return allocationDAO

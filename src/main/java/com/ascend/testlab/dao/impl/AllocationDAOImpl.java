@@ -306,7 +306,7 @@ public class AllocationDAOImpl implements AllocationDAO {
               .oldVariant(oldVariantName)
               .newVariant(newVariantName)
               .reason(reason)
-              .changedBy("system")
+              .changedBy(Constants.ADMIN)
               .build();
 
       String entryJson = objectMapper.writeValueAsString(entry);

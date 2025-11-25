@@ -1,5 +1,6 @@
 package com.ascend.testlab.dto.entity.allocation;
 
+import com.ascend.testlab.constants.Constants;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -38,5 +39,5 @@ public class ReallocationLogEntry {
 
   @JsonProperty(value = "changed_by")
   @Builder.Default
-  private String changedBy = "system";
+  private String changedBy = Constants.ADMIN;
 }
