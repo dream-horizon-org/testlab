@@ -4,6 +4,83 @@ info:
   description: testlab Service
   version: "1.0"
 paths:
+  /v1/experiments/{experimentId}:
+    get:
+      operationId: getExperimentHandle
+      parameters:
+      - name: x-project-key
+        in: header
+        required: true
+        schema:
+          type: string
+      - name: experimentId
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Success'
+        "400":
+          description: Experiment Id is not valid
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Failure'
+        "404":
+          description: Experiment not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Failure'
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Failure'
+    delete:
+      operationId: handle
+      parameters:
+      - name: x-project-key
+        in: header
+        required: true
+        schema:
+          type: string
+      - name: experimentId
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Success'
+        "400":
+          description: Project id is missing or Experiment id is invalid
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Failure'
+        "404":
+          description: Experiment not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Failure'
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Failure'
   /v1/experiments/key-availability:
     get:
       operationId: experimentKeyAvailabilityHandle
@@ -99,45 +176,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Failure'
-  /v1/experiments/{experimentId}:
-    get:
-      operationId: getExperimentHandle
-      parameters:
-      - name: x-project-key
-        in: header
-        required: true
-        schema:
-          type: string
-      - name: experimentId
-        in: path
-        required: true
-        schema:
-          type: string
-      responses:
-        "200":
-          description: Successful Response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Success'
-        "400":
-          description: Experiment Id is not valid
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Failure'
-        "404":
-          description: Experiment not found
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Failure'
-        "500":
-          description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Failure'
   /v1/experiments/{experimentId}/history:
     get:
       operationId: getExperimentHistoryHandle
@@ -219,6 +257,11 @@ paths:
                 $ref: '#/components/schemas/Failure'
 components:
   schemas:
+    Success:
+      type: object
+      properties:
+        data:
+          type: object
     ErrorEntity:
       type: object
       properties:
@@ -233,6 +276,11 @@ components:
       properties:
         error:
           $ref: '#/components/schemas/ErrorEntity'
+    SuccessBoolean:
+      type: object
+      properties:
+        data:
+          type: boolean
     ExperimentKeyAvailabilityResponse:
       type: object
       properties:
@@ -243,11 +291,6 @@ components:
       properties:
         data:
           $ref: '#/components/schemas/ExperimentKeyAvailabilityResponse'
-    Success:
-      type: object
-      properties:
-        data:
-          type: object
     Experiment:
       type: object
       properties:
