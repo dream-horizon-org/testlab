@@ -772,12 +772,11 @@ public class AllocationDAOImpl implements AllocationDAO {
   }
 
   /**
-   * Increments variant counts for multiple experiments in batch using map operations. Tracks which
-   * increments succeed for proper rollback on failure.
+   * Increments variant counts for multiple experiments in batch. Each variant count is stored as a
+   * separate record in Aerospike. Tracks which increments succeed for proper rollback on failure.
    *
    * @param projectKey project identifier
-   * @param variantCountMap map of "experimentId:variantName" -> count to increment (always 1 for
-   *     now)
+   * @param variantCountMap map of "experimentId:variantName" -> variant name
    * @return map of keys to their new counts
    */
   private Single<Map<String, Long>> incrementVariantCountsBatch(
@@ -790,8 +789,6 @@ public class AllocationDAOImpl implements AllocationDAO {
     WritePolicy policy = new WritePolicy();
     policy.expiration = -1;
     policy.sendKey = true;
-
-    Map<String, Long> results = new HashMap<>();
 
     return Observable.fromIterable(variantCountMap.entrySet())
         .concatMapSingle(
@@ -811,36 +808,34 @@ public class AllocationDAOImpl implements AllocationDAO {
                   .operate(policy, key, incrementOp, getOp)
                   .map(
                       record -> {
-                        Long count =
+                        Long newCount =
                             record != null
                                 ? record.getLong(aerospikeConfig.getVariantCountBin())
                                 : 1L;
-                        results.put(keyStr, count);
-                        log.debug("Incremented variant count for {} to {}", keyStr, count);
-                        return keyStr;
+                        log.debug("Incremented variant count for {} to {}", keyStr, newCount);
+                        return new AbstractMap.SimpleEntry<>(keyStr, newCount);
                       })
                   .onErrorResumeNext(
                       error -> {
-                        log.error("Failed to increment variant count for {}", keyStr, error);
-
-                        return Single.error(
-                            new RuntimeException(
-                                "Failed to increment variant count for "
-                                    + keyStr
-                                    + " after successfully incrementing "
-                                    + results.size()
-                                    + " variants",
-                                error));
+                        log.error(
+                            "Failed to increment variant count for {}. Continuing with remaining increments.",
+                            keyStr,
+                            error);
+                        return Single.error(error);
                       });
             })
-        .ignoreElements()
-        .andThen(Single.just(results))
+        .toMap(Map.Entry::getKey, Map.Entry::getValue)
+        .doOnSuccess(
+            result ->
+                log.debug(
+                    "Successfully incremented {} variant counts for project {}",
+                    result.size(),
+                    projectKey))
         .doOnError(
             error ->
                 log.error(
-                    "Error incrementing variant counts batch for project {}: {} of {} succeeded",
+                    "Error incrementing variant counts batch for project {}: of {}",
                     projectKey,
-                    results.size(),
                     variantCountMap.size(),
                     error));
   }

@@ -13,6 +13,7 @@ import com.ascend.testlab.dto.entity.variantweights.CohortVariantWeights;
 import com.ascend.testlab.dto.entity.variantweights.StratifiedVariantWeights;
 import com.ascend.testlab.dto.entity.variantweights.VariantWeights;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.rxjava3.sqlclient.Row;
 import java.util.Arrays;
@@ -88,7 +89,7 @@ public class ExperimentMapper {
           deserializeVariants(row.getJsonObject(Columns.VARIANTS), mapper, experimentId);
       List<RuleAttributes> ruleAttributes =
           deserializeRuleAttributes(
-              row.getJsonObject(Columns.RULE_ATTRIBUTES), mapper, experimentId);
+              row.getJsonArray(Columns.RULE_ATTRIBUTES), mapper, experimentId);
 
       return Experiment.builder()
           .projectKey(row.getString(Columns.PROJECT_KEY))
@@ -212,8 +213,7 @@ public class ExperimentMapper {
    * @throws Exception if deserialization fails
    */
   private static List<RuleAttributes> deserializeRuleAttributes(
-      JsonObject ruleAttributesJson, ObjectMapper objectMapper, UUID experimentId)
-      throws Exception {
+      JsonArray ruleAttributesJson, ObjectMapper objectMapper, UUID experimentId) throws Exception {
 
     if (Objects.isNull(ruleAttributesJson)) {
       log.warn("Null rule attributes JSON for experiment {}", experimentId);

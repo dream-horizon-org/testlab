@@ -459,8 +459,8 @@ public class AllocationServiceImpl implements AllocationService {
                           String key =
                               allocation.getExperimentId().toString()
                                   + Constants.COLON
-                                  + allocation.getVariant().getDisplayName();
-                          variantCountMap.put(key, allocation.getVariant().getDisplayName());
+                                  + allocation.getVariantName();
+                          variantCountMap.put(key, allocation.getVariantName());
                         }
 
                         return allocationDAO
@@ -599,10 +599,8 @@ public class AllocationServiceImpl implements AllocationService {
     Map<String, String> variantCountMap = new HashMap<>();
     for (UserExperimentMap allocation : carryoverAssignments) {
       String key =
-          allocation.getExperimentId().toString()
-              + Constants.COLON
-              + allocation.getVariant().getDisplayName();
-      variantCountMap.put(key, allocation.getVariant().getDisplayName());
+          allocation.getExperimentId().toString() + Constants.COLON + allocation.getVariantName();
+      variantCountMap.put(key, allocation.getVariantName());
     }
 
     return allocationDAO
