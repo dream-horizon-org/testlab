@@ -459,8 +459,7 @@ class AllocationIT {
             allocateRequestBody, postHeaders, null, spec -> spec.post(this.allocationRoute));
 
     allocateResponse.statusCode(HttpStatus.SC_OK);
-    String originalVariant =
-        allocateResponse.extract().path("data.experiment_map[0].variant_name");
+    String originalVariant = allocateResponse.extract().path("data.experiment_map[0].variant_name");
 
     // Determine new variant (if control, switch to treatment and vice versa)
     String newVariant = "treatment".equals(originalVariant) ? "control" : "treatment";
@@ -697,8 +696,7 @@ class AllocationIT {
         TestUtil.executeRequest(
             allocateRequestBody, headers, null, spec -> spec.post(this.allocationRoute));
 
-    String originalVariant =
-        allocateResponse.extract().path("data.experiment_map[0].variant_name");
+    String originalVariant = allocateResponse.extract().path("data.experiment_map[0].variant_name");
     String newVariant = "treatment".equals(originalVariant) ? "control" : "treatment";
 
     // Reallocate with a reason for audit trail
@@ -740,8 +738,7 @@ class AllocationIT {
         TestUtil.executeRequest(
             allocateRequestBody, headers, null, spec -> spec.post(this.allocationRoute));
 
-    String originalVariant =
-        allocateResponse.extract().path("data.experiment_map[0].variant_name");
+    String originalVariant = allocateResponse.extract().path("data.experiment_map[0].variant_name");
     String newVariant = "treatment".equals(originalVariant) ? "control" : "treatment";
 
     // Reallocate without reason (reason is optional)
@@ -768,8 +765,7 @@ class AllocationIT {
     seedExperiment(projectKey, experimentId, "Test Experiment Default Realloc", experimentKey);
 
     // Allocate user
-    Map<String, String> allocateHeaders =
-        Map.of(WebConstants.PROJECT_KEY_HEADER, projectKey);
+    Map<String, String> allocateHeaders = Map.of(WebConstants.PROJECT_KEY_HEADER, projectKey);
 
     Map<String, Object> allocateRequestBody = new HashMap<>();
     allocateRequestBody.put("user_id", user_id);
@@ -781,8 +777,7 @@ class AllocationIT {
         TestUtil.executeRequest(
             allocateRequestBody, allocateHeaders, null, spec -> spec.post(this.allocationRoute));
 
-    String originalVariant =
-        allocateResponse.extract().path("data.experiment_map[0].variant_name");
+    String originalVariant = allocateResponse.extract().path("data.experiment_map[0].variant_name");
     String newVariant = "treatment".equals(originalVariant) ? "control" : "treatment";
 
     // Reallocate without project key header - should use default

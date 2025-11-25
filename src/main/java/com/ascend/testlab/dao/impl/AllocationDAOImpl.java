@@ -109,7 +109,8 @@ public class AllocationDAOImpl implements AllocationDAO {
             ReadQuery.GET_LIVE_EXPERIMENT,
             Tuple.of(projectKey, experimentId),
             row -> ExperimentMapper.mapRowToExperiment(row, objectMapper))
-        .switchIfEmpty(Single.error(ExceptionUtil.getException(ErrorEnum.ACTIVE_EXPERIMENT_NOT_FOUND)))
+        .switchIfEmpty(
+            Single.error(ExceptionUtil.getException(ErrorEnum.ACTIVE_EXPERIMENT_NOT_FOUND)))
         .doOnError(
             error ->
                 log.error(

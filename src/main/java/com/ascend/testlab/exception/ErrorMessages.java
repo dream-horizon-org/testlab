@@ -37,6 +37,12 @@ public final class ErrorMessages {
   /** The error message for invalid limit value. */
   public static final String INVALID_LIMIT_VALUE = "Limit must be greater than zero";
 
+    /** The error message for the variant name missing. */
+    public static final String VARIANT_NAME_MISSING = "variant name parameter is missing";
+
+    /** The error message for the user id missing. */
+    public static final String USER_ID_MISSING = "user id parameter is missing";
+
   /** The error message for invalid page value. */
   public static final String INVALID_PAGE_VALUE = "Page value must be greater than zero";
 
