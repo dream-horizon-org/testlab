@@ -22,7 +22,7 @@ class FilterExperimentsIT {
   private static final String PROJECT_KEY = "filter_exp_it";
   private static final String EXPERIMENT_ID_1 = "11111111-1111-1111-1111-111111111111";
   private static final String EXPERIMENT_ID_2 = "123e4567-e89b-12d3-a456-426614174000";
-  private final String route = WebConstants.FILTER_EXPERIMENTS_PATH;
+  private final String route = "/v1/experiments";
 
   @BeforeAll
   public static void initialize() {

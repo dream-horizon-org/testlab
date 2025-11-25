@@ -92,4 +92,21 @@ public class ExperimentServiceImpl implements ExperimentService {
                       err, new RestException(ErrorEnum.REST_FILTER_EXPERIMENTS_FAILED, err)));
             });
   }
+
+  /** {@inheritDoc}* */
+  @Override
+  public Single<Boolean> deleteExperiment(String projectKey, String experimentId) {
+    return experimentDAO
+        .getExperiment(projectKey, experimentId)
+        .switchIfEmpty(Single.error(new RestException(ErrorEnum.EXPERIMENT_NOT_FOUND)))
+        .flatMap(experiment -> experimentDAO.deleteExperiment(projectKey, experiment))
+        .onErrorResumeNext(
+            err -> {
+              log.error(
+                  "Error in deleting experiment for project {}: {}", projectKey, experimentId);
+              return Single.error(
+                  ErrorEnum.handleException(
+                      err, new RestException(ErrorEnum.REST_DELETE_EXPERIMENT_FAILED, err)));
+            });
+  }
 }

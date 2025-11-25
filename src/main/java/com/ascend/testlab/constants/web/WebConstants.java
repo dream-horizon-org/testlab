@@ -61,13 +61,6 @@ public final class WebConstants {
 
   public static final String DEFAULT_PROJECT_KEY = "abc";
 
-  /*API Path */
-  /** The path for filtering experiments endpoint. */
-  public static final String FILTER_EXPERIMENTS_PATH = "/v1/experiments";
-
-  /** The path for getting a single experiment by ID endpoint. */
-  public static final String GET_EXPERIMENT_PATH = "/v1/experiments/{experimentId}";
-
   /** The path parameter name for experiment ID. */
   public static final String EXPERIMENT_ID = "experimentId";
 

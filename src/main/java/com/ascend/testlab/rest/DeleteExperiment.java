@@ -2,7 +2,6 @@ package com.ascend.testlab.rest;
 
 import com.ascend.testlab.constants.web.WebConstants;
 import com.ascend.testlab.dto.ResponseEntity;
-import com.ascend.testlab.dto.entity.experiment.Experiment;
 import com.ascend.testlab.exception.ErrorMessages;
 import com.ascend.testlab.service.ExperimentService;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -16,8 +15,12 @@ import java.util.concurrent.CompletionStage;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * REST endpoint for retrieving experiment details by experiment ID. Handles GET requests to fetch a
- * specific experiment within a project.
+ * REST endpoint for deleting experiments. Handles DELETE requests to remove an experiment from the
+ * system.
+ *
+ * <p>Deletes an experiment by its ID within a specified project. The deletion process removes the
+ * experiment record, associated tags, and owner mappings, and logs the deletion in the experiment
+ * log table for audit purposes.
  *
  * @author Yashita Bansal
  * @version 1.0
@@ -26,33 +29,42 @@ import lombok.extern.slf4j.Slf4j;
  */
 @Path("/v1")
 @Slf4j
-public class GetExperiment {
+public class DeleteExperiment {
 
-  /** The experiment service for retrieving experiment data. */
   private final ExperimentService experimentService;
 
   /**
-   * Constructor for GetExperiment.
+   * Constructor for DeleteExperiment.
    *
-   * @param experimentService the experiment service to use for retrieving experiment data
+   * @param experimentService the experiment service to use for deleting experiment data
    */
   @Inject
-  public GetExperiment(ExperimentService experimentService) {
+  public DeleteExperiment(ExperimentService experimentService) {
     this.experimentService = experimentService;
   }
 
   /**
-   * Handles GET request to retrieve experiment details by experiment ID.
+   * Handles DELETE request to delete an experiment by experiment ID.
    *
-   * <p>Fetches a single experiment based on the provided project Key and experiment ID. The project
-   * key is passed as a header parameter, while the experiment ID is passed as a path parameter.
+   * <p>Deletes a single experiment based on the provided project Key and experiment ID. The project
+   * key is passed as a header parameter, while the experiment ID is passed as a query parameter.
+   *
+   * <p>The deletion process performs the following operations in a transaction:
+   *
+   * <ul>
+   *   <li>Deletes the experiment record from the experiments table
+   *   <li>Removes associated tags from the experiment_tags table
+   *   <li>Removes owner mappings from the experiment_owners table
+   *   <li>Logs the deletion with previous experiment data in the experiment_update_log table
+   * </ul>
    *
    * @param projectKey the project Key (required, passed as header parameter "x-project-key")
-   * @param experimentId the experiment ID (required, passed as path parameter)
-   * @return a CompletionStage containing a successful response with the experiment data, or a
-   *     failure response if the experiment ID is invalid or the experiment is not found
+   * @param experimentId the experiment ID (required, passed as query parameter "experimentId")
+   * @return a CompletionStage containing a successful response with DeleteExperimentResponse
+   *     containing deletion details, or a failure response if the project key is missing, the
+   *     experiment ID is invalid, or the experiment does not exist
    */
-  @GET
+  @DELETE
   @Path("/experiments/{experimentId}")
   @Produces(MediaType.APPLICATION_JSON)
   @Consumes(MediaType.APPLICATION_JSON)
@@ -63,7 +75,7 @@ public class GetExperiment {
   @ApiResponse(
       content = @Content(schema = @Schema(implementation = ResponseEntity.Failure.class)),
       responseCode = "400",
-      description = "Experiment Id is not valid")
+      description = "Project id is missing or Experiment id is invalid")
   @ApiResponse(
       content = @Content(schema = @Schema(implementation = ResponseEntity.Failure.class)),
       responseCode = "404",
@@ -72,7 +84,7 @@ public class GetExperiment {
       content = @Content(schema = @Schema(implementation = ResponseEntity.Failure.class)),
       responseCode = "500",
       description = "Internal Server Error")
-  public CompletionStage<ResponseEntity.Success<Experiment>> getExperimentHandle(
+  public CompletionStage<ResponseEntity.Success<Boolean>> handle(
       @HeaderParam(WebConstants.PROJECT_KEY_HEADER)
           @NotBlank(message = ErrorMessages.PROJECT_KEY_MISSING)
           String projectKey,
@@ -80,7 +92,7 @@ public class GetExperiment {
           @NotBlank(message = ErrorMessages.EXPERIMENT_ID_MISSING)
           String experimentId) {
     return experimentService
-        .getExperiment(projectKey, experimentId)
+        .deleteExperiment(projectKey, experimentId)
         .map(ResponseEntity.Success::new)
         .toCompletionStage();
   }

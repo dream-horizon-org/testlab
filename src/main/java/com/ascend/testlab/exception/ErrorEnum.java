@@ -57,10 +57,21 @@ public enum ErrorEnum implements RestError {
       "Filter Experiments failed due to: %s",
       HttpStatus.SC_INTERNAL_SERVER_ERROR),
 
+  /** The error code for deleting experiment failed. */
+  REST_DELETE_EXPERIMENT_FAILED(
+      "testlab_REST_DELETE_EXPERIMENT_FAILED",
+      "Delete experiment failed due to: %s",
+      HttpStatus.SC_INTERNAL_SERVER_ERROR),
+
   /** The error code for failing reallocation. */
-  REALLOCATION__FAILED(
-      "REALLOCATION__FAILED",
+  REST_REALLOCATION_FAILED(
+      "testlab_REST_REALLOCATION_FAILED",
       "Failed to reallocate user experiment",
+      HttpStatus.SC_INTERNAL_SERVER_ERROR),
+
+  USER_COHORTS_SERVICE_REQUEST_FAILED(
+      "USER_COHORTS_SERVICE_REQUEST_FAILED",
+      "Cohorts service request failed with statusCode:%s",
       HttpStatus.SC_INTERNAL_SERVER_ERROR),
 
   /* Client Errors */
@@ -70,18 +81,11 @@ public enum ErrorEnum implements RestError {
       "Missing User Identifier, pass user-id/guest-id",
       HttpStatus.SC_BAD_REQUEST),
 
-  INVALID_ALLOCATION_REQUEST(
-      "INVALID_ALLOCATION_REQUEST", "Allocation Request is invalid", HttpStatus.SC_BAD_REQUEST),
-
-  USER_COHORTS_SERVICE_REQUEST_FAILED(
-      "USER_COHORTS_SERVICE_REQUEST_FAILED",
-      "Cohorts service request failed with statusCode:%s",
-      HttpStatus.SC_INTERNAL_SERVER_ERROR),
-
   INVALID_REQUEST_BODY(
       "INVALID_REQUEST_BODY",
       "Request body param(s) is/are missing/invalid",
       HttpStatus.SC_BAD_REQUEST),
+
   /** The error code when an invalid variant is present in the request payload. */
   INVALID_VARIANT_FOUND(
       "INVALID_VARIANT_FOUND", "Invalid variant found in request", HttpStatus.SC_BAD_REQUEST),

@@ -165,7 +165,7 @@ public class AllocationDAOImpl implements AllocationDAO {
                                     rollbackSuccess ->
                                         Single.error(
                                             ExceptionUtil.getException(
-                                                ErrorEnum.REALLOCATION__FAILED)));
+                                                ErrorEnum.REST_REALLOCATION_FAILED)));
                           }
 
                           return logReallocation(
@@ -625,17 +625,18 @@ public class AllocationDAOImpl implements AllocationDAO {
             });
   }
 
-    /**
-     * Atomically adjusts the stored variant count in Aerospike by \+1 or \-1 and returns the new
-     * count. Performs an add operation followed by a read of the count bin so the returned value
-     * reflects the latest count.
-     *
-     * @param projectKey project identifier
-     * @param experimentId experiment identifier
-     * @param variantName variant name
-     * @param decrement if `true` the count is decremented by 1; if `false` the count is incremented by 1
-     * @return the new count after the update, or 0L on error
-     */
+  /**
+   * Atomically adjusts the stored variant count in Aerospike by \+1 or \-1 and returns the new
+   * count. Performs an add operation followed by a read of the count bin so the returned value
+   * reflects the latest count.
+   *
+   * @param projectKey project identifier
+   * @param experimentId experiment identifier
+   * @param variantName variant name
+   * @param decrement if `true` the count is decremented by 1; if `false` the count is incremented
+   *     by 1
+   * @return the new count after the update, or 0L on error
+   */
   private Single<Long> updateVariantCount(
       String projectKey, String experimentId, String variantName, Boolean decrement) {
 

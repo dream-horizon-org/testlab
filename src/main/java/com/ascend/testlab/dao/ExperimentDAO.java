@@ -28,4 +28,13 @@ public interface ExperimentDAO {
    */
   Single<FilterExperimentsResponse> filterExperiments(
       String projectKey, FilterExperimentsRequest req);
+
+  /**
+   * Delete experiment and related data for the provided projectKey and experimentId
+   *
+   * @param projectKey the project Key
+   * @param experiment the experiment data
+   * @return a Single that emits true if deletion is successful, false otherwise
+   */
+  Single<Boolean> deleteExperiment(String projectKey, Experiment experiment);
 }
