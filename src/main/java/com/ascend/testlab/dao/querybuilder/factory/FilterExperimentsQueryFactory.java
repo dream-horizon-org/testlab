@@ -11,6 +11,7 @@ import com.ascend.testlab.dao.querybuilder.decorator.filter.TypeFilterQueryDecor
 import com.ascend.testlab.dao.querybuilder.decorator.operation.GroupAndOrderQueryDecorator;
 import com.ascend.testlab.dao.querybuilder.decorator.operation.PaginationQueryDecorator;
 import com.ascend.testlab.dto.request.FilterExperimentsRequest;
+import com.ascend.testlab.util.CommonUtil;
 import lombok.experimental.UtilityClass;
 
 /**
@@ -59,7 +60,7 @@ public final class FilterExperimentsQueryFactory {
     baseQuery = new GroupAndOrderQueryDecorator(baseQuery);
 
     // Apply pagination at the end
-    int offset = (request.getPage() - 1) * request.getLimit();
+    int offset = CommonUtil.calculateOffset(request.getPage(), request.getLimit());
     baseQuery = new PaginationQueryDecorator(baseQuery, request.getLimit(), offset);
 
     return baseQuery.buildQuery();

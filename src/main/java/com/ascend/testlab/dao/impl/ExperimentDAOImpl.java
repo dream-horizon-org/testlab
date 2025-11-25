@@ -15,6 +15,7 @@ import com.ascend.testlab.dto.request.CreateExperimentRequest;
 import com.ascend.testlab.dto.request.FilterExperimentsRequest;
 import com.ascend.testlab.dto.request.UpdateExperimentRequest;
 import com.ascend.testlab.dto.response.FilterExperimentsResponse;
+import com.ascend.testlab.dto.response.PaginationMeta;
 import com.ascend.testlab.exception.ErrorEnum;
 import com.dream11.rest.exception.RestException;
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -1588,10 +1589,10 @@ public class ExperimentDAOImpl implements ExperimentDAO {
 
     response.setExperiments(experiments);
 
-    FilterExperimentsResponse.PaginationMeta paginationMeta;
+    PaginationMeta paginationMeta;
     paginationMeta =
-        FilterExperimentsResponse.PaginationMeta.builder()
-            .pageSize(req.getLimit())
+        PaginationMeta.builder()
+            .pageSize(experiments.size())
             .currentPage(req.getPage())
             .totalCount(totalCount)
             .build();

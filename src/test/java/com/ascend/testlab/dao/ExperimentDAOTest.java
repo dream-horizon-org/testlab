@@ -602,9 +602,9 @@ public class ExperimentDAOTest {
       testObserver.assertValue(
           response ->
               response.getExperiments().size() == 1
-                  && response.getPagination().getTotalCount() == 1
-                  && response.getPagination().getCurrentPage() == 1
-                  && response.getPagination().getPageSize() == 20);
+                  && response.getPagination().totalCount() == 1
+                  && response.getPagination().currentPage() == 1
+                  && response.getPagination().pageSize() == response.getExperiments().size());
       verify(pgReaderClient, times(1)).fetchAll(anyString(), any(Tuple.class), any(Function.class));
       testContext.completeNow();
     }
@@ -629,9 +629,9 @@ public class ExperimentDAOTest {
       testObserver.assertValue(
           response ->
               response.getExperiments().isEmpty()
-                  && response.getPagination().getTotalCount() == 0
-                  && response.getPagination().getCurrentPage() == 1
-                  && response.getPagination().getPageSize() == 20);
+                  && response.getPagination().totalCount() == 0
+                  && response.getPagination().currentPage() == 1
+                  && response.getPagination().pageSize() == 0);
       verify(pgReaderClient, times(1)).fetchAll(anyString(), any(Tuple.class), any(Function.class));
       testContext.completeNow();
     }
@@ -657,8 +657,7 @@ public class ExperimentDAOTest {
       testObserver.assertNoErrors();
       testObserver.assertValue(
           response ->
-              response.getExperiments().size() == 1
-                  && response.getPagination().getTotalCount() == 1);
+              response.getExperiments().size() == 1 && response.getPagination().totalCount() == 1);
       verify(pgReaderClient, times(1)).fetchAll(anyString(), any(Tuple.class), any(Function.class));
       testContext.completeNow();
     }
@@ -684,8 +683,7 @@ public class ExperimentDAOTest {
       testObserver.assertNoErrors();
       testObserver.assertValue(
           response ->
-              response.getExperiments().size() == 1
-                  && response.getPagination().getTotalCount() == 1);
+              response.getExperiments().size() == 1 && response.getPagination().totalCount() == 1);
       verify(pgReaderClient, times(1)).fetchAll(anyString(), any(Tuple.class), any(Function.class));
       testContext.completeNow();
     }
@@ -711,8 +709,7 @@ public class ExperimentDAOTest {
       testObserver.assertNoErrors();
       testObserver.assertValue(
           response ->
-              response.getExperiments().size() == 1
-                  && response.getPagination().getTotalCount() == 1);
+              response.getExperiments().size() == 1 && response.getPagination().totalCount() == 1);
       verify(pgReaderClient, times(1)).fetchAll(anyString(), any(Tuple.class), any(Function.class));
       testContext.completeNow();
     }
@@ -738,8 +735,7 @@ public class ExperimentDAOTest {
       testObserver.assertNoErrors();
       testObserver.assertValue(
           response ->
-              response.getExperiments().size() == 1
-                  && response.getPagination().getTotalCount() == 1);
+              response.getExperiments().size() == 1 && response.getPagination().totalCount() == 1);
       verify(pgReaderClient, times(1)).fetchAll(anyString(), any(Tuple.class), any(Function.class));
       testContext.completeNow();
     }
@@ -765,8 +761,7 @@ public class ExperimentDAOTest {
       testObserver.assertNoErrors();
       testObserver.assertValue(
           response ->
-              response.getExperiments().size() == 1
-                  && response.getPagination().getTotalCount() == 1);
+              response.getExperiments().size() == 1 && response.getPagination().totalCount() == 1);
       verify(pgReaderClient, times(1)).fetchAll(anyString(), any(Tuple.class), any(Function.class));
       testContext.completeNow();
     }
@@ -798,8 +793,7 @@ public class ExperimentDAOTest {
       testObserver.assertNoErrors();
       testObserver.assertValue(
           response ->
-              response.getExperiments().size() == 1
-                  && response.getPagination().getTotalCount() == 1);
+              response.getExperiments().size() == 1 && response.getPagination().totalCount() == 1);
       verify(pgReaderClient, times(1)).fetchAll(anyString(), any(Tuple.class), any(Function.class));
       testContext.completeNow();
     }
@@ -825,9 +819,9 @@ public class ExperimentDAOTest {
       testObserver.assertNoErrors();
       testObserver.assertValue(
           response ->
-              response.getPagination().getTotalCount() == 15
-                  && response.getPagination().getCurrentPage() == 2
-                  && response.getPagination().getPageSize() == 10);
+              response.getPagination().totalCount() == 15
+                  && response.getPagination().currentPage() == 2
+                  && response.getPagination().pageSize() == response.getExperiments().size());
       verify(pgReaderClient, times(1)).fetchAll(anyString(), any(Tuple.class), any(Function.class));
       testContext.completeNow();
     }

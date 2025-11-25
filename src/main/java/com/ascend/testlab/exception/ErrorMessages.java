@@ -32,12 +32,19 @@ public final class ErrorMessages {
 
   public static final String INVALID_ASSIGNMENT_DOMAIN = "invalid assignment domain";
 
+  /** The error message for the experiment key missing. */
+  public static final String EXPERIMENT_KEY_MISSING = "experimentKey query parameter is missing";
+
+  /** The error message for the experiment id missing. */
+  public static final String EXPERIMENT_ID_MISSING = "experiment_id parameter is missing";
+
   /** The error message for invalid limit value. */
   public static final String INVALID_LIMIT_VALUE = "Limit must be greater than zero";
 
   /** The error message for invalid page value. */
   public static final String INVALID_PAGE_VALUE = "Page value must be greater than zero";
 
-  /** The error message for the experiment ID missing. */
-  public static final String EXPERIMENT_ID_MISSING = "Experiment ID is missing or blank";
+  /** The error message for experiment key too long. */
+  public static final String EXPERIMENT_KEY_TOO_LONG =
+      "Experiment key is too long (max 255 characters)";
 }

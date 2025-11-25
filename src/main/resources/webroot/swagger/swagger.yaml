@@ -4,6 +4,41 @@ info:
   description: testlab Service
   version: "1.0"
 paths:
+  /v1/experiments/key-availability:
+    get:
+      operationId: experimentKeyAvailabilityHandle
+      parameters:
+      - name: x-project-key
+        in: header
+        required: true
+        schema:
+          type: string
+      - name: experimentKey
+        in: query
+        required: true
+        schema:
+          maxLength: 255
+          minLength: 0
+          type: string
+      responses:
+        "200":
+          description: Successfully validated experiment key
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessExperimentKeyAvailabilityResponse'
+        "400":
+          description: Invalid project key or experiment key
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Failure'
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Failure'
   /v1/experiment:
     post:
       summary: Create a new experiment
@@ -165,6 +200,57 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Failure'
+  /v1/experiments/{experimentId}/history:
+    get:
+      operationId: getExperimentHistoryHandle
+      parameters:
+      - name: x-project-key
+        in: header
+        required: true
+        schema:
+          type: string
+      - name: experimentId
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          format: int32
+          default: 20
+      - name: page
+        in: query
+        schema:
+          type: integer
+          format: int32
+          default: 1
+      responses:
+        "200":
+          description: Successfully fetched experiment history
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessExperimentHistoryResponse'
+        "400":
+          description: Invalid project key or experiment id
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Failure'
+        "404":
+          description: Experiment not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Failure'
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Failure'
   /v1/experiments/tags:
     get:
       operationId: getTagsHandle
@@ -195,6 +281,30 @@ paths:
                 $ref: '#/components/schemas/Failure'
 components:
   schemas:
+    ErrorEntity:
+      type: object
+      properties:
+        code:
+          type: string
+        message:
+          type: string
+        cause:
+          type: string
+    Failure:
+      type: object
+      properties:
+        error:
+          $ref: '#/components/schemas/ErrorEntity'
+    ExperimentKeyAvailabilityResponse:
+      type: object
+      properties:
+        isAvailable:
+          type: boolean
+    SuccessExperimentKeyAvailabilityResponse:
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/ExperimentKeyAvailabilityResponse'
     CreateExperimentResponse:
       type: object
       properties:
@@ -557,20 +667,6 @@ components:
       properties:
         data:
           type: object
-    ErrorEntity:
-      type: object
-      properties:
-        code:
-          type: string
-        message:
-          type: string
-        cause:
-          type: string
-    Failure:
-      type: object
-      properties:
-        error:
-          $ref: '#/components/schemas/ErrorEntity'
     Experiment:
       type: object
       properties:
@@ -686,6 +782,37 @@ components:
       properties:
         data:
           $ref: '#/components/schemas/Experiment'
+    ExperimentHistoryEntry:
+      type: object
+      properties:
+        updatedBy:
+          type: string
+        previousData:
+          $ref: '#/components/schemas/JsonObject'
+        currentData:
+          $ref: '#/components/schemas/JsonObject'
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    ExperimentHistoryResponse:
+      type: object
+      properties:
+        experimentId:
+          type: string
+        history:
+          type: array
+          items:
+            $ref: '#/components/schemas/ExperimentHistoryEntry'
+        pagination:
+          $ref: '#/components/schemas/PaginationMeta'
+    SuccessExperimentHistoryResponse:
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/ExperimentHistoryResponse'
     SuccessTagsResponse:
       type: object
       properties:
