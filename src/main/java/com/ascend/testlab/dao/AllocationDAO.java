@@ -40,7 +40,6 @@ public interface AllocationDAO {
    * @param projectKey project identifier
    * @param experimentId experiment identifier
    * @return experiment object
-   *
    */
   Single<Experiment> fetchActiveExperiment(String projectKey, String experimentId);
 

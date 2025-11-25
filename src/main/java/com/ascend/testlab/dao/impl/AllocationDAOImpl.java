@@ -125,7 +125,8 @@ public class AllocationDAOImpl implements AllocationDAO {
    * count (if exists) 2. Incrementing the new variant count 3. Updating the user's assignment in
    * Aerospike 4. Logging the reallocation with PK (projectKey, userId, experimentId)
    *
-   * <p>If any step fails after variant counts are modified, appropriate rollbacks are performed.
+   * <p>If any step fails after variant counts are modified, appropriate rollbacks are performed
+   * using the same parallel pattern.
    *
    * @param projectKey project identifier
    * @param oldVariant the old variant name (null if user had no previous assignment)
@@ -142,47 +143,35 @@ public class AllocationDAOImpl implements AllocationDAO {
       ReallocateRequest reallocateRequest) {
 
     String newVariantName = newVariantAssignment.getVariantName();
+    String experimentId = reallocateRequest.getExperimentId();
 
-    return decrementAndIncrementVariantCounts(
-            projectKey, reallocateRequest.getExperimentId(), oldVariant, newVariantName)
+    return decrementAndIncrementVariantCounts(projectKey, experimentId, oldVariant, newVariantName)
         .flatMap(
             countUpdated ->
                 updateUserAssignmentInAerospike(
                         reallocateRequest.getUserId(),
                         projectKey,
-                        reallocateRequest.getExperimentId(),
+                        experimentId,
                         newVariantAssignment)
                     .flatMap(
                         assignmentUpdated -> {
                           if (!assignmentUpdated) {
                             log.error(
-                                "Failed to update user assignment, rolling back variant counts");
-                            Map<String, String> rollbackMap = new HashMap<>();
-                            if (oldVariant != null) {
-                              rollbackMap.put(
-                                  reallocateRequest.getExperimentId()
-                                      + Constants.COLON
-                                      + oldVariant,
-                                  oldVariant);
-                            }
-                            rollbackMap.put(
-                                reallocateRequest.getExperimentId()
-                                    + Constants.COLON
-                                    + newVariantName,
-                                newVariantName);
-
-                            return rollbackVariantCounts(projectKey, rollbackMap)
+                                "Failed to update user assignment, rolling back variant counts in parallel");
+                            // rollback variant counts
+                            return decrementAndIncrementVariantCounts(
+                                    projectKey, experimentId, newVariantName, oldVariant)
                                 .flatMap(
-                                    rbSuccess ->
+                                    rollbackSuccess ->
                                         Single.error(
-                                            new RuntimeException(
-                                                "Failed to update user assignment")));
+                                            ExceptionUtil.getException(
+                                                ErrorEnum.REALLOCATION__FAILED)));
                           }
 
                           return logReallocation(
                                   reallocateRequest.getUserId(),
                                   projectKey,
-                                  reallocateRequest.getExperimentId(),
+                                  experimentId,
                                   oldVariant,
                                   newVariantName,
                                   reallocateRequest.getReason())
@@ -192,7 +181,7 @@ public class AllocationDAOImpl implements AllocationDAO {
                                     log.warn(
                                         "Failed to log reallocation for user {} experiment {}, but reallocation succeeded",
                                         reallocateRequest.getUserId(),
-                                        reallocateRequest.getExperimentId(),
+                                        experimentId,
                                         logError);
                                     return Single.just(newVariantAssignment);
                                   });
@@ -202,109 +191,36 @@ public class AllocationDAOImpl implements AllocationDAO {
                 log.error(
                     "Error during reallocation for user {} experiment {}",
                     reallocateRequest.getUserId(),
-                    reallocateRequest.getExperimentId(),
+                    experimentId,
                     error));
   }
 
   /**
-   * Decrements the old variant count and increments the new variant count in a coordinated manner.
-   * If decrement fails, no increment is performed. If increment fails after decrement, the
-   * decrement is rolled back.
+   * Decrements the old variant count and increments the new variant count using parallel execution
+   * via Single.zip for better performance. If either operation fails, appropriate rollback is
+   * attempted.
    *
    * @param projectKey project identifier
    * @param experimentId experiment identifier
-   * @param oldVariantName old variant name (may be null)
+   * @param oldVariantName old variant name (may be null for new users)
    * @param newVariantName new variant name
-   * @return true if variant counts updated successfully
+   * @return a Single emitting true if variant counts updated successfully
    */
   private Single<Boolean> decrementAndIncrementVariantCounts(
       String projectKey, String experimentId, String oldVariantName, String newVariantName) {
 
-    WritePolicy policy = new WritePolicy();
-    policy.expiration = -1;
-    policy.sendKey = true;
-
-    // First, decrement old variant
-    Single<Long> decrementSingle = decrementVariantCount(projectKey, experimentId, oldVariantName);
-
-    return decrementSingle.flatMap(
-        oldCount -> {
-          // Then increment new variant
-          String newKey = experimentId + Constants.COLON + newVariantName;
-          Key key =
-              new Key(
-                  aerospikeConfig.getNamespace(),
-                  CommonUtil.getSetName(aerospikeConfig.getVariantCountSet(), projectKey),
-                  newKey);
-
-          Operation incrementOp = Operation.add(new Bin(aerospikeConfig.getVariantCountBin(), 1));
-          Operation getOp = Operation.get(aerospikeConfig.getVariantCountBin());
-
-          return aerospikeClient
-              .operate(policy, key, incrementOp, getOp)
-              .map(
-                  record -> {
-                    Long newCount =
-                        record != null ? record.getLong(aerospikeConfig.getVariantCountBin()) : 1L;
-                    log.debug(
-                        "Variant counts updated: old_count={}, new_count={}, key={}",
-                        oldCount,
-                        newCount,
-                        newKey);
-                    return true;
-                  })
-              .onErrorResumeNext(
-                  error -> {
-                    log.error(
-                        "Failed to increment new variant count for key: {}, rolling back decrement",
-                        newKey);
-
-                    if (oldVariantName != null) {
-                      return incrementVariantCountForRollback(
-                              projectKey, experimentId, oldVariantName)
-                          .flatMap(
-                              rbSuccess ->
-                                  Single.error(
-                                      new RuntimeException(
-                                          "Failed to increment new variant count", error)));
-                    }
-                    return Single.error(
-                        new RuntimeException("Failed to increment new variant count", error));
-                  });
+    return Single.zip(
+        updateVariantCount(projectKey, experimentId, oldVariantName, true),
+        updateVariantCount(projectKey, experimentId, newVariantName, false),
+        (oldCount, newCount) -> {
+          log.debug(
+              "Variant counts updated in parallel: old_count={}, new_count={}, oldKey={}, newKey={}",
+              oldCount,
+              newCount,
+              experimentId + Constants.COLON + oldVariantName,
+              experimentId + Constants.COLON + newVariantName);
+          return true;
         });
-  }
-
-  /**
-   * Helper method to increment a variant count during rollback operations.
-   *
-   * @param projectKey project identifier
-   * @param experimentId experiment identifier
-   * @param variantName variant name to increment
-   * @return true if successful
-   */
-  private Single<Boolean> incrementVariantCountForRollback(
-      String projectKey, String experimentId, String variantName) {
-
-    String key = experimentId + Constants.COLON + variantName;
-    Key asKey =
-        new Key(
-            aerospikeConfig.getNamespace(),
-            CommonUtil.getSetName(aerospikeConfig.getVariantCountSet(), projectKey),
-            key);
-
-    Operation incrementOp = Operation.add(new Bin(aerospikeConfig.getVariantCountBin(), 1));
-    Operation getOp = Operation.get(aerospikeConfig.getVariantCountBin());
-    WritePolicy policy = new WritePolicy();
-    policy.sendKey = true;
-
-    return aerospikeClient
-        .operate(policy, asKey, incrementOp, getOp)
-        .map(
-            record -> {
-              log.debug("Rolled back increment for variant {}", key);
-              return true;
-            })
-        .onErrorReturnItem(false);
   }
 
   /**
@@ -709,17 +625,19 @@ public class AllocationDAOImpl implements AllocationDAO {
             });
   }
 
-  /**
-   * Decrements variant count for a single variant. This is a utility method used during rollback.
-   * Note: This method is kept for potential future use but the batch rollback method is preferred.
-   *
-   * @param projectKey project identifier
-   * @param experimentId experiment identifier
-   * @param variantName variant name
-   * @return the new count after decrement
-   */
-  private Single<Long> decrementVariantCount(
-      String projectKey, String experimentId, String variantName) {
+    /**
+     * Atomically adjusts the stored variant count in Aerospike by \+1 or \-1 and returns the new
+     * count. Performs an add operation followed by a read of the count bin so the returned value
+     * reflects the latest count.
+     *
+     * @param projectKey project identifier
+     * @param experimentId experiment identifier
+     * @param variantName variant name
+     * @param decrement if `true` the count is decremented by 1; if `false` the count is incremented by 1
+     * @return the new count after the update, or 0L on error
+     */
+  private Single<Long> updateVariantCount(
+      String projectKey, String experimentId, String variantName, Boolean decrement) {
 
     log.debug("Decrementing variant count for experiment {} variant {}", experimentId, variantName);
 
@@ -730,7 +648,8 @@ public class AllocationDAOImpl implements AllocationDAO {
             CommonUtil.getSetName(aerospikeConfig.getVariantCountSet(), projectKey),
             asKey);
 
-    Operation decrementOp = Operation.add(new Bin(aerospikeConfig.getVariantCountBin(), -1));
+    int val = decrement ? -1 : 1;
+    Operation decrementOp = Operation.add(new Bin(aerospikeConfig.getVariantCountBin(), val));
     Operation getOp = Operation.get(aerospikeConfig.getVariantCountBin());
     WritePolicy policy = new WritePolicy();
     policy.sendKey = true;
@@ -741,12 +660,14 @@ public class AllocationDAOImpl implements AllocationDAO {
             record -> {
               if (record == null) {
                 log.warn(
-                    "Null record returned after decrement for {}:{}", experimentId, variantName);
+                    "Null record returned after update operation for {}:{}",
+                    experimentId,
+                    variantName);
                 return 0L;
               }
               long newCount = record.getLong(aerospikeConfig.getVariantCountBin());
               log.debug(
-                  "Decremented variant count to {} for experiment {} variant {}",
+                  "updated variant count to {} for experiment {} variant {}",
                   newCount,
                   experimentId,
                   variantName);
