@@ -57,6 +57,12 @@ public enum ErrorEnum implements RestError {
       "Filter Experiments failed due to: %s",
       HttpStatus.SC_INTERNAL_SERVER_ERROR),
 
+  /** The error code for failing reallocation. */
+  REALLOCATION__FAILED(
+      "REALLOCATION__FAILED",
+      "Failed to reallocate user experiment",
+      HttpStatus.SC_INTERNAL_SERVER_ERROR),
+
   /* Client Errors */
 
   MISSING_USER_IDENTIFIER(
@@ -76,10 +82,30 @@ public enum ErrorEnum implements RestError {
       "INVALID_REQUEST_BODY",
       "Request body param(s) is/are missing/invalid",
       HttpStatus.SC_BAD_REQUEST),
+  /** The error code when an invalid variant is present in the request payload. */
+  INVALID_VARIANT_FOUND(
+      "INVALID_VARIANT_FOUND", "Invalid variant found in request", HttpStatus.SC_BAD_REQUEST),
+
+  /** The error code when the requested variant is already assigned to the user. */
+  VARIANT_ALREADY_ASSIGNED(
+      "VARIANT_ALREADY_ASSIGNED", "Given variant already assigned", HttpStatus.SC_BAD_REQUEST),
+
+  /** The error code when no allotment is found. */
+  NO_ALLOTMENT_FOUND(
+      "NO_ALLOTMENT_FOUND",
+      "No assignment found for given user, use overrides to allot variant",
+      HttpStatus.SC_NOT_FOUND),
+
   /** The error code when experiment is not found. */
   EXPERIMENT_NOT_FOUND(
       "EXPERIMENT_NOT_FOUND",
       "Experiment not found for the given experimentId",
+      HttpStatus.SC_NOT_FOUND),
+
+  /** The error code when active experiment is not found. */
+  ACTIVE_EXPERIMENT_NOT_FOUND(
+      "ACTIVE_EXPERIMENT_NOT_FOUND",
+      "Active Experiment not found for the given experimentId",
       HttpStatus.SC_NOT_FOUND),
 
   /** The error code for validating experiment status failed. */

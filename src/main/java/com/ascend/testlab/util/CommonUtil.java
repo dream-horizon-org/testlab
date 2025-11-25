@@ -44,7 +44,7 @@ public final class CommonUtil {
    * @return the qualified set name in the format "set:projectKey"
    */
   public static String getSetName(String set, String projectKey) {
-    return set + Constants.COLON + projectKey;
+    return set + Constants.UNDER_SCORE + projectKey;
   }
 
   /**

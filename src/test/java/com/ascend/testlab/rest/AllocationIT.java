@@ -434,6 +434,368 @@ class AllocationIT {
   }
 
   // ===========================
+  // PUT /v1/allocation Tests
+  // ===========================
+
+  @Test
+  void testReallocation_Success_UserAlreadyAllocated() {
+    String user_id = "user-realloc-test-123";
+    String experimentId = UUID.randomUUID().toString();
+    String experimentKey = "test-experiment-realloc";
+
+    seedExperiment(projectKey, experimentId, "Test Experiment Reallocation", experimentKey);
+
+    // First, allocate user to experiment (will be assigned to control or treatment)
+    Map<String, String> postHeaders = Map.of(WebConstants.PROJECT_KEY_HEADER, projectKey);
+
+    Map<String, Object> allocateRequestBody = new HashMap<>();
+    allocateRequestBody.put("user_id", user_id);
+    allocateRequestBody.put("stable_id", "guest-realloc-test-123");
+    allocateRequestBody.put("experiment_keys", List.of(experimentKey));
+    allocateRequestBody.put("attributes", createDefaultAttributes());
+
+    ValidatableResponse allocateResponse =
+        TestUtil.executeRequest(
+            allocateRequestBody, postHeaders, null, spec -> spec.post(this.allocationRoute));
+
+    allocateResponse.statusCode(HttpStatus.SC_OK);
+    String originalVariant = allocateResponse.extract().path("data.experiment_map[0].variant_name");
+
+    // Determine new variant (if control, switch to treatment and vice versa)
+    String newVariant = "treatment".equals(originalVariant) ? "control" : "treatment";
+
+    // Now reallocate to different variant
+    Map<String, Object> reallocateRequestBody = new HashMap<>();
+    reallocateRequestBody.put("experiment_id", experimentId);
+    reallocateRequestBody.put("variant_name", newVariant);
+    reallocateRequestBody.put("user_id", user_id);
+    reallocateRequestBody.put("reason", "Testing reallocation");
+
+    ValidatableResponse reallocateResponse =
+        TestUtil.executeRequest(
+            reallocateRequestBody, postHeaders, null, spec -> spec.put(this.allocationRoute));
+
+    reallocateResponse.statusCode(HttpStatus.SC_OK);
+    reallocateResponse.contentType(WebConstants.APPLICATION_JSON);
+    reallocateResponse.body("data", Matchers.notNullValue());
+    reallocateResponse.body("data.variant_name", Matchers.equalTo(newVariant));
+    reallocateResponse.body("data.status", Matchers.notNullValue());
+  }
+
+  @Test
+  void testReallocation_Success_VerifyWithGetCall() {
+    String user_id = "user-realloc-verify";
+    String experimentId = UUID.randomUUID().toString();
+    String experimentKey = "test-experiment-realloc-verify";
+
+    seedExperiment(projectKey, experimentId, "Test Experiment Realloc Verify", experimentKey);
+
+    // Allocate user
+    Map<String, String> headers = Map.of(WebConstants.PROJECT_KEY_HEADER, projectKey);
+
+    Map<String, Object> allocateRequestBody = new HashMap<>();
+    allocateRequestBody.put("user_id", user_id);
+    allocateRequestBody.put("stable_id", "guest-realloc-verify");
+    allocateRequestBody.put("experiment_keys", List.of(experimentKey));
+    allocateRequestBody.put("attributes", createDefaultAttributes());
+
+    TestUtil.executeRequest(
+        allocateRequestBody, headers, null, spec -> spec.post(this.allocationRoute));
+
+    // Get initial allocation
+    Map<String, String> getHeaders = new HashMap<>();
+    getHeaders.put(WebConstants.PROJECT_KEY_HEADER, projectKey);
+    getHeaders.put(WebConstants.USER_ID_HEADER, user_id);
+
+    ValidatableResponse getResponse1 =
+        TestUtil.executeRequest(null, getHeaders, null, spec -> spec.get(this.allocationRoute));
+
+    getResponse1.statusCode(HttpStatus.SC_OK);
+    String variant1 = getResponse1.extract().path("data.experiment_map[0].variant_name");
+
+    // Reallocate to new variant
+    String newVariant = "treatment".equals(variant1) ? "control" : "treatment";
+
+    Map<String, Object> reallocateRequestBody = new HashMap<>();
+    reallocateRequestBody.put("experiment_id", experimentId);
+    reallocateRequestBody.put("variant_name", newVariant);
+    reallocateRequestBody.put("user_id", user_id);
+    reallocateRequestBody.put("reason", "Verification test");
+
+    TestUtil.executeRequest(
+        reallocateRequestBody, headers, null, spec -> spec.put(this.allocationRoute));
+
+    // Get allocation again - should show new variant
+    ValidatableResponse getResponse2 =
+        TestUtil.executeRequest(null, getHeaders, null, spec -> spec.get(this.allocationRoute));
+
+    getResponse2.statusCode(HttpStatus.SC_OK);
+    String variant2 = getResponse2.extract().path("data.experiment_map[0].variant_name");
+
+    assert newVariant.equals(variant2) : "Variant should be updated after reallocation";
+  }
+
+  @Test
+  void testReallocation_MissingExperimentId_BadRequest() {
+
+    Map<String, String> headers = Map.of(WebConstants.PROJECT_KEY_HEADER, projectKey);
+
+    Map<String, Object> reallocateRequestBody = new HashMap<>();
+    // Missing experiment_id
+    reallocateRequestBody.put("variant_name", "treatment");
+    reallocateRequestBody.put("user_id", "user-123");
+    reallocateRequestBody.put("reason", "Test");
+
+    ValidatableResponse response =
+        TestUtil.executeRequest(
+            reallocateRequestBody, headers, null, spec -> spec.put(this.allocationRoute));
+
+    response.statusCode(HttpStatus.SC_BAD_REQUEST);
+  }
+
+  @Test
+  void testReallocation_MissingVariantName_BadRequest() {
+
+    Map<String, String> headers = Map.of(WebConstants.PROJECT_KEY_HEADER, projectKey);
+
+    String experimentId = UUID.randomUUID().toString();
+
+    Map<String, Object> reallocateRequestBody = new HashMap<>();
+    reallocateRequestBody.put("experiment_id", experimentId);
+    // Missing variant_name
+    reallocateRequestBody.put("user_id", "user-123");
+    reallocateRequestBody.put("reason", "Test");
+
+    ValidatableResponse response =
+        TestUtil.executeRequest(
+            reallocateRequestBody, headers, null, spec -> spec.put(this.allocationRoute));
+
+    response.statusCode(HttpStatus.SC_BAD_REQUEST);
+  }
+
+  @Test
+  void testReallocation_MissingUserId_BadRequest() {
+
+    Map<String, String> headers = Map.of(WebConstants.PROJECT_KEY_HEADER, projectKey);
+
+    String experimentId = UUID.randomUUID().toString();
+
+    Map<String, Object> reallocateRequestBody = new HashMap<>();
+    reallocateRequestBody.put("experiment_id", experimentId);
+    reallocateRequestBody.put("variant_name", "treatment");
+    // Missing user_id
+    reallocateRequestBody.put("reason", "Test");
+
+    ValidatableResponse response =
+        TestUtil.executeRequest(
+            reallocateRequestBody, headers, null, spec -> spec.put(this.allocationRoute));
+
+    response.statusCode(HttpStatus.SC_BAD_REQUEST);
+  }
+
+  @Test
+  void testReallocation_ExperimentNotFound_NotFound() {
+
+    Map<String, String> headers = Map.of(WebConstants.PROJECT_KEY_HEADER, projectKey);
+
+    String nonExistentExperimentId = UUID.randomUUID().toString();
+
+    Map<String, Object> reallocateRequestBody = new HashMap<>();
+    reallocateRequestBody.put("experiment_id", nonExistentExperimentId);
+    reallocateRequestBody.put("variant_name", "treatment");
+    reallocateRequestBody.put("user_id", "user-123");
+    reallocateRequestBody.put("reason", "User not previously allocated");
+
+    ValidatableResponse response =
+        TestUtil.executeRequest(
+            reallocateRequestBody, headers, null, spec -> spec.put(this.allocationRoute));
+
+    // Should return 404 if experiment not found
+    response.statusCode(HttpStatus.SC_NOT_FOUND);
+  }
+
+  @Test
+  void testReallocation_UserNotAllocatedToExperiment_NotFound() {
+
+    String experimentId = UUID.randomUUID().toString();
+    String experimentKey = "test-experiment-no-allocation";
+
+    seedExperiment(projectKey, experimentId, "Test Experiment No Allocation", experimentKey);
+
+    Map<String, String> headers = Map.of(WebConstants.PROJECT_KEY_HEADER, projectKey);
+
+    Map<String, Object> reallocateRequestBody = new HashMap<>();
+    reallocateRequestBody.put("experiment_id", experimentId);
+    reallocateRequestBody.put("variant_name", "treatment");
+    reallocateRequestBody.put("user_id", "user-never-allocated");
+    reallocateRequestBody.put("reason", "User not previously allocated");
+
+    ValidatableResponse response =
+        TestUtil.executeRequest(
+            reallocateRequestBody, headers, null, spec -> spec.put(this.allocationRoute));
+
+    // Should return 404 if user is not allocated to this experiment
+    response.statusCode(HttpStatus.SC_NOT_FOUND);
+  }
+
+  @Test
+  void testReallocation_InvalidVariantName_BadRequest() {
+
+    String user_id = "user-invalid-variant";
+    String experimentId = UUID.randomUUID().toString();
+    String experimentKey = "test-experiment-invalid-variant";
+
+    seedExperiment(projectKey, experimentId, "Test Experiment Invalid Variant", experimentKey);
+
+    // First allocate user
+    Map<String, String> headers = Map.of(WebConstants.PROJECT_KEY_HEADER, projectKey);
+
+    Map<String, Object> allocateRequestBody = new HashMap<>();
+    allocateRequestBody.put("user_id", user_id);
+    allocateRequestBody.put("stable_id", "guest-invalid-variant");
+    allocateRequestBody.put("experiment_keys", List.of(experimentKey));
+    allocateRequestBody.put("attributes", createDefaultAttributes());
+
+    TestUtil.executeRequest(
+        allocateRequestBody, headers, null, spec -> spec.post(this.allocationRoute));
+
+    // Try to reallocate to invalid variant
+    Map<String, Object> reallocateRequestBody = new HashMap<>();
+    reallocateRequestBody.put("experiment_id", experimentId);
+    reallocateRequestBody.put("variant_name", "invalid_variant_name");
+    reallocateRequestBody.put("user_id", user_id);
+    reallocateRequestBody.put("reason", "Testing invalid variant");
+
+    ValidatableResponse response =
+        TestUtil.executeRequest(
+            reallocateRequestBody, headers, null, spec -> spec.put(this.allocationRoute));
+
+    // Should return 400 for invalid variant name
+    response.statusCode(HttpStatus.SC_BAD_REQUEST);
+  }
+
+  @Test
+  void testReallocation_WithReason_Success() {
+
+    String user_id = "user-with-reason";
+    String experimentId = UUID.randomUUID().toString();
+    String experimentKey = "test-experiment-with-reason";
+
+    seedExperiment(projectKey, experimentId, "Test Experiment With Reason", experimentKey);
+
+    // Allocate user
+    Map<String, String> headers = Map.of(WebConstants.PROJECT_KEY_HEADER, projectKey);
+
+    Map<String, Object> allocateRequestBody = new HashMap<>();
+    allocateRequestBody.put("user_id", user_id);
+    allocateRequestBody.put("stable_id", "guest-with-reason");
+    allocateRequestBody.put("experiment_keys", List.of(experimentKey));
+    allocateRequestBody.put("attributes", createDefaultAttributes());
+
+    ValidatableResponse allocateResponse =
+        TestUtil.executeRequest(
+            allocateRequestBody, headers, null, spec -> spec.post(this.allocationRoute));
+
+    String originalVariant = allocateResponse.extract().path("data.experiment_map[0].variant_name");
+    String newVariant = "treatment".equals(originalVariant) ? "control" : "treatment";
+
+    // Reallocate with a reason for audit trail
+    String auditReason = "User complained about poor experience";
+
+    Map<String, Object> reallocateRequestBody = new HashMap<>();
+    reallocateRequestBody.put("experiment_id", experimentId);
+    reallocateRequestBody.put("variant_name", newVariant);
+    reallocateRequestBody.put("user_id", user_id);
+    reallocateRequestBody.put("reason", auditReason);
+
+    ValidatableResponse reallocateResponse =
+        TestUtil.executeRequest(
+            reallocateRequestBody, headers, null, spec -> spec.put(this.allocationRoute));
+
+    reallocateResponse.statusCode(HttpStatus.SC_OK);
+    reallocateResponse.body("data.variant_name", Matchers.equalTo(newVariant));
+  }
+
+  @Test
+  void testReallocation_WithoutReason_Success() {
+
+    String user_id = "user-without-reason";
+    String experimentId = UUID.randomUUID().toString();
+    String experimentKey = "test-experiment-without-reason";
+
+    seedExperiment(projectKey, experimentId, "Test Experiment Without Reason", experimentKey);
+
+    // Allocate user
+    Map<String, String> headers = Map.of(WebConstants.PROJECT_KEY_HEADER, projectKey);
+
+    Map<String, Object> allocateRequestBody = new HashMap<>();
+    allocateRequestBody.put("user_id", user_id);
+    allocateRequestBody.put("stable_id", "guest-without-reason");
+    allocateRequestBody.put("experiment_keys", List.of(experimentKey));
+    allocateRequestBody.put("attributes", createDefaultAttributes());
+
+    ValidatableResponse allocateResponse =
+        TestUtil.executeRequest(
+            allocateRequestBody, headers, null, spec -> spec.post(this.allocationRoute));
+
+    String originalVariant = allocateResponse.extract().path("data.experiment_map[0].variant_name");
+    String newVariant = "treatment".equals(originalVariant) ? "control" : "treatment";
+
+    // Reallocate without reason (reason is optional)
+    Map<String, Object> reallocateRequestBody = new HashMap<>();
+    reallocateRequestBody.put("experiment_id", experimentId);
+    reallocateRequestBody.put("variant_name", newVariant);
+    reallocateRequestBody.put("user_id", user_id);
+
+    ValidatableResponse reallocateResponse =
+        TestUtil.executeRequest(
+            reallocateRequestBody, headers, null, spec -> spec.put(this.allocationRoute));
+
+    reallocateResponse.statusCode(HttpStatus.SC_OK);
+    reallocateResponse.body("data.variant_name", Matchers.equalTo(newVariant));
+  }
+
+  @Test
+  void testReallocation_DefaultProjectKey_Success() {
+
+    String user_id = "user-default-realloc";
+    String experimentId = UUID.randomUUID().toString();
+    String experimentKey = "test-experiment-default-realloc";
+
+    seedExperiment(projectKey, experimentId, "Test Experiment Default Realloc", experimentKey);
+
+    // Allocate user
+    Map<String, String> allocateHeaders = Map.of(WebConstants.PROJECT_KEY_HEADER, projectKey);
+
+    Map<String, Object> allocateRequestBody = new HashMap<>();
+    allocateRequestBody.put("user_id", user_id);
+    allocateRequestBody.put("stable_id", "guest-default-realloc");
+    allocateRequestBody.put("experiment_keys", List.of(experimentKey));
+    allocateRequestBody.put("attributes", createDefaultAttributes());
+
+    ValidatableResponse allocateResponse =
+        TestUtil.executeRequest(
+            allocateRequestBody, allocateHeaders, null, spec -> spec.post(this.allocationRoute));
+
+    String originalVariant = allocateResponse.extract().path("data.experiment_map[0].variant_name");
+    String newVariant = "treatment".equals(originalVariant) ? "control" : "treatment";
+
+    // Reallocate without project key header - should use default
+    Map<String, String> reallocateHeaders = new HashMap<>();
+
+    Map<String, Object> reallocateRequestBody = new HashMap<>();
+    reallocateRequestBody.put("experiment_id", experimentId);
+    reallocateRequestBody.put("variant_name", newVariant);
+    reallocateRequestBody.put("user_id", user_id);
+
+    ValidatableResponse reallocateResponse =
+        TestUtil.executeRequest(
+            reallocateRequestBody, reallocateHeaders, null, spec -> spec.put(this.allocationRoute));
+
+    reallocateResponse.statusCode(HttpStatus.SC_OK);
+  }
+
+  // ===========================
   // Helper Methods
   // ===========================
 

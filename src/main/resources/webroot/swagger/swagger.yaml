@@ -83,6 +83,44 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Failure'
+    put:
+      operationId: reAllocateExperimentHandle
+      parameters:
+      - name: x-project-key
+        in: header
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReallocateRequest'
+        required: true
+      responses:
+        "200":
+          description: Successfully reallocated user to new variant
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessUserExperimentMap'
+        "400":
+          description: Bad Request - invalid/missing body params or header
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Failure'
+        "404":
+          description: Not Found - Experiment or user assignment not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Failure'
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Failure'
   /v1/experiments/key-availability:
     get:
       operationId: experimentKeyAvailabilityHandle
@@ -379,6 +417,25 @@ components:
           type: string
         user_id:
           type: string
+    ReallocateRequest:
+      type: object
+      required:
+      - experiment_id
+      - variant_name
+      - user_id
+      properties:
+        experiment_id:
+          type: string
+          description: The ID of the experiment
+        variant_name:
+          type: string
+          description: The new variant name to assign the user to
+        user_id:
+          type: string
+          description: The ID of the user to reallocate
+        reason:
+          type: string
+          description: Optional reason for the reallocation
     Attributes:
       type: object
       properties:
@@ -410,6 +467,11 @@ components:
       properties:
         data:
           $ref: '#/components/schemas/GetAllocationsResponse'
+    SuccessUserExperimentMap:
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/UserExperimentMap'
     ExperimentKeyAvailabilityResponse:
       type: object
       properties:
