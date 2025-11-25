@@ -41,7 +41,7 @@ public interface AllocationDAO {
    * @param experimentId experiment identifier
    * @return experiment object
    */
-  Single<Experiment> fetchExperiment(String projectKey, String experimentId);
+  Single<Experiment> fetchActiveExperiment(String projectKey, String experimentId);
 
   /**
    * Transactionally reallocates a user to a new variant for an experiment. Handles decrementing the

@@ -103,13 +103,13 @@ public class AllocationDAOImpl implements AllocationDAO {
   }
 
   @Override
-  public Single<Experiment> fetchExperiment(String projectKey, String experimentId) {
+  public Single<Experiment> fetchActiveExperiment(String projectKey, String experimentId) {
     return pgReaderClient
         .fetchOne(
             ReadQuery.GET_LIVE_EXPERIMENT,
             Tuple.of(projectKey, experimentId),
             row -> ExperimentMapper.mapRowToExperiment(row, objectMapper))
-        .switchIfEmpty(Single.error(ExceptionUtil.getException(ErrorEnum.EXPERIMENT_NOT_FOUND)))
+        .switchIfEmpty(Single.error(ExceptionUtil.getException(ErrorEnum.ACTIVE_EXPERIMENT_NOT_FOUND)))
         .doOnError(
             error ->
                 log.error(

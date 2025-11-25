@@ -155,7 +155,7 @@ public class AllocationServiceImpl implements AllocationService {
       String projectKey, ReallocateRequest reallocateRequest) {
     UUID experimentId = UUID.fromString(reallocateRequest.getExperimentId());
     return Single.zip(
-            allocationDAO.fetchExperiment(projectKey, reallocateRequest.getExperimentId()),
+            allocationDAO.fetchActiveExperiment(projectKey, reallocateRequest.getExperimentId()),
             allocationDAO.getAllocations(reallocateRequest.getUserId(), projectKey),
             (experiment, userAssignments) -> {
               if (Objects.isNull(experiment) || Objects.isNull(experiment.getExperimentId())) {
