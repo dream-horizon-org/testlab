@@ -63,11 +63,11 @@ public interface AerospikeClient {
    * Get a list of records from Aerospike database.
    *
    * @param batchPolicy the policy to use for the operation
-   * @param keys the key of the record
+   * @param keys the keys of the records
    * @param binNames the names of the bins to get
    * @return a Single that emits the record
    */
-  Single<List<Record>> get(BatchPolicy batchPolicy, Key[] keys, String... binNames);
+  Single<List<Record>> get(BatchPolicy batchPolicy, List<Key> keys, String... binNames);
 
   /**
    * Put a record into Aerospike database.

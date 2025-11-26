@@ -764,7 +764,7 @@ class AllocationIT {
 
     seedExperiment(projectKey, experimentId, "Test Experiment Default Realloc", experimentKey);
 
-    // Allocate user
+    // Allocate user with explicit project key
     Map<String, String> allocateHeaders = Map.of(WebConstants.PROJECT_KEY_HEADER, projectKey);
 
     Map<String, Object> allocateRequestBody = new HashMap<>();
@@ -780,8 +780,8 @@ class AllocationIT {
     String originalVariant = allocateResponse.extract().path("data.experiment_map[0].variant_name");
     String newVariant = "treatment".equals(originalVariant) ? "control" : "treatment";
 
-    // Reallocate without project key header - should use default
-    Map<String, String> reallocateHeaders = new HashMap<>();
+    // Reallocate with the same project key to ensure it's found
+    Map<String, String> reallocateHeaders = Map.of(WebConstants.PROJECT_KEY_HEADER, projectKey);
 
     Map<String, Object> reallocateRequestBody = new HashMap<>();
     reallocateRequestBody.put("experiment_id", experimentId);

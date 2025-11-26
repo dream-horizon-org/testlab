@@ -130,12 +130,14 @@ public class Allocation {
       description = "Internal Server Error",
       content = @Content(schema = @Schema(implementation = ResponseEntity.Failure.class)))
   public CompletionStage<ResponseEntity.Success<UserExperimentMap>> reAllocateExperimentHandle(
-      @HeaderParam(WebConstants.PROJECT_KEY_HEADER) @DefaultValue(WebConstants.DEFAULT_PROJECT_KEY)
-          String projectKey,
+      @HeaderParam(WebConstants.PROJECT_KEY_HEADER) String projectKey,
       @Valid @NotNull ReallocateRequest reallocateRequest) {
 
+    String effectiveProjectKey =
+        StringUtils.isBlank(projectKey) ? applicationConfig.getProjectKey() : projectKey;
+
     return allocationService
-        .reallocateExperiment(projectKey, reallocateRequest)
+        .reallocateExperiment(effectiveProjectKey, reallocateRequest)
         .map(ResponseEntity.Success::new)
         .toCompletionStage();
   }

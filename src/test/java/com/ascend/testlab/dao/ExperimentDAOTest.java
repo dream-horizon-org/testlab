@@ -775,7 +775,7 @@ class ExperimentDAOTest {
                 ? experiment.getAssignmentDomain().toString()
                 : AssignmentDomain.COHORT.toString());
     when(mockRow.getArrayOfStrings("overrides")).thenReturn(null);
-    when(mockRow.getJsonObject("rule_attributes")).thenReturn(null);
+    when(mockRow.getJsonArray("rule_attributes")).thenReturn(null);
     when(mockRow.getJsonObject("winning_variant")).thenReturn(null);
     when(mockRow.getInteger("exposure")).thenReturn(experiment.getExposure());
     when(mockRow.getLong("threshold")).thenReturn(experiment.getThreshold());
