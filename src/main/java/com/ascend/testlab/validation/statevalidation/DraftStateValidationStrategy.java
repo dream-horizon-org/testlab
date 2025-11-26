@@ -32,9 +32,4 @@ public class DraftStateValidationStrategy implements StateValidationStrategy {
     // DRAFT state allows all field updates - no restrictions
     log.debug("Experiment {} is in DRAFT state, all field updates allowed", experimentId);
   }
-
-  @Override
-  public int getPriority() {
-    return 50; // Lower priority than LIVE state
-  }
 }

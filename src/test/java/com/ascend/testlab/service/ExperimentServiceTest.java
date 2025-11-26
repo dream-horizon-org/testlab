@@ -17,6 +17,10 @@ import com.ascend.testlab.dto.response.PaginationMeta;
 import com.ascend.testlab.dto.response.UpdateExperimentResponse;
 import com.ascend.testlab.exception.ErrorEnum;
 import com.ascend.testlab.service.impl.ExperimentServiceImpl;
+import com.ascend.testlab.validation.statevalidation.DraftStateValidationStrategy;
+import com.ascend.testlab.validation.statevalidation.LiveStateValidationStrategy;
+import com.ascend.testlab.validation.statevalidation.PausedStateValidationStrategy;
+import com.ascend.testlab.validation.statevalidation.StateValidationContext;
 import com.dream11.rest.exception.RestException;
 import io.reactivex.rxjava3.core.Maybe;
 import io.reactivex.rxjava3.core.Single;
@@ -47,6 +51,7 @@ public class ExperimentServiceTest {
   private ExperimentService experimentService;
 
   @Mock private ExperimentDAO experimentDAO;
+  private StateValidationContext stateValidationContext;
 
   private static final String PROJECT_KEY = "123e4567-e89b-12d3-a456-426614174000";
   private static final String EXPERIMENT_ID = "123e4567-e89b-12d3-a456-426614174000";
@@ -57,7 +62,14 @@ public class ExperimentServiceTest {
 
   @BeforeEach
   void setUp() {
-    experimentService = new ExperimentServiceImpl(experimentDAO);
+    // Create real validation strategies for testing
+    LiveStateValidationStrategy liveStrategy = new LiveStateValidationStrategy();
+    PausedStateValidationStrategy pausedStrategy = new PausedStateValidationStrategy();
+    DraftStateValidationStrategy draftStrategy = new DraftStateValidationStrategy();
+    stateValidationContext =
+        new StateValidationContext(liveStrategy, pausedStrategy, draftStrategy);
+
+    experimentService = new ExperimentServiceImpl(experimentDAO, stateValidationContext);
     testTenantId = UUID.randomUUID();
     testProjectKey = UUID.randomUUID().toString();
     testExperimentId = UUID.randomUUID();
@@ -68,10 +80,12 @@ public class ExperimentServiceTest {
   class ConstructorTests {
 
     @Test
-    @DisplayName("Should create service with valid DAO")
+    @DisplayName("Should create service with valid DAO and StateValidationContext")
     void testConstructorWithValidDAO() {
       // Act
-      ExperimentServiceImpl service = new ExperimentServiceImpl(experimentDAO);
+      ExperimentServiceImpl service =
+          new ExperimentServiceImpl(
+              experimentDAO, stateValidationContext, variantStructureValidator);
 
       // Assert
       assertNotNull(service);
@@ -81,7 +95,8 @@ public class ExperimentServiceTest {
     @DisplayName("Should create service with null DAO")
     void testConstructorWithNullDAO() {
       // Act - Constructor doesn't validate null, but will fail at runtime
-      ExperimentServiceImpl service = new ExperimentServiceImpl(null);
+      ExperimentServiceImpl service =
+          new ExperimentServiceImpl(null, stateValidationContext, variantStructureValidator);
 
       // Assert
       assertNotNull(service);

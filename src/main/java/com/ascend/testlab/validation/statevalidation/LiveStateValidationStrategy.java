@@ -57,11 +57,6 @@ public class LiveStateValidationStrategy implements StateValidationStrategy {
         attemptedFields);
   }
 
-  @Override
-  public int getPriority() {
-    return 10; // High priority for LIVE state validation
-  }
-
   /**
    * Extracts non-null field names from the update request.
    *
@@ -100,7 +95,8 @@ public class LiveStateValidationStrategy implements StateValidationStrategy {
     Set<String> restrictedFields = new HashSet<>();
 
     for (String fieldName : attemptedFields) {
-      if (Constants.LIVE_STATE_NON_UPDATABLE_FIELDS.contains(fieldName)) {
+      // If field is NOT in the allowed list, it's restricted
+      if (!Constants.LIVE_STATE_UPDATABLE_FIELDS.contains(fieldName)) {
         restrictedFields.add(fieldName);
       }
     }

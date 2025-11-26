@@ -27,13 +27,4 @@ public interface StateValidationStrategy {
    * @throws IllegalArgumentException if validation fails
    */
   void validate(UpdateExperimentRequest request, String currentStatus, UUID experimentId);
-
-  /**
-   * Returns the priority of this strategy (lower number = higher priority).
-   *
-   * @return priority value
-   */
-  default int getPriority() {
-    return 100;
-  }
 }
