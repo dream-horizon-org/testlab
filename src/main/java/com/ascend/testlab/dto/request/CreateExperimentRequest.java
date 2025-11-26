@@ -93,7 +93,6 @@ public class CreateExperimentRequest {
   private ExperimentHealth guardrailHealthStatus;
 
   @JsonProperty("metrics")
-  @NotNull(message = "Metrics are required")
   @ValidMetrics
   private Map<String, List<String>> metrics;
 
