@@ -50,7 +50,6 @@ paths:
         in: header
         schema:
           type: string
-          default: abc
       requestBody:
         content:
           application/json:

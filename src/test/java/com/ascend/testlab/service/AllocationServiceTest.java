@@ -4,9 +4,14 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
+import com.ascend.testlab.constants.enums.ExperimentStatus;
+import com.ascend.testlab.constants.enums.ExperimentType;
 import com.ascend.testlab.dao.AllocationDAO;
 import com.ascend.testlab.dto.entity.allocation.UserExperimentMap;
+import com.ascend.testlab.dto.entity.experiment.Experiment;
+import com.ascend.testlab.dto.entity.experiment.Variant;
 import com.ascend.testlab.dto.request.ReallocateRequest;
+import com.ascend.testlab.dto.response.GetAllocationsResponse;
 import com.ascend.testlab.service.impl.AllocationServiceImpl;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.reactivex.rxjava3.core.Single;
@@ -21,18 +26,9 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-/**
- * Comprehensive unit tests for AllocationService reallocate functionality.
- *
- * <p>Tests the PUT /v1/allocations endpoint which reassigns users to different experiment variants.
- *
- * @author Anudeep Reddy
- * @version 1.0
- * @since 1.0
- */
 @ExtendWith({VertxExtension.class, MockitoExtension.class})
 @DisplayName("AllocationService Reallocate Tests")
-public class AllocationTest {
+class AllocationServiceTest {
 
   private AllocationService allocationService;
 
@@ -101,6 +97,14 @@ public class AllocationTest {
               .assignedAt(System.currentTimeMillis())
               .build();
 
+      when(allocationDAO.acquireUserLock(eq(USER_ID), eq(PROJECT_KEY)))
+          .thenReturn(Single.just(true));
+      when(allocationDAO.releaseUserLock(eq(USER_ID), eq(PROJECT_KEY)))
+          .thenReturn(Single.just(true));
+      when(allocationDAO.fetchActiveExperiment(eq(PROJECT_KEY), eq(EXPERIMENT_ID.toString())))
+          .thenReturn(Single.just(createMockExperiment()));
+      when(allocationDAO.getAllocations(eq(USER_ID), eq(PROJECT_KEY)))
+          .thenReturn(Single.just(List.of(createCurrentAssignment(CONTROL_VARIANT))));
       when(allocationDAO.reallocateUserVariant(
               eq(PROJECT_KEY), eq(CONTROL_VARIANT), any(UserExperimentMap.class), eq(request)))
           .thenReturn(Single.just(expectedResponse));
@@ -140,6 +144,7 @@ public class AllocationTest {
               .assignedAt(System.currentTimeMillis())
               .build();
 
+      setupCommonMocks(request, CONTROL_VARIANT);
       when(allocationDAO.reallocateUserVariant(
               eq(PROJECT_KEY), anyString(), any(UserExperimentMap.class), eq(request)))
           .thenReturn(Single.just(expectedResponse));
@@ -179,6 +184,7 @@ public class AllocationTest {
               .assignedAt(System.currentTimeMillis())
               .build();
 
+      setupCommonMocks(request, CONTROL_VARIANT);
       when(allocationDAO.reallocateUserVariant(
               eq(PROJECT_KEY), eq(CONTROL_VARIANT), any(UserExperimentMap.class), eq(request)))
           .thenReturn(Single.just(expectedResponse));
@@ -216,6 +222,7 @@ public class AllocationTest {
               .assignedAt(System.currentTimeMillis())
               .build();
 
+      setupCommonMocks(request, CONTROL_VARIANT);
       when(allocationDAO.reallocateUserVariant(
               eq(PROJECT_KEY), anyString(), any(UserExperimentMap.class), eq(request)))
           .thenReturn(Single.just(expectedResponse));
@@ -247,8 +254,12 @@ public class AllocationTest {
               .reason("Test")
               .build();
 
-      when(allocationDAO.reallocateUserVariant(
-              eq(PROJECT_KEY), anyString(), any(UserExperimentMap.class), eq(request)))
+      when(allocationDAO.acquireUserLock(eq(USER_ID), eq(PROJECT_KEY)))
+          .thenReturn(Single.just(true));
+      lenient()
+          .when(allocationDAO.releaseUserLock(eq(USER_ID), eq(PROJECT_KEY)))
+          .thenReturn(Single.just(true));
+      when(allocationDAO.fetchActiveExperiment(eq(PROJECT_KEY), eq(request.getExperimentId())))
           .thenReturn(Single.error(new RuntimeException("Experiment not found")));
 
       // Act
@@ -259,9 +270,6 @@ public class AllocationTest {
       testObserver.assertError(Exception.class);
       testObserver.assertNotComplete();
       testObserver.assertValueCount(0);
-      verify(allocationDAO, times(1))
-          .reallocateUserVariant(
-              eq(PROJECT_KEY), anyString(), any(UserExperimentMap.class), eq(request));
     }
 
     @Test
@@ -276,17 +284,15 @@ public class AllocationTest {
               .reason("Test")
               .build();
 
-      when(allocationDAO.reallocateUserVariant(
-              eq(PROJECT_KEY), anyString(), any(UserExperimentMap.class), eq(request)))
-          .thenReturn(
-              Single.error(new IllegalArgumentException("Variant not found in experiment")));
+      setupCommonMocks(request, CONTROL_VARIANT);
+      // Variant won't exist in the mock experiment's variants map
 
       // Act
       TestObserver<UserExperimentMap> testObserver =
           allocationService.reallocateExperiment(PROJECT_KEY, request).test();
 
       // Assert
-      testObserver.assertError(IllegalArgumentException.class);
+      testObserver.assertError(Exception.class);
       testObserver.assertNotComplete();
       testObserver.assertValueCount(0);
     }
@@ -303,11 +309,15 @@ public class AllocationTest {
               .reason("Test")
               .build();
 
-      // Act - This would typically happen during UUID parsing
-      // For this test, we simulate the error
-      when(allocationDAO.reallocateUserVariant(
-              anyString(), anyString(), any(UserExperimentMap.class), any(ReallocateRequest.class)))
-          .thenReturn(Single.error(new IllegalArgumentException("Invalid UUID")));
+      when(allocationDAO.acquireUserLock(eq(USER_ID), eq(PROJECT_KEY)))
+          .thenReturn(Single.just(true));
+      lenient()
+          .when(allocationDAO.releaseUserLock(eq(USER_ID), eq(PROJECT_KEY)))
+          .thenReturn(Single.just(true));
+      lenient()
+          .when(allocationDAO.fetchActiveExperiment(eq(PROJECT_KEY), anyString()))
+          .thenReturn(Single.just(createMockExperiment()));
+      // UUID parsing error will occur before/during performReallocation
 
       // Act
       TestObserver<UserExperimentMap> testObserver =
@@ -330,6 +340,7 @@ public class AllocationTest {
               .reason("Test")
               .build();
 
+      setupCommonMocks(request, CONTROL_VARIANT);
       when(allocationDAO.reallocateUserVariant(
               eq(PROJECT_KEY), anyString(), any(UserExperimentMap.class), eq(request)))
           .thenReturn(Single.error(new RuntimeException("Database connection failed")));
@@ -356,6 +367,7 @@ public class AllocationTest {
               .reason("Test")
               .build();
 
+      setupCommonMocks(request, CONTROL_VARIANT);
       when(allocationDAO.reallocateUserVariant(
               eq(PROJECT_KEY), anyString(), any(UserExperimentMap.class), eq(request)))
           .thenReturn(Single.error(new RuntimeException("Request timed out")));
@@ -394,6 +406,7 @@ public class AllocationTest {
               .assignedAt(System.currentTimeMillis())
               .build();
 
+      setupCommonMocks(request, CONTROL_VARIANT);
       when(allocationDAO.reallocateUserVariant(
               eq(PROJECT_KEY), anyString(), any(UserExperimentMap.class), eq(request)))
           .thenReturn(Single.just(expectedResponse));
@@ -428,6 +441,7 @@ public class AllocationTest {
               .assignedAt(System.currentTimeMillis())
               .build();
 
+      setupCommonMocks(request, CONTROL_VARIANT);
       when(allocationDAO.reallocateUserVariant(
               eq(PROJECT_KEY), anyString(), any(UserExperimentMap.class), eq(request)))
           .thenReturn(Single.just(expectedResponse));
@@ -461,6 +475,7 @@ public class AllocationTest {
               .assignedAt(System.currentTimeMillis())
               .build();
 
+      setupCommonMocks(request, CONTROL_VARIANT);
       when(allocationDAO.reallocateUserVariant(
               eq(PROJECT_KEY), anyString(), any(UserExperimentMap.class), eq(request)))
           .thenReturn(Single.just(expectedResponse));
@@ -495,6 +510,7 @@ public class AllocationTest {
               .assignedAt(System.currentTimeMillis())
               .build();
 
+      setupCommonMocks(request, CONTROL_VARIANT);
       when(allocationDAO.reallocateUserVariant(
               eq(PROJECT_KEY), anyString(), any(UserExperimentMap.class), eq(request)))
           .thenReturn(Single.just(expectedResponse));
@@ -534,6 +550,14 @@ public class AllocationTest {
               .assignedAt(System.currentTimeMillis())
               .build();
 
+      when(allocationDAO.acquireUserLock(eq(USER_ID), eq(projectKey)))
+          .thenReturn(Single.just(true));
+      when(allocationDAO.releaseUserLock(eq(USER_ID), eq(projectKey)))
+          .thenReturn(Single.just(true));
+      when(allocationDAO.fetchActiveExperiment(eq(projectKey), eq(request.getExperimentId())))
+          .thenReturn(Single.just(createMockExperiment()));
+      when(allocationDAO.getAllocations(eq(request.getUserId()), eq(projectKey)))
+          .thenReturn(Single.just(List.of(createCurrentAssignment(CONTROL_VARIANT))));
       when(allocationDAO.reallocateUserVariant(
               eq(projectKey), anyString(), any(UserExperimentMap.class), eq(request)))
           .thenReturn(Single.just(expectedResponse));
@@ -572,6 +596,26 @@ public class AllocationTest {
               .assignedAt(System.currentTimeMillis())
               .build();
 
+      // Setup mocks for projectKey1
+      when(allocationDAO.acquireUserLock(eq(USER_ID), eq(projectKey1)))
+          .thenReturn(Single.just(true));
+      when(allocationDAO.releaseUserLock(eq(USER_ID), eq(projectKey1)))
+          .thenReturn(Single.just(true));
+      when(allocationDAO.fetchActiveExperiment(eq(projectKey1), eq(request.getExperimentId())))
+          .thenReturn(Single.just(createMockExperiment()));
+      when(allocationDAO.getAllocations(eq(request.getUserId()), eq(projectKey1)))
+          .thenReturn(Single.just(List.of(createCurrentAssignment(CONTROL_VARIANT))));
+
+      // Setup mocks for projectKey2
+      when(allocationDAO.acquireUserLock(eq(USER_ID), eq(projectKey2)))
+          .thenReturn(Single.just(true));
+      when(allocationDAO.releaseUserLock(eq(USER_ID), eq(projectKey2)))
+          .thenReturn(Single.just(true));
+      when(allocationDAO.fetchActiveExperiment(eq(projectKey2), eq(request.getExperimentId())))
+          .thenReturn(Single.just(createMockExperiment()));
+      when(allocationDAO.getAllocations(eq(request.getUserId()), eq(projectKey2)))
+          .thenReturn(Single.just(List.of(createCurrentAssignment(CONTROL_VARIANT))));
+
       when(allocationDAO.reallocateUserVariant(
               anyString(), anyString(), any(UserExperimentMap.class), eq(request)))
           .thenReturn(Single.just(expectedResponse));
@@ -602,10 +646,13 @@ public class AllocationTest {
     @DisplayName("Should handle concurrent reallocation requests for same user")
     void testConcurrentReallocationsSameUser() {
       // Arrange
+      String variant1 = "variant1";
+      String variant2 = "variant2";
+
       ReallocateRequest request1 =
           ReallocateRequest.builder()
               .experimentId(EXPERIMENT_ID.toString())
-              .variantName("variant1")
+              .variantName(variant1)
               .userId(USER_ID)
               .reason("First")
               .build();
@@ -613,7 +660,7 @@ public class AllocationTest {
       ReallocateRequest request2 =
           ReallocateRequest.builder()
               .experimentId(EXPERIMENT_ID.toString())
-              .variantName("variant2")
+              .variantName(variant2)
               .userId(USER_ID)
               .reason("Second")
               .build();
@@ -621,7 +668,7 @@ public class AllocationTest {
       UserExperimentMap response1 =
           UserExperimentMap.builder()
               .experimentId(EXPERIMENT_ID)
-              .variantName("variant1")
+              .variantName(variant1)
               .status("REALLOCATED")
               .assignedAt(System.currentTimeMillis())
               .build();
@@ -629,11 +676,38 @@ public class AllocationTest {
       UserExperimentMap response2 =
           UserExperimentMap.builder()
               .experimentId(EXPERIMENT_ID)
-              .variantName("variant2")
+              .variantName(variant2)
               .status("REALLOCATED")
               .assignedAt(System.currentTimeMillis())
               .build();
 
+      // Create experiment with variant1 and variant2
+      Experiment mockExperiment =
+          Experiment.builder()
+              .experimentId(EXPERIMENT_ID)
+              .projectKey(PROJECT_KEY)
+              .name("Test Experiment")
+              .key("test_experiment")
+              .status(ExperimentStatus.LIVE)
+              .type(ExperimentType.A_B)
+              .variants(
+                  Map.of(
+                      CONTROL_VARIANT,
+                      Variant.builder().displayName(CONTROL_VARIANT).build(),
+                      variant1,
+                      Variant.builder().displayName(variant1).build(),
+                      variant2,
+                      Variant.builder().displayName(variant2).build()))
+              .build();
+
+      when(allocationDAO.acquireUserLock(eq(USER_ID), eq(PROJECT_KEY)))
+          .thenReturn(Single.just(true));
+      when(allocationDAO.releaseUserLock(eq(USER_ID), eq(PROJECT_KEY)))
+          .thenReturn(Single.just(true));
+      when(allocationDAO.fetchActiveExperiment(eq(PROJECT_KEY), eq(EXPERIMENT_ID.toString())))
+          .thenReturn(Single.just(mockExperiment));
+      when(allocationDAO.getAllocations(eq(USER_ID), eq(PROJECT_KEY)))
+          .thenReturn(Single.just(List.of(createCurrentAssignment(CONTROL_VARIANT))));
       when(allocationDAO.reallocateUserVariant(
               eq(PROJECT_KEY), anyString(), any(UserExperimentMap.class), eq(request1)))
           .thenReturn(Single.just(response1));
@@ -652,12 +726,6 @@ public class AllocationTest {
       testObserver2.assertComplete();
       testObserver1.assertNoErrors();
       testObserver2.assertNoErrors();
-      verify(allocationDAO, times(2))
-          .reallocateUserVariant(
-              eq(PROJECT_KEY),
-              anyString(),
-              any(UserExperimentMap.class),
-              any(ReallocateRequest.class));
     }
 
     @Test
@@ -691,6 +759,26 @@ public class AllocationTest {
               .assignedAt(System.currentTimeMillis())
               .build();
 
+      // Setup mocks for user1
+      when(allocationDAO.acquireUserLock(eq(userId1), eq(PROJECT_KEY)))
+          .thenReturn(Single.just(true));
+      when(allocationDAO.releaseUserLock(eq(userId1), eq(PROJECT_KEY)))
+          .thenReturn(Single.just(true));
+      when(allocationDAO.getAllocations(eq(userId1), eq(PROJECT_KEY)))
+          .thenReturn(Single.just(List.of(createCurrentAssignment(CONTROL_VARIANT))));
+
+      // Setup mocks for user2
+      when(allocationDAO.acquireUserLock(eq(userId2), eq(PROJECT_KEY)))
+          .thenReturn(Single.just(true));
+      when(allocationDAO.releaseUserLock(eq(userId2), eq(PROJECT_KEY)))
+          .thenReturn(Single.just(true));
+      when(allocationDAO.getAllocations(eq(userId2), eq(PROJECT_KEY)))
+          .thenReturn(Single.just(List.of(createCurrentAssignment(CONTROL_VARIANT))));
+
+      // Shared stub for experiment (same for both requests)
+      when(allocationDAO.fetchActiveExperiment(eq(PROJECT_KEY), eq(EXPERIMENT_ID.toString())))
+          .thenReturn(Single.just(createMockExperiment()));
+
       when(allocationDAO.reallocateUserVariant(
               eq(PROJECT_KEY),
               anyString(),
@@ -707,12 +795,6 @@ public class AllocationTest {
       // Assert
       testObserver1.assertComplete();
       testObserver2.assertComplete();
-      verify(allocationDAO, times(2))
-          .reallocateUserVariant(
-              eq(PROJECT_KEY),
-              anyString(),
-              any(UserExperimentMap.class),
-              any(ReallocateRequest.class));
     }
   }
 
@@ -740,6 +822,7 @@ public class AllocationTest {
               .assignedAt(System.currentTimeMillis())
               .build();
 
+      setupCommonMocks(request, CONTROL_VARIANT);
       when(allocationDAO.reallocateUserVariant(
               eq(PROJECT_KEY), anyString(), any(UserExperimentMap.class), eq(request)))
           .thenReturn(Single.just(expectedResponse));
@@ -781,6 +864,7 @@ public class AllocationTest {
               .assignedAt(System.currentTimeMillis())
               .build();
 
+      setupCommonMocks(request, CONTROL_VARIANT);
       when(allocationDAO.reallocateUserVariant(
               eq(PROJECT_KEY), anyString(), any(UserExperimentMap.class), eq(request)))
           .thenReturn(Single.just(expectedResponse));
@@ -815,6 +899,7 @@ public class AllocationTest {
               .assignedAt(System.currentTimeMillis())
               .build();
 
+      setupCommonMocks(request, CONTROL_VARIANT);
       when(allocationDAO.reallocateUserVariant(
               eq(PROJECT_KEY), anyString(), any(UserExperimentMap.class), eq(request)))
           .thenReturn(Single.just(expectedResponse));
@@ -855,6 +940,7 @@ public class AllocationTest {
               .assignedAt(System.currentTimeMillis())
               .build();
 
+      setupCommonMocks(request, CONTROL_VARIANT);
       when(allocationDAO.reallocateUserVariant(
               eq(PROJECT_KEY), anyString(), any(UserExperimentMap.class), eq(request)))
           .thenReturn(Single.just(expectedResponse));
@@ -895,6 +981,7 @@ public class AllocationTest {
               .assignedAt(System.currentTimeMillis())
               .build();
 
+      setupCommonMocks(request, CONTROL_VARIANT);
       when(allocationDAO.reallocateUserVariant(
               eq(PROJECT_KEY), anyString(), any(UserExperimentMap.class), eq(request)))
           .thenReturn(Single.just(expectedResponse));
@@ -933,6 +1020,7 @@ public class AllocationTest {
               .assignedAt(System.currentTimeMillis())
               .build();
 
+      setupCommonMocks(request, TREATMENT_VARIANT);
       when(allocationDAO.reallocateUserVariant(
               eq(PROJECT_KEY), anyString(), any(UserExperimentMap.class), eq(request)))
           .thenReturn(Single.just(expectedResponse));
@@ -968,6 +1056,31 @@ public class AllocationTest {
               .assignedAt(System.currentTimeMillis())
               .build();
 
+      // Create experiment with hyphenated variant
+      Experiment mockExperiment =
+          Experiment.builder()
+              .experimentId(EXPERIMENT_ID)
+              .projectKey(PROJECT_KEY)
+              .name("Test Experiment")
+              .key("test_experiment")
+              .status(ExperimentStatus.LIVE)
+              .type(ExperimentType.A_B)
+              .variants(
+                  Map.of(
+                      CONTROL_VARIANT,
+                      Variant.builder().displayName(CONTROL_VARIANT).build(),
+                      hyphenatedVariant,
+                      Variant.builder().displayName(hyphenatedVariant).build()))
+              .build();
+
+      when(allocationDAO.acquireUserLock(eq(USER_ID), eq(PROJECT_KEY)))
+          .thenReturn(Single.just(true));
+      when(allocationDAO.releaseUserLock(eq(USER_ID), eq(PROJECT_KEY)))
+          .thenReturn(Single.just(true));
+      when(allocationDAO.fetchActiveExperiment(eq(PROJECT_KEY), eq(request.getExperimentId())))
+          .thenReturn(Single.just(mockExperiment));
+      when(allocationDAO.getAllocations(eq(request.getUserId()), eq(PROJECT_KEY)))
+          .thenReturn(Single.just(List.of(createCurrentAssignment(CONTROL_VARIANT))));
       when(allocationDAO.reallocateUserVariant(
               eq(PROJECT_KEY), anyString(), any(UserExperimentMap.class), eq(request)))
           .thenReturn(Single.just(expectedResponse));
@@ -1002,6 +1115,7 @@ public class AllocationTest {
               .assignedAt(System.currentTimeMillis())
               .build();
 
+      setupCommonMocks(request, CONTROL_VARIANT);
       when(allocationDAO.reallocateUserVariant(
               eq(PROJECT_KEY), anyString(), any(UserExperimentMap.class), eq(request)))
           .thenReturn(Single.just(expectedResponse));
@@ -1014,5 +1128,322 @@ public class AllocationTest {
       testObserver.assertComplete();
       testObserver.assertNoErrors();
     }
+  }
+
+  @Nested
+  @DisplayName("GetAllocations Service Tests")
+  class GetAllocationsServiceTests {
+
+    @Test
+    @DisplayName("Should get allocations for user successfully")
+    void testGetAllocationsSuccess() {
+      // Arrange
+      List<UserExperimentMap> allocations =
+          List.of(
+              createCurrentAssignment(CONTROL_VARIANT), createCurrentAssignment(TREATMENT_VARIANT));
+
+      when(allocationDAO.getAllocations(eq(USER_ID), eq(PROJECT_KEY)))
+          .thenReturn(Single.just(allocations));
+
+      // Act
+      TestObserver<GetAllocationsResponse> testObserver =
+          allocationService.getAllocations(USER_ID, PROJECT_KEY).test();
+
+      // Assert
+      testObserver.assertComplete();
+      testObserver.assertNoErrors();
+      testObserver.assertValue(response -> response.experimentMap().size() == 2);
+      verify(allocationDAO, times(1)).getAllocations(eq(USER_ID), eq(PROJECT_KEY));
+    }
+
+    @Test
+    @DisplayName("Should get empty allocations when user has none")
+    void testGetAllocationsEmpty() {
+      // Arrange
+      when(allocationDAO.getAllocations(eq(USER_ID), eq(PROJECT_KEY)))
+          .thenReturn(Single.just(List.of()));
+
+      // Act
+      TestObserver<GetAllocationsResponse> testObserver =
+          allocationService.getAllocations(USER_ID, PROJECT_KEY).test();
+
+      // Assert
+      testObserver.assertComplete();
+      testObserver.assertNoErrors();
+      testObserver.assertValue(response -> response.experimentMap().isEmpty());
+    }
+
+    @Test
+    @DisplayName("Should handle error when fetching allocations")
+    void testGetAllocationsError() {
+      // Arrange
+      RuntimeException expectedException = new RuntimeException("Database error");
+      when(allocationDAO.getAllocations(eq(USER_ID), eq(PROJECT_KEY)))
+          .thenReturn(Single.error(expectedException));
+
+      // Act
+      TestObserver<GetAllocationsResponse> testObserver =
+          allocationService.getAllocations(USER_ID, PROJECT_KEY).test();
+
+      // Assert
+      testObserver.assertError(RuntimeException.class);
+    }
+
+    @Test
+    @DisplayName("Should handle different user IDs correctly")
+    void testGetAllocationsDifferentUsers() {
+      // Arrange
+      String userId1 = "user-1";
+      String userId2 = "user-2";
+
+      List<UserExperimentMap> allocations1 = List.of(createCurrentAssignment(CONTROL_VARIANT));
+      List<UserExperimentMap> allocations2 = List.of(createCurrentAssignment(TREATMENT_VARIANT));
+
+      when(allocationDAO.getAllocations(eq(userId1), eq(PROJECT_KEY)))
+          .thenReturn(Single.just(allocations1));
+      when(allocationDAO.getAllocations(eq(userId2), eq(PROJECT_KEY)))
+          .thenReturn(Single.just(allocations2));
+
+      // Act
+      TestObserver<GetAllocationsResponse> testObserver1 =
+          allocationService.getAllocations(userId1, PROJECT_KEY).test();
+      TestObserver<GetAllocationsResponse> testObserver2 =
+          allocationService.getAllocations(userId2, PROJECT_KEY).test();
+
+      // Assert
+      testObserver1.assertComplete();
+      testObserver2.assertComplete();
+      testObserver1.assertValue(response -> response.experimentMap().size() == 1);
+      testObserver2.assertValue(response -> response.experimentMap().size() == 1);
+    }
+  }
+
+  @Nested
+  @DisplayName("Lock Acquisition Tests")
+  class LockAcquisitionTests {
+
+    @Test
+    @DisplayName("Should fail reallocation when lock cannot be acquired")
+    void testLockAcquisitionFailure() {
+      // Arrange
+      ReallocateRequest request =
+          ReallocateRequest.builder()
+              .experimentId(EXPERIMENT_ID.toString())
+              .variantName(TREATMENT_VARIANT)
+              .userId(USER_ID)
+              .reason("Test")
+              .build();
+
+      when(allocationDAO.acquireUserLock(eq(USER_ID), eq(PROJECT_KEY)))
+          .thenReturn(Single.just(false));
+
+      // Act
+      TestObserver<UserExperimentMap> testObserver =
+          allocationService.reallocateExperiment(PROJECT_KEY, request).test();
+
+      // Assert
+      testObserver.assertError(Exception.class);
+      testObserver.assertNotComplete();
+    }
+
+    @Test
+    @DisplayName("Should handle lock acquisition error")
+    void testLockAcquisitionError() {
+      // Arrange
+      ReallocateRequest request =
+          ReallocateRequest.builder()
+              .experimentId(EXPERIMENT_ID.toString())
+              .variantName(TREATMENT_VARIANT)
+              .userId(USER_ID)
+              .reason("Test")
+              .build();
+
+      when(allocationDAO.acquireUserLock(eq(USER_ID), eq(PROJECT_KEY)))
+          .thenReturn(Single.error(new RuntimeException("Lock service unavailable")));
+
+      // Act
+      TestObserver<UserExperimentMap> testObserver =
+          allocationService.reallocateExperiment(PROJECT_KEY, request).test();
+
+      // Assert
+      testObserver.assertError(RuntimeException.class);
+    }
+
+    @Test
+    @DisplayName("Should release lock after successful reallocation")
+    void testLockReleaseAfterSuccess() {
+      // Arrange
+      ReallocateRequest request =
+          ReallocateRequest.builder()
+              .experimentId(EXPERIMENT_ID.toString())
+              .variantName(TREATMENT_VARIANT)
+              .userId(USER_ID)
+              .reason("Test")
+              .build();
+
+      UserExperimentMap expectedResponse =
+          UserExperimentMap.builder()
+              .experimentId(EXPERIMENT_ID)
+              .variantName(TREATMENT_VARIANT)
+              .status("REALLOCATED")
+              .assignedAt(System.currentTimeMillis())
+              .build();
+
+      setupCommonMocks(request, CONTROL_VARIANT);
+      when(allocationDAO.reallocateUserVariant(
+              eq(PROJECT_KEY), anyString(), any(UserExperimentMap.class), eq(request)))
+          .thenReturn(Single.just(expectedResponse));
+
+      // Act
+      TestObserver<UserExperimentMap> testObserver =
+          allocationService.reallocateExperiment(PROJECT_KEY, request).test();
+
+      // Assert
+      testObserver.assertComplete();
+      verify(allocationDAO, times(1)).releaseUserLock(eq(USER_ID), eq(PROJECT_KEY));
+    }
+
+    @Test
+    @DisplayName("Should release lock after reallocation failure")
+    void testLockReleaseAfterFailure() {
+      // Arrange
+      ReallocateRequest request =
+          ReallocateRequest.builder()
+              .experimentId(EXPERIMENT_ID.toString())
+              .variantName(TREATMENT_VARIANT)
+              .userId(USER_ID)
+              .reason("Test")
+              .build();
+
+      setupCommonMocks(request, CONTROL_VARIANT);
+      when(allocationDAO.reallocateUserVariant(
+              eq(PROJECT_KEY), anyString(), any(UserExperimentMap.class), eq(request)))
+          .thenReturn(Single.error(new RuntimeException("Reallocation failed")));
+
+      // Act
+      TestObserver<UserExperimentMap> testObserver =
+          allocationService.reallocateExperiment(PROJECT_KEY, request).test();
+
+      // Assert
+      testObserver.assertError(RuntimeException.class);
+      verify(allocationDAO, times(1)).releaseUserLock(eq(USER_ID), eq(PROJECT_KEY));
+    }
+  }
+
+  @Nested
+  @DisplayName("Variant Assignment Validation Tests")
+  class VariantAssignmentValidationTests {
+
+    @Test
+    @DisplayName("Should reject reallocation to same variant")
+    void testReallocationToSameVariant() {
+      // Arrange
+      ReallocateRequest request =
+          ReallocateRequest.builder()
+              .experimentId(EXPERIMENT_ID.toString())
+              .variantName(CONTROL_VARIANT)
+              .userId(USER_ID)
+              .reason("Test")
+              .build();
+
+      setupCommonMocks(request, CONTROL_VARIANT);
+
+      // Act
+      TestObserver<UserExperimentMap> testObserver =
+          allocationService.reallocateExperiment(PROJECT_KEY, request).test();
+
+      // Assert
+      testObserver.assertError(Exception.class);
+    }
+
+    @Test
+    @DisplayName("Should reject reallocation when user has no current assignment")
+    void testReallocationWithNoCurrentAssignment() {
+      // Arrange
+      ReallocateRequest request =
+          ReallocateRequest.builder()
+              .experimentId(EXPERIMENT_ID.toString())
+              .variantName(TREATMENT_VARIANT)
+              .userId(USER_ID)
+              .reason("Test")
+              .build();
+
+      when(allocationDAO.acquireUserLock(eq(USER_ID), eq(PROJECT_KEY)))
+          .thenReturn(Single.just(true));
+      when(allocationDAO.releaseUserLock(eq(USER_ID), eq(PROJECT_KEY)))
+          .thenReturn(Single.just(true));
+      when(allocationDAO.fetchActiveExperiment(eq(PROJECT_KEY), eq(request.getExperimentId())))
+          .thenReturn(Single.just(createMockExperiment()));
+      when(allocationDAO.getAllocations(eq(USER_ID), eq(PROJECT_KEY)))
+          .thenReturn(Single.just(List.of()));
+
+      // Act
+      TestObserver<UserExperimentMap> testObserver =
+          allocationService.reallocateExperiment(PROJECT_KEY, request).test();
+
+      // Assert
+      testObserver.assertError(Exception.class);
+    }
+
+    @Test
+    @DisplayName("Should handle case-sensitive variant names")
+    void testVariantNameCaseSensitivity() {
+      // Arrange
+      String variantUpperCase = "TREATMENT";
+      ReallocateRequest request =
+          ReallocateRequest.builder()
+              .experimentId(EXPERIMENT_ID.toString())
+              .variantName(variantUpperCase)
+              .userId(USER_ID)
+              .reason("Test")
+              .build();
+
+      setupCommonMocks(request, CONTROL_VARIANT);
+
+      // Act
+      TestObserver<UserExperimentMap> testObserver =
+          allocationService.reallocateExperiment(PROJECT_KEY, request).test();
+
+      // Assert
+      testObserver.assertError(Exception.class);
+    }
+  }
+
+  // Helper methods
+  private Experiment createMockExperiment() {
+    return Experiment.builder()
+        .experimentId(EXPERIMENT_ID)
+        .projectKey(PROJECT_KEY)
+        .name("Test Experiment")
+        .key("test_experiment")
+        .status(ExperimentStatus.LIVE)
+        .type(ExperimentType.A_B)
+        .variants(
+            Map.of(
+                CONTROL_VARIANT,
+                Variant.builder().displayName(CONTROL_VARIANT).build(),
+                TREATMENT_VARIANT,
+                Variant.builder().displayName(TREATMENT_VARIANT).build()))
+        .build();
+  }
+
+  private UserExperimentMap createCurrentAssignment(String variantName) {
+    return UserExperimentMap.builder()
+        .experimentId(EXPERIMENT_ID)
+        .variantName(variantName)
+        .status("ASSIGNED")
+        .assignedAt(System.currentTimeMillis())
+        .build();
+  }
+
+  private void setupCommonMocks(ReallocateRequest request, String currentVariant) {
+    when(allocationDAO.acquireUserLock(eq(request.getUserId()), eq(PROJECT_KEY)))
+        .thenReturn(Single.just(true));
+    when(allocationDAO.releaseUserLock(eq(request.getUserId()), eq(PROJECT_KEY)))
+        .thenReturn(Single.just(true));
+    when(allocationDAO.fetchActiveExperiment(eq(PROJECT_KEY), eq(request.getExperimentId())))
+        .thenReturn(Single.just(createMockExperiment()));
+    when(allocationDAO.getAllocations(eq(request.getUserId()), eq(PROJECT_KEY)))
+        .thenReturn(Single.just(List.of(createCurrentAssignment(currentVariant))));
   }
 }

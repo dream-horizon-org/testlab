@@ -500,16 +500,15 @@ public class AllocationDAOImpl implements AllocationDAO {
    * @param projectKey project identifier
    * @return map of userId to list of user experiment mappings
    */
-  @SuppressWarnings("unchecked")
   private Single<Map<String, List<UserExperimentMap>>> getAllocationsBatchFromAerospike(
       List<String> userIds, String projectKey) {
 
     String set = CommonUtil.getSetName(aerospikeConfig.getUserAllocationsSet(), projectKey);
 
-    Key[] keys = new Key[userIds.size()];
-    for (int i = 0; i < userIds.size(); i++) {
-      keys[i] = new Key(aerospikeConfig.getNamespace(), set, userIds.get(i));
-    }
+    List<Key> keys =
+        userIds.stream()
+            .map(userId -> new Key(aerospikeConfig.getNamespace(), set, userId))
+            .toList();
 
     BatchPolicy batchPolicy = new BatchPolicy();
     batchPolicy.sendKey = true;
@@ -695,10 +694,9 @@ public class AllocationDAOImpl implements AllocationDAO {
               asKey);
       keys.add(key);
     }
-    Key[] keyArray = keys.toArray(new Key[0]);
 
     return aerospikeClient
-        .get(batchPolicy, keyArray, aerospikeConfig.getVariantCountBin())
+        .get(batchPolicy, keys, aerospikeConfig.getVariantCountBin())
         .map(
             record ->
                 record.stream()
