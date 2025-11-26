@@ -1,8 +1,8 @@
 package com.ascend.testlab.validation.statevalidation;
 
 import com.ascend.testlab.dto.request.UpdateExperimentRequest;
+import com.google.inject.Inject;
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.List;
 import java.util.UUID;
 import lombok.extern.slf4j.Slf4j;
@@ -18,28 +18,23 @@ public class StateValidationContext {
 
   private final List<StateValidationStrategy> strategies;
 
-  /** Default constructor that initializes with all available strategies. */
-  public StateValidationContext() {
-    this.strategies = new ArrayList<>();
-    registerDefaultStrategies();
-  }
-
   /**
-   * Constructor that accepts custom strategies.
+   * Constructor that accepts strategies via dependency injection.
    *
-   * @param strategies list of validation strategies
+   * @param liveStrategy validation strategy for LIVE state
+   * @param pausedStrategy validation strategy for PAUSED state
+   * @param draftStrategy validation strategy for DRAFT state
    */
-  public StateValidationContext(List<StateValidationStrategy> strategies) {
-    this.strategies = new ArrayList<>(strategies);
-    sortStrategiesByPriority();
-  }
-
-  /** Registers default validation strategies for all experiment states. */
-  private void registerDefaultStrategies() {
-    strategies.add(new LiveStateValidationStrategy());
-    strategies.add(new DraftStateValidationStrategy());
-    // Add more strategies here as needed (e.g., PausedStateValidationStrategy)
-    sortStrategiesByPriority();
+  @Inject
+  public StateValidationContext(
+      LiveStateValidationStrategy liveStrategy,
+      PausedStateValidationStrategy pausedStrategy,
+      DraftStateValidationStrategy draftStrategy) {
+    this.strategies = new ArrayList<>();
+    strategies.add(liveStrategy);
+    strategies.add(pausedStrategy);
+    strategies.add(draftStrategy);
+    // CONCLUDED and TERMINATED are handled as terminal states in the service layer
   }
 
   /**
@@ -49,7 +44,6 @@ public class StateValidationContext {
    */
   public void registerStrategy(StateValidationStrategy strategy) {
     strategies.add(strategy);
-    sortStrategiesByPriority();
   }
 
   /**
@@ -89,11 +83,6 @@ public class StateValidationContext {
           currentStatus,
           experimentId);
     }
-  }
-
-  /** Sorts strategies by priority (lower number = higher priority). */
-  private void sortStrategiesByPriority() {
-    strategies.sort(Comparator.comparingInt(StateValidationStrategy::getPriority));
   }
 
   /**

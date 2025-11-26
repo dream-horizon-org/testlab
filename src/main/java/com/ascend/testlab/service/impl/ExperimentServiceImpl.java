@@ -11,6 +11,8 @@ import com.ascend.testlab.dto.response.FilterExperimentsResponse;
 import com.ascend.testlab.dto.response.UpdateExperimentResponse;
 import com.ascend.testlab.exception.ErrorEnum;
 import com.ascend.testlab.service.ExperimentService;
+import com.ascend.testlab.validation.VariantStructureValidator;
+import com.ascend.testlab.validation.statevalidation.StateValidationContext;
 import com.dream11.rest.exception.RestException;
 import com.google.inject.Inject;
 import io.reactivex.rxjava3.core.Single;
@@ -34,15 +36,24 @@ import lombok.extern.slf4j.Slf4j;
 public class ExperimentServiceImpl implements ExperimentService {
 
   private final ExperimentDAO experimentDAO;
+  private final StateValidationContext stateValidationContext;
+  private final VariantStructureValidator variantStructureValidator;
 
   /**
    * Constructor for ExperimentServiceImpl.
    *
    * @param experimentDAO the experiment DAO to use for data access
+   * @param stateValidationContext the state validation context for state-based field restrictions
+   * @param variantStructureValidator the validator for variant structure consistency
    */
   @Inject
-  public ExperimentServiceImpl(ExperimentDAO experimentDAO) {
+  public ExperimentServiceImpl(
+      ExperimentDAO experimentDAO,
+      StateValidationContext stateValidationContext,
+      VariantStructureValidator variantStructureValidator) {
     this.experimentDAO = experimentDAO;
+    this.stateValidationContext = stateValidationContext;
+    this.variantStructureValidator = variantStructureValidator;
   }
 
   /**
@@ -137,8 +148,8 @@ public class ExperimentServiceImpl implements ExperimentService {
         tenantId,
         projectKey,
         request.getName(),
-        request != null ? request.getTags() : null,
-        request != null ? request.getOwner() : null);
+        request.getTags(),
+        request.getOwner());
 
     // Set project_key and experiment_id - both come from header
     UUID experimentId = UUID.randomUUID();
@@ -302,6 +313,46 @@ public class ExperimentServiceImpl implements ExperimentService {
                           org.apache.http.HttpStatus.SC_BAD_REQUEST,
                           null));
                 }
+
+                // Validate state-based field restrictions using Strategy Pattern
+                log.debug(
+                    "Validating state-based field restrictions for experimentId: {}, status: {}",
+                    experimentId,
+                    currentStatus);
+                try {
+                  stateValidationContext.validate(context.request, currentStatus, experimentId);
+                } catch (IllegalArgumentException e) {
+                  log.error(
+                      "State-based validation failed for experimentId: {}, status: {}, error: {}",
+                      experimentId,
+                      currentStatus,
+                      e.getMessage());
+                  return Single.error(
+                      new RestException(
+                          "INVALID_REQUEST",
+                          e.getMessage(),
+                          org.apache.http.HttpStatus.SC_BAD_REQUEST,
+                          e));
+                }
+              }
+
+              // Validate variant structure if variants are being updated
+              if (context.request.getVariants() != null) {
+                log.debug("Validating variant structure for experimentId: {}", experimentId);
+                try {
+                  validateVariantStructure(previousData, context.request, experimentId);
+                } catch (IllegalArgumentException e) {
+                  log.error(
+                      "Variant structure validation failed for experimentId: {}, error: {}",
+                      experimentId,
+                      e.getMessage());
+                  return Single.error(
+                      new RestException(
+                          "INVALID_REQUEST",
+                          e.getMessage(),
+                          org.apache.http.HttpStatus.SC_BAD_REQUEST,
+                          e));
+                }
               }
 
               // Validate status transition if status is being updated
@@ -349,24 +400,6 @@ public class ExperimentServiceImpl implements ExperimentService {
                   ErrorEnum.handleException(
                       err, new RestException(ErrorEnum.EXPERIMENT_UPDATE_FAILED, err)));
             });
-  }
-
-  /**
-   * Logs update error.
-   *
-   * @param tenantId tenant identifier
-   * @param projectKey project identifier
-   * @param experimentId experiment identifier
-   * @param error error that occurred
-   */
-  private void logError(UUID tenantId, String projectKey, UUID experimentId, Throwable error) {
-    log.error(
-        "Failed to update experiment for tenantId: {}, projectKey: {}, experimentId: {}, error: {}",
-        tenantId,
-        projectKey,
-        experimentId,
-        error.getMessage(),
-        error);
   }
 
   /**
@@ -500,6 +533,33 @@ public class ExperimentServiceImpl implements ExperimentService {
         experimentId,
         currentStatus,
         newStatus);
+  }
+
+  /**
+   * Validates that variant updates only modify variable values, not keys or data types.
+   *
+   * <p>When updating variants, the structure (variant keys, variable keys, and data types) must
+   * remain consistent with the original experiment. Only variable values can be changed.
+   *
+   * @param previousData the existing experiment data
+   * @param request the update request
+   * @param experimentId the experiment identifier for logging
+   * @throws IllegalArgumentException if variant structure is invalid
+   */
+  private void validateVariantStructure(
+      Map<String, Object> previousData, UpdateExperimentRequest request, UUID experimentId) {
+
+    log.debug("Validating variant structure consistency for experimentId: {}", experimentId);
+
+    // Get existing variants from previous data
+    Object existingVariantsObj = previousData.get("variants");
+    if (existingVariantsObj == null) {
+      log.warn("No existing variants found for experimentId: {}", experimentId);
+      return; // If no existing variants, allow the update (edge case)
+    }
+
+    // Delegate to VariantStructureValidator
+    variantStructureValidator.validate(existingVariantsObj, request.getVariants(), experimentId);
   }
 
   /** Context holder for update operation containing request, tags, and metadata. */
