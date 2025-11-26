@@ -1,4 +1,4 @@
-package com.ascend.testlab.dao.querybuilder.decorator.filter;
+package com.ascend.testlab.dao.querybuilder.decorator.operation;
 
 import com.ascend.testlab.constants.postgresql.ReadQuery;
 import com.ascend.testlab.dao.querybuilder.core.FilterQueryBuilder;

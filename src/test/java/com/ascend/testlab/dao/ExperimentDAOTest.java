@@ -180,6 +180,12 @@ class ExperimentDAOTest {
           .when(pgReaderClient)
           .fetchAll(anyString(), any(Tuple.class), any(Function.class));
 
+      // Mock the count query that's called when rows are empty
+      // fetchOne applies the mapper function and returns Maybe<T>, so we return Maybe.just(0)
+      // since the mapper extracts total_count which should be 0
+      when(pgReaderClient.fetchOne(anyString(), any(Tuple.class), any(Function.class)))
+          .thenReturn(Maybe.just(0));
+
       // Act
       TestObserver<FilterExperimentsResponse> testObserver =
           experimentDAO.filterExperiments(PROJECT_KEY, request).test();
@@ -194,6 +200,7 @@ class ExperimentDAOTest {
                   && response.getPagination().currentPage() == 1
                   && response.getPagination().pageSize() == 0);
       verify(pgReaderClient, times(1)).fetchAll(anyString(), any(Tuple.class), any(Function.class));
+      verify(pgReaderClient, times(1)).fetchOne(anyString(), any(Tuple.class), any(Function.class));
       testContext.completeNow();
     }
 
@@ -465,7 +472,7 @@ class ExperimentDAOTest {
         .createdBy("test-user")
         .createdAt(Instant.now())
         .updatedAt(Instant.now())
-        .tags("tag1,tag2")
+        .tags(List.of("tag1", "tag2"))
         .owner("owner1")
         .build();
   }
@@ -506,7 +513,7 @@ class ExperimentDAOTest {
     when(mockRow.getString("created_by")).thenReturn(experiment.getCreatedBy());
     when(mockRow.getOffsetDateTime("created_at")).thenReturn(now);
     when(mockRow.getOffsetDateTime("updated_at")).thenReturn(now);
-    when(mockRow.getString("tags")).thenReturn(experiment.getTags());
+    when(mockRow.getString("tags")).thenReturn(String.join(",", experiment.getTags()));
     when(mockRow.getString("owners")).thenReturn(experiment.getOwner());
     // Add total_count for pagination
     when(mockRow.getInteger("total_count")).thenReturn(totalCount);

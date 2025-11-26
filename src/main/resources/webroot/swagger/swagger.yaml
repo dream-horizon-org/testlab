@@ -325,6 +325,8 @@ components:
             type: string
         owner:
           type: string
+        variant_counts:
+          $ref: '#/components/schemas/JsonObject'
     FilterExperimentsResponse:
       type: object
       properties:
@@ -346,16 +348,16 @@ components:
     PaginationMeta:
       type: object
       properties:
-        currentPage:
+        current_page:
           type: integer
           format: int32
-        pageSize:
+        page_size:
           type: integer
           format: int32
-        totalCount:
+        total_count:
           type: integer
           format: int32
-        hasNextPage:
+        has_next_page:
           type: boolean
     SuccessFilterExperimentsResponse:
       type: object

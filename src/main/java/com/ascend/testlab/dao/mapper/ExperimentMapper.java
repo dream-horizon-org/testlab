@@ -71,7 +71,10 @@ public class ExperimentMapper {
             .createdBy(row.getString(Columns.CREATED_BY))
             .createdAt(row.getOffsetDateTime(Columns.CREATED_AT).toInstant())
             .updatedAt(row.getOffsetDateTime(Columns.UPDATED_AT).toInstant())
-            .tags(CommonUtil.separateCommaSeparatedString(row.getString(Columns.TAGS)))
+            .tags(
+                row.getString(Columns.TAGS) != null
+                    ? CommonUtil.separateCommaSeparatedString(row.getString(Columns.TAGS))
+                    : null)
             .owner(row.getString(Columns.OWNERS));
 
     return builder.build();

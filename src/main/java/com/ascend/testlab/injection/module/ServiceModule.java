@@ -12,9 +12,11 @@ import com.ascend.testlab.config.*;
 import com.ascend.testlab.dao.AdminDAO;
 import com.ascend.testlab.dao.ExperimentDAO;
 import com.ascend.testlab.dao.HealthCheckDAO;
+import com.ascend.testlab.dao.VariantCountDAO;
 import com.ascend.testlab.dao.impl.AdminDAOImpl;
 import com.ascend.testlab.dao.impl.ExperimentDAOImpl;
 import com.ascend.testlab.dao.impl.HealthCheckDAOImpl;
+import com.ascend.testlab.dao.impl.VariantCountDAOImpl;
 import com.ascend.testlab.service.AdminService;
 import com.ascend.testlab.service.ExperimentService;
 import com.ascend.testlab.service.HealthCheckService;
@@ -88,6 +90,7 @@ public class ServiceModule extends DefaultModule {
     bind(HealthCheckDAO.class).to(HealthCheckDAOImpl.class);
     bind(AdminDAO.class).to(AdminDAOImpl.class);
     bind(ExperimentDAO.class).to(ExperimentDAOImpl.class);
+    bind(VariantCountDAO.class).to(VariantCountDAOImpl.class);
   }
 
   /** Bind the service interfaces to their implementations. */

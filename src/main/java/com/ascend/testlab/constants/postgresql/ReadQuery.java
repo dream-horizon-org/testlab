@@ -87,7 +87,7 @@ public final class ReadQuery {
    * parameter index and returns the parameterized query fragment.
    */
   public static final IntFunction<String> NAME_FILTER =
-      " AND e.name_tsvector @@ plainto_tsquery('simple', $%d)"::formatted;
+      " AND similarity(e.name, $%d) > 0.1"::formatted;
 
   /** GROUP BY clause for experiment queries. Groups results by project_key and experiment_id */
   public static final String GROUP_BY = " GROUP BY e.project_key, e.experiment_id";
@@ -149,6 +149,10 @@ public final class ReadQuery {
       WHERE e.project_key = $1
       """;
 
+  /**
+   * Wraps a filtered experiment query to count the total number of matching experiments. Accepts a
+   * query string and returns a COUNT query wrapped around it.
+   */
   public static final Function<String, String> COUNT_FILTERED_EXPERIMENTS =
       "SELECT COUNT(*) as total_count FROM (%s) AS grouped_results"::formatted;
 }

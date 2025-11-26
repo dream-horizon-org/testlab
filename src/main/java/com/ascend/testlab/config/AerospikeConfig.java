@@ -53,6 +53,12 @@ public class AerospikeConfig {
   /** The namespace in which the data is stored. */
   private String namespace;
 
+  /** The set in which the variant Count is stored. */
+  private String variantCountSet;
+
+  /** The bin in which the count is stored. */
+  private String variantCountBin;
+
   /**
    * Get the provider for the Aerospike config.
    *

@@ -4,6 +4,7 @@ import com.ascend.testlab.dao.querybuilder.core.BaseQueryBuilder;
 import com.ascend.testlab.dao.querybuilder.core.FilterQueryBuilder;
 import com.ascend.testlab.dao.querybuilder.core.ParameterizedQuery;
 import com.ascend.testlab.dao.querybuilder.decorator.filter.*;
+import com.ascend.testlab.dao.querybuilder.decorator.operation.CountFilterQueryDecorator;
 import com.ascend.testlab.dao.querybuilder.decorator.operation.GroupAndOrderQueryDecorator;
 import com.ascend.testlab.dao.querybuilder.decorator.operation.PaginationQueryDecorator;
 import com.ascend.testlab.dto.request.FilterExperimentsRequest;
@@ -56,13 +57,13 @@ public final class FilterExperimentsQueryFactory {
     }
     baseQuery = new GroupAndOrderQueryDecorator(baseQuery);
 
-    if (isPaginationReq) {
-      // Apply pagination at the end
-      int offset = CommonUtil.calculateOffset(request.getPage(), request.getLimit());
-      baseQuery = new PaginationQueryDecorator(baseQuery, request.getLimit(), offset);
-    } else {
-      baseQuery = new CountFilterQueryDecorator(baseQuery);
-    }
+    baseQuery =
+        (isPaginationReq)
+            ? new PaginationQueryDecorator(
+                baseQuery,
+                request.getLimit(),
+                CommonUtil.calculateOffset(request.getPage(), request.getLimit()))
+            : new CountFilterQueryDecorator(baseQuery);
 
     return baseQuery.buildQuery();
   }

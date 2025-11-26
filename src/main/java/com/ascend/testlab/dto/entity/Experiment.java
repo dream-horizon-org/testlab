@@ -91,4 +91,7 @@ public class Experiment {
 
   @JsonProperty("owner")
   private String owner;
+
+  @JsonProperty("variant_counts")
+  private JsonObject variantCounts;
 }

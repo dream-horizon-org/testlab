@@ -6,6 +6,7 @@ import static org.mockito.Mockito.*;
 import com.ascend.testlab.constants.enums.ExperimentStatus;
 import com.ascend.testlab.constants.enums.ExperimentType;
 import com.ascend.testlab.dao.ExperimentDAO;
+import com.ascend.testlab.dao.VariantCountDAO;
 import com.ascend.testlab.dto.entity.Experiment;
 import com.ascend.testlab.dto.request.FilterExperimentsRequest;
 import com.ascend.testlab.dto.response.FilterExperimentsResponse;
@@ -16,6 +17,7 @@ import com.dream11.rest.exception.RestException;
 import io.reactivex.rxjava3.core.Maybe;
 import io.reactivex.rxjava3.core.Single;
 import io.reactivex.rxjava3.observers.TestObserver;
+import io.vertx.core.json.JsonObject;
 import io.vertx.junit5.VertxExtension;
 import java.time.Instant;
 import java.util.*;
@@ -42,13 +44,14 @@ public class ExperimentServiceTest {
   private ExperimentService experimentService;
 
   @Mock private ExperimentDAO experimentDAO;
+  @Mock private VariantCountDAO variantCountDAO;
 
   private static final String PROJECT_KEY = "123e4567-e89b-12d3-a456-426614174000";
   private static final String EXPERIMENT_ID = "123e4567-e89b-12d3-a456-426614174000";
 
   @BeforeEach
   void setUp() {
-    experimentService = new ExperimentServiceImpl(experimentDAO);
+    experimentService = new ExperimentServiceImpl(experimentDAO, variantCountDAO);
   }
 
   @Nested
@@ -59,7 +62,7 @@ public class ExperimentServiceTest {
     @DisplayName("Should create service with valid DAO")
     void testConstructorWithValidDAO() {
       // Act
-      ExperimentServiceImpl service = new ExperimentServiceImpl(experimentDAO);
+      ExperimentServiceImpl service = new ExperimentServiceImpl(experimentDAO, variantCountDAO);
 
       // Assert
       assertNotNull(service);
@@ -69,7 +72,7 @@ public class ExperimentServiceTest {
     @DisplayName("Should create service with null DAO")
     void testConstructorWithNullDAO() {
       // Act - Constructor doesn't validate null, but will fail at runtime
-      ExperimentServiceImpl service = new ExperimentServiceImpl(null);
+      ExperimentServiceImpl service = new ExperimentServiceImpl(null, null);
 
       // Assert
       assertNotNull(service);
@@ -87,6 +90,8 @@ public class ExperimentServiceTest {
       Experiment expectedExperiment = createMockExperiment();
       when(experimentDAO.getExperiment(PROJECT_KEY, EXPERIMENT_ID))
           .thenReturn(Maybe.just(expectedExperiment));
+      when(variantCountDAO.getVariantCount(PROJECT_KEY, EXPERIMENT_ID))
+          .thenReturn(Single.just(new JsonObject()));
 
       // Act
       TestObserver<Experiment> testObserver =
@@ -99,6 +104,7 @@ public class ExperimentServiceTest {
       testObserver.assertValue(
           experiment -> experiment.getExperimentId().equals(UUID.fromString(EXPERIMENT_ID)));
       verify(experimentDAO, times(1)).getExperiment(PROJECT_KEY, EXPERIMENT_ID);
+      verify(variantCountDAO, times(1)).getVariantCount(PROJECT_KEY, EXPERIMENT_ID);
     }
 
     @Test
@@ -108,6 +114,8 @@ public class ExperimentServiceTest {
       Experiment expectedExperiment = createMockExperiment();
       when(experimentDAO.getExperiment(PROJECT_KEY, EXPERIMENT_ID))
           .thenReturn(Maybe.just(expectedExperiment));
+      when(variantCountDAO.getVariantCount(PROJECT_KEY, EXPERIMENT_ID))
+          .thenReturn(Single.just(new JsonObject()));
 
       // Act
       TestObserver<Experiment> testObserver =
@@ -119,6 +127,56 @@ public class ExperimentServiceTest {
       Experiment result = testObserver.values().get(0);
       assertEquals(PROJECT_KEY, result.getProjectKey());
       verify(experimentDAO, times(1)).getExperiment(PROJECT_KEY, EXPERIMENT_ID);
+      verify(variantCountDAO, times(1)).getVariantCount(PROJECT_KEY, EXPERIMENT_ID);
+    }
+
+    @Test
+    @DisplayName("Should return experiment with variant counts when available")
+    void testGetExperimentWithVariantCounts() {
+      // Arrange
+      Experiment expectedExperiment = createMockExperiment();
+      JsonObject variantCounts = new JsonObject().put("variant1", 100).put("variant2", 200);
+      when(experimentDAO.getExperiment(PROJECT_KEY, EXPERIMENT_ID))
+          .thenReturn(Maybe.just(expectedExperiment));
+      when(variantCountDAO.getVariantCount(PROJECT_KEY, EXPERIMENT_ID))
+          .thenReturn(Single.just(variantCounts));
+
+      // Act
+      TestObserver<Experiment> testObserver =
+          experimentService.getExperiment(PROJECT_KEY, EXPERIMENT_ID).test();
+
+      // Assert
+      testObserver.assertComplete();
+      testObserver.assertNoErrors();
+      Experiment result = testObserver.values().get(0);
+      assertNotNull(result.getVariantCounts());
+      assertEquals(100, result.getVariantCounts().getInteger("variant1"));
+      assertEquals(200, result.getVariantCounts().getInteger("variant2"));
+      verify(experimentDAO, times(1)).getExperiment(PROJECT_KEY, EXPERIMENT_ID);
+      verify(variantCountDAO, times(1)).getVariantCount(PROJECT_KEY, EXPERIMENT_ID);
+    }
+
+    @Test
+    @DisplayName("Should return experiment with null variant counts when empty")
+    void testGetExperimentWithEmptyVariantCounts() {
+      // Arrange
+      Experiment expectedExperiment = createMockExperiment();
+      when(experimentDAO.getExperiment(PROJECT_KEY, EXPERIMENT_ID))
+          .thenReturn(Maybe.just(expectedExperiment));
+      when(variantCountDAO.getVariantCount(PROJECT_KEY, EXPERIMENT_ID))
+          .thenReturn(Single.just(new JsonObject()));
+
+      // Act
+      TestObserver<Experiment> testObserver =
+          experimentService.getExperiment(PROJECT_KEY, EXPERIMENT_ID).test();
+
+      // Assert
+      testObserver.assertComplete();
+      testObserver.assertNoErrors();
+      Experiment result = testObserver.values().get(0);
+      assertNull(result.getVariantCounts());
+      verify(experimentDAO, times(1)).getExperiment(PROJECT_KEY, EXPERIMENT_ID);
+      verify(variantCountDAO, times(1)).getVariantCount(PROJECT_KEY, EXPERIMENT_ID);
     }
   }
 
@@ -175,6 +233,7 @@ public class ExperimentServiceTest {
                       .getErrorCode()
                       .equals(ErrorEnum.REST_GET_EXPERIMENT_BY_ID_FAILED.getErrorCode()));
       verify(experimentDAO, times(1)).getExperiment(PROJECT_KEY, EXPERIMENT_ID);
+      verify(variantCountDAO, never()).getVariantCount(anyString(), anyString());
     }
 
     @Test
@@ -194,6 +253,36 @@ public class ExperimentServiceTest {
       testObserver.assertNotComplete();
       testObserver.assertValueCount(0);
       verify(experimentDAO, times(1)).getExperiment(PROJECT_KEY, EXPERIMENT_ID);
+      verify(variantCountDAO, never()).getVariantCount(anyString(), anyString());
+    }
+
+    @Test
+    @DisplayName("Should handle error from variantCountDAO")
+    void testGetExperimentVariantCountDAOError() {
+      // Arrange
+      Experiment expectedExperiment = createMockExperiment();
+      RuntimeException runtimeException = new RuntimeException("Aerospike connection failed");
+      when(experimentDAO.getExperiment(PROJECT_KEY, EXPERIMENT_ID))
+          .thenReturn(Maybe.just(expectedExperiment));
+      when(variantCountDAO.getVariantCount(PROJECT_KEY, EXPERIMENT_ID))
+          .thenReturn(Single.error(runtimeException));
+
+      // Act
+      TestObserver<Experiment> testObserver =
+          experimentService.getExperiment(PROJECT_KEY, EXPERIMENT_ID).test();
+
+      // Assert
+      testObserver.assertError(RestException.class);
+      testObserver.assertNotComplete();
+      testObserver.assertValueCount(0);
+      testObserver.assertError(
+          error ->
+              error instanceof RestException
+                  && ((RestException) error)
+                      .getErrorCode()
+                      .equals(ErrorEnum.REST_GET_EXPERIMENT_BY_ID_FAILED.getErrorCode()));
+      verify(experimentDAO, times(1)).getExperiment(PROJECT_KEY, EXPERIMENT_ID);
+      verify(variantCountDAO, times(1)).getVariantCount(PROJECT_KEY, EXPERIMENT_ID);
     }
   }
 
@@ -361,7 +450,8 @@ public class ExperimentServiceTest {
       // Arrange
       FilterExperimentsRequest request = new FilterExperimentsRequest();
       FilterExperimentsResponse emptyResponse =
-          new FilterExperimentsResponse(Collections.emptyList(), new PaginationMeta(1, 0, 0));
+          new FilterExperimentsResponse(
+              Collections.emptyList(), new PaginationMeta(1, 0, 0, false));
       when(experimentDAO.filterExperiments(PROJECT_KEY, request))
           .thenReturn(Single.just(emptyResponse));
 
@@ -383,7 +473,7 @@ public class ExperimentServiceTest {
       FilterExperimentsRequest request =
           FilterExperimentsRequest.builder().limit(10).page(2).build();
       List<Experiment> mockExperiments = List.of(createMockExperiment());
-      PaginationMeta paginationMeta = new PaginationMeta(2, mockExperiments.size(), 25);
+      PaginationMeta paginationMeta = new PaginationMeta(2, mockExperiments.size(), 25, false);
       FilterExperimentsResponse expectedResponse =
           new FilterExperimentsResponse(mockExperiments, paginationMeta);
       when(experimentDAO.filterExperiments(PROJECT_KEY, request))
@@ -463,6 +553,8 @@ public class ExperimentServiceTest {
       Experiment expectedExperiment = createMockExperiment();
       when(experimentDAO.getExperiment(PROJECT_KEY, EXPERIMENT_ID))
           .thenReturn(Maybe.just(expectedExperiment));
+      when(variantCountDAO.getVariantCount(PROJECT_KEY, EXPERIMENT_ID))
+          .thenReturn(Single.just(new JsonObject()));
 
       // Act
       TestObserver<Experiment> testObserver =
@@ -471,6 +563,7 @@ public class ExperimentServiceTest {
       // Assert
       testObserver.assertComplete();
       verify(experimentDAO, times(1)).getExperiment(PROJECT_KEY, EXPERIMENT_ID);
+      verify(variantCountDAO, times(1)).getVariantCount(PROJECT_KEY, EXPERIMENT_ID);
     }
 
     @Test
@@ -498,6 +591,8 @@ public class ExperimentServiceTest {
       Experiment expectedExperiment = createMockExperiment();
       when(experimentDAO.getExperiment(PROJECT_KEY, EXPERIMENT_ID))
           .thenReturn(Maybe.just(expectedExperiment));
+      when(variantCountDAO.getVariantCount(PROJECT_KEY, EXPERIMENT_ID))
+          .thenReturn(Single.just(new JsonObject()));
 
       // Act - Each subscription triggers the Single chain again
       TestObserver<Experiment> testObserver1 =
@@ -511,6 +606,7 @@ public class ExperimentServiceTest {
 
       // Verify called exactly twice (once per subscription)
       verify(experimentDAO, times(2)).getExperiment(PROJECT_KEY, EXPERIMENT_ID);
+      verify(variantCountDAO, times(2)).getVariantCount(PROJECT_KEY, EXPERIMENT_ID);
     }
 
     @Test
@@ -548,6 +644,8 @@ public class ExperimentServiceTest {
       Experiment expectedExperiment = createMockExperiment();
       when(experimentDAO.getExperiment(PROJECT_KEY, EXPERIMENT_ID))
           .thenReturn(Maybe.just(expectedExperiment).delay(100, TimeUnit.MILLISECONDS));
+      when(variantCountDAO.getVariantCount(PROJECT_KEY, EXPERIMENT_ID))
+          .thenReturn(Single.just(new JsonObject()).delay(100, TimeUnit.MILLISECONDS));
 
       // Act
       TestObserver<Experiment> testObserver =
@@ -661,6 +759,8 @@ public class ExperimentServiceTest {
 
       when(experimentDAO.getExperiment(PROJECT_KEY, EXPERIMENT_ID))
           .thenReturn(Maybe.just(experiment));
+      when(variantCountDAO.getVariantCount(PROJECT_KEY, EXPERIMENT_ID))
+          .thenReturn(Single.just(new JsonObject()));
       when(experimentDAO.filterExperiments(PROJECT_KEY, request))
           .thenReturn(Single.just(filterResponse));
 
@@ -675,6 +775,7 @@ public class ExperimentServiceTest {
       filterObserver.assertComplete().assertNoErrors();
 
       verify(experimentDAO, times(1)).getExperiment(PROJECT_KEY, EXPERIMENT_ID);
+      verify(variantCountDAO, times(1)).getVariantCount(PROJECT_KEY, EXPERIMENT_ID);
       verify(experimentDAO, times(1)).filterExperiments(PROJECT_KEY, request);
     }
 
@@ -688,6 +789,8 @@ public class ExperimentServiceTest {
 
       when(experimentDAO.getExperiment(PROJECT_KEY, EXPERIMENT_ID))
           .thenReturn(Maybe.just(experiment));
+      when(variantCountDAO.getVariantCount(PROJECT_KEY, EXPERIMENT_ID))
+          .thenReturn(Single.just(new JsonObject()));
       when(experimentDAO.filterExperiments(PROJECT_KEY, request))
           .thenReturn(Single.just(filterResponse));
 
@@ -727,7 +830,7 @@ public class ExperimentServiceTest {
         .createdBy("test-user")
         .createdAt(Instant.now())
         .updatedAt(Instant.now())
-        .tags("tag1,tag2")
+        .tags(List.of("tag1", "tag2"))
         .owner("owner1")
         .build();
   }
@@ -738,7 +841,7 @@ public class ExperimentServiceTest {
    * @return a mock FilterExperimentsResponse object
    */
   private FilterExperimentsResponse createMockFilterResponse() {
-    PaginationMeta paginationMeta = new PaginationMeta(1, 20, 1);
+    PaginationMeta paginationMeta = new PaginationMeta(1, 20, 1, false);
     return new FilterExperimentsResponse(List.of(createMockExperiment()), paginationMeta);
   }
 }
