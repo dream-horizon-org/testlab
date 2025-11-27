@@ -45,14 +45,19 @@ public interface ExperimentDAO {
   Single<Boolean> deleteExperiment(String projectKey, Experiment experiment);
 
   /**
-   * Creates a new experiment in the database.
+   * Creates a new experiment in the database without transaction management.
+   *
+   * <p><b>Deprecated:</b> This method is only for testing purposes. Use createWithRelatedData for
+   * production code.
    *
    * @param tenantId tenant identifier for multi-tenancy
    * @param projectKey project identifier for partitioning
    * @param request experiment creation request with all experiment details
-   * @return Single emitting 1L on success, 0L on failure
+   * @return Single emitting experiment ID as String on success
+   * @deprecated Use {@link #createWithRelatedData(UUID, CreateExperimentRequest)} instead
    */
-  Single<Long> create(UUID tenantId, String projectKey, CreateExperimentRequest request);
+  @Deprecated
+  Single<String> create(UUID tenantId, String projectKey, CreateExperimentRequest request);
 
   /**
    * Creates experiment with tags, owner, update log, and analysis in a transaction.
@@ -63,9 +68,9 @@ public interface ExperimentDAO {
    * @param tenantId tenant identifier for multi-tenancy
    * @param request experiment creation request with all experiment details including projectKey,
    *     experimentId, tags, and owner
-   * @return Single emitting experiment ID on success
+   * @return Single emitting experiment ID as String on success
    */
-  Single<Long> createWithRelatedData(UUID tenantId, CreateExperimentRequest request);
+  Single<String> createWithRelatedData(UUID tenantId, CreateExperimentRequest request);
 
   /**
    * Gets current experiment data as a map.

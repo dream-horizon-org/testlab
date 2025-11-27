@@ -2,7 +2,7 @@ package com.ascend.testlab.constants.enums;
 
 public enum ExperimentHealth {
   WARNING,
-  PASSING,
+  PASSED,
   NO_CHECKS_AVAILABLE,
   FAILED
 }

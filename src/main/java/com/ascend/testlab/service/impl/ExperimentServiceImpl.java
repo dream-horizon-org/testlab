@@ -179,7 +179,27 @@ public class ExperimentServiceImpl implements ExperimentService {
                   tenantId,
                   projectKey,
                   request.getName(),
-                  err.getMessage());
+                  err.getMessage(),
+                  err);
+
+              // Check for unique constraint violation
+              // Note: When a unique constraint is violated in a transaction, PostgreSQL aborts the
+              // transaction
+              // and subsequent operations fail with "25P02 - current transaction is aborted"
+              // We check both the direct unique violation and the aborted transaction error
+              if (isUniqueConstraintViolation(err)
+                  || (err.getMessage() != null && err.getMessage().contains("25P02"))) {
+                String constraintMessage = extractUniqueConstraintMessage(err);
+                log.info(
+                    "Detected unique constraint violation, returning 400: {}", constraintMessage);
+                return Single.error(
+                    new RestException(
+                        "DUPLICATE_EXPERIMENT",
+                        constraintMessage,
+                        org.apache.http.HttpStatus.SC_BAD_REQUEST,
+                        err));
+              }
+
               return Single.error(
                   ErrorEnum.handleException(
                       err, new RestException(ErrorEnum.EXPERIMENT_CREATION_FAILED, err)));
@@ -396,6 +416,22 @@ public class ExperimentServiceImpl implements ExperimentService {
                   projectKey,
                   experimentId,
                   err.getMessage());
+
+              // Check for unique constraint violation
+              // Note: When a unique constraint is violated in a transaction, PostgreSQL aborts the
+              // transaction
+              // and subsequent operations fail with "25P02 - current transaction is aborted"
+              if (isUniqueConstraintViolation(err)
+                  || (err.getMessage() != null && err.getMessage().contains("25P02"))) {
+                String constraintMessage = extractUniqueConstraintMessage(err);
+                return Single.error(
+                    new RestException(
+                        "DUPLICATE_EXPERIMENT",
+                        constraintMessage,
+                        org.apache.http.HttpStatus.SC_BAD_REQUEST,
+                        err));
+              }
+
               return Single.error(
                   ErrorEnum.handleException(
                       err, new RestException(ErrorEnum.EXPERIMENT_UPDATE_FAILED, err)));
@@ -605,5 +641,86 @@ public class ExperimentServiceImpl implements ExperimentService {
           || request.getEndTime() != null
           || tags != null;
     }
+  }
+
+  /**
+   * Checks if the error is a unique constraint violation from PostgreSQL.
+   *
+   * @param err the throwable error
+   * @return true if it's a unique constraint violation
+   */
+  private boolean isUniqueConstraintViolation(Throwable err) {
+    // Check the error and all its causes
+    Throwable current = err;
+    while (current != null) {
+      String message = current.getMessage();
+      String className = current.getClass().getName();
+
+      // Check if it's a PgException
+      if (className.contains("PgException")) {
+        try {
+          // Try to get the SQL state using reflection
+          java.lang.reflect.Method getSqlStateMethod = current.getClass().getMethod("getSqlState");
+          String sqlState = (String) getSqlStateMethod.invoke(current);
+          // 23505 is the PostgreSQL error code for unique_violation
+          if ("23505".equals(sqlState)) {
+            return true;
+          }
+        } catch (Exception e) {
+          // Reflection failed, continue with message checking
+        }
+      }
+
+      if (message != null) {
+        // PostgreSQL unique violation error code is 23505
+        // Error message contains "duplicate key value violates unique constraint"
+        if (message.contains("duplicate key value violates unique constraint")
+            || message.contains("23505")
+            || message.contains("experiment_key_unique_check")
+            || message.contains("name_unique_check")
+            || message.contains("experiment_key_key")) {
+          return true;
+        }
+      }
+
+      // Also check suppressed exceptions
+      for (Throwable suppressed : current.getSuppressed()) {
+        if (isUniqueConstraintViolation(suppressed)) {
+          return true;
+        }
+      }
+
+      current = current.getCause();
+    }
+    return false;
+  }
+
+  /**
+   * Extracts a user-friendly message from the unique constraint violation error.
+   *
+   * @param err the throwable error
+   * @return user-friendly error message
+   */
+  private String extractUniqueConstraintMessage(Throwable err) {
+    // Check the error and all its causes for constraint information
+    Throwable current = err;
+    while (current != null) {
+      String message = current.getMessage();
+      if (message != null) {
+        // Extract constraint name
+        if (message.contains("experiment_key_unique_check")
+            || message.contains("experiment_key_key")) {
+          return "An experiment with this experiment_key already exists in the project";
+        } else if (message.contains("name_unique_check")) {
+          return "An experiment with this name already exists in the project";
+        } else if (message.contains("duplicate key value violates unique constraint")) {
+          // Generic unique constraint message
+          return "A record with the same unique field already exists";
+        }
+      }
+      current = current.getCause();
+    }
+
+    return "Duplicate entry detected";
   }
 }

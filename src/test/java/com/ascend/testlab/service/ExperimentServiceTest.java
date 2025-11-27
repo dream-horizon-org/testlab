@@ -17,6 +17,7 @@ import com.ascend.testlab.dto.response.PaginationMeta;
 import com.ascend.testlab.dto.response.UpdateExperimentResponse;
 import com.ascend.testlab.exception.ErrorEnum;
 import com.ascend.testlab.service.impl.ExperimentServiceImpl;
+import com.ascend.testlab.validation.VariantStructureValidator;
 import com.ascend.testlab.validation.statevalidation.DraftStateValidationStrategy;
 import com.ascend.testlab.validation.statevalidation.LiveStateValidationStrategy;
 import com.ascend.testlab.validation.statevalidation.PausedStateValidationStrategy;
@@ -51,6 +52,7 @@ public class ExperimentServiceTest {
   private ExperimentService experimentService;
 
   @Mock private ExperimentDAO experimentDAO;
+  @Mock private VariantStructureValidator variantStructureValidator;
   private StateValidationContext stateValidationContext;
 
   private static final String PROJECT_KEY = "123e4567-e89b-12d3-a456-426614174000";
@@ -69,7 +71,8 @@ public class ExperimentServiceTest {
     stateValidationContext =
         new StateValidationContext(liveStrategy, pausedStrategy, draftStrategy);
 
-    experimentService = new ExperimentServiceImpl(experimentDAO, stateValidationContext);
+    experimentService =
+        new ExperimentServiceImpl(experimentDAO, stateValidationContext, variantStructureValidator);
     testTenantId = UUID.randomUUID();
     testProjectKey = UUID.randomUUID().toString();
     testExperimentId = UUID.randomUUID();
@@ -978,7 +981,7 @@ public class ExperimentServiceTest {
       // Arrange
       CreateExperimentRequest request = createValidRequest();
       when(experimentDAO.createWithRelatedData(any(UUID.class), any(CreateExperimentRequest.class)))
-          .thenReturn(Single.just(1L));
+          .thenReturn(Single.just(testExperimentId.toString()));
 
       // Act
       TestObserver<CreateExperimentResponse> testObserver =
@@ -1007,7 +1010,7 @@ public class ExperimentServiceTest {
       request.setExperimentId(null);
 
       when(experimentDAO.createWithRelatedData(any(UUID.class), any(CreateExperimentRequest.class)))
-          .thenReturn(Single.just(1L));
+          .thenReturn(Single.just(testExperimentId.toString()));
 
       // Act
       TestObserver<CreateExperimentResponse> testObserver =
@@ -1075,7 +1078,7 @@ public class ExperimentServiceTest {
       request.setOverrides(List.of("user1@example.com", "user2@example.com"));
 
       when(experimentDAO.createWithRelatedData(any(UUID.class), any(CreateExperimentRequest.class)))
-          .thenReturn(Single.just(1L));
+          .thenReturn(Single.just(testExperimentId.toString()));
 
       // Act
       TestObserver<CreateExperimentResponse> testObserver =
@@ -1104,7 +1107,7 @@ public class ExperimentServiceTest {
       request.setCreatedBy("test@example.com");
 
       when(experimentDAO.createWithRelatedData(any(UUID.class), any(CreateExperimentRequest.class)))
-          .thenReturn(Single.just(1L));
+          .thenReturn(Single.just(testExperimentId.toString()));
 
       // Act
       TestObserver<CreateExperimentResponse> testObserver =
@@ -1356,9 +1359,9 @@ public class ExperimentServiceTest {
       CreateExperimentRequest request3 = createValidRequest();
 
       when(experimentDAO.createWithRelatedData(any(UUID.class), any(CreateExperimentRequest.class)))
-          .thenReturn(Single.just(1L))
-          .thenReturn(Single.just(2L))
-          .thenReturn(Single.just(3L));
+          .thenReturn(Single.just(UUID.randomUUID().toString()))
+          .thenReturn(Single.just(UUID.randomUUID().toString()))
+          .thenReturn(Single.just(UUID.randomUUID().toString()));
 
       // Act
       TestObserver<CreateExperimentResponse> observer1 =
@@ -1443,7 +1446,7 @@ public class ExperimentServiceTest {
     request.setCohorts(largeCohorts);
 
     when(experimentDAO.createWithRelatedData(any(UUID.class), any(CreateExperimentRequest.class)))
-        .thenReturn(Single.just(1L));
+        .thenReturn(Single.just(testExperimentId.toString()));
 
     // Act
     TestObserver<CreateExperimentResponse> testObserver =
@@ -1462,7 +1465,7 @@ public class ExperimentServiceTest {
     request.setHypothesis("Test hypothesis");
     request.setStatus(ExperimentStatus.DRAFT);
     request.setType(ExperimentType.A_B);
-    request.setGuardrailHealthStatus(ExperimentHealth.PASSING);
+    request.setGuardrailHealthStatus(ExperimentHealth.PASSED);
     request.setExposure(50);
     request.setThreshold(1000);
     request.setStartTime(System.currentTimeMillis() / 1000);

@@ -5,17 +5,17 @@ public final class WriteQuery {
 
   public static final String INSERT_EXPERIMENT =
       """
-      INSERT INTO experiments (
+      INSERT INTO experiment.experiments (
         project_key, experiment_id, name, experiment_key, description, hypothesis,
         status, type, guardrail_health_status, cohorts, variant_weights, variants,
         distribution_strategy, assignment_domain, overrides, rule_attributes,
         winning_variant, exposure, threshold, start_time, end_time, created_by, name_tsvector
       )
       VALUES (
-        $1, $2, $3, $4, $5, $6, $7::experiment_status, $8::experiment_type,
-        $9::experiment_health, $10::varchar[], $11::jsonb, $12::jsonb,
-        $13::experiment_strategy, $14::assignment_domain, $15::jsonb, $16::jsonb,
-        $17::jsonb, $18, $19, $20, $21, $22, to_tsvector('simple', LOWER(REPLACE($3, '-', ' ')))
+        $1, $2, $3::varchar, $4, $5, $6, $7::experiment.experiment_status, $8::experiment.experiment_type,
+        $9::experiment.experiment_health, $10::varchar[], $11::jsonb, $12::jsonb,
+        $13::experiment.experiment_strategy, $14::experiment.assignment_domain, $15::varchar[], $16::jsonb,
+        $17::jsonb, $18, $19, $20, $21, $22, to_tsvector('simple', LOWER(REPLACE($3::varchar, '-', ' ')))
       )
       """;
 
@@ -82,7 +82,7 @@ public final class WriteQuery {
       DO NOTHING
       """;
 
-  public static final String UPDATE_EXPERIMENT_PREFIX = "UPDATE experiments SET ";
+  public static final String UPDATE_EXPERIMENT_PREFIX = "UPDATE experiment.experiments SET ";
 
   /** Query to delete an experiment by project key and experiment ID. */
   public static final String DELETE_EXPERIMENT_BY_ID =
