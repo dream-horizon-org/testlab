@@ -20,9 +20,10 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
 public class DeleteExperimentResponse {
-  /** Indicates if the deletion was successful. */
-  private boolean success;
 
   /** The ID of the deleted experiment. */
   private String experimentId;
+
+  /** Indicates if the deletion was successful. */
+  private boolean success;
 }

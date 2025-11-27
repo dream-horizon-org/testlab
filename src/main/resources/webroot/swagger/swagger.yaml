@@ -179,7 +179,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/SuccessBoolean'
+                $ref: '#/components/schemas/SuccessDeleteExperimentResponse'
         "400":
           description: Project id is missing or Experiment id is invalid
           content:
@@ -489,11 +489,18 @@ components:
           type: string
         user_id:
           type: string
-    SuccessBoolean:
+    DeleteExperimentResponse:
+      type: object
+      properties:
+        experiment_id:
+          type: string
+        success:
+          type: boolean
+    SuccessDeleteExperimentResponse:
       type: object
       properties:
         data:
-          type: boolean
+          $ref: '#/components/schemas/DeleteExperimentResponse'
     ExperimentKeyAvailabilityResponse:
       type: object
       properties:
