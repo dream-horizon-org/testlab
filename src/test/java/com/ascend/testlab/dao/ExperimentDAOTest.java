@@ -12,7 +12,7 @@ import com.ascend.testlab.constants.enums.ExperimentType;
 import com.ascend.testlab.constants.postgresql.ReadQuery;
 import com.ascend.testlab.constants.postgresql.WriteQuery;
 import com.ascend.testlab.dao.impl.ExperimentDAOImpl;
-import com.ascend.testlab.dto.entity.Experiment;
+import com.ascend.testlab.dto.entity.experiment.Experiment;
 import com.ascend.testlab.dto.request.CreateExperimentRequest;
 import com.ascend.testlab.dto.request.FilterExperimentsRequest;
 import com.ascend.testlab.dto.response.FilterExperimentsResponse;
@@ -1003,8 +1003,8 @@ public class ExperimentDAOTest {
         .createdBy("test-user")
         .createdAt(Instant.now())
         .updatedAt(Instant.now())
-        .tags("tag1,tag2")
-        .owner("owner1")
+        .tags(List.of("tag1", "tag2"))
+        .owners(List.of("owner1"))
         .build();
   }
 
@@ -1044,8 +1044,11 @@ public class ExperimentDAOTest {
     when(mockRow.getString("created_by")).thenReturn(experiment.getCreatedBy());
     when(mockRow.getOffsetDateTime("created_at")).thenReturn(now);
     when(mockRow.getOffsetDateTime("updated_at")).thenReturn(now);
-    when(mockRow.getString("tags")).thenReturn(experiment.getTags());
-    when(mockRow.getString("owners")).thenReturn(experiment.getOwner());
+    when(mockRow.getString("tags"))
+        .thenReturn(experiment.getTags() != null ? String.join(",", experiment.getTags()) : null);
+    when(mockRow.getString("owners"))
+        .thenReturn(
+            experiment.getOwners() != null ? String.join(",", experiment.getOwners()) : null);
     // Add total_count for pagination
     when(mockRow.getInteger("total_count")).thenReturn(totalCount);
 
