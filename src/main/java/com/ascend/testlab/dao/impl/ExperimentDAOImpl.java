@@ -337,25 +337,34 @@ public class ExperimentDAOImpl implements ExperimentDAO {
                           insertAnalysis(
                               connection, projectKey, experimentId, request.getMetrics()),
                           (tagsSuccess, ownerSuccess, updateLogSuccess, analysisSuccess) -> {
-                            // Validate all operations succeeded
-                            if (!tagsSuccess) {
-                              throw new RestException(ErrorEnum.TAGS_INSERTION_FAILED);
-                            }
-                            if (!ownerSuccess) {
-                              throw new RestException(ErrorEnum.OWNER_INSERTION_FAILED);
-                            }
-                            if (!updateLogSuccess) {
-                              throw new RestException(ErrorEnum.UPDATE_LOG_INSERTION_FAILED);
-                            }
-                            if (!analysisSuccess) {
-                              throw new RestException(ErrorEnum.ANALYSIS_INSERTION_FAILED);
-                            }
-                            log.info(
-                                "DAO: Successfully created experiment with all related data in parallel, experimentId: {}, projectKey: {}",
-                                experimentId,
-                                projectKey);
-                            return experimentId.toString(); // Return experiment ID
-                          });
+                            return new Object[] {tagsSuccess, ownerSuccess, updateLogSuccess, analysisSuccess};
+                          })
+                      .flatMap(results -> {
+                        Boolean tagsSuccess = (Boolean) results[0];
+                        Boolean ownerSuccess = (Boolean) results[1];
+                        Boolean updateLogSuccess = (Boolean) results[2];
+                        Boolean analysisSuccess = (Boolean) results[3];
+                        
+                        // Validate all operations succeeded
+                        if (!tagsSuccess) {
+                          return Single.error(new RestException(ErrorEnum.TAGS_INSERTION_FAILED));
+                        }
+                        if (!ownerSuccess) {
+                          return Single.error(new RestException(ErrorEnum.OWNER_INSERTION_FAILED));
+                        }
+                        if (!updateLogSuccess) {
+                          return Single.error(new RestException(ErrorEnum.UPDATE_LOG_INSERTION_FAILED));
+                        }
+                        if (!analysisSuccess) {
+                          return Single.error(new RestException(ErrorEnum.ANALYSIS_INSERTION_FAILED));
+                        }
+                        
+                        log.info(
+                            "DAO: Successfully created experiment with all related data in parallel, experimentId: {}, projectKey: {}",
+                            experimentId,
+                            projectKey);
+                        return Single.just(experimentId.toString()); // Return experiment ID
+                      });
                     }));
   }
 
