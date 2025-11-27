@@ -546,16 +546,16 @@ components:
     Experiment:
       type: object
       properties:
-        ruleAttributes:
+        rule_attributes:
           type: array
           items:
             $ref: '#/components/schemas/RuleAttributes'
-        distributionStrategy:
+        distribution_strategy:
           type: string
           enum:
           - ROUND_ROBIN
           - RANDOM
-        assignmentDomain:
+        assignment_domain:
           type: string
           enum:
           - STRATIFIED
@@ -638,7 +638,10 @@ components:
           type: string
           format: date-time
         variant_counts:
-          $ref: '#/components/schemas/JsonObject'
+          type: object
+          additionalProperties:
+            type: integer
+            format: int64
     FilterExperimentsResponse:
       type: object
       properties:

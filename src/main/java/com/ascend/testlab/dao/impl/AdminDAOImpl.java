@@ -1,10 +1,16 @@
 package com.ascend.testlab.dao.impl;
 
+import com.aerospike.client.Key;
+import com.aerospike.client.policy.BatchPolicy;
+import com.ascend.testlab.client.aerospike.AerospikeClient;
 import com.ascend.testlab.client.postgresql.PgReaderClient;
+import com.ascend.testlab.config.AerospikeConfig;
+import com.ascend.testlab.constants.Constants;
 import com.ascend.testlab.constants.postgresql.Columns;
 import com.ascend.testlab.constants.postgresql.ReadQuery;
 import com.ascend.testlab.dao.AdminDAO;
 import com.ascend.testlab.dto.entity.ExperimentHistoryEntry;
+import com.ascend.testlab.dto.entity.experiment.Experiment;
 import com.ascend.testlab.dto.request.ExperimentHistoryRequest;
 import com.ascend.testlab.dto.response.ExperimentHistoryResponse;
 import com.ascend.testlab.dto.response.PaginationMeta;
@@ -13,7 +19,7 @@ import com.google.inject.Inject;
 import io.reactivex.rxjava3.core.Single;
 import io.vertx.rxjava3.sqlclient.Row;
 import io.vertx.rxjava3.sqlclient.Tuple;
-import java.util.List;
+import java.util.*;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -31,14 +37,25 @@ public class AdminDAOImpl implements AdminDAO {
   /** The PostgreSQL reader client. */
   private final PgReaderClient pgReaderClient;
 
+  /** The Aerospike client. */
+  private final AerospikeClient aerospikeClient;
+
+  /** The Aerospike config. */
+  private final AerospikeConfig aerospikeConfig;
+
   /**
    * Constructor for the AdminDAOImpl.
    *
    * @param pgReaderClient the PostgreSQL reader client
    */
   @Inject
-  public AdminDAOImpl(PgReaderClient pgReaderClient) {
+  public AdminDAOImpl(
+      PgReaderClient pgReaderClient,
+      AerospikeClient aerospikeClient,
+      AerospikeConfig aerospikeConfig) {
     this.pgReaderClient = pgReaderClient;
+    this.aerospikeClient = aerospikeClient;
+    this.aerospikeConfig = aerospikeConfig;
   }
 
   /** {@inheritDoc} */
@@ -118,5 +135,60 @@ public class AdminDAOImpl implements AdminDAO {
         .createdAt(row.getOffsetDateTime(Columns.CREATED_AT).toInstant())
         .updatedAt(row.getOffsetDateTime(Columns.UPDATED_AT).toInstant())
         .build();
+  }
+
+  /** {@inheritDoc} */
+  @Override
+  public Single<Map<String, Long>> getVariantCount(String projectKey, Experiment experiment) {
+    if (Objects.isNull(experiment.getVariants()) || experiment.getVariants().isEmpty()) {
+      return Single.just(new HashMap<>());
+    }
+
+    List<String> variants = experiment.getVariants().keySet().stream().toList();
+
+    List<Key> keys =
+        getKeyFromVariantName(projectKey, String.valueOf(experiment.getExperimentId()), variants);
+
+    BatchPolicy batchPolicy = new BatchPolicy();
+    batchPolicy.sendKey = true;
+
+    return aerospikeClient
+        .get(batchPolicy, keys, aerospikeConfig.getVariantCountBin())
+        .map(
+            records -> {
+              if (records == null || records.isEmpty()) return new HashMap<String, Long>();
+
+              Map<String, Long> variantCountMap = new HashMap<>();
+
+              for (int i = 0; i < records.size(); i++) {
+                if (records.get(i) == null) continue;
+                Long count = records.get(i).getLong(aerospikeConfig.getVariantCountBin());
+                String variantName = variants.get(i);
+
+                variantCountMap.put(variantName, count);
+              }
+
+              return variantCountMap;
+            })
+        .onErrorReturn(
+            err -> {
+              log.error(
+                  "Failed to fetch variant count for project: {}", experiment.getProjectKey(), err);
+              return new HashMap<>();
+            });
+  }
+
+  /** Generates Aerospike Key objects from variant names for a given experiment.*/
+  private List<Key> getKeyFromVariantName(
+      String projectKey, String experimentId, List<String> variants) {
+    String set = CommonUtil.getSetName(aerospikeConfig.getVariantCountSet(), projectKey);
+    return variants.stream()
+        .map(
+            variantName ->
+                new Key(
+                    aerospikeConfig.getNamespace(),
+                    set,
+                    experimentId + Constants.COLON + variantName))
+        .toList();
   }
 }

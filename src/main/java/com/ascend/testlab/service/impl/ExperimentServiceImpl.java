@@ -1,7 +1,7 @@
 package com.ascend.testlab.service.impl;
 
+import com.ascend.testlab.dao.AdminDAO;
 import com.ascend.testlab.dao.ExperimentDAO;
-import com.ascend.testlab.dao.VariantCountDAO;
 import com.ascend.testlab.dto.entity.experiment.Experiment;
 import com.ascend.testlab.dto.request.FilterExperimentsRequest;
 import com.ascend.testlab.dto.response.FilterExperimentsResponse;
@@ -27,18 +27,18 @@ import lombok.extern.slf4j.Slf4j;
 public class ExperimentServiceImpl implements ExperimentService {
 
   private final ExperimentDAO experimentDAO;
-  private final VariantCountDAO variantCountDAO;
+  private final AdminDAO adminDAO;
 
   /**
    * Constructor for ExperimentServiceImpl.
    *
    * @param experimentDAO the experiment DAO to use for data access
-   * @param variantCountDAO the variant count DAO to get count from aerospike
+   * @param adminDAO the variant count DAO to get count from aerospike
    */
   @Inject
-  public ExperimentServiceImpl(ExperimentDAO experimentDAO, VariantCountDAO variantCountDAO) {
+  public ExperimentServiceImpl(ExperimentDAO experimentDAO, AdminDAO adminDAO) {
     this.experimentDAO = experimentDAO;
-    this.variantCountDAO = variantCountDAO;
+    this.adminDAO = adminDAO;
   }
 
   /**
@@ -59,8 +59,8 @@ public class ExperimentServiceImpl implements ExperimentService {
         .switchIfEmpty(Single.error(new RestException(ErrorEnum.EXPERIMENT_NOT_FOUND)))
         .flatMap(
             experiment ->
-                variantCountDAO
-                    .getVariantCount(projectKey, experimentId)
+                adminDAO
+                    .getVariantCount(projectKey, experiment)
                     .map(
                         variantCount -> {
                           experiment.setVariantCounts(

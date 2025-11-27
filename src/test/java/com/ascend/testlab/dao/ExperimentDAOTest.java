@@ -794,8 +794,6 @@ class ExperimentDAOTest {
     when(mockRow.getArrayOfStrings("tags")).thenReturn(experiment.getTags().toArray(String[]::new));
     when(mockRow.getArrayOfStrings("owners"))
         .thenReturn(experiment.getOwners().toArray(String[]::new));
-    when(mockRow.getString("tags")).thenReturn(String.join(",", experiment.getTags()));
-    when(mockRow.getString("owners")).thenReturn(experiment.getOwner());
     // Add total_count for pagination
     when(mockRow.getInteger("total_count")).thenReturn(totalCount);
 

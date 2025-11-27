@@ -56,9 +56,9 @@ class GetExperimentHistoryIT {
     response.body("data.history", Matchers.notNullValue());
     response.body("data.history.size()", Matchers.greaterThanOrEqualTo(1));
     response.body("data.pagination", Matchers.notNullValue());
-    response.body("data.pagination.totalCount", Matchers.greaterThanOrEqualTo(1));
-    response.body("data.pagination.currentPage", Matchers.equalTo(1));
-    response.body("data.pagination.pageSize", Matchers.greaterThanOrEqualTo(1));
+    response.body("data.pagination.total_count", Matchers.greaterThanOrEqualTo(1));
+    response.body("data.pagination.current_page", Matchers.equalTo(1));
+    response.body("data.pagination.page_size", Matchers.greaterThanOrEqualTo(1));
     response.body("data.history[0].updatedBy", Matchers.notNullValue());
   }
 
@@ -118,9 +118,9 @@ class GetExperimentHistoryIT {
     response.body("data.experimentId", Matchers.equalTo(EXPERIMENT_ID));
     response.body("data.history", Matchers.notNullValue());
     response.body("data.pagination", Matchers.notNullValue());
-    response.body("data.pagination.currentPage", Matchers.equalTo(1));
-    response.body("data.pagination.pageSize", Matchers.greaterThanOrEqualTo(1));
-    response.body("data.pagination.totalCount", Matchers.greaterThanOrEqualTo(1));
+    response.body("data.pagination.current_page", Matchers.equalTo(1));
+    response.body("data.pagination.page_size", Matchers.greaterThanOrEqualTo(1));
+    response.body("data.pagination.total_count", Matchers.greaterThanOrEqualTo(1));
   }
 
   @Test
@@ -134,9 +134,9 @@ class GetExperimentHistoryIT {
 
     response.statusCode(HttpStatus.SC_OK);
     response.contentType(WebConstants.APPLICATION_JSON);
-    response.body("data.pagination.currentPage", Matchers.equalTo(1));
-    response.body("data.pagination.pageSize", Matchers.equalTo(5));
-    response.body("data.pagination.totalCount", Matchers.greaterThanOrEqualTo(5));
+    response.body("data.pagination.current_page", Matchers.equalTo(1));
+    response.body("data.pagination.page_size", Matchers.equalTo(5));
+    response.body("data.pagination.total_count", Matchers.greaterThanOrEqualTo(5));
     response.body("data.history.size()", Matchers.equalTo(5));
   }
 
@@ -151,9 +151,9 @@ class GetExperimentHistoryIT {
 
     response.statusCode(HttpStatus.SC_OK);
     response.contentType(WebConstants.APPLICATION_JSON);
-    response.body("data.pagination.currentPage", Matchers.equalTo(2));
-    response.body("data.pagination.pageSize", Matchers.greaterThanOrEqualTo(5));
-    response.body("data.pagination.totalCount", Matchers.greaterThanOrEqualTo(15));
+    response.body("data.pagination.current_page", Matchers.equalTo(2));
+    response.body("data.pagination.page_size", Matchers.greaterThanOrEqualTo(5));
+    response.body("data.pagination.total_count", Matchers.greaterThanOrEqualTo(15));
     response.body("data.history.size()", Matchers.greaterThanOrEqualTo(5));
   }
 
@@ -172,10 +172,10 @@ class GetExperimentHistoryIT {
 
       response.statusCode(HttpStatus.SC_OK);
       response.contentType(WebConstants.APPLICATION_JSON);
-      response.body("data.pagination.currentPage", Matchers.equalTo(2));
-      response.body("data.pagination.pageSize", Matchers.equalTo(0));
+      response.body("data.pagination.current_page", Matchers.equalTo(2));
+      response.body("data.pagination.page_size", Matchers.equalTo(0));
       response.body(
-          "data.pagination.totalCount", Matchers.anyOf(Matchers.equalTo(0), Matchers.equalTo(1)));
+          "data.pagination.total_count", Matchers.anyOf(Matchers.equalTo(0), Matchers.equalTo(1)));
       response.body("data.history.size()", Matchers.equalTo(0));
     } catch (SQLException e) {
       log.error("Failed to seed experiment history for test", e);
@@ -193,9 +193,9 @@ class GetExperimentHistoryIT {
             null, headers, queryParams, spec -> spec.get(this.route, EXPERIMENT_ID));
 
     responsePage1.statusCode(HttpStatus.SC_OK);
-    responsePage1.body("data.pagination.currentPage", Matchers.equalTo(1));
-    responsePage1.body("data.pagination.pageSize", Matchers.equalTo(5));
-    responsePage1.body("data.pagination.totalCount", Matchers.equalTo(25));
+    responsePage1.body("data.pagination.current_page", Matchers.equalTo(1));
+    responsePage1.body("data.pagination.page_size", Matchers.equalTo(5));
+    responsePage1.body("data.pagination.total_count", Matchers.equalTo(25));
     responsePage1.body("data.history.size()", Matchers.equalTo(5));
 
     queryParams = Map.of(WebConstants.LIMIT, "5", WebConstants.PAGE, "2");
@@ -204,9 +204,9 @@ class GetExperimentHistoryIT {
             null, headers, queryParams, spec -> spec.get(this.route, EXPERIMENT_ID));
 
     responsePage2.statusCode(HttpStatus.SC_OK);
-    responsePage2.body("data.pagination.currentPage", Matchers.equalTo(2));
-    responsePage2.body("data.pagination.pageSize", Matchers.equalTo(5));
-    responsePage2.body("data.pagination.totalCount", Matchers.equalTo(25));
+    responsePage2.body("data.pagination.current_page", Matchers.equalTo(2));
+    responsePage2.body("data.pagination.page_size", Matchers.equalTo(5));
+    responsePage2.body("data.pagination.total_count", Matchers.equalTo(25));
     responsePage2.body("data.history.size()", Matchers.equalTo(5));
 
     queryParams = Map.of(WebConstants.LIMIT, "5", WebConstants.PAGE, "5");
@@ -215,9 +215,9 @@ class GetExperimentHistoryIT {
             null, headers, queryParams, spec -> spec.get(this.route, EXPERIMENT_ID));
 
     responsePage5.statusCode(HttpStatus.SC_OK);
-    responsePage5.body("data.pagination.currentPage", Matchers.equalTo(5));
-    responsePage5.body("data.pagination.pageSize", Matchers.equalTo(5));
-    responsePage5.body("data.pagination.totalCount", Matchers.equalTo(25));
+    responsePage5.body("data.pagination.current_page", Matchers.equalTo(5));
+    responsePage5.body("data.pagination.page_size", Matchers.equalTo(5));
+    responsePage5.body("data.pagination.total_count", Matchers.equalTo(25));
     responsePage5.body("data.history.size()", Matchers.equalTo(5));
 
     queryParams = Map.of(WebConstants.LIMIT, "5", WebConstants.PAGE, "6");
@@ -226,10 +226,10 @@ class GetExperimentHistoryIT {
             null, headers, queryParams, spec -> spec.get(this.route, EXPERIMENT_ID));
 
     responsePage6.statusCode(HttpStatus.SC_OK);
-    responsePage6.body("data.pagination.currentPage", Matchers.equalTo(6));
-    responsePage6.body("data.pagination.pageSize", Matchers.equalTo(0));
+    responsePage6.body("data.pagination.current_page", Matchers.equalTo(6));
+    responsePage6.body("data.pagination.page_size", Matchers.equalTo(0));
     responsePage6.body(
-        "data.pagination.totalCount", Matchers.anyOf(Matchers.equalTo(0), Matchers.equalTo(25)));
+        "data.pagination.total_count", Matchers.anyOf(Matchers.equalTo(0), Matchers.equalTo(25)));
     responsePage6.body("data.history.size()", Matchers.equalTo(0));
   }
 
@@ -244,9 +244,9 @@ class GetExperimentHistoryIT {
 
     response.statusCode(HttpStatus.SC_OK);
     response.contentType(WebConstants.APPLICATION_JSON);
-    response.body("data.pagination.currentPage", Matchers.equalTo(2));
-    response.body("data.pagination.pageSize", Matchers.equalTo(5));
-    response.body("data.pagination.totalCount", Matchers.greaterThanOrEqualTo(10));
+    response.body("data.pagination.current_page", Matchers.equalTo(2));
+    response.body("data.pagination.page_size", Matchers.equalTo(5));
+    response.body("data.pagination.total_count", Matchers.greaterThanOrEqualTo(10));
     response.body("data.history.size()", Matchers.equalTo(5));
   }
 
@@ -280,9 +280,9 @@ class GetExperimentHistoryIT {
 
     response.statusCode(HttpStatus.SC_OK);
     response.contentType(WebConstants.APPLICATION_JSON);
-    response.body("data.pagination.currentPage", Matchers.equalTo(1));
-    response.body("data.pagination.pageSize", Matchers.greaterThanOrEqualTo(3));
-    response.body("data.pagination.totalCount", Matchers.greaterThanOrEqualTo(3));
+    response.body("data.pagination.current_page", Matchers.equalTo(1));
+    response.body("data.pagination.page_size", Matchers.greaterThanOrEqualTo(3));
+    response.body("data.pagination.total_count", Matchers.greaterThanOrEqualTo(3));
     response.body("data.history.size()", Matchers.greaterThanOrEqualTo(3));
   }
 

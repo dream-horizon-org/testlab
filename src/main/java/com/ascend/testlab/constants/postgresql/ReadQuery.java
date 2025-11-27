@@ -139,10 +139,13 @@ public final class ReadQuery {
           ::formatted;
 
   /**
-   * Filter clause for filtering experiments by owners. Accepts the parameter index and returns the
-   * parameterized query fragment using ANY array syntax.
+   * Filter clause for filtering experiments by owners. Uses EXISTS subquery to filter experiments
+   * first, then all owners are aggregated for those experiments. Accepts the parameter index and
+   * returns the parameterized query fragment using ANY array syntax.
    */
-  public static final IntFunction<String> OWNER_FILTER = " AND o.owner = ANY($%d)"::formatted;
+  public static final IntFunction<String> OWNER_FILTER =
+      " AND EXISTS (SELECT 1 FROM experiment.owners o_filter WHERE o_filter.project_key = e.project_key AND o_filter.experiment_id = e.experiment_id AND o_filter.owner = ANY($%d))"
+          ::formatted;
 
   /**
    * Base query for filtering experiments by project_key. Returns experiment details including tags
