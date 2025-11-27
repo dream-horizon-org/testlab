@@ -21,15 +21,45 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class UpdateRequestValidator implements ConstraintValidator<ValidUpdateRequest, Object> {
 
+  /** Array of field names that cannot be updated. */
   private String[] nonUpdatableFields;
+
+  /** Custom validation message template. */
   private String message;
 
+  /**
+   * Initializes the validator with the annotation parameters.
+   *
+   * <p>Extracts the non-updatable field names and custom message from the annotation.
+   *
+   * @param constraintAnnotation the annotation instance containing validation configuration
+   */
   @Override
   public void initialize(ValidUpdateRequest constraintAnnotation) {
     this.nonUpdatableFields = constraintAnnotation.nonUpdatableFields();
     this.message = constraintAnnotation.message();
   }
 
+  /**
+   * Validates that non-updatable fields are not present in the update request.
+   *
+   * <p>Uses reflection to check if any of the specified non-updatable fields have non-null values.
+   * If any non-updatable field is present, validation fails with a detailed error message listing
+   * all violated fields.
+   *
+   * <p>Handles the following cases:
+   *
+   * <ul>
+   *   <li>Null objects are considered valid
+   *   <li>Fields that don't exist in the class are silently skipped
+   *   <li>Field access errors result in validation failure with error logging
+   *   <li>Non-null non-updatable fields cause validation failure with detailed message
+   * </ul>
+   *
+   * @param value the object to validate (typically an update request DTO)
+   * @param context the validation context for building custom error messages
+   * @return true if validation passes (all non-updatable fields are null), false otherwise
+   */
   @Override
   public boolean isValid(Object value, ConstraintValidatorContext context) {
     if (value == null) {

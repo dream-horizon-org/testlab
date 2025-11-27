@@ -1728,17 +1728,19 @@ public class ExperimentDAOImpl implements ExperimentDAO {
   }
 
   /**
-   * Converts UpdateExperimentRequest DTO to Map for dynamic SQL generation.
+   * Extracts non-null fields from UpdateExperimentRequest for dynamic SQL generation.
    *
-   * @param request update experiment request DTO
-   * @return Map representation of the request with null values removed
-   */
-  /**
-   * Extracts non-null fields from UpdateExperimentRequest for dynamic SQL generation. Excludes
-   * fields that are not part of the experiments table (tags, owner, metrics, updated_by).
+   * <p>Uses reflection to iterate through all fields in the request DTO and extracts non-null
+   * values. Field names are converted to snake_case using the @JsonProperty annotation. Excludes
+   * fields that are not part of the experiments table (tags, owner, metrics, updated_by) as these
+   * are handled separately.
    *
-   * @param request update experiment request
-   * @return map of non-null field names to values (using snake_case from @JsonProperty)
+   * <p>The extracted fields are used to build dynamic UPDATE SQL statements, allowing partial
+   * updates where only the provided fields are modified.
+   *
+   * @param request update experiment request DTO containing the fields to update
+   * @return map of non-null field names (snake_case) to their values, ready for SQL generation
+   * @throws RestException with REQU EST_FIELD_EXTRACTION_FAILED if reflection fails
    */
   private Map<String, Object> extractNonNullFields(UpdateExperimentRequest request) {
     Map<String, Object> fields = new LinkedHashMap<>();

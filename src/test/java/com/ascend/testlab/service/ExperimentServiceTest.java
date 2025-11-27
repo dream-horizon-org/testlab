@@ -3,9 +3,9 @@ package com.ascend.testlab.service;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
-import com.ascend.testlab.constants.enums.ExperimentHealth;
 import com.ascend.testlab.constants.enums.ExperimentStatus;
 import com.ascend.testlab.constants.enums.ExperimentType;
+import com.ascend.testlab.constants.enums.HealthStatus;
 import com.ascend.testlab.dao.ExperimentDAO;
 import com.ascend.testlab.dto.entity.experiment.Experiment;
 import com.ascend.testlab.dto.request.CreateExperimentRequest;
@@ -1465,7 +1465,7 @@ public class ExperimentServiceTest {
     request.setHypothesis("Test hypothesis");
     request.setStatus(ExperimentStatus.DRAFT);
     request.setType(ExperimentType.A_B);
-    request.setGuardrailHealthStatus(ExperimentHealth.PASSED);
+    request.setGuardrailHealthStatus(HealthStatus.PASSED);
     request.setExposure(50);
     request.setThreshold(1000);
     request.setStartTime(System.currentTimeMillis() / 1000);

@@ -2,9 +2,9 @@ package com.ascend.testlab.dto.entity.experiment;
 
 import com.ascend.testlab.annotations.ValidEnumValue;
 import com.ascend.testlab.constants.Constants;
+import com.ascend.testlab.constants.attributes.Operand;
+import com.ascend.testlab.constants.attributes.RelationalOperator;
 import com.ascend.testlab.constants.enums.DataTypeEnum;
-import com.ascend.testlab.constants.enums.Operand;
-import com.ascend.testlab.constants.enums.RelationalOperator;
 import com.ascend.testlab.exception.ErrorMessages;
 import jakarta.validation.constraints.*;
 import java.util.List;

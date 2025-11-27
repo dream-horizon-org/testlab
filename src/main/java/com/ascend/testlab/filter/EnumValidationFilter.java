@@ -64,14 +64,14 @@ public class EnumValidationFilter implements ContainerRequestFilter {
             validateEnumField(
                 jsonNode,
                 "guardrail_health_status",
-                ExperimentHealth.class,
+                HealthStatus.class,
                 "guardrail_health_status",
                 requestContext);
           } else if (jsonNode.has("guardrailHealthStatus")) {
             validateEnumField(
                 jsonNode,
                 "guardrailHealthStatus",
-                ExperimentHealth.class,
+                HealthStatus.class,
                 "guardrail_health_status",
                 requestContext);
           }
@@ -81,14 +81,14 @@ public class EnumValidationFilter implements ContainerRequestFilter {
             validateEnumField(
                 jsonNode,
                 "distribution_strategy",
-                ExperimentStrategy.class,
+                DistributionStrategy.class,
                 "distribution_strategy",
                 requestContext);
           } else if (jsonNode.has("distributionStrategy")) {
             validateEnumField(
                 jsonNode,
                 "distributionStrategy",
-                ExperimentStrategy.class,
+                DistributionStrategy.class,
                 "distribution_strategy",
                 requestContext);
           }

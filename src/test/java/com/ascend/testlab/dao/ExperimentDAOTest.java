@@ -6,9 +6,9 @@ import static org.mockito.Mockito.*;
 
 import com.ascend.testlab.client.postgresql.PgReaderClient;
 import com.ascend.testlab.client.postgresql.PgWriterClient;
-import com.ascend.testlab.constants.enums.ExperimentHealth;
 import com.ascend.testlab.constants.enums.ExperimentStatus;
 import com.ascend.testlab.constants.enums.ExperimentType;
+import com.ascend.testlab.constants.enums.HealthStatus;
 import com.ascend.testlab.constants.postgresql.ReadQuery;
 import com.ascend.testlab.constants.postgresql.WriteQuery;
 import com.ascend.testlab.dao.impl.ExperimentDAOImpl;
@@ -579,7 +579,7 @@ public class ExperimentDAOTest {
     request.setHypothesis("Test hypothesis");
     request.setStatus(ExperimentStatus.DRAFT);
     request.setType(ExperimentType.A_B);
-    request.setGuardrailHealthStatus(ExperimentHealth.PASSED);
+    request.setGuardrailHealthStatus(HealthStatus.PASSED);
     request.setCohorts(Arrays.asList("test_cohort"));
     request.setExposure(50);
     request.setThreshold(1000);

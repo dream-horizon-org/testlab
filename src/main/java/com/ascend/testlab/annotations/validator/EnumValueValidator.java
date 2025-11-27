@@ -28,10 +28,23 @@ import java.util.stream.Collectors;
  * @since 1.0
  */
 public class EnumValueValidator implements ConstraintValidator<ValidEnumValue, Object> {
+  /** The enum class to validate against. */
   private Class<? extends Enum<?>> enumClass;
+
+  /** The method name to invoke on enum constants for value comparison. */
   private String methodName;
+
+  /** Custom error message template. */
   private String customMessage;
 
+  /**
+   * Initializes the validator with annotation parameters.
+   *
+   * <p>Extracts the enum class, method name, and custom message from the @ValidEnumValue
+   * annotation.
+   *
+   * @param annotation the ValidEnumValue annotation instance
+   */
   @Override
   public void initialize(ValidEnumValue annotation) {
     this.enumClass = annotation.enumClass();
@@ -39,6 +52,23 @@ public class EnumValueValidator implements ConstraintValidator<ValidEnumValue, O
     this.customMessage = annotation.message();
   }
 
+  /**
+   * Validates if the provided value is a valid enum value.
+   *
+   * <p>Validation logic:
+   *
+   * <ul>
+   *   <li>Null values are considered valid (use @NotNull for null checks)
+   *   <li>If value is already an enum instance of the expected type, it's valid
+   *   <li>Otherwise, invokes the specified method on all enum constants and checks if any result
+   *       matches the value
+   *   <li>On validation failure, provides a detailed error message listing all valid values
+   * </ul>
+   *
+   * @param value the value to validate (can be String or enum instance)
+   * @param context the constraint validator context for building error messages
+   * @return true if the value is valid, false otherwise
+   */
   @Override
   public boolean isValid(Object value, ConstraintValidatorContext context) {
     if (value == null) {
@@ -70,8 +100,12 @@ public class EnumValueValidator implements ConstraintValidator<ValidEnumValue, O
    * Invokes the specified method on all enum constants and validates if the value matches any
    * result.
    *
-   * @param value the value to validate
-   * @return true if the value matches any enum constant's method result
+   * <p>Uses reflection to get the method from the enum class and delegates to validateValue for the
+   * actual comparison.
+   *
+   * @param value the value to validate against enum method results
+   * @return true if the value matches any enum constant's method result, false otherwise
+   * @throws RestException with ENUM_VALIDATION_FAILED if method invocation fails
    */
   private boolean invokeMethodAndValidateValue(Object value) {
     try {
@@ -85,9 +119,13 @@ public class EnumValueValidator implements ConstraintValidator<ValidEnumValue, O
   /**
    * Validates if the value matches any of the enum constant's method results.
    *
-   * @param method the method to invoke on enum constants
-   * @param value the value to validate
-   * @return true if the value matches any result
+   * <p>Streams through all enum constants, invokes the specified method on each, and checks if any
+   * result equals the provided value.
+   *
+   * @param method the method to invoke on each enum constant
+   * @param value the value to compare against method results
+   * @return true if the value matches any enum constant's method result, false otherwise
+   * @throws RestException with ENUM_VALIDATION_FAILED if method invocation fails on any constant
    */
   private boolean validateValue(Method method, Object value) {
     return Arrays.stream(enumClass.getEnumConstants())
@@ -103,9 +141,14 @@ public class EnumValueValidator implements ConstraintValidator<ValidEnumValue, O
   }
 
   /**
-   * Gets a comma-separated string of all valid enum values.
+   * Gets a comma-separated string of all valid enum values for error messages.
    *
-   * @return comma-separated valid enum values
+   * <p>Attempts to invoke the specified method on all enum constants to get their string
+   * representations. If method invocation fails for any constant, falls back to using the enum
+   * constant's toString(). If the method itself cannot be found, falls back to using enum constant
+   * names.
+   *
+   * @return comma-separated string of all valid enum values
    */
   private String getValidEnumValues() {
     try {

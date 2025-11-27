@@ -711,8 +711,8 @@ components:
         distribution_strategy:
           type: string
           enum:
-          - RANDOM
           - ROUND_ROBIN
+          - RANDOM
         assignment_domain:
           type: string
           enum:
@@ -857,8 +857,8 @@ components:
         distribution_strategy:
           type: string
           enum:
-          - RANDOM
           - ROUND_ROBIN
+          - RANDOM
         assignment_domain:
           type: string
           enum:

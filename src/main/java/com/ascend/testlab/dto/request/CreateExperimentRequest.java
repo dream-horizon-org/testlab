@@ -2,10 +2,10 @@ package com.ascend.testlab.dto.request;
 
 import com.ascend.testlab.annotations.ValidEnumValue;
 import com.ascend.testlab.constants.Constants;
-import com.ascend.testlab.constants.enums.ExperimentHealth;
+import com.ascend.testlab.constants.enums.DistributionStrategy;
 import com.ascend.testlab.constants.enums.ExperimentStatus;
-import com.ascend.testlab.constants.enums.ExperimentStrategy;
 import com.ascend.testlab.constants.enums.ExperimentType;
+import com.ascend.testlab.constants.enums.HealthStatus;
 import com.ascend.testlab.entity.AssignmentDomain;
 import com.ascend.testlab.entity.RuleAttributes;
 import com.ascend.testlab.entity.Variant;
@@ -87,10 +87,10 @@ public class CreateExperimentRequest {
 
   @JsonProperty("guardrail_health_status")
   @ValidEnumValue(
-      enumClass = ExperimentHealth.class,
+      enumClass = HealthStatus.class,
       method = Constants.NAME,
       message = ErrorMessages.INVALID_EXPERIMENT_HEALTH)
-  private ExperimentHealth guardrailHealthStatus;
+  private HealthStatus guardrailHealthStatus;
 
   @JsonProperty("metrics")
   @ValidMetrics
@@ -134,10 +134,10 @@ public class CreateExperimentRequest {
   @JsonProperty("distribution_strategy")
   @NotNull(message = "ExperimentStrategy is required")
   @ValidEnumValue(
-      enumClass = ExperimentStrategy.class,
+      enumClass = DistributionStrategy.class,
       method = Constants.NAME,
       message = ErrorMessages.INVALID_EXPERIMENT_STRATEGY)
-  private ExperimentStrategy distributionStrategy;
+  private DistributionStrategy distributionStrategy;
 
   @JsonProperty("assignment_domain")
   @NotNull(message = "assignmentDomain is required")
