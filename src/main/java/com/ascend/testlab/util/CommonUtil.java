@@ -116,4 +116,30 @@ public final class CommonUtil {
   public static int calculateOffset(int page, int limit) {
     return (page - 1) * limit;
   }
+
+  /**
+   * Normalizes experiment name for full-text search by replacing separators with spaces.
+   *
+   * <p>Replaces hyphens (-), underscores (_), and dots (.) with spaces to improve searchability in
+   * PostgreSQL full-text search (tsvector). This allows users to search for experiments using any
+   * of these separators or spaces.
+   *
+   * <p>Examples:
+   *
+   * <ul>
+   *   <li>"Test-Experiment" → "Test Experiment"
+   *   <li>"Test_Experiment" → "Test Experiment"
+   *   <li>"Test.Experiment" → "Test Experiment"
+   *   <li>"Test-Experiment_v1.0" → "Test Experiment v1 0"
+   * </ul>
+   *
+   * @param name the experiment name to normalize
+   * @return the normalized name with separators replaced by spaces
+   */
+  public static String normalizeNameForSearch(String name) {
+    if (name == null) {
+      return null;
+    }
+    return name.replaceAll("[-_.]", " ");
+  }
 }
