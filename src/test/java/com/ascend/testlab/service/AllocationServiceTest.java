@@ -11,7 +11,7 @@ import com.ascend.testlab.dto.entity.allocation.UserExperimentMap;
 import com.ascend.testlab.dto.entity.experiment.Experiment;
 import com.ascend.testlab.dto.entity.experiment.Variant;
 import com.ascend.testlab.dto.request.ReallocateRequest;
-import com.ascend.testlab.dto.response.GetAllocationsResponse;
+import com.ascend.testlab.dto.response.AllocationsResponse;
 import com.ascend.testlab.service.impl.AllocationServiceImpl;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.reactivex.rxjava3.core.Single;
@@ -1146,7 +1146,7 @@ class AllocationServiceTest {
           .thenReturn(Single.just(allocations));
 
       // Act
-      TestObserver<GetAllocationsResponse> testObserver =
+      TestObserver<AllocationsResponse> testObserver =
           allocationService.getAllocations(USER_ID, PROJECT_KEY).test();
 
       // Assert
@@ -1164,7 +1164,7 @@ class AllocationServiceTest {
           .thenReturn(Single.just(List.of()));
 
       // Act
-      TestObserver<GetAllocationsResponse> testObserver =
+      TestObserver<AllocationsResponse> testObserver =
           allocationService.getAllocations(USER_ID, PROJECT_KEY).test();
 
       // Assert
@@ -1182,7 +1182,7 @@ class AllocationServiceTest {
           .thenReturn(Single.error(expectedException));
 
       // Act
-      TestObserver<GetAllocationsResponse> testObserver =
+      TestObserver<AllocationsResponse> testObserver =
           allocationService.getAllocations(USER_ID, PROJECT_KEY).test();
 
       // Assert
@@ -1205,9 +1205,9 @@ class AllocationServiceTest {
           .thenReturn(Single.just(allocations2));
 
       // Act
-      TestObserver<GetAllocationsResponse> testObserver1 =
+      TestObserver<AllocationsResponse> testObserver1 =
           allocationService.getAllocations(userId1, PROJECT_KEY).test();
-      TestObserver<GetAllocationsResponse> testObserver2 =
+      TestObserver<AllocationsResponse> testObserver2 =
           allocationService.getAllocations(userId2, PROJECT_KEY).test();
 
       // Assert

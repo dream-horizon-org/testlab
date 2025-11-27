@@ -8,6 +8,7 @@ import com.ascend.testlab.constants.enums.ExperimentType;
 import com.ascend.testlab.dao.ExperimentDAO;
 import com.ascend.testlab.dto.entity.experiment.Experiment;
 import com.ascend.testlab.dto.request.FilterExperimentsRequest;
+import com.ascend.testlab.dto.response.DeleteExperimentResponse;
 import com.ascend.testlab.dto.response.FilterExperimentsResponse;
 import com.ascend.testlab.dto.response.PaginationMeta;
 import com.ascend.testlab.exception.ErrorEnum;
@@ -661,14 +662,14 @@ public class ExperimentServiceTest {
       when(experimentDAO.deleteExperiment(PROJECT_KEY, experiment)).thenReturn(Single.just(true));
 
       // Act
-      TestObserver<Boolean> testObserver =
+      TestObserver<DeleteExperimentResponse> testObserver =
           experimentService.deleteExperiment(PROJECT_KEY, EXPERIMENT_ID).test();
 
       // Assert
       testObserver.assertComplete();
       testObserver.assertNoErrors();
       testObserver.assertValueCount(1);
-      testObserver.assertValue(true);
+      testObserver.assertValue(DeleteExperimentResponse::isSuccess);
       verify(experimentDAO, times(1)).getExperiment(PROJECT_KEY, EXPERIMENT_ID);
       verify(experimentDAO, times(1)).deleteExperiment(PROJECT_KEY, experiment);
     }
@@ -682,7 +683,7 @@ public class ExperimentServiceTest {
       when(experimentDAO.deleteExperiment(PROJECT_KEY, experiment)).thenReturn(Single.just(true));
 
       // Act
-      TestObserver<Boolean> testObserver =
+      TestObserver<DeleteExperimentResponse> testObserver =
           experimentService.deleteExperiment(PROJECT_KEY, EXPERIMENT_ID).test();
 
       // Assert
@@ -704,7 +705,7 @@ public class ExperimentServiceTest {
       when(experimentDAO.getExperiment(PROJECT_KEY, EXPERIMENT_ID)).thenReturn(Maybe.empty());
 
       // Act
-      TestObserver<Boolean> testObserver =
+      TestObserver<DeleteExperimentResponse> testObserver =
           experimentService.deleteExperiment(PROJECT_KEY, EXPERIMENT_ID).test();
 
       // Assert
@@ -733,7 +734,7 @@ public class ExperimentServiceTest {
           .thenReturn(Maybe.error(restException));
 
       // Act
-      TestObserver<Boolean> testObserver =
+      TestObserver<DeleteExperimentResponse> testObserver =
           experimentService.deleteExperiment(PROJECT_KEY, EXPERIMENT_ID).test();
 
       // Assert
@@ -753,7 +754,7 @@ public class ExperimentServiceTest {
           .thenReturn(Maybe.error(runtimeException));
 
       // Act
-      TestObserver<Boolean> testObserver =
+      TestObserver<DeleteExperimentResponse> testObserver =
           experimentService.deleteExperiment(PROJECT_KEY, EXPERIMENT_ID).test();
 
       // Assert
@@ -784,7 +785,7 @@ public class ExperimentServiceTest {
           .thenReturn(Single.error(runtimeException));
 
       // Act
-      TestObserver<Boolean> testObserver =
+      TestObserver<DeleteExperimentResponse> testObserver =
           experimentService.deleteExperiment(PROJECT_KEY, EXPERIMENT_ID).test();
 
       // Assert
@@ -812,7 +813,7 @@ public class ExperimentServiceTest {
           .thenReturn(Single.error(restException));
 
       // Act
-      TestObserver<Boolean> testObserver =
+      TestObserver<DeleteExperimentResponse> testObserver =
           experimentService.deleteExperiment(PROJECT_KEY, EXPERIMENT_ID).test();
 
       // Assert
@@ -853,7 +854,7 @@ public class ExperimentServiceTest {
           experimentService.getExperiment(PROJECT_KEY, EXPERIMENT_ID).test();
       TestObserver<FilterExperimentsResponse> filterObserver =
           experimentService.filterExperiments(PROJECT_KEY, request).test();
-      TestObserver<Boolean> deleteObserver =
+      TestObserver<DeleteExperimentResponse> deleteObserver =
           experimentService.deleteExperiment(PROJECT_KEY, EXPERIMENT_ID).test();
 
       // Assert
@@ -888,7 +889,7 @@ public class ExperimentServiceTest {
           experimentService.getExperiment(PROJECT_KEY, EXPERIMENT_ID).test();
       TestObserver<FilterExperimentsResponse> testObserver3 =
           experimentService.filterExperiments(PROJECT_KEY, request).test();
-      TestObserver<Boolean> testObserver4 =
+      TestObserver<DeleteExperimentResponse> testObserver4 =
           experimentService.deleteExperiment(PROJECT_KEY, EXPERIMENT_ID).test();
 
       // Assert

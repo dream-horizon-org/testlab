@@ -12,8 +12,7 @@ import com.ascend.testlab.dto.entity.experiment.Experiment;
 import com.ascend.testlab.dto.entity.experiment.Variant;
 import com.ascend.testlab.dto.request.AllocationRequest;
 import com.ascend.testlab.dto.request.ReallocateRequest;
-import com.ascend.testlab.dto.response.AllocationResponse;
-import com.ascend.testlab.dto.response.GetAllocationsResponse;
+import com.ascend.testlab.dto.response.AllocationsResponse;
 import com.ascend.testlab.exception.ErrorEnum;
 import com.ascend.testlab.service.AllocationService;
 import com.ascend.testlab.service.CohortService;
@@ -45,6 +44,13 @@ public class AllocationServiceImpl implements AllocationService {
   private final CohortService cohortService;
   private final ObjectMapper objectMapper;
 
+  /**
+   * Constructor for AllocationServiceImpl.
+   *
+   * @param allocationDAO the allocation DAO
+   * @param cohortService the cohort service
+   * @param objectMapper the object mapper
+   */
   @Inject
   public AllocationServiceImpl(
       AllocationDAO allocationDAO, CohortService cohortService, ObjectMapper objectMapper) {
@@ -55,7 +61,7 @@ public class AllocationServiceImpl implements AllocationService {
 
   /** {@inheritDoc} */
   @Override
-  public Single<AllocationResponse> allotExperiments(
+  public Single<AllocationsResponse> allotExperiments(
       String projectKey, AllocationRequest allocationRequest) {
 
     String guestId = allocationRequest != null ? allocationRequest.getStableId() : null;
@@ -110,16 +116,16 @@ public class AllocationServiceImpl implements AllocationService {
                 log.info(
                     "Allocation completed for user: {}, total experiments: {}",
                     userId,
-                    response.getExperimentMap().size()))
+                    response.experimentMap().size()))
         .doOnError(error -> log.error("Error in allocation flow for user: {}", userId, error));
   }
 
   /** {@inheritDoc} */
   @Override
-  public Single<GetAllocationsResponse> getAllocations(String userId, String projectKey) {
+  public Single<AllocationsResponse> getAllocations(String userId, String projectKey) {
     return allocationDAO
         .getAllocations(userId, projectKey)
-        .map(GetAllocationsResponse::new)
+        .map(AllocationsResponse::new)
         .doOnSuccess(
             res -> {
               log.info("Successfully fetched allocations for user: {}", userId);
@@ -343,7 +349,7 @@ public class AllocationServiceImpl implements AllocationService {
     return activeAllocations;
   }
 
-  private Single<AllocationResponse> assignWithLock(
+  private Single<AllocationsResponse> assignWithLock(
       String userId,
       String stableId,
       String projectKey,
@@ -629,8 +635,8 @@ public class AllocationServiceImpl implements AllocationService {
         .onErrorReturnItem(true);
   }
 
-  private Single<AllocationResponse> buildResponse(List<UserExperimentMap> allocations) {
-    return Single.just(AllocationResponse.builder().experimentMap(allocations).build());
+  private Single<AllocationsResponse> buildResponse(List<UserExperimentMap> allocations) {
+    return Single.just(new AllocationsResponse(allocations));
   }
 
   /**

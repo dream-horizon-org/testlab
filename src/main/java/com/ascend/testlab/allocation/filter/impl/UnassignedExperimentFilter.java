@@ -8,7 +8,6 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -20,10 +19,18 @@ import lombok.extern.slf4j.Slf4j;
  * @see AbstractExperimentFilter
  */
 @Slf4j
-@RequiredArgsConstructor
 public class UnassignedExperimentFilter extends AbstractExperimentFilter {
 
   private final List<UserExperimentMap> userAssignments;
+
+  /**
+   * Constructor for UnassignedExperimentFilter.
+   *
+   * @param userAssignments the list of user assignments
+   */
+  public UnassignedExperimentFilter(List<UserExperimentMap> userAssignments) {
+    this.userAssignments = userAssignments;
+  }
 
   @Override
   protected List<Experiment> applyFilter(List<Experiment> experiments) {

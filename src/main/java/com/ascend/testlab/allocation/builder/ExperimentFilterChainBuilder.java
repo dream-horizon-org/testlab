@@ -25,6 +25,14 @@ public class ExperimentFilterChainBuilder {
   private ExperimentFilter firstFilter;
   private ExperimentFilter currentFilter;
 
+  /**
+   * Builds the filter chain from the allocation request.
+   *
+   * @param request the allocation request
+   * @param userAssignments the list of user assignments
+   * @param cohorts the list of cohorts
+   * @return the head of the filter chain
+   */
   public static ExperimentFilter buildFromRequest(
       AllocationRequest request, List<UserExperimentMap> userAssignments, List<String> cohorts) {
 
@@ -36,6 +44,12 @@ public class ExperimentFilterChainBuilder {
         .build();
   }
 
+  /**
+   * Adds a filter to the chain.
+   *
+   * @param filter the filter to add
+   * @return the builder instance
+   */
   public ExperimentFilterChainBuilder addFilter(ExperimentFilter filter) {
     if (Objects.isNull(firstFilter)) {
       firstFilter = filter;
@@ -46,6 +60,11 @@ public class ExperimentFilterChainBuilder {
     return this;
   }
 
+  /**
+   * Builds the filter chain.
+   *
+   * @return the head of the filter chain
+   */
   public ExperimentFilter build() {
     if (Objects.isNull(firstFilter)) {
       log.warn("No filters added to chain, returning pass-through filter");

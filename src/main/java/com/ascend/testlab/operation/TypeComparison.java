@@ -8,9 +8,25 @@ import java.util.Objects;
 import lombok.extern.slf4j.Slf4j;
 import org.semver4j.Semver;
 
+/**
+ * Utility class for performing type-specific comparisons.
+ *
+ * @author Anudeep Reddy
+ * @version 1.0
+ * @since 1.0
+ */
 @Slf4j
 public class TypeComparison {
 
+  /**
+   * Compare two boolean values.
+   *
+   * @param operand1 the first operand
+   * @param operand2 the second operand
+   * @param operator the operator
+   * @param operandValue the operand value (unused)
+   * @return the result of the comparison
+   */
   public static boolean compareBoolean(
       String operand1, String operand2, RelationalOperator operator, String operandValue) {
     if (Objects.isNull(operand1)) return false;
@@ -24,6 +40,15 @@ public class TypeComparison {
     };
   }
 
+  /**
+   * Compare two double values.
+   *
+   * @param operand1 the first operand
+   * @param operand2 the second operand
+   * @param operator the operator
+   * @param operandValue the operand value (unused)
+   * @return the result of the comparison
+   */
   public static boolean compareDouble(
       String operand1, String operand2, RelationalOperator operator, String operandValue) {
     if (Objects.isNull(operand1)) return false;
@@ -33,6 +58,15 @@ public class TypeComparison {
     return compareComparable(doubleOperand1, doubleOperand2, operator);
   }
 
+  /**
+   * Compare a string and a list (JSON array string).
+   *
+   * @param operand1 the first operand (string)
+   * @param operand2 the second operand (JSON array string)
+   * @param operator the operator
+   * @param operandValue the operand value (unused)
+   * @return the result of the comparison
+   */
   public static boolean compareList(
       String operand1, String operand2, RelationalOperator operator, String operandValue) {
     JsonArray jsonOperand2 = new JsonArray(operand2);
@@ -46,6 +80,14 @@ public class TypeComparison {
     };
   }
 
+  /**
+   * Compare two lists of strings.
+   *
+   * @param operand1 the first operand
+   * @param operand2 the second operand
+   * @param operator the operator
+   * @return the result of the comparison
+   */
   public static boolean compareList(
       List<String> operand1, List<String> operand2, RelationalOperator operator) {
     return switch (operator) {
@@ -55,6 +97,15 @@ public class TypeComparison {
     };
   }
 
+  /**
+   * Compare two number values (Long).
+   *
+   * @param operand1 the first operand
+   * @param operand2 the second operand
+   * @param operator the operator
+   * @param operandValue the operand value (unused)
+   * @return the result of the comparison
+   */
   public static boolean compareNumber(
       String operand1, String operand2, RelationalOperator operator, String operandValue) {
     if (Objects.isNull(operand1)) return false;
@@ -64,6 +115,15 @@ public class TypeComparison {
     return compareComparable(longOperand1, longOperand2, operator);
   }
 
+  /**
+   * Compare two object values (JSON object string).
+   *
+   * @param operand1 the first operand
+   * @param operand2 the second operand
+   * @param operator the operator
+   * @param operandValue the operand value (unused)
+   * @return the result of the comparison
+   */
   public static boolean compareObject(
       String operand1, String operand2, RelationalOperator operator, String operandValue) {
     if (Objects.isNull(operand1)) return false;
@@ -77,6 +137,15 @@ public class TypeComparison {
     };
   }
 
+  /**
+   * Compare two semantic version strings.
+   *
+   * @param operand1 the first operand
+   * @param operand2 the second operand
+   * @param operator the operator
+   * @param operandValue the operand value (unused)
+   * @return the result of the comparison
+   */
   public static boolean compareSemVer(
       String operand1, String operand2, RelationalOperator operator, String operandValue) {
     Semver semverOperand1 = Semver.coerce(operand1);
@@ -86,6 +155,15 @@ public class TypeComparison {
     return compareComparable(semverOperand1, semverOperand2, operator);
   }
 
+  /**
+   * Compare two string values.
+   *
+   * @param operand1 the first operand
+   * @param operand2 the second operand
+   * @param operator the operator
+   * @param operandValue the operand value (unused)
+   * @return the result of the comparison
+   */
   public static boolean compareString(
       String operand1, String operand2, RelationalOperator operator, String operandValue) {
     if (Objects.isNull(operand1)) return false;
@@ -97,6 +175,15 @@ public class TypeComparison {
     };
   }
 
+  /**
+   * Compare two comparable values.
+   *
+   * @param operand1 the first operand
+   * @param operand2 the second operand
+   * @param operator the operator
+   * @param <T> the type of the operands
+   * @return the result of the comparison
+   */
   public static <T> boolean compareComparable(
       Comparable<T> operand1, T operand2, RelationalOperator operator) {
     return switch (operator) {
@@ -110,6 +197,7 @@ public class TypeComparison {
     };
   }
 
+  /** Private constructor to prevent instantiation. */
   private TypeComparison() {
     throw new UnsupportedOperationException("Constructor Invocation Unavailable");
   }

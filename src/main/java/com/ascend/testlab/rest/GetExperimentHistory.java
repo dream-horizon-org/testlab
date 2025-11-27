@@ -25,7 +25,7 @@ import java.util.concurrent.CompletionStage;
  * @since 1.0
  * @see ExperimentHistoryResponse
  */
-@Path("/v1/experiments/{experimentId}/history")
+@Path("/v1/experiments/{experiment_id}/history")
 public class GetExperimentHistory {
 
   /** The admin service. */

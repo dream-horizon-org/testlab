@@ -18,8 +18,13 @@ public final class WebConstants {
   /** The value for the application/json content type. */
   public static final String APPLICATION_JSON = "application/json";
 
+  /** The header for user ID. */
   public static final String USER_ID_HEADER = "x-user-Id";
+
+  /** The header for guest ID. */
   public static final String GUEST_ID_HEADER = "x-guest-Id";
+
+  /** The header for tenant ID. */
   public static final String TENANT_ID_HEADER = "x-tenant-Id";
 
   /* Circuit Breaker Constants */
@@ -60,7 +65,7 @@ public final class WebConstants {
   public static final String PROJECT_KEY_HEADER = "x-project-key";
 
   /** The path parameter name for experiment ID. */
-  public static final String EXPERIMENT_ID = "experimentId";
+  public static final String EXPERIMENT_ID = "experiment_id";
 
   /* Query Parameter Constants */
 
@@ -80,7 +85,7 @@ public final class WebConstants {
   public static final String NAME = "name";
 
   /** The query parameter name for experiment key. */
-  public static final String EXPERIMENT_KEY = "experimentKey";
+  public static final String EXPERIMENT_KEY = "experiment_key";
 
   /* Pagination Parameter Constants */
 

@@ -14,6 +14,7 @@ public final class ResponseEntity {
   /**
    * Record encapsulating the success response for the REST API.
    *
+   * @param data the response data
    * @param <T> the type of the data
    */
   public record Success<T>(T data) {}

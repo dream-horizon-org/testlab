@@ -5,6 +5,13 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+/**
+ * Response DTO for get cohorts API.
+ *
+ * @author Anudeep Reddy
+ * @version 1.0
+ * @since 1.0
+ */
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
