@@ -55,7 +55,6 @@ public class ExperimentDAOTest {
 
   private ExperimentDAO experimentDAO;
 
-  private UUID testTenantId;
   private String testProjectKey;
   private UUID testExperimentId;
 
@@ -64,7 +63,6 @@ public class ExperimentDAOTest {
     experimentDAO =
         new ExperimentDAOImpl(
             pgReaderClient, pgWriterClient, new com.fasterxml.jackson.databind.ObjectMapper());
-    testTenantId = UUID.randomUUID();
     testProjectKey = UUID.randomUUID().toString();
     testExperimentId = UUID.randomUUID();
   }
@@ -90,8 +88,7 @@ public class ExperimentDAOTest {
               });
 
       // Act
-      TestObserver<String> testObserver =
-          experimentDAO.create(testTenantId, testProjectKey, request).test();
+      TestObserver<String> testObserver = experimentDAO.create(testProjectKey, request).test();
       ExperimentDAO dao = new ExperimentDAOImpl(pgReaderClient, pgWriterClient, objectMapper);
 
       // Assert
@@ -128,8 +125,7 @@ public class ExperimentDAOTest {
               });
 
       // Act
-      TestObserver<String> testObserver =
-          experimentDAO.create(testTenantId, testProjectKey, request).test();
+      TestObserver<String> testObserver = experimentDAO.create(testProjectKey, request).test();
 
       // Assert
       testObserver.assertComplete();
@@ -154,8 +150,7 @@ public class ExperimentDAOTest {
               });
 
       // Act
-      TestObserver<String> testObserver =
-          experimentDAO.create(testTenantId, testProjectKey, request).test();
+      TestObserver<String> testObserver = experimentDAO.create(testProjectKey, request).test();
 
       // Assert
       testObserver.assertNotComplete();
@@ -180,8 +175,7 @@ public class ExperimentDAOTest {
               });
 
       // Act
-      TestObserver<String> testObserver =
-          experimentDAO.create(testTenantId, testProjectKey, request).test();
+      TestObserver<String> testObserver = experimentDAO.create(testProjectKey, request).test();
 
       // Assert
       testObserver.assertNotComplete();
@@ -209,8 +203,7 @@ public class ExperimentDAOTest {
               });
 
       // Act
-      TestObserver<String> testObserver =
-          experimentDAO.create(testTenantId, testProjectKey, request).test();
+      TestObserver<String> testObserver = experimentDAO.create(testProjectKey, request).test();
 
       // Assert
       testObserver.assertComplete();
@@ -241,8 +234,7 @@ public class ExperimentDAOTest {
               });
 
       // Act
-      TestObserver<String> testObserver =
-          experimentDAO.create(testTenantId, testProjectKey, request).test();
+      TestObserver<String> testObserver = experimentDAO.create(testProjectKey, request).test();
 
       // Assert
       testObserver.assertComplete();
@@ -283,8 +275,7 @@ public class ExperimentDAOTest {
               });
 
       // Act
-      TestObserver<String> testObserver =
-          experimentDAO.create(testTenantId, testProjectKey, request).test();
+      TestObserver<String> testObserver = experimentDAO.create(testProjectKey, request).test();
 
       // Assert
       testObserver.assertComplete();
@@ -559,8 +550,7 @@ public class ExperimentDAOTest {
               });
 
       // Act
-      TestObserver<String> testObserver =
-          experimentDAO.create(testTenantId, testProjectKey, request).test();
+      TestObserver<String> testObserver = experimentDAO.create(testProjectKey, request).test();
 
       // Assert
       testObserver.assertNotComplete();

@@ -58,7 +58,6 @@ public class ExperimentServiceTest {
   private static final String PROJECT_KEY = "123e4567-e89b-12d3-a456-426614174000";
   private static final String EXPERIMENT_ID = "123e4567-e89b-12d3-a456-426614174000";
 
-  private UUID testTenantId;
   private String testProjectKey;
   private UUID testExperimentId;
 
@@ -73,7 +72,6 @@ public class ExperimentServiceTest {
 
     experimentService =
         new ExperimentServiceImpl(experimentDAO, stateValidationContext, variantStructureValidator);
-    testTenantId = UUID.randomUUID();
     testProjectKey = UUID.randomUUID().toString();
     testExperimentId = UUID.randomUUID();
   }
@@ -985,7 +983,7 @@ public class ExperimentServiceTest {
 
       // Act
       TestObserver<CreateExperimentResponse> testObserver =
-          experimentService.create(testTenantId, testProjectKey, request).test();
+          experimentService.create(testProjectKey, request).test();
 
       // Assert
       testObserver.assertComplete();
@@ -1014,7 +1012,7 @@ public class ExperimentServiceTest {
 
       // Act
       TestObserver<CreateExperimentResponse> testObserver =
-          experimentService.create(testTenantId, testProjectKey, request).test();
+          experimentService.create(testProjectKey, request).test();
 
       // Assert
       testObserver.assertComplete();
@@ -1035,7 +1033,7 @@ public class ExperimentServiceTest {
 
       // Act
       TestObserver<CreateExperimentResponse> testObserver =
-          experimentService.create(testTenantId, testProjectKey, request).test();
+          experimentService.create(testProjectKey, request).test();
 
       // Assert - Service wraps error with EXPERIMENT_CREATION_FAILED
       testObserver.assertError(RestException.class);
@@ -1056,7 +1054,7 @@ public class ExperimentServiceTest {
 
       // Act
       TestObserver<CreateExperimentResponse> testObserver =
-          experimentService.create(testTenantId, testProjectKey, request).test();
+          experimentService.create(testProjectKey, request).test();
 
       // Assert - Service wraps error with EXPERIMENT_CREATION_FAILED
       testObserver.assertError(RestException.class);
@@ -1082,7 +1080,7 @@ public class ExperimentServiceTest {
 
       // Act
       TestObserver<CreateExperimentResponse> testObserver =
-          experimentService.create(testTenantId, testProjectKey, request).test();
+          experimentService.create(testProjectKey, request).test();
 
       // Assert
       testObserver.assertComplete();
@@ -1111,7 +1109,7 @@ public class ExperimentServiceTest {
 
       // Act
       TestObserver<CreateExperimentResponse> testObserver =
-          experimentService.create(testTenantId, testProjectKey, request).test();
+          experimentService.create(testProjectKey, request).test();
 
       // Assert
       testObserver.assertComplete();
@@ -1172,7 +1170,7 @@ public class ExperimentServiceTest {
 
       // Act
       TestObserver<UpdateExperimentResponse> testObserver =
-          experimentService.update(testTenantId, testProjectKey, testExperimentId, request).test();
+          experimentService.update(testProjectKey, testExperimentId, request).test();
 
       // Assert
       testObserver.assertComplete();
@@ -1218,7 +1216,7 @@ public class ExperimentServiceTest {
 
       // Act
       TestObserver<UpdateExperimentResponse> testObserver =
-          experimentService.update(testTenantId, testProjectKey, testExperimentId, updates).test();
+          experimentService.update(testProjectKey, testExperimentId, updates).test();
 
       // Assert
       testObserver.assertComplete();
@@ -1243,7 +1241,7 @@ public class ExperimentServiceTest {
 
       // Act
       TestObserver<UpdateExperimentResponse> testObserver =
-          experimentService.update(testTenantId, testProjectKey, testExperimentId, updates).test();
+          experimentService.update(testProjectKey, testExperimentId, updates).test();
 
       // Assert
       testObserver.assertComplete();
@@ -1263,7 +1261,7 @@ public class ExperimentServiceTest {
 
       // Act
       TestObserver<UpdateExperimentResponse> testObserver =
-          experimentService.update(testTenantId, testProjectKey, testExperimentId, updates).test();
+          experimentService.update(testProjectKey, testExperimentId, updates).test();
 
       // Assert
       testObserver.assertComplete();
@@ -1293,7 +1291,7 @@ public class ExperimentServiceTest {
 
       // Act
       TestObserver<UpdateExperimentResponse> testObserver =
-          experimentService.update(testTenantId, testProjectKey, testExperimentId, updates).test();
+          experimentService.update(testProjectKey, testExperimentId, updates).test();
 
       // Assert
       testObserver.assertComplete();
@@ -1315,7 +1313,7 @@ public class ExperimentServiceTest {
 
       // Act
       TestObserver<UpdateExperimentResponse> testObserver =
-          experimentService.update(testTenantId, testProjectKey, testExperimentId, updates).test();
+          experimentService.update(testProjectKey, testExperimentId, updates).test();
 
       // Assert - Service wraps error with EXPERIMENT_UPDATE_FAILED
       testObserver.assertError(RestException.class);
@@ -1334,7 +1332,7 @@ public class ExperimentServiceTest {
 
       // Act
       TestObserver<UpdateExperimentResponse> testObserver =
-          experimentService.update(testTenantId, testProjectKey, testExperimentId, updates).test();
+          experimentService.update(testProjectKey, testExperimentId, updates).test();
 
       // Assert
       testObserver.assertComplete();
@@ -1450,7 +1448,7 @@ public class ExperimentServiceTest {
 
     // Act
     TestObserver<CreateExperimentResponse> testObserver =
-        experimentService.create(testTenantId, testProjectKey, request).test();
+        experimentService.create(testProjectKey, request).test();
 
     // Assert
     testObserver.assertComplete();
