@@ -47,4 +47,10 @@ public final class ErrorMessages {
   /** The error message for experiment key too long. */
   public static final String EXPERIMENT_KEY_TOO_LONG =
       "Experiment key is too long (max 255 characters)";
+
+  /** The error message for variant name missing. */
+  public static final String VARIANT_NAME_MISSING = "Variant name is required";
+
+  /** The error message for user ID missing. */
+  public static final String USER_ID_MISSING = "User ID is required";
 }

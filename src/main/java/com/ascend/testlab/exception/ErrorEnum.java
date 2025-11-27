@@ -87,11 +87,6 @@ public enum ErrorEnum implements RestError {
       "Missing User Identifier, pass user-id/guest-id",
       HttpStatus.SC_BAD_REQUEST),
 
-  INVALID_REQUEST_BODY(
-      "INVALID_REQUEST_BODY",
-      "Request body param(s) is/are missing/invalid",
-      HttpStatus.SC_BAD_REQUEST),
-
   /** The error code when an invalid variant is present in the request payload. */
   INVALID_VARIANT_FOUND(
       "INVALID_VARIANT_FOUND", "Invalid variant found in request", HttpStatus.SC_BAD_REQUEST),
