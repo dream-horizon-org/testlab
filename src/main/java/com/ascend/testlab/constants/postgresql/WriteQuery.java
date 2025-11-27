@@ -64,12 +64,6 @@ public final class WriteQuery {
         project_key, experiment_id, previous_data, current_data, updated_by
       )
       VALUES ($1, $2, $3, $4, $5)
-      ON CONFLICT (project_key, experiment_id)
-      DO UPDATE SET
-        previous_data = EXCLUDED.previous_data,
-        current_data = EXCLUDED.current_data,
-        updated_by = EXCLUDED.updated_by,
-        updated_at = CURRENT_TIMESTAMP
       """;
 
   public static final String INSERT_EXPERIMENT_ANALYSIS =
