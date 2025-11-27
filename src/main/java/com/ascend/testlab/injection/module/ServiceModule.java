@@ -10,17 +10,23 @@ import com.ascend.testlab.client.webclient.WebClient;
 import com.ascend.testlab.client.webclient.impl.WebClientImpl;
 import com.ascend.testlab.config.*;
 import com.ascend.testlab.dao.AdminDAO;
+import com.ascend.testlab.dao.AllocationDAO;
 import com.ascend.testlab.dao.ExperimentDAO;
 import com.ascend.testlab.dao.HealthCheckDAO;
 import com.ascend.testlab.dao.VariantCountDAO;
 import com.ascend.testlab.dao.impl.AdminDAOImpl;
+import com.ascend.testlab.dao.impl.AllocationDAOImpl;
 import com.ascend.testlab.dao.impl.ExperimentDAOImpl;
 import com.ascend.testlab.dao.impl.HealthCheckDAOImpl;
 import com.ascend.testlab.dao.impl.VariantCountDAOImpl;
 import com.ascend.testlab.service.AdminService;
+import com.ascend.testlab.service.AllocationService;
+import com.ascend.testlab.service.CohortService;
 import com.ascend.testlab.service.ExperimentService;
 import com.ascend.testlab.service.HealthCheckService;
 import com.ascend.testlab.service.impl.AdminServiceImpl;
+import com.ascend.testlab.service.impl.AllocationServiceImpl;
+import com.ascend.testlab.service.impl.CohortServiceImpl;
 import com.ascend.testlab.service.impl.ExperimentServiceImpl;
 import com.ascend.testlab.service.impl.HealthCheckServiceImpl;
 import com.ascend.testlab.util.CircuitBreakerFactory;
@@ -90,6 +96,7 @@ public class ServiceModule extends DefaultModule {
     bind(HealthCheckDAO.class).to(HealthCheckDAOImpl.class);
     bind(AdminDAO.class).to(AdminDAOImpl.class);
     bind(ExperimentDAO.class).to(ExperimentDAOImpl.class);
+    bind(AllocationDAO.class).to(AllocationDAOImpl.class);
     bind(VariantCountDAO.class).to(VariantCountDAOImpl.class);
   }
 
@@ -98,5 +105,7 @@ public class ServiceModule extends DefaultModule {
     bind(HealthCheckService.class).to(HealthCheckServiceImpl.class);
     bind(AdminService.class).to(AdminServiceImpl.class);
     bind(ExperimentService.class).to(ExperimentServiceImpl.class);
+    bind(AllocationService.class).to(AllocationServiceImpl.class);
+    bind(CohortService.class).to(CohortServiceImpl.class);
   }
 }

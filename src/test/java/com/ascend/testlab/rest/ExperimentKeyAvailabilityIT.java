@@ -144,8 +144,8 @@ class ExperimentKeyAvailabilityIT {
       String insert =
           String.format(
               "INSERT INTO experiment.%s "
-                  + "(project_key, experiment_id, name, experiment_key, status) "
-                  + "VALUES ('%s', '%s', '%s', '%s', 'DRAFT');",
+                  + "(project_key, experiment_id, name, experiment_key, status, distribution_strategy, assignment_domain) "
+                  + "VALUES ('%s', '%s', '%s', '%s', 'DRAFT', 'RANDOM', 'COHORT');",
               partitionName, projectKey, experimentId, experimentKey, experimentKey);
       TestUtil.executeSQLStatement(connection, insert);
     }

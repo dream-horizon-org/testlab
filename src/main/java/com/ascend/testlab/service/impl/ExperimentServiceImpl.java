@@ -2,7 +2,7 @@ package com.ascend.testlab.service.impl;
 
 import com.ascend.testlab.dao.ExperimentDAO;
 import com.ascend.testlab.dao.VariantCountDAO;
-import com.ascend.testlab.dto.entity.Experiment;
+import com.ascend.testlab.dto.entity.experiment.Experiment;
 import com.ascend.testlab.dto.request.FilterExperimentsRequest;
 import com.ascend.testlab.dto.response.FilterExperimentsResponse;
 import com.ascend.testlab.exception.ErrorEnum;
@@ -104,6 +104,23 @@ public class ExperimentServiceImpl implements ExperimentService {
               return Single.error(
                   ErrorEnum.handleException(
                       err, new RestException(ErrorEnum.REST_FILTER_EXPERIMENTS_FAILED, err)));
+            });
+  }
+
+  /** {@inheritDoc}* */
+  @Override
+  public Single<Boolean> deleteExperiment(String projectKey, String experimentId) {
+    return experimentDAO
+        .getExperiment(projectKey, experimentId)
+        .switchIfEmpty(Single.error(new RestException(ErrorEnum.EXPERIMENT_NOT_FOUND)))
+        .flatMap(experiment -> experimentDAO.deleteExperiment(projectKey, experiment))
+        .onErrorResumeNext(
+            err -> {
+              log.error(
+                  "Error in deleting experiment for project {}: {}", projectKey, experimentId);
+              return Single.error(
+                  ErrorEnum.handleException(
+                      err, new RestException(ErrorEnum.REST_DELETE_EXPERIMENT_FAILED, err)));
             });
   }
 }

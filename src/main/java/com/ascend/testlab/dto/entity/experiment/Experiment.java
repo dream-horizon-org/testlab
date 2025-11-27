@@ -1,13 +1,16 @@
-package com.ascend.testlab.dto.entity;
+package com.ascend.testlab.dto.entity.experiment;
 
-import com.ascend.testlab.constants.enums.AssignmentStrategy;
+import com.ascend.testlab.constants.enums.AssignmentDomain;
+import com.ascend.testlab.constants.enums.DistributionStrategy;
 import com.ascend.testlab.constants.enums.ExperimentStatus;
 import com.ascend.testlab.constants.enums.ExperimentType;
 import com.ascend.testlab.constants.enums.HealthStatus;
+import com.ascend.testlab.dto.entity.variantweights.VariantWeights;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.vertx.core.json.JsonObject;
 import java.time.Instant;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import lombok.*;
 
@@ -32,6 +35,9 @@ public class Experiment {
   @JsonProperty("name")
   private String name;
 
+  @JsonProperty("experiment_key")
+  private String key;
+
   @JsonProperty("description")
   private String description;
 
@@ -51,16 +57,15 @@ public class Experiment {
   private List<String> cohorts;
 
   @JsonProperty("variant_weights")
-  private JsonObject variantWeights;
+  private VariantWeights variantWeights;
 
-  @JsonProperty("assignment_strategy")
-  private AssignmentStrategy assignmentStrategy;
+  @JsonProperty("variants")
+  private Map<String, Variant> variants;
 
-  @JsonProperty("overrides")
-  private JsonObject overrides;
-
-  @JsonProperty("rule_attributes")
-  private JsonObject ruleAttributes;
+  private List<RuleAttributes> ruleAttributes;
+  private DistributionStrategy distributionStrategy;
+  private AssignmentDomain assignmentDomain;
+  private List<String> overrides;
 
   @JsonProperty("winning_variant")
   private JsonObject winningVariant;
@@ -86,11 +91,8 @@ public class Experiment {
   @JsonProperty("updated_at")
   private Instant updatedAt;
 
-  @JsonProperty("tags")
   private List<String> tags;
-
-  @JsonProperty("owner")
-  private String owner;
+  private List<String> owners;
 
   @JsonProperty("variant_counts")
   private JsonObject variantCounts;

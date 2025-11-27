@@ -1,6 +1,6 @@
 package com.ascend.testlab.dao;
 
-import com.ascend.testlab.dto.entity.Experiment;
+import com.ascend.testlab.dto.entity.experiment.Experiment;
 import com.ascend.testlab.dto.request.FilterExperimentsRequest;
 import com.ascend.testlab.dto.response.FilterExperimentsResponse;
 import io.reactivex.rxjava3.core.Maybe;
@@ -28,4 +28,13 @@ public interface ExperimentDAO {
    */
   Single<FilterExperimentsResponse> filterExperiments(
       String projectKey, FilterExperimentsRequest req);
+
+  /**
+   * Delete experiment and related data for the provided projectKey and experimentId
+   *
+   * @param projectKey the project Key
+   * @param experiment the experiment data
+   * @return a Single that emits true if deletion is successful, false otherwise
+   */
+  Single<Boolean> deleteExperiment(String projectKey, Experiment experiment);
 }

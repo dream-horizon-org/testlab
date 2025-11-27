@@ -36,7 +36,6 @@ public class CustomConstraintExceptionMapper
   public Response toResponse(ConstraintViolationException constraintViolationException) {
     log.error("Constraint violation: ", constraintViolationException);
 
-    // Aggregate the constraint violation messages
     String errorMessage =
         constraintViolationException.getConstraintViolations().stream()
             .map(ConstraintViolation::getMessageTemplate)

@@ -18,6 +18,10 @@ public final class WebConstants {
   /** The value for the application/json content type. */
   public static final String APPLICATION_JSON = "application/json";
 
+  public static final String USER_ID_HEADER = "x-user-Id";
+  public static final String GUEST_ID_HEADER = "x-guest-Id";
+  public static final String TENANT_ID_HEADER = "x-tenant-Id";
+
   /* Circuit Breaker Constants */
 
   /** The name of the buffered calls count. */
@@ -54,13 +58,6 @@ public final class WebConstants {
 
   /** The name of the project key header. */
   public static final String PROJECT_KEY_HEADER = "x-project-key";
-
-  /*API Path */
-  /** The path for filtering experiments endpoint. */
-  public static final String FILTER_EXPERIMENTS_PATH = "/v1/experiments";
-
-  /** The path for getting a single experiment by ID endpoint. */
-  public static final String GET_EXPERIMENT_PATH = "/v1/experiments/{experimentId}";
 
   /** The path parameter name for experiment ID. */
   public static final String EXPERIMENT_ID = "experimentId";
