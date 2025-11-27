@@ -6,9 +6,10 @@ CREATE DATABASE experiment;
 CREATE SCHEMA IF NOT EXISTS experiment;
 
 CREATE TYPE experiment.experiment_status AS ENUM ('LIVE','PAUSED','DRAFT','CONCLUDED','TERMINATED');
-CREATE TYPE experiment.experiment_type AS ENUM ('A/A','A/B');
+CREATE TYPE experiment.experiment_type AS ENUM ('A/B');
 CREATE TYPE experiment.experiment_health AS ENUM ('WARNING','PASSED','NO_CHECKS_AVAILABLE','FAILED');
-CREATE TYPE experiment.experiment_strategy AS ENUM ('RANDOM','ROUND_ROBIN');
+CREATE TYPE experiment.experiment_strategy AS ENUM ('RANDOM', 'ROUND_ROBIN');
+CREATE TYPE experiment.assignment_domain AS ENUM ('MANUAL', 'COHORT', 'DEFAULT');
 
 CREATE TABLE IF NOT EXISTS experiment.experiments (
     project_key          VARCHAR(255) NOT NULL,
@@ -23,10 +24,9 @@ CREATE TABLE IF NOT EXISTS experiment.experiments (
     cohorts             VARCHAR(255) ARRAY,
     variant_weights     JSONB,
     variants            JSONB,
-    distribution_strategy experiment_strategy,
-    assignment_domain   assignment_domain,
-    overrides           VARCHAR(255),
-    assignment_strategy experiment.experiment_strategy,
+    distribution_strategy experiment.experiment_strategy,
+    assignment_domain   experiment.assignment_domain,
+    overrides           VARCHAR(255) ARRAY,
     rule_attributes     JSONB,
     winning_variant     JSONB,
     exposure            INTEGER,
@@ -64,18 +64,6 @@ CREATE TABLE IF NOT EXISTS experiment.tags (
     PRIMARY KEY ( project_key, experiment_id, tag)
 ) PARTITION BY LIST (project_key);
 
--- Example partition creation for experiments table (partitions are created dynamically by the application)
--- CREATE TABLE IF NOT EXISTS experiments_550e8400_e29b_41d4_a716_446655440001 
---   PARTITION OF experiments FOR VALUES IN ('550e8400-e29b-41d4-a716-446655440001');
-
--- Example partition creation for tags table (partitions are created dynamically by the application)
--- CREATE TABLE IF NOT EXISTS experiment.tags_550e8400_e29b_41d4_a716_446655440001 
---   PARTITION OF experiment.tags FOR VALUES IN ('550e8400-e29b-41d4-a716-446655440001');
-
--- Example partition creation for owners table (partitions are created dynamically by the application)
--- CREATE TABLE IF NOT EXISTS experiment.owners_550e8400_e29b_41d4_a716_446655440001 
---   PARTITION OF experiment.owners FOR VALUES IN ('550e8400-e29b-41d4-a716-446655440001');
-
 CREATE TABLE IF NOT EXISTS experiment.experiment_update_log (
     project_key     VARCHAR(255) NOT NULL,
     experiment_id  VARCHAR(36) NOT NULL,
@@ -84,7 +72,7 @@ CREATE TABLE IF NOT EXISTS experiment.experiment_update_log (
     updated_by     VARCHAR(255),
     created_at     TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at     TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    PRIMARY KEY (project_key, experiment_id, created_at)
+    PRIMARY KEY (project_key, experiment_id)
 ) PARTITION BY LIST (project_key);
 
 CREATE TABLE IF NOT EXISTS experiment.experiment_analysis (

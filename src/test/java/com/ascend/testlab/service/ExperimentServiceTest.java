@@ -1,11 +1,8 @@
 package com.ascend.testlab.service;
 
-import static com.ascend.testlab.constants.postgresql.Columns.PROJECT_KEY;
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
-import com.ascend.testlab.client.postgresql.PgWriterClient;
 import com.ascend.testlab.constants.enums.ExperimentHealth;
 import com.ascend.testlab.constants.enums.ExperimentStatus;
 import com.ascend.testlab.constants.enums.ExperimentType;
@@ -20,6 +17,11 @@ import com.ascend.testlab.dto.response.PaginationMeta;
 import com.ascend.testlab.dto.response.UpdateExperimentResponse;
 import com.ascend.testlab.exception.ErrorEnum;
 import com.ascend.testlab.service.impl.ExperimentServiceImpl;
+import com.ascend.testlab.validation.VariantStructureValidator;
+import com.ascend.testlab.validation.statevalidation.DraftStateValidationStrategy;
+import com.ascend.testlab.validation.statevalidation.LiveStateValidationStrategy;
+import com.ascend.testlab.validation.statevalidation.PausedStateValidationStrategy;
+import com.ascend.testlab.validation.statevalidation.StateValidationContext;
 import com.dream11.rest.exception.RestException;
 import io.reactivex.rxjava3.core.Maybe;
 import io.reactivex.rxjava3.core.Single;
@@ -27,7 +29,7 @@ import io.reactivex.rxjava3.observers.TestObserver;
 import io.vertx.junit5.VertxExtension;
 import java.time.Instant;
 import java.util.*;
-import java.util.function.Function;
+import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -37,8 +39,9 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 /**
- * Comprehensive unit tests for ExperimentService.
+ * Comprehensive unit tests for ExperimentServiceImpl.
  *
+ * @author Yashita Bansal
  * @version 1.0
  * @since 1.0
  */
@@ -46,10 +49,14 @@ import org.mockito.junit.jupiter.MockitoExtension;
 @DisplayName("ExperimentService Tests")
 public class ExperimentServiceTest {
 
-  @Mock private ExperimentDAO experimentDAO;
-  @Mock private PgWriterClient pgWriterClient;
-
   private ExperimentService experimentService;
+
+  @Mock private ExperimentDAO experimentDAO;
+  @Mock private VariantStructureValidator variantStructureValidator;
+  private StateValidationContext stateValidationContext;
+
+  private static final String PROJECT_KEY = "123e4567-e89b-12d3-a456-426614174000";
+  private static final String EXPERIMENT_ID = "123e4567-e89b-12d3-a456-426614174000";
 
   private UUID testTenantId;
   private String testProjectKey;
@@ -57,567 +64,46 @@ public class ExperimentServiceTest {
 
   @BeforeEach
   void setUp() {
-    experimentService = new ExperimentServiceImpl(experimentDAO, pgWriterClient);
+    // Create real validation strategies for testing
+    LiveStateValidationStrategy liveStrategy = new LiveStateValidationStrategy();
+    PausedStateValidationStrategy pausedStrategy = new PausedStateValidationStrategy();
+    DraftStateValidationStrategy draftStrategy = new DraftStateValidationStrategy();
+    stateValidationContext =
+        new StateValidationContext(liveStrategy, pausedStrategy, draftStrategy);
+
+    experimentService =
+        new ExperimentServiceImpl(experimentDAO, stateValidationContext, variantStructureValidator);
     testTenantId = UUID.randomUUID();
     testProjectKey = UUID.randomUUID().toString();
     testExperimentId = UUID.randomUUID();
-
-    // Mock transaction execution by default (lenient to avoid unnecessary stubbing errors)
-    lenient()
-        .when(pgWriterClient.executeWithTransaction(any(Function.class)))
-        .thenAnswer(
-            invocation -> {
-              Function<Object, Single<Long>> function = invocation.getArgument(0);
-              return function.apply(null);
-            });
   }
 
   @Nested
-  @DisplayName("Create Experiment Tests")
-  class CreateExperimentTests {
+  @DisplayName("Constructor Tests")
+  class ConstructorTests {
 
     @Test
-    @DisplayName("Should successfully create experiment")
-    void testCreateExperimentSuccess() {
-      // Arrange
-      CreateExperimentRequest request = createValidRequest();
-      when(experimentDAO.createWithRelatedData(any(UUID.class), any(CreateExperimentRequest.class)))
-          .thenReturn(Single.just(1L));
-
+    @DisplayName("Should create service with valid DAO and StateValidationContext")
+    void testConstructorWithValidDAO() {
       // Act
-      TestObserver<CreateExperimentResponse> testObserver =
-          experimentService.create(testTenantId, testProjectKey, request).test();
+      ExperimentServiceImpl service =
+          new ExperimentServiceImpl(
+              experimentDAO, stateValidationContext, variantStructureValidator);
 
       // Assert
-      testObserver.assertComplete();
-      testObserver.assertNoErrors();
-      testObserver.assertValueCount(1);
-
-      CreateExperimentResponse response = testObserver.values().get(0);
-      assertNotNull(response.getExperimentId());
-      assertTrue(response.isStatus());
-      assertEquals("created", response.getMessage());
-
-      verify(experimentDAO, times(1))
-          .createWithRelatedData(any(UUID.class), any(CreateExperimentRequest.class));
+      assertNotNull(service);
     }
 
     @Test
-    @DisplayName("Should set projectKey and experimentId from headers")
-    void testCreateExperimentSetsIds() {
-      // Arrange
-      CreateExperimentRequest request = createValidRequest();
-      request.setProjectKey(null);
-      request.setExperimentId(null);
-
-      when(experimentDAO.createWithRelatedData(any(UUID.class), any(CreateExperimentRequest.class)))
-          .thenReturn(Single.just(1L));
-
-      // Act
-      TestObserver<CreateExperimentResponse> testObserver =
-          experimentService.create(testTenantId, testProjectKey, request).test();
+    @DisplayName("Should create service with null DAO")
+    void testConstructorWithNullDAO() {
+      // Act - Constructor doesn't validate null, but will fail at runtime
+      ExperimentServiceImpl service =
+          new ExperimentServiceImpl(null, stateValidationContext, variantStructureValidator);
 
       // Assert
-      testObserver.assertComplete();
-      testObserver.assertNoErrors();
-
-      assertNotNull(request.getProjectKey());
-      assertNotNull(request.getExperimentId());
-      assertEquals(testProjectKey, request.getProjectKey());
+      assertNotNull(service);
     }
-
-    @Test
-    @DisplayName("Should propagate error when DAO returns error")
-    void testCreateExperimentDaoReturnsZero() {
-      // Arrange
-      CreateExperimentRequest request = createValidRequest();
-      when(experimentDAO.createWithRelatedData(any(UUID.class), any(CreateExperimentRequest.class)))
-          .thenReturn(Single.error(new RuntimeException("Failed to insert experiment")));
-
-      // Act
-      TestObserver<CreateExperimentResponse> testObserver =
-          experimentService.create(testTenantId, testProjectKey, request).test();
-
-      // Assert - Service wraps error with EXPERIMENT_CREATION_FAILED
-      testObserver.assertError(RestException.class);
-      testObserver.assertError(
-          throwable ->
-              throwable.getMessage().contains("Failed to create experiment")
-                  || throwable.getMessage().contains("Failed to insert experiment"));
-    }
-
-    @Test
-    @DisplayName("Should propagate DAO error during create")
-    void testCreateExperimentDaoError() {
-      // Arrange
-      CreateExperimentRequest request = createValidRequest();
-      RuntimeException exception = new RuntimeException("Database connection failed");
-      when(experimentDAO.createWithRelatedData(any(UUID.class), any(CreateExperimentRequest.class)))
-          .thenReturn(Single.error(exception));
-
-      // Act
-      TestObserver<CreateExperimentResponse> testObserver =
-          experimentService.create(testTenantId, testProjectKey, request).test();
-
-      // Assert - Service wraps error with EXPERIMENT_CREATION_FAILED
-      testObserver.assertError(RestException.class);
-      testObserver.assertError(
-          throwable ->
-              throwable.getMessage().contains("Failed to create experiment")
-                  || throwable.getMessage().contains("Database connection failed"));
-    }
-
-    // Note: Null request validation happens at REST layer, so no null test needed here
-
-    @Test
-    @DisplayName("Should create experiment with all optional fields")
-    void testCreateExperimentWithAllFields() {
-      // Arrange
-      CreateExperimentRequest request = createValidRequest();
-      request.setCohorts(Arrays.asList("premium_users", "mobile_users"));
-
-      request.setOverrides(List.of("user1@example.com", "user2@example.com"));
-
-      when(experimentDAO.createWithRelatedData(any(UUID.class), any(CreateExperimentRequest.class)))
-          .thenReturn(Single.just(1L));
-
-      // Act
-      TestObserver<CreateExperimentResponse> testObserver =
-          experimentService.create(testTenantId, testProjectKey, request).test();
-
-      // Assert
-      testObserver.assertComplete();
-      testObserver.assertNoErrors();
-
-      CreateExperimentResponse response = testObserver.values().get(0);
-      assertTrue(response.isStatus());
-    }
-
-    @Test
-    @DisplayName("Should create experiment with minimal fields")
-    void testCreateExperimentMinimalFields() {
-      // Arrange
-      CreateExperimentRequest request = new CreateExperimentRequest();
-      request.setName("minimal_experiment");
-      request.setDescription("Minimal description");
-      request.setHypothesis("Minimal hypothesis");
-      request.setExposure(50);
-      request.setThreshold(1000);
-      request.setStartTime(System.currentTimeMillis() / 1000);
-      request.setEndTime(System.currentTimeMillis() / 1000 + 86400);
-      request.setCreatedBy("test@example.com");
-
-      when(experimentDAO.createWithRelatedData(any(UUID.class), any(CreateExperimentRequest.class)))
-          .thenReturn(Single.just(1L));
-
-      // Act
-      TestObserver<CreateExperimentResponse> testObserver =
-          experimentService.create(testTenantId, testProjectKey, request).test();
-
-      // Assert
-      testObserver.assertComplete();
-      testObserver.assertNoErrors();
-
-      CreateExperimentResponse response = testObserver.values().get(0);
-      assertTrue(response.isStatus());
-    }
-  }
-
-  @Nested
-  @DisplayName("Update Experiment Tests")
-  class UpdateExperimentTests {
-
-    private void mockUpdateWithTransaction() {
-      Map<String, Object> previousData = new HashMap<>();
-      previousData.put("description", "Old description");
-
-      when(experimentDAO.getExperimentData(anyString(), any(UUID.class)))
-          .thenReturn(Single.just(previousData));
-      when(experimentDAO.updateWithTransaction(
-              anyString(),
-              any(UUID.class),
-              any(UpdateExperimentRequest.class),
-              any(),
-              any(),
-              any(),
-              anyMap(),
-              any()))
-          .thenReturn(Single.just(true));
-    }
-
-    @Test
-    @DisplayName("Should successfully update experiment")
-    void testUpdateExperimentSuccess() {
-      // Arrange
-      UpdateExperimentRequest request = new UpdateExperimentRequest();
-      request.setDescription("Updated description");
-      request.setStatus(ExperimentStatus.LIVE);
-      request.setExposure(75);
-
-      Map<String, Object> previousData = new HashMap<>();
-      previousData.put("description", "Old description");
-      previousData.put("status", "DRAFT");
-
-      when(experimentDAO.getExperimentData(anyString(), any(UUID.class)))
-          .thenReturn(Single.just(previousData));
-      when(experimentDAO.updateWithTransaction(
-              anyString(),
-              any(UUID.class),
-              any(UpdateExperimentRequest.class),
-              any(),
-              any(),
-              any(),
-              anyMap(),
-              any()))
-          .thenReturn(Single.just(true));
-
-      // Act
-      TestObserver<UpdateExperimentResponse> testObserver =
-          experimentService.update(testTenantId, testProjectKey, testExperimentId, request).test();
-
-      // Assert
-      testObserver.assertComplete();
-      testObserver.assertNoErrors();
-      testObserver.assertValue(
-          response -> response.isStatus() && "updated".equals(response.getMessage()));
-
-      verify(experimentDAO, times(1)).getExperimentData(anyString(), any(UUID.class));
-      verify(experimentDAO, times(1))
-          .updateWithTransaction(
-              anyString(),
-              any(UUID.class),
-              any(UpdateExperimentRequest.class),
-              any(),
-              any(),
-              any(),
-              anyMap(),
-              any());
-    }
-
-    @Test
-    @DisplayName("Should update single field")
-    void testUpdateSingleField() {
-      // Arrange
-      UpdateExperimentRequest updates = new UpdateExperimentRequest();
-      updates.setDescription("Updated description");
-
-      Map<String, Object> previousData = new HashMap<>();
-      previousData.put("description", "Old description");
-
-      when(experimentDAO.getExperimentData(anyString(), any(UUID.class)))
-          .thenReturn(Single.just(previousData));
-      when(experimentDAO.updateWithTransaction(
-              anyString(),
-              any(UUID.class),
-              any(UpdateExperimentRequest.class),
-              any(),
-              any(),
-              any(),
-              anyMap(),
-              any()))
-          .thenReturn(Single.just(true));
-
-      // Act
-      TestObserver<UpdateExperimentResponse> testObserver =
-          experimentService.update(testTenantId, testProjectKey, testExperimentId, updates).test();
-
-      // Assert
-      testObserver.assertComplete();
-      testObserver.assertNoErrors();
-      testObserver.assertValue(
-          response -> response.isStatus() && "updated".equals(response.getMessage()));
-    }
-
-    @Test
-    @DisplayName("Should update multiple fields")
-    void testUpdateMultipleFields() {
-      // Arrange
-      UpdateExperimentRequest updates = new UpdateExperimentRequest();
-      updates.setName("updated_name");
-      updates.setDescription("Updated description");
-      updates.setHypothesis("Updated hypothesis");
-      updates.setStatus(ExperimentStatus.LIVE);
-      updates.setExposure(80);
-      updates.setThreshold(15000L);
-
-      mockUpdateWithTransaction();
-
-      // Act
-      TestObserver<UpdateExperimentResponse> testObserver =
-          experimentService.update(testTenantId, testProjectKey, testExperimentId, updates).test();
-
-      // Assert
-      testObserver.assertComplete();
-      testObserver.assertNoErrors();
-      testObserver.assertValue(
-          response -> response.isStatus() && "updated".equals(response.getMessage()));
-    }
-
-    @Test
-    @DisplayName("Should update cohorts array")
-    void testUpdateCohortsArray() {
-      // Arrange
-      UpdateExperimentRequest updates = new UpdateExperimentRequest();
-      updates.setCohorts(Arrays.asList("premium_users", "mobile_users", "web_users"));
-
-      mockUpdateWithTransaction();
-
-      // Act
-      TestObserver<UpdateExperimentResponse> testObserver =
-          experimentService.update(testTenantId, testProjectKey, testExperimentId, updates).test();
-
-      // Assert
-      testObserver.assertComplete();
-      testObserver.assertNoErrors();
-      testObserver.assertValue(
-          response -> response.isStatus() && "updated".equals(response.getMessage()));
-    }
-
-    @Test
-    @DisplayName("Should update JSONB fields")
-    void testUpdateJsonbFields() {
-      // Arrange
-      UpdateExperimentRequest updates = new UpdateExperimentRequest();
-
-      Map<String, Object> variantWeights = new HashMap<>();
-      variantWeights.put("control", 0.3);
-      variantWeights.put("variant_a", 0.4);
-      variantWeights.put("variant_b", 0.3);
-      // TODO: Fix variant_weights setter
-      // updates.setVariantWeights(variantWeights);
-
-      List<String> overrides =
-          Arrays.asList("user1@example.com", "user2@example.com", "user3@example.com");
-      updates.setOverrides(overrides);
-
-      mockUpdateWithTransaction();
-
-      // Act
-      TestObserver<UpdateExperimentResponse> testObserver =
-          experimentService.update(testTenantId, testProjectKey, testExperimentId, updates).test();
-
-      // Assert
-      testObserver.assertComplete();
-      testObserver.assertNoErrors();
-      testObserver.assertValue(
-          response -> response.isStatus() && "updated".equals(response.getMessage()));
-    }
-
-    @Test
-    @DisplayName("Should handle DAO error during update")
-    void testUpdateDaoError() {
-      // Arrange
-      UpdateExperimentRequest updates = new UpdateExperimentRequest();
-      updates.setDescription("Updated description");
-
-      RuntimeException exception = new RuntimeException("Database connection failed");
-      when(experimentDAO.getExperimentData(anyString(), any(UUID.class)))
-          .thenReturn(Single.error(exception));
-
-      // Act
-      TestObserver<UpdateExperimentResponse> testObserver =
-          experimentService.update(testTenantId, testProjectKey, testExperimentId, updates).test();
-
-      // Assert - Service wraps error with EXPERIMENT_UPDATE_FAILED
-      testObserver.assertError(RestException.class);
-      testObserver.assertError(
-          throwable ->
-              throwable.getMessage().contains("Failed to update experiment")
-                  || throwable.getMessage().contains("Database connection failed"));
-    }
-
-    @Test
-    @DisplayName("Should handle empty update map")
-    void testUpdateEmptyMap() {
-      // Arrange
-      UpdateExperimentRequest updates = new UpdateExperimentRequest();
-      // No mocking needed - service should return early with "No updates provided"
-
-      // Act
-      TestObserver<UpdateExperimentResponse> testObserver =
-          experimentService.update(testTenantId, testProjectKey, testExperimentId, updates).test();
-
-      // Assert
-      testObserver.assertComplete();
-      testObserver.assertNoErrors();
-      testObserver.assertValue(
-          response -> response.isStatus() && "No updates provided".equals(response.getMessage()));
-    }
-
-    // Note: Null request validation happens at REST layer, so no null test needed here
-  }
-
-  @Nested
-  @DisplayName("Concurrent Operation Tests")
-  class ConcurrentOperationTests {
-
-    @Test
-    @DisplayName("Should handle multiple concurrent creates")
-    void testConcurrentCreates() {
-      // Arrange
-      CreateExperimentRequest request1 = createValidRequest();
-      CreateExperimentRequest request2 = createValidRequest();
-      CreateExperimentRequest request3 = createValidRequest();
-
-      when(experimentDAO.createWithRelatedData(any(UUID.class), any(CreateExperimentRequest.class)))
-          .thenReturn(Single.just(1L))
-          .thenReturn(Single.just(2L))
-          .thenReturn(Single.just(3L));
-
-      // Act
-      TestObserver<CreateExperimentResponse> observer1 =
-          experimentService.create(testTenantId, testProjectKey, request1).test();
-      TestObserver<CreateExperimentResponse> observer2 =
-          experimentService.create(testTenantId, testProjectKey, request2).test();
-      TestObserver<CreateExperimentResponse> observer3 =
-          experimentService.create(testTenantId, testProjectKey, request3).test();
-
-      // Assert
-      observer1.assertComplete().assertNoErrors();
-      observer2.assertComplete().assertNoErrors();
-      observer3.assertComplete().assertNoErrors();
-
-      verify(experimentDAO, times(3))
-          .createWithRelatedData(any(UUID.class), any(CreateExperimentRequest.class));
-    }
-
-    @Test
-    @DisplayName("Should handle multiple concurrent updates")
-    void testConcurrentUpdates() {
-      // Arrange
-      UpdateExperimentRequest updates1 = new UpdateExperimentRequest();
-      updates1.setDescription("Update 1");
-
-      UpdateExperimentRequest updates2 = new UpdateExperimentRequest();
-      updates2.setStatus(ExperimentStatus.LIVE);
-
-      UpdateExperimentRequest updates3 = new UpdateExperimentRequest();
-      updates3.setExposure(90);
-
-      Map<String, Object> previousData = new HashMap<>();
-      when(experimentDAO.getExperimentData(anyString(), any(UUID.class)))
-          .thenReturn(Single.just(previousData));
-      when(experimentDAO.updateWithTransaction(
-              anyString(),
-              any(UUID.class),
-              any(UpdateExperimentRequest.class),
-              any(),
-              any(),
-              any(),
-              anyMap(),
-              any()))
-          .thenReturn(Single.just(true));
-
-      // Act
-      TestObserver<UpdateExperimentResponse> observer1 =
-          experimentService.update(testTenantId, testProjectKey, testExperimentId, updates1).test();
-      TestObserver<UpdateExperimentResponse> observer2 =
-          experimentService.update(testTenantId, testProjectKey, testExperimentId, updates2).test();
-      TestObserver<UpdateExperimentResponse> observer3 =
-          experimentService.update(testTenantId, testProjectKey, testExperimentId, updates3).test();
-
-      // Assert
-      observer1.assertComplete().assertNoErrors().assertValue(response -> response.isStatus());
-      observer2.assertComplete().assertNoErrors().assertValue(response -> response.isStatus());
-      observer3.assertComplete().assertNoErrors().assertValue(response -> response.isStatus());
-
-      verify(experimentDAO, times(3)).getExperimentData(anyString(), any(UUID.class));
-      verify(experimentDAO, times(3))
-          .updateWithTransaction(
-              anyString(),
-              any(UUID.class),
-              any(UpdateExperimentRequest.class),
-              any(),
-              any(),
-              any(),
-              anyMap(),
-              any());
-    }
-  }
-
-  @Nested
-  @DisplayName("Edge Case Tests")
-  class EdgeCaseTests {
-
-    @Test
-    @DisplayName("Should handle very long experiment name")
-    void testVeryLongExperimentName() {
-      // Arrange
-      CreateExperimentRequest request = createValidRequest();
-      request.setName("a".repeat(100)); // Very long name
-
-      when(experimentDAO.createWithRelatedData(any(UUID.class), any(CreateExperimentRequest.class)))
-          .thenReturn(Single.just(1L));
-
-      // Act
-      TestObserver<CreateExperimentResponse> testObserver =
-          experimentService.create(testTenantId, testProjectKey, request).test();
-
-      // Assert
-      testObserver.assertComplete();
-      testObserver.assertNoErrors();
-    }
-
-    @Test
-    @DisplayName("Should handle large cohorts array")
-    void testLargeCohortsArray() {
-      // Arrange
-      CreateExperimentRequest request = createValidRequest();
-      List<String> largeCohorts = new ArrayList<>();
-      for (int i = 0; i < 100; i++) {
-        largeCohorts.add("cohort_" + i);
-      }
-      request.setCohorts(largeCohorts);
-
-      when(experimentDAO.createWithRelatedData(any(UUID.class), any(CreateExperimentRequest.class)))
-          .thenReturn(Single.just(1L));
-
-      // Act
-      TestObserver<CreateExperimentResponse> testObserver =
-          experimentService.create(testTenantId, testProjectKey, request).test();
-
-      // Assert
-      testObserver.assertComplete();
-      testObserver.assertNoErrors();
-    }
-
-    @Test
-    @DisplayName("Should handle complex JSONB structures")
-    void testComplexJsonbStructures() {
-      // Arrange
-      CreateExperimentRequest request = createValidRequest();
-
-      // Note: variantWeights is now VariantWeights type, not Map
-      // Skipping complex variant weights for this test
-
-      when(experimentDAO.createWithRelatedData(any(UUID.class), any(CreateExperimentRequest.class)))
-          .thenReturn(Single.just(1L));
-
-      // Act
-      TestObserver<CreateExperimentResponse> testObserver =
-          experimentService.create(testTenantId, testProjectKey, request).test();
-
-      // Assert
-      testObserver.assertComplete();
-      testObserver.assertNoErrors();
-    }
-  }
-
-  // Helper method to create a valid request
-  private CreateExperimentRequest createValidRequest() {
-    CreateExperimentRequest request = new CreateExperimentRequest();
-    request.setName("test_experiment");
-    request.setDescription("Test description");
-    request.setHypothesis("Test hypothesis");
-    request.setStatus(ExperimentStatus.DRAFT);
-    request.setType(ExperimentType.A_B);
-    request.setGuardrailHealthStatus(ExperimentHealth.PASSING);
-    request.setExposure(50);
-    request.setThreshold(1000);
-    request.setStartTime(System.currentTimeMillis() / 1000);
-    request.setEndTime(System.currentTimeMillis() / 1000 + 86400);
-    request.setCreatedBy("test@example.com");
-    return request;
   }
 
   @Nested
@@ -629,19 +115,20 @@ public class ExperimentServiceTest {
     void testGetExperimentSuccess() {
       // Arrange
       Experiment expectedExperiment = createMockExperiment();
-      when(experimentDAO.getExperiment(PROJECT_KEY, testExperimentId.toString()))
+      when(experimentDAO.getExperiment(PROJECT_KEY, EXPERIMENT_ID))
           .thenReturn(Maybe.just(expectedExperiment));
 
       // Act
       TestObserver<Experiment> testObserver =
-          experimentService.getExperiment(PROJECT_KEY, testExperimentId.toString()).test();
+          experimentService.getExperiment(PROJECT_KEY, EXPERIMENT_ID).test();
 
       // Assert
       testObserver.assertComplete();
       testObserver.assertNoErrors();
       testObserver.assertValueCount(1);
-      testObserver.assertValue(experiment -> experiment.getExperimentId().equals(testExperimentId));
-      verify(experimentDAO, times(1)).getExperiment(PROJECT_KEY, testExperimentId.toString());
+      testObserver.assertValue(
+          experiment -> experiment.getExperimentId().equals(UUID.fromString(EXPERIMENT_ID)));
+      verify(experimentDAO, times(1)).getExperiment(PROJECT_KEY, EXPERIMENT_ID);
     }
 
     @Test
@@ -649,19 +136,19 @@ public class ExperimentServiceTest {
     void testGetExperimentWithCorrectProjectKey() {
       // Arrange
       Experiment expectedExperiment = createMockExperiment();
-      when(experimentDAO.getExperiment(PROJECT_KEY, testExperimentId.toString()))
+      when(experimentDAO.getExperiment(PROJECT_KEY, EXPERIMENT_ID))
           .thenReturn(Maybe.just(expectedExperiment));
 
       // Act
       TestObserver<Experiment> testObserver =
-          experimentService.getExperiment(PROJECT_KEY, testExperimentId.toString()).test();
+          experimentService.getExperiment(PROJECT_KEY, EXPERIMENT_ID).test();
 
       // Assert
       testObserver.assertComplete();
       testObserver.assertNoErrors();
       Experiment result = testObserver.values().get(0);
       assertEquals(PROJECT_KEY, result.getProjectKey());
-      verify(experimentDAO, times(1)).getExperiment(PROJECT_KEY, testExperimentId.toString());
+      verify(experimentDAO, times(1)).getExperiment(PROJECT_KEY, EXPERIMENT_ID);
     }
   }
 
@@ -673,12 +160,11 @@ public class ExperimentServiceTest {
     @DisplayName("Should return EXPERIMENT_NOT_FOUND when experiment not found")
     void testGetExperimentNotFound() {
       // Arrange
-      when(experimentDAO.getExperiment(PROJECT_KEY, testExperimentId.toString()))
-          .thenReturn(Maybe.empty());
+      when(experimentDAO.getExperiment(PROJECT_KEY, EXPERIMENT_ID)).thenReturn(Maybe.empty());
 
       // Act
       TestObserver<Experiment> testObserver =
-          experimentService.getExperiment(PROJECT_KEY, testExperimentId.toString()).test();
+          experimentService.getExperiment(PROJECT_KEY, EXPERIMENT_ID).test();
 
       // Assert
       testObserver.assertError(RestException.class);
@@ -693,7 +179,7 @@ public class ExperimentServiceTest {
             }
             return false;
           });
-      verify(experimentDAO, times(1)).getExperiment(PROJECT_KEY, testExperimentId.toString());
+      verify(experimentDAO, times(1)).getExperiment(PROJECT_KEY, EXPERIMENT_ID);
     }
 
     @Test
@@ -701,12 +187,12 @@ public class ExperimentServiceTest {
     void testGetExperimentRestException() {
       // Arrange
       RestException restException = new RestException(ErrorEnum.REST_GET_EXPERIMENT_BY_ID_FAILED);
-      when(experimentDAO.getExperiment(PROJECT_KEY, testExperimentId.toString()))
+      when(experimentDAO.getExperiment(PROJECT_KEY, EXPERIMENT_ID))
           .thenReturn(Maybe.error(restException));
 
       // Act
       TestObserver<Experiment> testObserver =
-          experimentService.getExperiment(PROJECT_KEY, testExperimentId.toString()).test();
+          experimentService.getExperiment(PROJECT_KEY, EXPERIMENT_ID).test();
 
       // Assert
       testObserver.assertError(RestException.class);
@@ -718,7 +204,7 @@ public class ExperimentServiceTest {
                   && ((RestException) error)
                       .getErrorCode()
                       .equals(ErrorEnum.REST_GET_EXPERIMENT_BY_ID_FAILED.getErrorCode()));
-      verify(experimentDAO, times(1)).getExperiment(PROJECT_KEY, testExperimentId.toString());
+      verify(experimentDAO, times(1)).getExperiment(PROJECT_KEY, EXPERIMENT_ID);
     }
 
     @Test
@@ -726,18 +212,18 @@ public class ExperimentServiceTest {
     void testGetExperimentRuntimeException() {
       // Arrange
       RuntimeException runtimeException = new RuntimeException("Database connection failed");
-      when(experimentDAO.getExperiment(PROJECT_KEY, testExperimentId.toString()))
+      when(experimentDAO.getExperiment(PROJECT_KEY, EXPERIMENT_ID))
           .thenReturn(Maybe.error(runtimeException));
 
       // Act
       TestObserver<Experiment> testObserver =
-          experimentService.getExperiment(PROJECT_KEY, testExperimentId.toString()).test();
+          experimentService.getExperiment(PROJECT_KEY, EXPERIMENT_ID).test();
 
       // Assert
       testObserver.assertError(RuntimeException.class);
       testObserver.assertNotComplete();
       testObserver.assertValueCount(0);
-      verify(experimentDAO, times(1)).getExperiment(PROJECT_KEY, testExperimentId.toString());
+      verify(experimentDAO, times(1)).getExperiment(PROJECT_KEY, EXPERIMENT_ID);
     }
   }
 
@@ -1005,16 +491,16 @@ public class ExperimentServiceTest {
     void testGetExperimentDAOCalledOnce() {
       // Arrange
       Experiment expectedExperiment = createMockExperiment();
-      when(experimentDAO.getExperiment(PROJECT_KEY, testExperimentId.toString()))
+      when(experimentDAO.getExperiment(PROJECT_KEY, EXPERIMENT_ID))
           .thenReturn(Maybe.just(expectedExperiment));
 
       // Act
       TestObserver<Experiment> testObserver =
-          experimentService.getExperiment(PROJECT_KEY, testExperimentId.toString()).test();
+          experimentService.getExperiment(PROJECT_KEY, EXPERIMENT_ID).test();
 
       // Assert
       testObserver.assertComplete();
-      verify(experimentDAO, times(1)).getExperiment(PROJECT_KEY, testExperimentId.toString());
+      verify(experimentDAO, times(1)).getExperiment(PROJECT_KEY, EXPERIMENT_ID);
     }
 
     @Test
@@ -1040,21 +526,21 @@ public class ExperimentServiceTest {
     void testGetExperimentMultipleSubscriptions() {
       // Arrange
       Experiment expectedExperiment = createMockExperiment();
-      when(experimentDAO.getExperiment(PROJECT_KEY, testExperimentId.toString()))
+      when(experimentDAO.getExperiment(PROJECT_KEY, EXPERIMENT_ID))
           .thenReturn(Maybe.just(expectedExperiment));
 
       // Act - Each subscription triggers the Single chain again
       TestObserver<Experiment> testObserver1 =
-          experimentService.getExperiment(PROJECT_KEY, testExperimentId.toString()).test();
+          experimentService.getExperiment(PROJECT_KEY, EXPERIMENT_ID).test();
       TestObserver<Experiment> testObserver2 =
-          experimentService.getExperiment(PROJECT_KEY, testExperimentId.toString()).test();
+          experimentService.getExperiment(PROJECT_KEY, EXPERIMENT_ID).test();
 
       // Assert
       testObserver1.assertComplete();
       testObserver2.assertComplete();
 
       // Verify called exactly twice (once per subscription)
-      verify(experimentDAO, times(2)).getExperiment(PROJECT_KEY, testExperimentId.toString());
+      verify(experimentDAO, times(2)).getExperiment(PROJECT_KEY, EXPERIMENT_ID);
     }
 
     @Test
@@ -1082,6 +568,299 @@ public class ExperimentServiceTest {
   }
 
   @Nested
+  @DisplayName("Edge Case Tests")
+  class EdgeCaseTests {
+
+    @Test
+    @DisplayName("Should handle delayed DAO responses for getExperiment")
+    void testGetExperimentDelayedResponse() {
+      // Arrange
+      Experiment expectedExperiment = createMockExperiment();
+      when(experimentDAO.getExperiment(PROJECT_KEY, EXPERIMENT_ID))
+          .thenReturn(Maybe.just(expectedExperiment).delay(100, TimeUnit.MILLISECONDS));
+
+      // Act
+      TestObserver<Experiment> testObserver =
+          experimentService.getExperiment(PROJECT_KEY, EXPERIMENT_ID).test();
+
+      // Wait for completion
+      testObserver.awaitDone(1, TimeUnit.SECONDS);
+
+      // Assert
+      testObserver.assertComplete();
+      testObserver.assertNoErrors();
+    }
+
+    @Test
+    @DisplayName("Should handle delayed DAO responses for filterExperiments")
+    void testFilterExperimentsDelayedResponse() {
+      // Arrange
+      FilterExperimentsRequest request = new FilterExperimentsRequest();
+      FilterExperimentsResponse expectedResponse = createMockFilterResponse();
+      when(experimentDAO.filterExperiments(PROJECT_KEY, request))
+          .thenReturn(Single.just(expectedResponse).delay(100, TimeUnit.MILLISECONDS));
+
+      // Act
+      TestObserver<FilterExperimentsResponse> testObserver =
+          experimentService.filterExperiments(PROJECT_KEY, request).test();
+
+      // Wait for completion
+      testObserver.awaitDone(1, TimeUnit.SECONDS);
+
+      // Assert
+      testObserver.assertComplete();
+      testObserver.assertNoErrors();
+    }
+
+    @Test
+    @DisplayName("Should handle null project Key")
+    void testGetExperimentWithNullProjectKey() {
+      // Arrange
+      when(experimentDAO.getExperiment(null, EXPERIMENT_ID)).thenReturn(Maybe.empty());
+
+      // Act
+      TestObserver<Experiment> testObserver =
+          experimentService.getExperiment(null, EXPERIMENT_ID).test();
+
+      // Assert
+      testObserver.assertError(RestException.class);
+      testObserver.assertNotComplete();
+      testObserver.assertValueCount(0);
+      testObserver.assertError(
+          error ->
+              error instanceof RestException
+                  && ((RestException) error)
+                      .getErrorCode()
+                      .equals(ErrorEnum.EXPERIMENT_NOT_FOUND.getErrorCode()));
+      verify(experimentDAO, times(1)).getExperiment(null, EXPERIMENT_ID);
+    }
+
+    @Test
+    @DisplayName("Should handle null experiment ID")
+    void testGetExperimentWithNullExperimentId() {
+      // Arrange
+      when(experimentDAO.getExperiment(PROJECT_KEY, null)).thenReturn(Maybe.empty());
+
+      // Act
+      TestObserver<Experiment> testObserver =
+          experimentService.getExperiment(PROJECT_KEY, null).test();
+
+      // Assert
+      testObserver.assertError(RestException.class);
+      testObserver.assertNotComplete();
+      testObserver.assertValueCount(0);
+      testObserver.assertError(
+          error ->
+              error instanceof RestException
+                  && ((RestException) error)
+                      .getErrorCode()
+                      .equals(ErrorEnum.EXPERIMENT_NOT_FOUND.getErrorCode()));
+      verify(experimentDAO, times(1)).getExperiment(PROJECT_KEY, null);
+    }
+
+    @Test
+    @DisplayName("Should handle null request for filterExperiments")
+    void testFilterExperimentsWithNullRequest() {
+      // Arrange
+      FilterExperimentsResponse expectedResponse = createMockFilterResponse();
+      when(experimentDAO.filterExperiments(PROJECT_KEY, null))
+          .thenReturn(Single.just(expectedResponse));
+
+      // Act
+      TestObserver<FilterExperimentsResponse> testObserver =
+          experimentService.filterExperiments(PROJECT_KEY, null).test();
+
+      // Assert
+      testObserver.assertComplete();
+      testObserver.assertNoErrors();
+      verify(experimentDAO, times(1)).filterExperiments(PROJECT_KEY, null);
+    }
+  }
+
+  @Nested
+  @DisplayName("Delete Experiment Success Tests")
+  class DeleteExperimentSuccessTests {
+    Experiment experiment = createMockExperiment();
+
+    @Test
+    @DisplayName("Should return true when experiment is deleted successfully")
+    void testDeleteExperimentSuccess() {
+      // Arrange
+      when(experimentDAO.getExperiment(PROJECT_KEY, EXPERIMENT_ID))
+          .thenReturn(Maybe.just(experiment));
+      when(experimentDAO.deleteExperiment(PROJECT_KEY, experiment)).thenReturn(Single.just(true));
+
+      // Act
+      TestObserver<Boolean> testObserver =
+          experimentService.deleteExperiment(PROJECT_KEY, EXPERIMENT_ID).test();
+
+      // Assert
+      testObserver.assertComplete();
+      testObserver.assertNoErrors();
+      testObserver.assertValueCount(1);
+      testObserver.assertValue(true);
+      verify(experimentDAO, times(1)).getExperiment(PROJECT_KEY, EXPERIMENT_ID);
+      verify(experimentDAO, times(1)).deleteExperiment(PROJECT_KEY, experiment);
+    }
+
+    @Test
+    @DisplayName("Should call DAO methods correctly for deleteExperiment")
+    void testDeleteExperimentDAOCalledOnce() {
+      // Arrange
+      when(experimentDAO.getExperiment(PROJECT_KEY, EXPERIMENT_ID))
+          .thenReturn(Maybe.just(experiment));
+      when(experimentDAO.deleteExperiment(PROJECT_KEY, experiment)).thenReturn(Single.just(true));
+
+      // Act
+      TestObserver<Boolean> testObserver =
+          experimentService.deleteExperiment(PROJECT_KEY, EXPERIMENT_ID).test();
+
+      // Assert
+      testObserver.assertComplete();
+      verify(experimentDAO, times(1)).getExperiment(PROJECT_KEY, EXPERIMENT_ID);
+      verify(experimentDAO, times(1)).deleteExperiment(PROJECT_KEY, experiment);
+    }
+  }
+
+  @Nested
+  @DisplayName("Delete Experiment Error Handling Tests")
+  class DeleteExperimentErrorHandlingTests {
+    Experiment experiment = createMockExperiment();
+
+    @Test
+    @DisplayName("Should return EXPERIMENT_NOT_FOUND when experiment not found in getExperiment")
+    void testDeleteExperimentNotFound() {
+      // Arrange
+      when(experimentDAO.getExperiment(PROJECT_KEY, EXPERIMENT_ID)).thenReturn(Maybe.empty());
+
+      // Act
+      TestObserver<Boolean> testObserver =
+          experimentService.deleteExperiment(PROJECT_KEY, EXPERIMENT_ID).test();
+
+      // Assert
+      testObserver.assertError(RestException.class);
+      testObserver.assertNotComplete();
+      testObserver.assertValueCount(0);
+      testObserver.assertError(
+          error -> {
+            if (error instanceof RestException restException) {
+              return restException
+                  .getErrorCode()
+                  .equals(ErrorEnum.EXPERIMENT_NOT_FOUND.getErrorCode());
+            }
+            return false;
+          });
+      verify(experimentDAO, times(1)).getExperiment(PROJECT_KEY, EXPERIMENT_ID);
+      verify(experimentDAO, never()).deleteExperiment(anyString(), any(Experiment.class));
+    }
+
+    @Test
+    @DisplayName("Should propagate RestException when getExperiment fails")
+    void testDeleteExperimentGetExperimentRestException() {
+      // Arrange
+      RestException restException = new RestException(ErrorEnum.REST_GET_EXPERIMENT_BY_ID_FAILED);
+      when(experimentDAO.getExperiment(PROJECT_KEY, EXPERIMENT_ID))
+          .thenReturn(Maybe.error(restException));
+
+      // Act
+      TestObserver<Boolean> testObserver =
+          experimentService.deleteExperiment(PROJECT_KEY, EXPERIMENT_ID).test();
+
+      // Assert
+      testObserver.assertError(RestException.class);
+      testObserver.assertNotComplete();
+      testObserver.assertValueCount(0);
+      verify(experimentDAO, times(1)).getExperiment(PROJECT_KEY, EXPERIMENT_ID);
+      verify(experimentDAO, never()).deleteExperiment(anyString(), any(Experiment.class));
+    }
+
+    @Test
+    @DisplayName("Should propagate RestException when getExperiment throws error")
+    void testDeleteExperimentGetExperimentRuntimeException() {
+      // Arrange
+      RuntimeException runtimeException = new RuntimeException("Database connection failed");
+      when(experimentDAO.getExperiment(PROJECT_KEY, EXPERIMENT_ID))
+          .thenReturn(Maybe.error(runtimeException));
+
+      // Act
+      TestObserver<Boolean> testObserver =
+          experimentService.deleteExperiment(PROJECT_KEY, EXPERIMENT_ID).test();
+
+      // Assert
+      testObserver.assertError(RestException.class);
+      testObserver.assertNotComplete();
+      testObserver.assertValueCount(0);
+      // getExperiment wraps RuntimeException in REST_GET_EXPERIMENT_BY_ID_FAILED,
+      // and ErrorEnum.handleException preserves the original RestException
+      testObserver.assertError(
+          error ->
+              error instanceof RestException
+                  && ((RestException) error)
+                      .getErrorCode()
+                      .equals(ErrorEnum.REST_DELETE_EXPERIMENT_FAILED.getErrorCode()));
+      verify(experimentDAO, times(1)).getExperiment(PROJECT_KEY, EXPERIMENT_ID);
+      verify(experimentDAO, never()).deleteExperiment(anyString(), any(Experiment.class));
+    }
+
+    @Test
+    @DisplayName(
+        "Should wrap RuntimeException from deleteExperiment in REST_DELETE_EXPERIMENT_FAILED")
+    void testDeleteExperimentDeleteRuntimeException() {
+      // Arrange
+      RuntimeException runtimeException = new RuntimeException("Delete operation failed");
+      when(experimentDAO.getExperiment(PROJECT_KEY, EXPERIMENT_ID))
+          .thenReturn(Maybe.just(experiment));
+      when(experimentDAO.deleteExperiment(PROJECT_KEY, experiment))
+          .thenReturn(Single.error(runtimeException));
+
+      // Act
+      TestObserver<Boolean> testObserver =
+          experimentService.deleteExperiment(PROJECT_KEY, EXPERIMENT_ID).test();
+
+      // Assert
+      testObserver.assertError(RestException.class);
+      testObserver.assertNotComplete();
+      testObserver.assertValueCount(0);
+      testObserver.assertError(
+          error ->
+              error instanceof RestException
+                  && ((RestException) error)
+                      .getErrorCode()
+                      .equals(ErrorEnum.REST_DELETE_EXPERIMENT_FAILED.getErrorCode()));
+      verify(experimentDAO, times(1)).getExperiment(PROJECT_KEY, EXPERIMENT_ID);
+      verify(experimentDAO, times(1)).deleteExperiment(PROJECT_KEY, experiment);
+    }
+
+    @Test
+    @DisplayName("Should propagate RestException from deleteExperiment")
+    void testDeleteExperimentDeleteRestException() {
+      // Arrange
+      RestException restException = new RestException(ErrorEnum.REST_DELETE_EXPERIMENT_FAILED);
+      when(experimentDAO.getExperiment(PROJECT_KEY, EXPERIMENT_ID))
+          .thenReturn(Maybe.just(experiment));
+      when(experimentDAO.deleteExperiment(PROJECT_KEY, experiment))
+          .thenReturn(Single.error(restException));
+
+      // Act
+      TestObserver<Boolean> testObserver =
+          experimentService.deleteExperiment(PROJECT_KEY, EXPERIMENT_ID).test();
+
+      // Assert
+      testObserver.assertError(RestException.class);
+      testObserver.assertNotComplete();
+      testObserver.assertValueCount(0);
+      testObserver.assertError(
+          error ->
+              error instanceof RestException
+                  && ((RestException) error)
+                      .getErrorCode()
+                      .equals(ErrorEnum.REST_DELETE_EXPERIMENT_FAILED.getErrorCode()));
+      verify(experimentDAO, times(1)).getExperiment(PROJECT_KEY, EXPERIMENT_ID);
+      verify(experimentDAO, times(1)).deleteExperiment(PROJECT_KEY, experiment);
+    }
+  }
+
+  @Nested
   @DisplayName("Integration Tests")
   class IntegrationTests {
 
@@ -1093,23 +872,29 @@ public class ExperimentServiceTest {
       FilterExperimentsRequest request = new FilterExperimentsRequest();
       FilterExperimentsResponse filterResponse = createMockFilterResponse();
 
-      when(experimentDAO.getExperiment(PROJECT_KEY, testExperimentId.toString()))
+      when(experimentDAO.getExperiment(PROJECT_KEY, EXPERIMENT_ID))
           .thenReturn(Maybe.just(experiment));
       when(experimentDAO.filterExperiments(PROJECT_KEY, request))
           .thenReturn(Single.just(filterResponse));
+      when(experimentDAO.deleteExperiment(PROJECT_KEY, experiment)).thenReturn(Single.just(true));
 
       // Act
       TestObserver<Experiment> getObserver =
-          experimentService.getExperiment(PROJECT_KEY, testExperimentId.toString()).test();
+          experimentService.getExperiment(PROJECT_KEY, EXPERIMENT_ID).test();
       TestObserver<FilterExperimentsResponse> filterObserver =
           experimentService.filterExperiments(PROJECT_KEY, request).test();
+      TestObserver<Boolean> deleteObserver =
+          experimentService.deleteExperiment(PROJECT_KEY, EXPERIMENT_ID).test();
 
       // Assert
       getObserver.assertComplete().assertNoErrors();
       filterObserver.assertComplete().assertNoErrors();
+      deleteObserver.assertComplete().assertNoErrors();
 
-      verify(experimentDAO, times(1)).getExperiment(PROJECT_KEY, testExperimentId.toString());
+      // getExperiment is called once for getExperiment and once for deleteExperiment
+      verify(experimentDAO, times(2)).getExperiment(PROJECT_KEY, EXPERIMENT_ID);
       verify(experimentDAO, times(1)).filterExperiments(PROJECT_KEY, request);
+      verify(experimentDAO, times(1)).deleteExperiment(PROJECT_KEY, experiment);
     }
 
     @Test
@@ -1120,23 +905,33 @@ public class ExperimentServiceTest {
       FilterExperimentsRequest request = new FilterExperimentsRequest();
       FilterExperimentsResponse filterResponse = createMockFilterResponse();
 
-      when(experimentDAO.getExperiment(PROJECT_KEY, testExperimentId.toString()))
+      when(experimentDAO.getExperiment(PROJECT_KEY, EXPERIMENT_ID))
           .thenReturn(Maybe.just(experiment));
       when(experimentDAO.filterExperiments(PROJECT_KEY, request))
           .thenReturn(Single.just(filterResponse));
+      when(experimentDAO.deleteExperiment(PROJECT_KEY, experiment)).thenReturn(Single.just(true));
 
       // Act
       TestObserver<Experiment> testObserver1 =
-          experimentService.getExperiment(PROJECT_KEY, testExperimentId.toString()).test();
+          experimentService.getExperiment(PROJECT_KEY, EXPERIMENT_ID).test();
       TestObserver<Experiment> testObserver2 =
-          experimentService.getExperiment(PROJECT_KEY, testExperimentId.toString()).test();
+          experimentService.getExperiment(PROJECT_KEY, EXPERIMENT_ID).test();
       TestObserver<FilterExperimentsResponse> testObserver3 =
           experimentService.filterExperiments(PROJECT_KEY, request).test();
+      TestObserver<Boolean> testObserver4 =
+          experimentService.deleteExperiment(PROJECT_KEY, EXPERIMENT_ID).test();
 
       // Assert
       testObserver1.assertComplete();
       testObserver2.assertComplete();
       testObserver3.assertComplete();
+      testObserver4.assertComplete();
+
+      // getExperiment is called 3 times: twice for getExperiment calls and once for
+      // deleteExperiment
+      verify(experimentDAO, times(3)).getExperiment(PROJECT_KEY, EXPERIMENT_ID);
+      verify(experimentDAO, times(1)).filterExperiments(PROJECT_KEY, request);
+      verify(experimentDAO, times(1)).deleteExperiment(PROJECT_KEY, experiment);
     }
   }
 
@@ -1147,7 +942,7 @@ public class ExperimentServiceTest {
    */
   private Experiment createMockExperiment() {
     return Experiment.builder()
-        .experimentId(testExperimentId)
+        .experimentId(UUID.fromString(EXPERIMENT_ID))
         .projectKey(PROJECT_KEY)
         .name("Test Experiment")
         .description("Test Description")
@@ -1174,5 +969,508 @@ public class ExperimentServiceTest {
   private FilterExperimentsResponse createMockFilterResponse() {
     PaginationMeta paginationMeta = new PaginationMeta(1, 20, 1);
     return new FilterExperimentsResponse(List.of(createMockExperiment()), paginationMeta);
+  }
+
+  @Nested
+  @DisplayName("Create Experiment Tests")
+  class CreateExperimentTests {
+
+    @Test
+    @DisplayName("Should successfully create experiment")
+    void testCreateExperimentSuccess() {
+      // Arrange
+      CreateExperimentRequest request = createValidRequest();
+      when(experimentDAO.createWithRelatedData(any(UUID.class), any(CreateExperimentRequest.class)))
+          .thenReturn(Single.just(testExperimentId.toString()));
+
+      // Act
+      TestObserver<CreateExperimentResponse> testObserver =
+          experimentService.create(testTenantId, testProjectKey, request).test();
+
+      // Assert
+      testObserver.assertComplete();
+      testObserver.assertNoErrors();
+      testObserver.assertValueCount(1);
+
+      CreateExperimentResponse response = testObserver.values().get(0);
+      assertNotNull(response.getExperimentId());
+      assertTrue(response.isStatus());
+      assertEquals("created", response.getMessage());
+
+      verify(experimentDAO, times(1))
+          .createWithRelatedData(any(UUID.class), any(CreateExperimentRequest.class));
+    }
+
+    @Test
+    @DisplayName("Should set projectKey and experimentId from headers")
+    void testCreateExperimentSetsIds() {
+      // Arrange
+      CreateExperimentRequest request = createValidRequest();
+      request.setProjectKey(null);
+      request.setExperimentId(null);
+
+      when(experimentDAO.createWithRelatedData(any(UUID.class), any(CreateExperimentRequest.class)))
+          .thenReturn(Single.just(testExperimentId.toString()));
+
+      // Act
+      TestObserver<CreateExperimentResponse> testObserver =
+          experimentService.create(testTenantId, testProjectKey, request).test();
+
+      // Assert
+      testObserver.assertComplete();
+      testObserver.assertNoErrors();
+
+      assertNotNull(request.getProjectKey());
+      assertNotNull(request.getExperimentId());
+      assertEquals(testProjectKey, request.getProjectKey());
+    }
+
+    @Test
+    @DisplayName("Should propagate error when DAO returns error")
+    void testCreateExperimentDaoReturnsZero() {
+      // Arrange
+      CreateExperimentRequest request = createValidRequest();
+      when(experimentDAO.createWithRelatedData(any(UUID.class), any(CreateExperimentRequest.class)))
+          .thenReturn(Single.error(new RuntimeException("Failed to insert experiment")));
+
+      // Act
+      TestObserver<CreateExperimentResponse> testObserver =
+          experimentService.create(testTenantId, testProjectKey, request).test();
+
+      // Assert - Service wraps error with EXPERIMENT_CREATION_FAILED
+      testObserver.assertError(RestException.class);
+      testObserver.assertError(
+          throwable ->
+              throwable.getMessage().contains("Failed to create experiment")
+                  || throwable.getMessage().contains("Failed to insert experiment"));
+    }
+
+    @Test
+    @DisplayName("Should propagate DAO error during create")
+    void testCreateExperimentDaoError() {
+      // Arrange
+      CreateExperimentRequest request = createValidRequest();
+      RuntimeException exception = new RuntimeException("Database connection failed");
+      when(experimentDAO.createWithRelatedData(any(UUID.class), any(CreateExperimentRequest.class)))
+          .thenReturn(Single.error(exception));
+
+      // Act
+      TestObserver<CreateExperimentResponse> testObserver =
+          experimentService.create(testTenantId, testProjectKey, request).test();
+
+      // Assert - Service wraps error with EXPERIMENT_CREATION_FAILED
+      testObserver.assertError(RestException.class);
+      testObserver.assertError(
+          throwable ->
+              throwable.getMessage().contains("Failed to create experiment")
+                  || throwable.getMessage().contains("Database connection failed"));
+    }
+
+    // Note: Null request validation happens at REST layer, so no null test needed here
+
+    @Test
+    @DisplayName("Should create experiment with all optional fields")
+    void testCreateExperimentWithAllFields() {
+      // Arrange
+      CreateExperimentRequest request = createValidRequest();
+      request.setCohorts(Arrays.asList("premium_users", "mobile_users"));
+
+      request.setOverrides(List.of("user1@example.com", "user2@example.com"));
+
+      when(experimentDAO.createWithRelatedData(any(UUID.class), any(CreateExperimentRequest.class)))
+          .thenReturn(Single.just(testExperimentId.toString()));
+
+      // Act
+      TestObserver<CreateExperimentResponse> testObserver =
+          experimentService.create(testTenantId, testProjectKey, request).test();
+
+      // Assert
+      testObserver.assertComplete();
+      testObserver.assertNoErrors();
+
+      CreateExperimentResponse response = testObserver.values().get(0);
+      assertTrue(response.isStatus());
+    }
+
+    @Test
+    @DisplayName("Should create experiment with minimal fields")
+    void testCreateExperimentMinimalFields() {
+      // Arrange
+      CreateExperimentRequest request = new CreateExperimentRequest();
+      request.setName("minimal_experiment");
+      request.setDescription("Minimal description");
+      request.setHypothesis("Minimal hypothesis");
+      request.setExposure(50);
+      request.setThreshold(1000);
+      request.setStartTime(System.currentTimeMillis() / 1000);
+      request.setEndTime(System.currentTimeMillis() / 1000 + 86400);
+      request.setCreatedBy("test@example.com");
+
+      when(experimentDAO.createWithRelatedData(any(UUID.class), any(CreateExperimentRequest.class)))
+          .thenReturn(Single.just(testExperimentId.toString()));
+
+      // Act
+      TestObserver<CreateExperimentResponse> testObserver =
+          experimentService.create(testTenantId, testProjectKey, request).test();
+
+      // Assert
+      testObserver.assertComplete();
+      testObserver.assertNoErrors();
+
+      CreateExperimentResponse response = testObserver.values().get(0);
+      assertTrue(response.isStatus());
+    }
+  }
+
+  @Nested
+  @DisplayName("Update Experiment Tests")
+  class UpdateExperimentTests {
+
+    private void mockUpdateWithTransaction() {
+      Map<String, Object> previousData = new HashMap<>();
+      previousData.put("description", "Old description");
+
+      when(experimentDAO.getExperimentData(anyString(), any(UUID.class)))
+          .thenReturn(Single.just(previousData));
+      when(experimentDAO.updateWithTransaction(
+              anyString(),
+              any(UUID.class),
+              any(UpdateExperimentRequest.class),
+              any(),
+              any(),
+              any(),
+              anyMap(),
+              any()))
+          .thenReturn(Single.just(true));
+    }
+
+    @Test
+    @DisplayName("Should successfully update experiment")
+    void testUpdateExperimentSuccess() {
+      // Arrange
+      UpdateExperimentRequest request = new UpdateExperimentRequest();
+      request.setDescription("Updated description");
+      request.setStatus(ExperimentStatus.LIVE);
+      request.setExposure(75);
+
+      Map<String, Object> previousData = new HashMap<>();
+      previousData.put("description", "Old description");
+      previousData.put("status", "DRAFT");
+
+      when(experimentDAO.getExperimentData(anyString(), any(UUID.class)))
+          .thenReturn(Single.just(previousData));
+      when(experimentDAO.updateWithTransaction(
+              anyString(),
+              any(UUID.class),
+              any(UpdateExperimentRequest.class),
+              any(),
+              any(),
+              any(),
+              anyMap(),
+              any()))
+          .thenReturn(Single.just(true));
+
+      // Act
+      TestObserver<UpdateExperimentResponse> testObserver =
+          experimentService.update(testTenantId, testProjectKey, testExperimentId, request).test();
+
+      // Assert
+      testObserver.assertComplete();
+      testObserver.assertNoErrors();
+      testObserver.assertValue(
+          response -> response.isStatus() && "updated".equals(response.getMessage()));
+
+      verify(experimentDAO, times(1)).getExperimentData(anyString(), any(UUID.class));
+      verify(experimentDAO, times(1))
+          .updateWithTransaction(
+              anyString(),
+              any(UUID.class),
+              any(UpdateExperimentRequest.class),
+              any(),
+              any(),
+              any(),
+              anyMap(),
+              any());
+    }
+
+    @Test
+    @DisplayName("Should update single field")
+    void testUpdateSingleField() {
+      // Arrange
+      UpdateExperimentRequest updates = new UpdateExperimentRequest();
+      updates.setDescription("Updated description");
+
+      Map<String, Object> previousData = new HashMap<>();
+      previousData.put("description", "Old description");
+
+      when(experimentDAO.getExperimentData(anyString(), any(UUID.class)))
+          .thenReturn(Single.just(previousData));
+      when(experimentDAO.updateWithTransaction(
+              anyString(),
+              any(UUID.class),
+              any(UpdateExperimentRequest.class),
+              any(),
+              any(),
+              any(),
+              anyMap(),
+              any()))
+          .thenReturn(Single.just(true));
+
+      // Act
+      TestObserver<UpdateExperimentResponse> testObserver =
+          experimentService.update(testTenantId, testProjectKey, testExperimentId, updates).test();
+
+      // Assert
+      testObserver.assertComplete();
+      testObserver.assertNoErrors();
+      testObserver.assertValue(
+          response -> response.isStatus() && "updated".equals(response.getMessage()));
+    }
+
+    @Test
+    @DisplayName("Should update multiple fields")
+    void testUpdateMultipleFields() {
+      // Arrange
+      UpdateExperimentRequest updates = new UpdateExperimentRequest();
+      updates.setName("updated_name");
+      updates.setDescription("Updated description");
+      updates.setHypothesis("Updated hypothesis");
+      updates.setStatus(ExperimentStatus.LIVE);
+      updates.setExposure(80);
+      updates.setThreshold(15000L);
+
+      mockUpdateWithTransaction();
+
+      // Act
+      TestObserver<UpdateExperimentResponse> testObserver =
+          experimentService.update(testTenantId, testProjectKey, testExperimentId, updates).test();
+
+      // Assert
+      testObserver.assertComplete();
+      testObserver.assertNoErrors();
+      testObserver.assertValue(
+          response -> response.isStatus() && "updated".equals(response.getMessage()));
+    }
+
+    @Test
+    @DisplayName("Should update cohorts array")
+    void testUpdateCohortsArray() {
+      // Arrange
+      UpdateExperimentRequest updates = new UpdateExperimentRequest();
+      updates.setCohorts(Arrays.asList("premium_users", "mobile_users", "web_users"));
+
+      mockUpdateWithTransaction();
+
+      // Act
+      TestObserver<UpdateExperimentResponse> testObserver =
+          experimentService.update(testTenantId, testProjectKey, testExperimentId, updates).test();
+
+      // Assert
+      testObserver.assertComplete();
+      testObserver.assertNoErrors();
+      testObserver.assertValue(
+          response -> response.isStatus() && "updated".equals(response.getMessage()));
+    }
+
+    @Test
+    @DisplayName("Should update JSONB fields")
+    void testUpdateJsonbFields() {
+      // Arrange
+      UpdateExperimentRequest updates = new UpdateExperimentRequest();
+
+      Map<String, Object> variantWeights = new HashMap<>();
+      variantWeights.put("control", 0.3);
+      variantWeights.put("variant_a", 0.4);
+      variantWeights.put("variant_b", 0.3);
+      // TODO: Fix variant_weights setter
+      // updates.setVariantWeights(variantWeights);
+
+      List<String> overrides =
+          Arrays.asList("user1@example.com", "user2@example.com", "user3@example.com");
+      updates.setOverrides(overrides);
+
+      mockUpdateWithTransaction();
+
+      // Act
+      TestObserver<UpdateExperimentResponse> testObserver =
+          experimentService.update(testTenantId, testProjectKey, testExperimentId, updates).test();
+
+      // Assert
+      testObserver.assertComplete();
+      testObserver.assertNoErrors();
+      testObserver.assertValue(
+          response -> response.isStatus() && "updated".equals(response.getMessage()));
+    }
+
+    @Test
+    @DisplayName("Should handle DAO error during update")
+    void testUpdateDaoError() {
+      // Arrange
+      UpdateExperimentRequest updates = new UpdateExperimentRequest();
+      updates.setDescription("Updated description");
+
+      RuntimeException exception = new RuntimeException("Database connection failed");
+      when(experimentDAO.getExperimentData(anyString(), any(UUID.class)))
+          .thenReturn(Single.error(exception));
+
+      // Act
+      TestObserver<UpdateExperimentResponse> testObserver =
+          experimentService.update(testTenantId, testProjectKey, testExperimentId, updates).test();
+
+      // Assert - Service wraps error with EXPERIMENT_UPDATE_FAILED
+      testObserver.assertError(RestException.class);
+      testObserver.assertError(
+          throwable ->
+              throwable.getMessage().contains("Failed to update experiment")
+                  || throwable.getMessage().contains("Database connection failed"));
+    }
+
+    @Test
+    @DisplayName("Should handle empty update map")
+    void testUpdateEmptyMap() {
+      // Arrange
+      UpdateExperimentRequest updates = new UpdateExperimentRequest();
+      // No mocking needed - service should return early with "No updates provided"
+
+      // Act
+      TestObserver<UpdateExperimentResponse> testObserver =
+          experimentService.update(testTenantId, testProjectKey, testExperimentId, updates).test();
+
+      // Assert
+      testObserver.assertComplete();
+      testObserver.assertNoErrors();
+      testObserver.assertValue(
+          response -> response.isStatus() && "No updates provided".equals(response.getMessage()));
+    }
+
+    // Note: Null request validation happens at REST layer, so no null test needed here
+  }
+
+  @Nested
+  @DisplayName("Concurrent Operation Tests")
+  class ConcurrentOperationTests {
+
+    @Test
+    @DisplayName("Should handle multiple concurrent creates")
+    void testConcurrentCreates() {
+      // Arrange
+      CreateExperimentRequest request1 = createValidRequest();
+      CreateExperimentRequest request2 = createValidRequest();
+      CreateExperimentRequest request3 = createValidRequest();
+
+      when(experimentDAO.createWithRelatedData(any(UUID.class), any(CreateExperimentRequest.class)))
+          .thenReturn(Single.just(UUID.randomUUID().toString()))
+          .thenReturn(Single.just(UUID.randomUUID().toString()))
+          .thenReturn(Single.just(UUID.randomUUID().toString()));
+
+      // Act
+      TestObserver<CreateExperimentResponse> observer1 =
+          experimentService.create(testTenantId, testProjectKey, request1).test();
+      TestObserver<CreateExperimentResponse> observer2 =
+          experimentService.create(testTenantId, testProjectKey, request2).test();
+      TestObserver<CreateExperimentResponse> observer3 =
+          experimentService.create(testTenantId, testProjectKey, request3).test();
+
+      // Assert
+      observer1.assertComplete().assertNoErrors();
+      observer2.assertComplete().assertNoErrors();
+      observer3.assertComplete().assertNoErrors();
+
+      verify(experimentDAO, times(3))
+          .createWithRelatedData(any(UUID.class), any(CreateExperimentRequest.class));
+    }
+
+    @Test
+    @DisplayName("Should handle multiple concurrent updates")
+    void testConcurrentUpdates() {
+      // Arrange
+      UpdateExperimentRequest updates1 = new UpdateExperimentRequest();
+      updates1.setDescription("Update 1");
+
+      UpdateExperimentRequest updates2 = new UpdateExperimentRequest();
+      updates2.setStatus(ExperimentStatus.LIVE);
+
+      UpdateExperimentRequest updates3 = new UpdateExperimentRequest();
+      updates3.setExposure(90);
+
+      Map<String, Object> previousData = new HashMap<>();
+      when(experimentDAO.getExperimentData(anyString(), any(UUID.class)))
+          .thenReturn(Single.just(previousData));
+      when(experimentDAO.updateWithTransaction(
+              anyString(),
+              any(UUID.class),
+              any(UpdateExperimentRequest.class),
+              any(),
+              any(),
+              any(),
+              anyMap(),
+              any()))
+          .thenReturn(Single.just(true));
+
+      // Act
+      TestObserver<UpdateExperimentResponse> observer1 =
+          experimentService.update(testTenantId, testProjectKey, testExperimentId, updates1).test();
+      TestObserver<UpdateExperimentResponse> observer2 =
+          experimentService.update(testTenantId, testProjectKey, testExperimentId, updates2).test();
+      TestObserver<UpdateExperimentResponse> observer3 =
+          experimentService.update(testTenantId, testProjectKey, testExperimentId, updates3).test();
+
+      // Assert
+      observer1.assertComplete().assertNoErrors().assertValue(response -> response.isStatus());
+      observer2.assertComplete().assertNoErrors().assertValue(response -> response.isStatus());
+      observer3.assertComplete().assertNoErrors().assertValue(response -> response.isStatus());
+
+      verify(experimentDAO, times(3)).getExperimentData(anyString(), any(UUID.class));
+      verify(experimentDAO, times(3))
+          .updateWithTransaction(
+              anyString(),
+              any(UUID.class),
+              any(UpdateExperimentRequest.class),
+              any(),
+              any(),
+              any(),
+              anyMap(),
+              any());
+    }
+  }
+
+  @Test
+  @DisplayName("Should handle large cohorts array")
+  void testLargeCohortsArray() {
+    // Arrange
+    CreateExperimentRequest request = createValidRequest();
+    List<String> largeCohorts = new ArrayList<>();
+    for (int i = 0; i < 100; i++) {
+      largeCohorts.add("cohort_" + i);
+    }
+    request.setCohorts(largeCohorts);
+
+    when(experimentDAO.createWithRelatedData(any(UUID.class), any(CreateExperimentRequest.class)))
+        .thenReturn(Single.just(testExperimentId.toString()));
+
+    // Act
+    TestObserver<CreateExperimentResponse> testObserver =
+        experimentService.create(testTenantId, testProjectKey, request).test();
+
+    // Assert
+    testObserver.assertComplete();
+    testObserver.assertNoErrors();
+  }
+
+  // Helper method to create a valid request
+  private CreateExperimentRequest createValidRequest() {
+    CreateExperimentRequest request = new CreateExperimentRequest();
+    request.setName("test_experiment");
+    request.setDescription("Test description");
+    request.setHypothesis("Test hypothesis");
+    request.setStatus(ExperimentStatus.DRAFT);
+    request.setType(ExperimentType.A_B);
+    request.setGuardrailHealthStatus(ExperimentHealth.PASSED);
+    request.setExposure(50);
+    request.setThreshold(1000);
+    request.setStartTime(System.currentTimeMillis() / 1000);
+    request.setEndTime(System.currentTimeMillis() / 1000 + 86400);
+    request.setCreatedBy("test@example.com");
+    return request;
   }
 }

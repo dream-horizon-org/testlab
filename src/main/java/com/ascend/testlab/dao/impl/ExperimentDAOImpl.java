@@ -39,50 +39,160 @@ import java.util.UUID;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * Implementation of ExperimentDAO for PostgreSQL database operations.
+ * Implementation of the ExperimentDAO interface.
  *
- * <p>This class handles all experiment-related database operations including create and update
- * operations with proper type conversions for PostgreSQL-specific types (UUID, JSONB, arrays).
- *
- * @author Ravi Pandey
+ * @author Yashita Bansal
  * @version 1.0
  * @since 1.0
+ * @see ExperimentDAO
  */
 @Slf4j
 public class ExperimentDAOImpl implements ExperimentDAO {
 
-  private final PgWriterClient pgWriterClient;
   private final PgReaderClient pgReaderClient;
-
-  private static final ObjectMapper MAPPER = new ObjectMapper();
+  private final PgWriterClient pgWriterClient;
+  private final ObjectMapper objectMapper;
 
   /**
-   * Constructs ExperimentDAOImpl with PostgreSQL clients.
+   * Constructs a new ExperimentDAOImpl.
    *
-   * @param pgWriterClient PostgreSQL writer client for database operations
-   * @param pgReaderClient PostgreSQL reader client for database operations
+   * @param pgReaderClient the PostgreSQL reader client
+   * @param pgWriterClient the PostgreSQL writer client
+   * @param objectMapper the Jackson ObjectMapper for JSON serialization/deserialization
    */
   @Inject
-  public ExperimentDAOImpl(PgWriterClient pgWriterClient, PgReaderClient pgReaderClient) {
-    this.pgWriterClient = pgWriterClient;
+  public ExperimentDAOImpl(
+      PgReaderClient pgReaderClient, PgWriterClient pgWriterClient, ObjectMapper objectMapper) {
     this.pgReaderClient = pgReaderClient;
+    this.pgWriterClient = pgWriterClient;
+    this.objectMapper = objectMapper;
+  }
+
+  /** {@inheritDoc} */
+  @Override
+  public Maybe<Experiment> getExperiment(String projectKey, String experimentId) {
+    return pgReaderClient.fetchOne(
+        ReadQuery.GET_EXPERIMENT,
+        Tuple.of(projectKey, experimentId),
+        ExperimentMapper::mapRowToExperiment);
+  }
+
+  /** {@inheritDoc} */
+  @Override
+  public Single<FilterExperimentsResponse> filterExperiments(
+      String projectKey, FilterExperimentsRequest req) {
+    ParameterizedQuery parameterizedQuery =
+        FilterExperimentsQueryFactory.buildQuery(projectKey, req);
+
+    return pgReaderClient
+        .fetchAll(parameterizedQuery.query(), parameterizedQuery.tuple(), row -> row)
+        .map(rows -> mapRowsToFilteredExperiment(rows, req));
   }
 
   /**
-   * Creates a new experiment in the database.
+   * Maps database rows to a FilterExperimentsResponse object. Extracts experiment data from rows
+   * and builds pagination metadata.
+   */
+  private FilterExperimentsResponse mapRowsToFilteredExperiment(
+      List<Row> rows, FilterExperimentsRequest req) {
+    FilterExperimentsResponse response = new FilterExperimentsResponse();
+
+    // Extract total count from the first row (all rows have the same total_count value)
+    int totalCount = (rows.isEmpty()) ? 0 : rows.get(0).getInteger(Columns.TOTAL_COUNT);
+
+    // Map all rows to experiments
+    List<Experiment> experiments =
+        (rows.isEmpty())
+            ? List.of()
+            : rows.stream().map(ExperimentMapper::mapRowToExperiment).toList();
+
+    response.setExperiments(experiments);
+
+    PaginationMeta paginationMeta;
+    paginationMeta =
+        PaginationMeta.builder()
+            .pageSize(experiments.size())
+            .currentPage(req.getPage())
+            .totalCount(totalCount)
+            .build();
+
+    response.setPagination(paginationMeta);
+
+    return response;
+  }
+
+  /** {@inheritDoc} */
+  @Override
+  public Single<Boolean> deleteExperiment(String projectKey, Experiment experiment) {
+    Tuple tuple = Tuple.of(projectKey, experiment.getExperimentId().toString());
+
+    JsonObject previous_data_json = JsonObject.mapFrom(experiment);
+
+    return pgWriterClient
+        .executeWithTransaction(
+            (sqlConnection) ->
+                pgWriterClient
+                    .execute(sqlConnection, WriteQuery.DELETE_EXPERIMENT_BY_ID, tuple)
+                    .flatMap(
+                        delExp ->
+                            pgWriterClient.execute(
+                                sqlConnection, WriteQuery.DELETE_TAG_FOR_EXPERIMENT, tuple))
+                    .flatMap(
+                        delTag ->
+                            pgWriterClient.execute(
+                                sqlConnection, WriteQuery.DELETE_OWNER_FOR_EXPERIMENT, tuple))
+                    .flatMap(
+                        delOwner ->
+                            pgWriterClient.execute(
+                                sqlConnection,
+                                WriteQuery.INSERT_EXPERIMENT_UPDATE_LOG,
+                                tuple.addJsonObject(previous_data_json).addJsonObject(null)))
+                    .map(result -> true))
+        .onErrorResumeNext(
+            err -> {
+              log.error(
+                  "Failed to delete experiment for projectKey: {}, experimentId: {}, error: {}",
+                  projectKey,
+                  experiment.getExperimentId(),
+                  err.getMessage());
+              return Single.error(new RestException(ErrorEnum.REST_DELETE_EXPERIMENT_FAILED, err));
+            });
+  }
+
+  /**
+   * Creates a new experiment in the database without transaction management.
    *
-   * <p>This method inserts a new experiment record with all provided fields including enums,
-   * arrays, and JSONB data. It handles proper type conversion for PostgreSQL compatibility.
+   * <p><b>Deprecated:</b> This method is only for testing purposes. Use createWithRelatedData for
+   * production code.
    *
    * @param tenantId tenant identifier for multi-tenancy
    * @param projectKey project identifier for partitioning
    * @param request experiment creation request with all experiment details
-   * @return Single emitting 1L on success, 0L on failure
+   * @return Single emitting experiment ID as String on success
+   * @deprecated Use {@link #createWithRelatedData(UUID, CreateExperimentRequest)} instead
    */
+  @Deprecated
   @Override
-  public Single<Long> create(UUID tenantId, String projectKey, CreateExperimentRequest request) {
+  public Single<String> create(UUID tenantId, String projectKey, CreateExperimentRequest request) {
+    log.warn("Using deprecated create method - this should only be used in tests");
+    // For testing only - use createWithRelatedData in production
+    return pgWriterClient.executeWithTransaction(
+        connection -> createWithConnection(connection, tenantId, projectKey, request));
+  }
+
+  /**
+   * Creates a new experiment using an existing SQL connection (for transaction support).
+   *
+   * @param connection the SQL connection to use
+   * @param tenantId tenant identifier for multi-tenancy
+   * @param projectKey project identifier for partitioning
+   * @param request experiment creation request
+   * @return Single emitting experiment ID as String on success
+   */
+  private Single<String> createWithConnection(
+      SqlConnection connection, UUID tenantId, String projectKey, CreateExperimentRequest request) {
     log.info(
-        "DAO: Creating experiment in database, tenantId: {}, projectKey: {}, experimentId: {}, name: {}",
+        "DAO: Creating experiment with connection, tenantId: {}, projectKey: {}, experimentId: {}, name: {}",
         tenantId,
         projectKey,
         request.getExperimentId(),
@@ -104,16 +214,16 @@ public class ExperimentDAOImpl implements ExperimentDAO {
               String winningVariantJson = null;
 
               if (request.getVariantWeights() != null) {
-                variantWeightsJson = MAPPER.writeValueAsString(request.getVariantWeights());
+                variantWeightsJson = objectMapper.writeValueAsString(request.getVariantWeights());
               }
               if (request.getVariants() != null) {
-                variantsJson = MAPPER.writeValueAsString(request.getVariants());
+                variantsJson = objectMapper.writeValueAsString(request.getVariants());
               }
               if (request.getRuleAttributes() != null) {
-                ruleAttributesJson = MAPPER.writeValueAsString(request.getRuleAttributes());
+                ruleAttributesJson = objectMapper.writeValueAsString(request.getRuleAttributes());
               }
               if (request.getWinningVariant() != null) {
-                winningVariantJson = MAPPER.writeValueAsString(request.getWinningVariant());
+                winningVariantJson = objectMapper.writeValueAsString(request.getWinningVariant());
               }
 
               log.debug(
@@ -148,7 +258,7 @@ public class ExperimentDAOImpl implements ExperimentDAO {
                   .addValue(
                       request.getOverrides() == null || request.getOverrides().isEmpty()
                           ? null
-                          : serializeToJson("overrides", request.getOverrides()))
+                          : request.getOverrides().toArray(new String[0]))
                   .addValue(ruleAttributesJson)
                   .addValue(winningVariantJson)
                   .addValue(request.getExposure())
@@ -157,33 +267,26 @@ public class ExperimentDAOImpl implements ExperimentDAO {
                   .addValue(request.getEndTime())
                   .addValue(request.getCreatedBy());
             })
-        .flatMap(params -> pgWriterClient.execute(WriteQuery.INSERT_EXPERIMENT, params))
-        .doOnSuccess(
-            success ->
-                log.info(
-                    "DAO: Successfully inserted experiment, projectKey: {}, experimentId: {}, rowsAffected: {}",
-                    request.getProjectKey(),
-                    request.getExperimentId(),
-                    success))
+        .flatMap(params -> pgWriterClient.execute(connection, WriteQuery.INSERT_EXPERIMENT, params))
         .flatMap(
             success -> {
               if (success) {
-                log.info("DAO: Experiment inserted successfully, returning success indicator");
-                return Single.just(1L);
+                log.info(
+                    "DAO: Experiment inserted successfully with connection, projectKey: {}, experimentId: {}",
+                    request.getProjectKey(),
+                    request.getExperimentId());
+                return Single.just(request.getExperimentId().toString());
               } else {
-                log.error("DAO: Insert returned false, no rows affected");
+                log.error(
+                    "DAO: Insert returned false, no rows affected for projectKey: {}, experimentId: {}",
+                    request.getProjectKey(),
+                    request.getExperimentId());
+                RuntimeException err =
+                    new RuntimeException("Failed to insert experiment - no rows affected");
                 return Single.error(
-                    new RuntimeException("Failed to insert experiment - no rows affected"));
+                    ErrorEnum.handleException(
+                        err, new RestException(ErrorEnum.EXPERIMENT_CREATION_FAILED, err)));
               }
-            })
-        .onErrorReturn(
-            error -> {
-              log.error(
-                  "DAO: Error during experiment creation, projectKey: {}, experimentId: {}, error: {}",
-                  request.getProjectKey(),
-                  request.getExperimentId(),
-                  error.getMessage());
-              return 0L;
             });
   }
 
@@ -196,10 +299,10 @@ public class ExperimentDAOImpl implements ExperimentDAO {
    * @param tenantId tenant identifier for multi-tenancy
    * @param request experiment creation request with all experiment details including projectKey,
    *     experimentId, tags, and owner
-   * @return Single emitting experiment ID on success
+   * @return Single emitting experiment ID as String on success
    */
   @Override
-  public Single<Long> createWithRelatedData(UUID tenantId, CreateExperimentRequest request) {
+  public Single<String> createWithRelatedData(UUID tenantId, CreateExperimentRequest request) {
 
     String projectKey = request.getProjectKey();
     UUID experimentId = request.getExperimentId();
@@ -213,15 +316,12 @@ public class ExperimentDAOImpl implements ExperimentDAO {
 
     return pgWriterClient.executeWithTransaction(
         connection ->
-            create(tenantId, projectKey, request)
+            createWithConnection(connection, tenantId, projectKey, request)
                 .flatMap(
-                    id -> {
-                      if (id <= 0) {
-                        log.error("DAO: Failed to create experiment - id is 0");
-                        return Single.error(new RuntimeException("Failed to insert experiment"));
-                      }
-
-                      log.info("DAO: Experiment created with id: {}, inserting related data", id);
+                    success -> {
+                      log.info(
+                          "DAO: Experiment created successfully, inserting related data for experimentId: {}",
+                          experimentId);
 
                       // Execute all inserts in parallel using zip
                       return Single.zip(
@@ -251,11 +351,10 @@ public class ExperimentDAOImpl implements ExperimentDAO {
                               throw new RestException(ErrorEnum.ANALYSIS_INSERTION_FAILED);
                             }
                             log.info(
-                                "DAO: Successfully created experiment with all related data in parallel, id: {}, experimentId: {}, projectKey: {}",
-                                id,
+                                "DAO: Successfully created experiment with all related data in parallel, experimentId: {}, projectKey: {}",
                                 experimentId,
                                 projectKey);
-                            return id;
+                            return experimentId.toString(); // Return experiment ID
                           });
                     }));
   }
@@ -378,6 +477,54 @@ public class ExperimentDAOImpl implements ExperimentDAO {
   }
 
   /**
+   * Updates experiment fields partially using an existing SQL connection (for transaction support).
+   *
+   * @param connection the SQL connection to use
+   * @param projectKey project identifier for partitioning
+   * @param experimentId experiment identifier
+   * @param request map of field names to values for update
+   * @return Single emitting true on success, false on failure
+   */
+  private Single<Boolean> updatePartial(
+      SqlConnection connection, String projectKey, UUID experimentId, Map<String, Object> request) {
+    log.info(
+        "DAO: Updating experiment with connection, projectKey: {}, experimentId: {}, fields: {}",
+        projectKey,
+        experimentId,
+        request != null ? request.keySet() : "null");
+
+    try {
+      Map<String, Object> requestMap = convertRequestMap(request);
+      Map<String, Object> updates = buildUpdatesMap(requestMap);
+
+      if (updates.isEmpty()) {
+        log.info(
+            "DAO: No valid fields to update for projectKey: {}, experimentId: {}",
+            projectKey,
+            experimentId);
+        return Single.just(true);
+      }
+
+      log.debug("DAO: Fields to update: {}", updates.keySet());
+
+      String query = buildUpdateQuery(updates, projectKey, experimentId);
+      Tuple params = buildUpdateParams(updates, projectKey, experimentId);
+
+      log.debug("DAO: Executing UPDATE query with connection: {}", query);
+
+      return executeUpdate(connection, query, params, projectKey, experimentId);
+    } catch (Exception e) {
+      log.error(
+          "DAO: Exception in update experiment with connection, projectKey: {}, experimentId: {}, error: {}",
+          projectKey,
+          experimentId,
+          e.getMessage(),
+          e);
+      return Single.just(false);
+    }
+  }
+
+  /**
    * Converts request map and handles special field transformations.
    *
    * <p>Performs end_date to end_time conversion if needed.
@@ -387,7 +534,7 @@ public class ExperimentDAOImpl implements ExperimentDAO {
    */
   private Map<String, Object> convertRequestMap(Map<String, Object> request) {
     Map<String, Object> requestMap =
-        MAPPER.convertValue(request, new TypeReference<Map<String, Object>>() {});
+        objectMapper.convertValue(request, new TypeReference<Map<String, Object>>() {});
 
     // Handle end_date to end_time conversion
     if (requestMap.get("end_time") == null && requestMap.get("end_date") != null) {
@@ -455,7 +602,7 @@ public class ExperimentDAOImpl implements ExperimentDAO {
     if (key.equals("cohorts") && value instanceof java.util.List) {
       return convertCohortsToArray(value);
     } else if (key.equals("overrides") && value instanceof java.util.List) {
-      return serializeToJson(key, value);
+      return convertCohortsToArray(value); // Convert to array like cohorts
     } else if (isEnumField(key)) {
       return convertEnumValue(value);
     } else if (isJsonbField(key)) {
@@ -523,7 +670,7 @@ public class ExperimentDAOImpl implements ExperimentDAO {
    */
   private String serializeToJson(String key, Object value) {
     try {
-      return MAPPER.writeValueAsString(value);
+      return objectMapper.writeValueAsString(value);
     } catch (Exception ex) {
       log.error("Failed to serialize JSONB field {}: {}", key, ex.getMessage());
       throw new RuntimeException("Failed to serialize JSONB field: " + key, ex);
@@ -639,6 +786,38 @@ public class ExperimentDAOImpl implements ExperimentDAO {
   }
 
   /**
+   * Executes update query using an existing SQL connection (for transaction support).
+   *
+   * @param connection the SQL connection to use
+   * @param query the UPDATE query
+   * @param params query parameters
+   * @param projectKey project identifier
+   * @param experimentId experiment identifier
+   * @return Single emitting true on success, false on failure
+   */
+  private Single<Boolean> executeUpdate(
+      SqlConnection connection, String query, Tuple params, String projectKey, UUID experimentId) {
+    return pgWriterClient
+        .execute(connection, query, params)
+        .doOnSuccess(
+            success ->
+                log.info(
+                    "DAO: Successfully updated experiment with connection, projectKey: {}, experimentId: {}, success: {}",
+                    projectKey,
+                    experimentId,
+                    success))
+        .onErrorReturn(
+            error -> {
+              log.error(
+                  "DAO: Returning false for failed experiment update with connection, projectKey: {}, experimentId: {}, error: {}",
+                  projectKey,
+                  experimentId,
+                  error.getMessage());
+              return false;
+            });
+  }
+
+  /**
    * Updates experiment with tags, owners, metrics and logs in a transaction.
    *
    * @param projectKey project identifier for partitioning
@@ -671,7 +850,7 @@ public class ExperimentDAOImpl implements ExperimentDAO {
 
     return pgWriterClient.executeWithTransaction(
         connection ->
-            updateExperimentFields(projectKey, experimentId, experimentFields)
+            updateExperimentFields(connection, projectKey, experimentId, experimentFields)
                 .flatMap(success -> validateUpdateSuccess(success, "experiment fields"))
                 .flatMap(unused -> updateTagsIfPresent(connection, projectKey, experimentId, tags))
                 .flatMap(success -> validateUpdateSuccess(success, "tags"))
@@ -695,14 +874,17 @@ public class ExperimentDAOImpl implements ExperimentDAO {
   /**
    * Updates experiment fields if not empty.
    *
+   * @param connection SQL connection
    * @param projectKey project identifier
    * @param experimentId experiment identifier
    * @param fields fields to update
    * @return Single emitting true on success
    */
   private Single<Boolean> updateExperimentFields(
-      String projectKey, UUID experimentId, Map<String, Object> fields) {
-    return fields.isEmpty() ? Single.just(true) : updatePartial(projectKey, experimentId, fields);
+      SqlConnection connection, String projectKey, UUID experimentId, Map<String, Object> fields) {
+    return fields.isEmpty()
+        ? Single.just(true)
+        : updatePartial(connection, projectKey, experimentId, fields);
   }
 
   /**
@@ -749,7 +931,10 @@ public class ExperimentDAOImpl implements ExperimentDAO {
               return deleteTags.flatMap(
                   deleteSuccess -> {
                     if (!deleteSuccess) {
-                      return Single.error(new RuntimeException("Failed to delete tags"));
+                      RuntimeException err = new RuntimeException("Failed to delete tags");
+                      return Single.error(
+                          ErrorEnum.handleException(
+                              err, new RestException(ErrorEnum.EXPERIMENT_UPDATE_FAILED, err)));
                     }
                     return insertNew;
                   });
@@ -800,7 +985,10 @@ public class ExperimentDAOImpl implements ExperimentDAO {
               return deleteOwners.flatMap(
                   deleteSuccess -> {
                     if (!deleteSuccess) {
-                      return Single.error(new RuntimeException("Failed to delete owners"));
+                      RuntimeException err = new RuntimeException("Failed to delete owners");
+                      return Single.error(
+                          ErrorEnum.handleException(
+                              err, new RestException(ErrorEnum.EXPERIMENT_UPDATE_FAILED, err)));
                     }
                     return insertNew;
                   });
@@ -831,7 +1019,10 @@ public class ExperimentDAOImpl implements ExperimentDAO {
         .flatMap(
             deleteSuccess -> {
               if (!deleteSuccess) {
-                return Single.error(new RuntimeException("Failed to delete existing metrics"));
+                RuntimeException err = new RuntimeException("Failed to delete existing metrics");
+                return Single.error(
+                    ErrorEnum.handleException(
+                        err, new RestException(ErrorEnum.EXPERIMENT_UPDATE_FAILED, err)));
               }
               return insertMetrics(connection, projectKey, experimentId, metrics);
             });
@@ -882,9 +1073,14 @@ public class ExperimentDAOImpl implements ExperimentDAO {
    * @return Single emitting true on success, error otherwise
    */
   private Single<Boolean> validateUpdateSuccess(Boolean success, String operation) {
-    return success
-        ? Single.just(true)
-        : Single.error(new RuntimeException("Failed to update " + operation));
+    if (success) {
+      return Single.just(true);
+    } else {
+      RuntimeException err = new RuntimeException("Failed to update " + operation);
+      return Single.error(
+          ErrorEnum.handleException(
+              err, new RestException(ErrorEnum.EXPERIMENT_UPDATE_FAILED, err)));
+    }
   }
 
   // ==================== Tag Operations ====================
@@ -1269,11 +1465,11 @@ public class ExperimentDAOImpl implements ExperimentDAO {
               // Convert POJOs/Maps directly to JsonObject for JSONB columns
               JsonObject previousDataJson =
                   previousData != null
-                      ? new JsonObject(MAPPER.writeValueAsString(previousData))
+                      ? new JsonObject(objectMapper.writeValueAsString(previousData))
                       : null;
               JsonObject currentDataJson =
                   currentData != null
-                      ? new JsonObject(MAPPER.writeValueAsString(currentData))
+                      ? new JsonObject(objectMapper.writeValueAsString(currentData))
                       : null;
 
               return Tuple.tuple()
@@ -1547,58 +1743,5 @@ public class ExperimentDAOImpl implements ExperimentDAO {
           "DAO: Failed to extract fields from UpdateExperimentRequest: {}", e.getMessage(), e);
       throw new RuntimeException("Failed to extract fields from request", e);
     }
-  }
-
-  /** {@inheritDoc} */
-  @Override
-  public Maybe<Experiment> getExperiment(String projectKey, String experimentId) {
-    return pgReaderClient.fetchOne(
-        ReadQuery.GET_EXPERIMENT,
-        Tuple.of(projectKey, experimentId),
-        ExperimentMapper::mapRowToExperiment);
-  }
-
-  /** {@inheritDoc} */
-  @Override
-  public Single<FilterExperimentsResponse> filterExperiments(
-      String projectKey, FilterExperimentsRequest req) {
-    ParameterizedQuery parameterizedQuery =
-        FilterExperimentsQueryFactory.buildQuery(projectKey, req);
-
-    return pgReaderClient
-        .fetchAll(parameterizedQuery.query(), parameterizedQuery.tuple(), row -> row)
-        .map(rows -> mapRowsToFilteredExperiment(rows, req));
-  }
-
-  /**
-   * Maps database rows to a FilterExperimentsResponse object. Extracts experiment data from rows
-   * and builds pagination metadata.
-   */
-  private FilterExperimentsResponse mapRowsToFilteredExperiment(
-      List<Row> rows, FilterExperimentsRequest req) {
-    FilterExperimentsResponse response = new FilterExperimentsResponse();
-
-    // Extract total count from the first row (all rows have the same total_count value)
-    int totalCount = (rows.isEmpty()) ? 0 : rows.get(0).getInteger(Columns.TOTAL_COUNT);
-
-    // Map all rows to experiments
-    List<Experiment> experiments =
-        (rows.isEmpty())
-            ? List.of()
-            : rows.stream().map(ExperimentMapper::mapRowToExperiment).toList();
-
-    response.setExperiments(experiments);
-
-    PaginationMeta paginationMeta;
-    paginationMeta =
-        PaginationMeta.builder()
-            .pageSize(experiments.size())
-            .currentPage(req.getPage())
-            .totalCount(totalCount)
-            .build();
-
-    response.setPagination(paginationMeta);
-
-    return response;
   }
 }

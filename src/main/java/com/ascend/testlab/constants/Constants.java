@@ -83,6 +83,28 @@ public final class Constants {
   public static final Set<String> NON_UPDATABLE_FIELDS =
       Set.of("name", "experiment_key", "project_key", "experiment_id", "created_by", "created_at");
 
+  /* State-Based Validation Constants */
+
+  /**
+   * Fields allowed to be updated when experiment is in LIVE state.
+   *
+   * <p>Only metadata and non-critical fields that don't affect experiment behavior.
+   */
+  public static final Set<String> LIVE_STATE_UPDATABLE_FIELDS =
+      Set.of(
+          "description",
+          "hypothesis",
+          "status",
+          "guardrail_health_status",
+          "winning_variant",
+          "exposure",
+          "threshold",
+          "end_time",
+          "tags",
+          "owner",
+          "metrics",
+          "updated_by");
+
   /** The delimiter for apostrophe. */
   public static final String APOSTROPHE = "'";
 

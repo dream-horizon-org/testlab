@@ -14,6 +14,7 @@ import com.ascend.testlab.validation.annotations.ValidMetrics;
 import com.ascend.testlab.validation.annotations.ValidTimeRange;
 import com.ascend.testlab.validation.annotations.ValidUpdateRequest;
 import com.ascend.testlab.validation.annotations.ValidVariantKeys;
+import com.ascend.testlab.validation.annotations.ValidVariantStructure;
 import com.ascend.testlab.validation.annotations.ValidVariantWeights;
 import com.ascend.testlab.variantWeights.VariantWeights;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
@@ -105,6 +106,7 @@ public class UpdateExperimentRequest {
   @JsonProperty("variants")
   @Valid
   @ValidVariantKeys
+  @ValidVariantStructure
   @Size(max = 50, message = "Maximum 50 variants allowed")
   private Map<String, @Valid Variant> variants;
 

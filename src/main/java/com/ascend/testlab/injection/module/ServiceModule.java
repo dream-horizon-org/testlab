@@ -22,6 +22,11 @@ import com.ascend.testlab.service.impl.AdminServiceImpl;
 import com.ascend.testlab.service.impl.ExperimentServiceImpl;
 import com.ascend.testlab.service.impl.HealthCheckServiceImpl;
 import com.ascend.testlab.util.CircuitBreakerFactory;
+import com.ascend.testlab.validation.VariantStructureValidator;
+import com.ascend.testlab.validation.statevalidation.DraftStateValidationStrategy;
+import com.ascend.testlab.validation.statevalidation.LiveStateValidationStrategy;
+import com.ascend.testlab.validation.statevalidation.PausedStateValidationStrategy;
+import com.ascend.testlab.validation.statevalidation.StateValidationContext;
 import com.google.inject.Singleton;
 import io.vertx.rxjava3.core.Vertx;
 
@@ -57,6 +62,8 @@ public class ServiceModule extends DefaultModule {
     bindDAOs();
     /* Bind Services */
     bindServices();
+    /* Bind Validators */
+    bindValidators();
     /* Static Binding */
     requestStaticInjection(CircuitBreakerFactory.class);
   }
@@ -95,5 +102,14 @@ public class ServiceModule extends DefaultModule {
     bind(HealthCheckService.class).to(HealthCheckServiceImpl.class);
     bind(AdminService.class).to(AdminServiceImpl.class);
     bind(ExperimentService.class).to(ExperimentServiceImpl.class);
+  }
+
+  /** Bind the validation strategies and context. */
+  private void bindValidators() {
+    bind(LiveStateValidationStrategy.class).in(Singleton.class);
+    bind(PausedStateValidationStrategy.class).in(Singleton.class);
+    bind(DraftStateValidationStrategy.class).in(Singleton.class);
+    bind(StateValidationContext.class).in(Singleton.class);
+    bind(VariantStructureValidator.class).in(Singleton.class);
   }
 }

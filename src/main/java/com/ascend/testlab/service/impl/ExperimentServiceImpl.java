@@ -1,6 +1,5 @@
 package com.ascend.testlab.service.impl;
 
-import com.ascend.testlab.client.postgresql.PgWriterClient;
 import com.ascend.testlab.constants.enums.ExperimentStatus;
 import com.ascend.testlab.dao.ExperimentDAO;
 import com.ascend.testlab.dto.entity.Experiment;
@@ -12,6 +11,8 @@ import com.ascend.testlab.dto.response.FilterExperimentsResponse;
 import com.ascend.testlab.dto.response.UpdateExperimentResponse;
 import com.ascend.testlab.exception.ErrorEnum;
 import com.ascend.testlab.service.ExperimentService;
+import com.ascend.testlab.validation.VariantStructureValidator;
+import com.ascend.testlab.validation.statevalidation.StateValidationContext;
 import com.dream11.rest.exception.RestException;
 import com.google.inject.Inject;
 import io.reactivex.rxjava3.core.Single;
@@ -21,31 +22,111 @@ import java.util.UUID;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * Implementation of ExperimentService for experiment business logic.
+ * Implementation of ExperimentService. Handles business logic for experiment retrieval and
+ * filtering operations, including error handling, pagination, and combining filters for tags and
+ * owners.
  *
- * <p>This class handles experiment creation, updates, and assignments with proper validation, error
- * handling, and logging. Manages transactional operations for experiment, tags, and owners.
- *
- * @author Ravi Pandey
+ * @author Yashita Bansal
  * @version 1.0
  * @since 1.0
+ * @see ExperimentService
+ * @see ExperimentDAO
  */
 @Slf4j
 public class ExperimentServiceImpl implements ExperimentService {
 
   private final ExperimentDAO experimentDAO;
-  private final PgWriterClient pgWriterClient;
+  private final StateValidationContext stateValidationContext;
+  private final VariantStructureValidator variantStructureValidator;
 
   /**
-   * Constructs ExperimentServiceImpl with experiment DAO and PostgreSQL writer client.
+   * Constructor for ExperimentServiceImpl.
    *
-   * @param experimentDAO experiment data access object
-   * @param pgWriterClient PostgreSQL writer client for transactional operations
+   * @param experimentDAO the experiment DAO to use for data access
+   * @param stateValidationContext the state validation context for state-based field restrictions
+   * @param variantStructureValidator the validator for variant structure consistency
    */
   @Inject
-  public ExperimentServiceImpl(ExperimentDAO experimentDAO, PgWriterClient pgWriterClient) {
+  public ExperimentServiceImpl(
+      ExperimentDAO experimentDAO,
+      StateValidationContext stateValidationContext,
+      VariantStructureValidator variantStructureValidator) {
     this.experimentDAO = experimentDAO;
-    this.pgWriterClient = pgWriterClient;
+    this.stateValidationContext = stateValidationContext;
+    this.variantStructureValidator = variantStructureValidator;
+  }
+
+  /**
+   * {@inheritDoc}
+   *
+   * <p>Delegates to the DAO layer to fetch the experiment. Handles error translation:
+   *
+   * <ul>
+   *   <li>EXPERIMENT_NOT_FOUND: If no experiment is found with the given project Key and experiment
+   *       ID.
+   *   <li>REST_GET_EXPERIMENT_BY_ID_FAILED: For any other errors encountered during retrieval.
+   * </ul>
+   */
+  @Override
+  public Single<Experiment> getExperiment(String projectKey, String experimentId) {
+    return experimentDAO
+        .getExperiment(projectKey, experimentId)
+        .switchIfEmpty(Single.error(new RestException(ErrorEnum.EXPERIMENT_NOT_FOUND)))
+        .onErrorResumeNext(
+            err -> {
+              log.error(
+                  "Error in get Experiments for project {} and experimentID {} : {}",
+                  projectKey,
+                  experimentId,
+                  err.getMessage());
+              return Single.error(
+                  ErrorEnum.handleException(
+                      err, new RestException(ErrorEnum.REST_GET_EXPERIMENT_BY_ID_FAILED, err)));
+            });
+  }
+
+  /**
+   * {@inheritDoc}
+   *
+   * <p>Delegates filtering to the DAO layer. The DAO handles all filter combinations including
+   * status, type, name, tags, and owners. Multiple filter values can be provided as comma-separated
+   * strings for status, type, tag, and owner parameters.
+   *
+   * <p>Pagination is applied in the SQL query using LIMIT and OFFSET clauses, which is more
+   * efficient than in-memory pagination. The total count is obtained using a window function in the
+   * same query, eliminating the need for a separate COUNT query. Defaults to limit=20 and page=1 if
+   * not specified.
+   */
+  @Override
+  public Single<FilterExperimentsResponse> filterExperiments(
+      String projectKey, FilterExperimentsRequest request) {
+    return experimentDAO
+        .filterExperiments(projectKey, request)
+        .onErrorResumeNext(
+            err -> {
+              log.error(
+                  "Error in filter Experiments for project {}: {}", projectKey, err.getMessage());
+              return Single.error(
+                  ErrorEnum.handleException(
+                      err, new RestException(ErrorEnum.REST_FILTER_EXPERIMENTS_FAILED, err)));
+            });
+  }
+
+  /** {@inheritDoc}* */
+  @Override
+  public Single<Boolean> deleteExperiment(String projectKey, String experimentId) {
+    return experimentDAO
+        .getExperiment(projectKey, experimentId)
+        .switchIfEmpty(Single.error(new RestException(ErrorEnum.EXPERIMENT_NOT_FOUND)))
+        .flatMap(experiment -> experimentDAO.deleteExperiment(projectKey, experiment))
+        .onErrorResumeNext(
+            err -> {
+              log.error(
+                  "Error in deleting experiment for project {}: {}", projectKey, experimentId);
+              return Single.error(
+                  ErrorEnum.handleException(
+                      err, new RestException(ErrorEnum.REST_DELETE_EXPERIMENT_FAILED, err)));
+            });
   }
 
   /**
@@ -67,8 +148,8 @@ public class ExperimentServiceImpl implements ExperimentService {
         tenantId,
         projectKey,
         request.getName(),
-        request != null ? request.getTags() : null,
-        request != null ? request.getOwner() : null);
+        request.getTags(),
+        request.getOwner());
 
     // Set project_key and experiment_id - both come from header
     UUID experimentId = UUID.randomUUID();
@@ -98,7 +179,27 @@ public class ExperimentServiceImpl implements ExperimentService {
                   tenantId,
                   projectKey,
                   request.getName(),
-                  err.getMessage());
+                  err.getMessage(),
+                  err);
+
+              // Check for unique constraint violation
+              // Note: When a unique constraint is violated in a transaction, PostgreSQL aborts the
+              // transaction
+              // and subsequent operations fail with "25P02 - current transaction is aborted"
+              // We check both the direct unique violation and the aborted transaction error
+              if (isUniqueConstraintViolation(err)
+                  || (err.getMessage() != null && err.getMessage().contains("25P02"))) {
+                String constraintMessage = extractUniqueConstraintMessage(err);
+                log.info(
+                    "Detected unique constraint violation, returning 400: {}", constraintMessage);
+                return Single.error(
+                    new RestException(
+                        "DUPLICATE_EXPERIMENT",
+                        constraintMessage,
+                        org.apache.http.HttpStatus.SC_BAD_REQUEST,
+                        err));
+              }
+
               return Single.error(
                   ErrorEnum.handleException(
                       err, new RestException(ErrorEnum.EXPERIMENT_CREATION_FAILED, err)));
@@ -232,6 +333,46 @@ public class ExperimentServiceImpl implements ExperimentService {
                           org.apache.http.HttpStatus.SC_BAD_REQUEST,
                           null));
                 }
+
+                // Validate state-based field restrictions using Strategy Pattern
+                log.debug(
+                    "Validating state-based field restrictions for experimentId: {}, status: {}",
+                    experimentId,
+                    currentStatus);
+                try {
+                  stateValidationContext.validate(context.request, currentStatus, experimentId);
+                } catch (IllegalArgumentException e) {
+                  log.error(
+                      "State-based validation failed for experimentId: {}, status: {}, error: {}",
+                      experimentId,
+                      currentStatus,
+                      e.getMessage());
+                  return Single.error(
+                      new RestException(
+                          "INVALID_REQUEST",
+                          e.getMessage(),
+                          org.apache.http.HttpStatus.SC_BAD_REQUEST,
+                          e));
+                }
+              }
+
+              // Validate variant structure if variants are being updated
+              if (context.request.getVariants() != null) {
+                log.debug("Validating variant structure for experimentId: {}", experimentId);
+                try {
+                  validateVariantStructure(previousData, context.request, experimentId);
+                } catch (IllegalArgumentException e) {
+                  log.error(
+                      "Variant structure validation failed for experimentId: {}, error: {}",
+                      experimentId,
+                      e.getMessage());
+                  return Single.error(
+                      new RestException(
+                          "INVALID_REQUEST",
+                          e.getMessage(),
+                          org.apache.http.HttpStatus.SC_BAD_REQUEST,
+                          e));
+                }
               }
 
               // Validate status transition if status is being updated
@@ -275,28 +416,26 @@ public class ExperimentServiceImpl implements ExperimentService {
                   projectKey,
                   experimentId,
                   err.getMessage());
+
+              // Check for unique constraint violation
+              // Note: When a unique constraint is violated in a transaction, PostgreSQL aborts the
+              // transaction
+              // and subsequent operations fail with "25P02 - current transaction is aborted"
+              if (isUniqueConstraintViolation(err)
+                  || (err.getMessage() != null && err.getMessage().contains("25P02"))) {
+                String constraintMessage = extractUniqueConstraintMessage(err);
+                return Single.error(
+                    new RestException(
+                        "DUPLICATE_EXPERIMENT",
+                        constraintMessage,
+                        org.apache.http.HttpStatus.SC_BAD_REQUEST,
+                        err));
+              }
+
               return Single.error(
                   ErrorEnum.handleException(
                       err, new RestException(ErrorEnum.EXPERIMENT_UPDATE_FAILED, err)));
             });
-  }
-
-  /**
-   * Logs update error.
-   *
-   * @param tenantId tenant identifier
-   * @param projectKey project identifier
-   * @param experimentId experiment identifier
-   * @param error error that occurred
-   */
-  private void logError(UUID tenantId, String projectKey, UUID experimentId, Throwable error) {
-    log.error(
-        "Failed to update experiment for tenantId: {}, projectKey: {}, experimentId: {}, error: {}",
-        tenantId,
-        projectKey,
-        experimentId,
-        error.getMessage(),
-        error);
   }
 
   /**
@@ -432,6 +571,33 @@ public class ExperimentServiceImpl implements ExperimentService {
         newStatus);
   }
 
+  /**
+   * Validates that variant updates only modify variable values, not keys or data types.
+   *
+   * <p>When updating variants, the structure (variant keys, variable keys, and data types) must
+   * remain consistent with the original experiment. Only variable values can be changed.
+   *
+   * @param previousData the existing experiment data
+   * @param request the update request
+   * @param experimentId the experiment identifier for logging
+   * @throws IllegalArgumentException if variant structure is invalid
+   */
+  private void validateVariantStructure(
+      Map<String, Object> previousData, UpdateExperimentRequest request, UUID experimentId) {
+
+    log.debug("Validating variant structure consistency for experimentId: {}", experimentId);
+
+    // Get existing variants from previous data
+    Object existingVariantsObj = previousData.get("variants");
+    if (existingVariantsObj == null) {
+      log.warn("No existing variants found for experimentId: {}", experimentId);
+      return; // If no existing variants, allow the update (edge case)
+    }
+
+    // Delegate to VariantStructureValidator
+    variantStructureValidator.validate(existingVariantsObj, request.getVariants(), experimentId);
+  }
+
   /** Context holder for update operation containing request, tags, and metadata. */
   private static class UpdateContext {
     final UpdateExperimentRequest request;
@@ -478,58 +644,83 @@ public class ExperimentServiceImpl implements ExperimentService {
   }
 
   /**
-   * {@inheritDoc}
+   * Checks if the error is a unique constraint violation from PostgreSQL.
    *
-   * <p>Delegates to the DAO layer to fetch the experiment. Handles error translation:
-   *
-   * <ul>
-   *   <li>EXPERIMENT_NOT_FOUND: If no experiment is found with the given project Key and experiment
-   *       ID.
-   *   <li>REST_GET_EXPERIMENT_BY_ID_FAILED: For any other errors encountered during retrieval.
-   * </ul>
+   * @param err the throwable error
+   * @return true if it's a unique constraint violation
    */
-  @Override
-  public Single<Experiment> getExperiment(String projectKey, String experimentId) {
-    return experimentDAO
-        .getExperiment(projectKey, experimentId)
-        .switchIfEmpty(Single.error(new RestException(ErrorEnum.EXPERIMENT_NOT_FOUND)))
-        .onErrorResumeNext(
-            err -> {
-              log.error(
-                  "Error in get Experiments for project {} and experimentID {} : {}",
-                  projectKey,
-                  experimentId,
-                  err.getMessage());
-              return Single.error(
-                  ErrorEnum.handleException(
-                      err, new RestException(ErrorEnum.REST_GET_EXPERIMENT_BY_ID_FAILED, err)));
-            });
+  private boolean isUniqueConstraintViolation(Throwable err) {
+    // Check the error and all its causes
+    Throwable current = err;
+    while (current != null) {
+      String message = current.getMessage();
+      String className = current.getClass().getName();
+
+      // Check if it's a PgException
+      if (className.contains("PgException")) {
+        try {
+          // Try to get the SQL state using reflection
+          java.lang.reflect.Method getSqlStateMethod = current.getClass().getMethod("getSqlState");
+          String sqlState = (String) getSqlStateMethod.invoke(current);
+          // 23505 is the PostgreSQL error code for unique_violation
+          if ("23505".equals(sqlState)) {
+            return true;
+          }
+        } catch (Exception e) {
+          // Reflection failed, continue with message checking
+        }
+      }
+
+      if (message != null) {
+        // PostgreSQL unique violation error code is 23505
+        // Error message contains "duplicate key value violates unique constraint"
+        if (message.contains("duplicate key value violates unique constraint")
+            || message.contains("23505")
+            || message.contains("experiment_key_unique_check")
+            || message.contains("name_unique_check")
+            || message.contains("experiment_key_key")) {
+          return true;
+        }
+      }
+
+      // Also check suppressed exceptions
+      for (Throwable suppressed : current.getSuppressed()) {
+        if (isUniqueConstraintViolation(suppressed)) {
+          return true;
+        }
+      }
+
+      current = current.getCause();
+    }
+    return false;
   }
 
   /**
-   * {@inheritDoc}
+   * Extracts a user-friendly message from the unique constraint violation error.
    *
-   * <p>Delegates filtering to the DAO layer. The DAO handles all filter combinations including
-   * status, type, name, tags, and owners. Multiple filter values can be provided as comma-separated
-   * strings for status, type, tag, and owner parameters.
-   *
-   * <p>Pagination is applied in the SQL query using LIMIT and OFFSET clauses, which is more
-   * efficient than in-memory pagination. The total count is obtained using a window function in the
-   * same query, eliminating the need for a separate COUNT query. Defaults to limit=20 and page=1 if
-   * not specified.
+   * @param err the throwable error
+   * @return user-friendly error message
    */
-  @Override
-  public Single<FilterExperimentsResponse> filterExperiments(
-      String projectKey, FilterExperimentsRequest request) {
-    return experimentDAO
-        .filterExperiments(projectKey, request)
-        .onErrorResumeNext(
-            err -> {
-              log.error(
-                  "Error in filter Experiments for project {}: {}", projectKey, err.getMessage());
-              return Single.error(
-                  ErrorEnum.handleException(
-                      err, new RestException(ErrorEnum.REST_FILTER_EXPERIMENTS_FAILED, err)));
-            });
+  private String extractUniqueConstraintMessage(Throwable err) {
+    // Check the error and all its causes for constraint information
+    Throwable current = err;
+    while (current != null) {
+      String message = current.getMessage();
+      if (message != null) {
+        // Extract constraint name
+        if (message.contains("experiment_key_unique_check")
+            || message.contains("experiment_key_key")) {
+          return "An experiment with this experiment_key already exists in the project";
+        } else if (message.contains("name_unique_check")) {
+          return "An experiment with this name already exists in the project";
+        } else if (message.contains("duplicate key value violates unique constraint")) {
+          // Generic unique constraint message
+          return "A record with the same unique field already exists";
+        }
+      }
+      current = current.getCause();
+    }
+
+    return "Duplicate entry detected";
   }
 }

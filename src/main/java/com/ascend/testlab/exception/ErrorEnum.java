@@ -63,8 +63,13 @@ public enum ErrorEnum implements RestError {
       "Filter Experiments failed due to: %s",
       HttpStatus.SC_INTERNAL_SERVER_ERROR),
 
-  /* Client Errors */
+  /** The error code for deleting experiment failed. */
+  REST_DELETE_EXPERIMENT_FAILED(
+      "testlab_REST_DELETE_EXPERIMENT_FAILED",
+      "Delete experiment failed due to: %s",
+      HttpStatus.SC_INTERNAL_SERVER_ERROR),
 
+  /* Client Errors */
   /** The error code when experiment is not found. */
   EXPERIMENT_NOT_FOUND(
       "EXPERIMENT_NOT_FOUND",
@@ -83,27 +88,23 @@ public enum ErrorEnum implements RestError {
 
   /** The error code for failed tags insertion. */
   TAGS_INSERTION_FAILED(
-      "TAGS_INSERTION_FAILED",
-      "Failed to insert tags for experiment",
-      HttpStatus.SC_INTERNAL_SERVER_ERROR),
+      "TAGS_INSERTION_FAILED", "Failed to insert tags for experiment", HttpStatus.SC_BAD_REQUEST),
 
   /** The error code for failed owner insertion. */
   OWNER_INSERTION_FAILED(
-      "OWNER_INSERTION_FAILED",
-      "Failed to insert owner for experiment",
-      HttpStatus.SC_INTERNAL_SERVER_ERROR),
+      "OWNER_INSERTION_FAILED", "Failed to insert owner for experiment", HttpStatus.SC_BAD_REQUEST),
 
   /** The error code for failed update log insertion. */
   UPDATE_LOG_INSERTION_FAILED(
       "UPDATE_LOG_INSERTION_FAILED",
       "Failed to insert update log for experiment",
-      HttpStatus.SC_INTERNAL_SERVER_ERROR),
+      HttpStatus.SC_BAD_REQUEST),
 
   /** The error code for failed analysis insertion. */
   ANALYSIS_INSERTION_FAILED(
       "ANALYSIS_INSERTION_FAILED",
       "Failed to insert analysis data for experiment",
-      HttpStatus.SC_INTERNAL_SERVER_ERROR),
+      HttpStatus.SC_BAD_REQUEST),
 
   /* Experiment Operation Errors */
 
@@ -111,13 +112,13 @@ public enum ErrorEnum implements RestError {
   EXPERIMENT_CREATION_FAILED(
       "EXPERIMENT_CREATION_FAILED",
       "Failed to create experiment. Please check your request and try again.",
-      HttpStatus.SC_INTERNAL_SERVER_ERROR),
+      HttpStatus.SC_BAD_REQUEST),
 
   /** The error code for failed experiment update. */
   EXPERIMENT_UPDATE_FAILED(
       "EXPERIMENT_UPDATE_FAILED",
       "Failed to update experiment. Please check your request and try again.",
-      HttpStatus.SC_INTERNAL_SERVER_ERROR);
+      HttpStatus.SC_BAD_REQUEST);
 
   /** The error code. */
   private final String errorCode;
