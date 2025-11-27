@@ -10,7 +10,15 @@ import lombok.extern.slf4j.Slf4j;
 /**
  * Validator to ensure variant structure consistency during updates.
  *
- * <p>Validates that when updating variants, only variable values change - not keys or data types.
+ * <p>Validates that when updating variants, only variable values change. The following cannot be
+ * modified:
+ *
+ * <ul>
+ *   <li>Variant keys (control, variant1, etc.)
+ *   <li>Variant display names
+ *   <li>Variable keys
+ *   <li>Variable data types
+ * </ul>
  *
  * @author Ravi Pandey
  * @version 1.0
@@ -28,6 +36,15 @@ public class VariantStructureValidator {
 
   /**
    * Validates that variant updates only modify variable values.
+   *
+   * <p>Ensures structural integrity by validating:
+   *
+   * <ul>
+   *   <li>Variant keys remain unchanged
+   *   <li>Display names remain unchanged
+   *   <li>Variable keys remain unchanged
+   *   <li>Variable data types remain unchanged
+   * </ul>
    *
    * @param existingVariantsJson existing variants from database (JSONB)
    * @param newVariants new variants from update request
@@ -119,6 +136,24 @@ public class VariantStructureValidator {
       @SuppressWarnings("unchecked")
       Map<String, Object> existingVariantMap =
           objectMapper.convertValue(existingVariantObj, Map.class);
+
+      // Validate displayName hasn't changed
+      String existingDisplayName = (String) existingVariantMap.get("displayName");
+      String newDisplayName = newVariant.getDisplayName();
+
+      if (existingDisplayName != null
+          && newDisplayName != null
+          && !existingDisplayName.equals(newDisplayName)) {
+        String errorMsg =
+            String.format(
+                "Display name cannot be changed for variant '%s'. Expected: '%s', but got: '%s'",
+                variantKey, existingDisplayName, newDisplayName);
+        log.error(
+            "Variant structure validation failed for experimentId: {}, error: {}",
+            experimentId,
+            errorMsg);
+        throw new IllegalArgumentException(errorMsg);
+      }
 
       // Get existing variables
       @SuppressWarnings("unchecked")
