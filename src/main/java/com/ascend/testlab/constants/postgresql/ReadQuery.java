@@ -72,7 +72,6 @@ public final class ReadQuery {
         start_time, end_time, created_by, created_at, updated_at
       FROM experiments
       WHERE project_key = $1 AND experiment_id = $2
-<<<<<<< HEAD
       """;
 
   /** Query to fetch active experiments for a tenant within a time range */
@@ -91,8 +90,6 @@ public final class ReadQuery {
       WHERE project_key = $1
         AND status = 'CONCLUDED'
         AND winning_variant IS NOT NULL
-=======
->>>>>>> 49d4e3d3b9bbf450fc7a6bdd8da0f82204c7c3ef
       """;
 
   /**
