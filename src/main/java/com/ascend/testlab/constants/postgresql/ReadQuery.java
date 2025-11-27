@@ -54,7 +54,7 @@ public final class ReadQuery {
         """;
 
   /** Query to retrieve the count of history entries for a given project_key and experiment_id. */
-  public static final String GET_EXPERIMENT_HISTORY_COUNT =
+  public static final String FETCH_EXPERIMENT_HISTORY_COUNT =
       """
         SELECT COUNT(1)
         FROM experiment.experiment_update_log
@@ -63,7 +63,7 @@ public final class ReadQuery {
         """;
 
   /** The query to fetch experiment data for update log. */
-  public static final String GET_EXPERIMENT_DATA =
+  public static final String FETCH_EXPERIMENT_DATA =
       """
       SELECT
         project_key, experiment_id, name, description, hypothesis, status, type,
@@ -75,15 +75,15 @@ public final class ReadQuery {
       """;
 
   /** Query to fetch active experiments for a tenant within a time range */
-  public static final String GET_EXPERIMENTS_FROM_KEY =
+  public static final String FETCH_EXPERIMENTS_FROM_KEY =
       "SELECT * FROM experiment.experiments WHERE project_key = $1 AND status = 'LIVE' AND experiment_key = ANY($2::text[])";
 
   /** Query to fetch a single live experiment by project_key and experiment_id. */
-  public static final String GET_LIVE_EXPERIMENT =
+  public static final String FETCH_LIVE_EXPERIMENT =
       "SELECT * FROM experiment.experiments WHERE project_key = $1 AND experiment_id = $2 AND status = 'LIVE'";
 
   /** Query to fetch concluded experiments for a tenant with winning variants */
-  public static final String GET_CONCLUDED_EXPERIMENTS =
+  public static final String FETCH_CONCLUDED_EXPERIMENTS =
       """
       SELECT *
       FROM experiment.experiments
@@ -96,7 +96,7 @@ public final class ReadQuery {
    * Query to retrieve a single experiment by project_key and experiment_id. Returns experiment
    * details including tags and owners aggregated as comma-separated strings.
    */
-  public static final String GET_EXPERIMENT =
+  public static final String FETCH_EXPERIMENT =
       """
       SELECT e.project_key, e.experiment_id, e.name, e.description, e.hypothesis, e.status, e.type,
              e.guardrail_health_status, e.cohorts, e.variant_weights, e.assignment_strategy, e.overrides,

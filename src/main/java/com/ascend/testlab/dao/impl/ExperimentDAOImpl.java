@@ -72,7 +72,7 @@ public class ExperimentDAOImpl implements ExperimentDAO {
   @Override
   public Maybe<Experiment> getExperiment(String projectKey, String experimentId) {
     return pgReaderClient.fetchOne(
-        ReadQuery.GET_EXPERIMENT,
+        ReadQuery.FETCH_EXPERIMENT,
         Tuple.of(projectKey, experimentId),
         row -> ExperimentMapper.mapRowToExperiment(row, objectMapper));
   }
@@ -405,7 +405,7 @@ public class ExperimentDAOImpl implements ExperimentDAO {
     Tuple params = Tuple.tuple().addString(projectKey).addString(experimentId.toString());
 
     return pgReaderClient
-        .fetchOne(ReadQuery.GET_EXPERIMENT_DATA, params, this::rowToMap)
+        .fetchOne(ReadQuery.FETCH_EXPERIMENT_DATA, params, this::rowToMap)
         .doOnSuccess(
             data ->
                 log.info(

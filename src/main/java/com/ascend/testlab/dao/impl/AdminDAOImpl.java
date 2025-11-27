@@ -98,7 +98,7 @@ public class AdminDAOImpl implements AdminDAO {
   public Single<Integer> getExperimentHistoryCount(String projectKey, String experimentId) {
     return pgReaderClient
         .fetchOne(
-            ReadQuery.GET_EXPERIMENT_HISTORY_COUNT,
+            ReadQuery.FETCH_EXPERIMENT_HISTORY_COUNT,
             Tuple.tuple().addString(projectKey).addString(experimentId),
             row -> row.getInteger(0))
         .switchIfEmpty(Single.just(0));

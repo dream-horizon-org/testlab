@@ -94,7 +94,7 @@ class AllocationDAOTest {
       List<Experiment> expectedExperiments = List.of(createMockExperiment());
 
       when(pgReaderClient.fetchAll(
-              eq(ReadQuery.GET_EXPERIMENTS_FROM_KEY), any(Tuple.class), any(Function.class)))
+              eq(ReadQuery.FETCH_EXPERIMENTS_FROM_KEY), any(Tuple.class), any(Function.class)))
           .thenReturn(Single.just(expectedExperiments));
 
       // Act
@@ -106,7 +106,8 @@ class AllocationDAOTest {
       testObserver.assertNoErrors();
       testObserver.assertValue(experiments -> experiments.size() == 1);
       verify(pgReaderClient, times(1))
-          .fetchAll(eq(ReadQuery.GET_EXPERIMENTS_FROM_KEY), any(Tuple.class), any(Function.class));
+          .fetchAll(
+              eq(ReadQuery.FETCH_EXPERIMENTS_FROM_KEY), any(Tuple.class), any(Function.class));
       testContext.completeNow();
     }
 
@@ -117,7 +118,7 @@ class AllocationDAOTest {
       List<String> experimentKeys = List.of();
 
       when(pgReaderClient.fetchAll(
-              eq(ReadQuery.GET_EXPERIMENTS_FROM_KEY), any(Tuple.class), any(Function.class)))
+              eq(ReadQuery.FETCH_EXPERIMENTS_FROM_KEY), any(Tuple.class), any(Function.class)))
           .thenReturn(Single.just(List.of()));
 
       // Act
@@ -139,7 +140,7 @@ class AllocationDAOTest {
       RuntimeException expectedException = new RuntimeException("Database error");
 
       when(pgReaderClient.fetchAll(
-              eq(ReadQuery.GET_EXPERIMENTS_FROM_KEY), any(Tuple.class), any(Function.class)))
+              eq(ReadQuery.FETCH_EXPERIMENTS_FROM_KEY), any(Tuple.class), any(Function.class)))
           .thenReturn(Single.error(expectedException));
 
       // Act
@@ -163,7 +164,7 @@ class AllocationDAOTest {
       Experiment expectedExperiment = createMockExperiment();
 
       when(pgReaderClient.fetchOne(
-              eq(ReadQuery.GET_LIVE_EXPERIMENT), any(Tuple.class), any(Function.class)))
+              eq(ReadQuery.FETCH_LIVE_EXPERIMENT), any(Tuple.class), any(Function.class)))
           .thenReturn(Maybe.just(expectedExperiment));
 
       // Act
@@ -175,7 +176,7 @@ class AllocationDAOTest {
       testObserver.assertNoErrors();
       testObserver.assertValueCount(1);
       verify(pgReaderClient, times(1))
-          .fetchOne(eq(ReadQuery.GET_LIVE_EXPERIMENT), any(Tuple.class), any(Function.class));
+          .fetchOne(eq(ReadQuery.FETCH_LIVE_EXPERIMENT), any(Tuple.class), any(Function.class));
       testContext.completeNow();
     }
 
@@ -184,7 +185,7 @@ class AllocationDAOTest {
     void testFetchActiveExperimentNotFound(VertxTestContext testContext) {
       // Arrange
       when(pgReaderClient.fetchOne(
-              eq(ReadQuery.GET_LIVE_EXPERIMENT), any(Tuple.class), any(Function.class)))
+              eq(ReadQuery.FETCH_LIVE_EXPERIMENT), any(Tuple.class), any(Function.class)))
           .thenReturn(Maybe.empty());
 
       // Act
@@ -203,7 +204,7 @@ class AllocationDAOTest {
       RuntimeException expectedException = new RuntimeException("Database error");
 
       when(pgReaderClient.fetchOne(
-              eq(ReadQuery.GET_LIVE_EXPERIMENT), any(Tuple.class), any(Function.class)))
+              eq(ReadQuery.FETCH_LIVE_EXPERIMENT), any(Tuple.class), any(Function.class)))
           .thenReturn(Maybe.error(expectedException));
 
       // Act
@@ -227,7 +228,7 @@ class AllocationDAOTest {
       List<Experiment> expectedExperiments = List.of(createMockExperiment());
 
       when(pgReaderClient.fetchAll(
-              eq(ReadQuery.GET_CONCLUDED_EXPERIMENTS), any(Tuple.class), any(Function.class)))
+              eq(ReadQuery.FETCH_CONCLUDED_EXPERIMENTS), any(Tuple.class), any(Function.class)))
           .thenReturn(Single.just(expectedExperiments));
 
       // Act
@@ -246,7 +247,7 @@ class AllocationDAOTest {
     void testFetchConcludedExperimentsEmpty(VertxTestContext testContext) {
       // Arrange
       when(pgReaderClient.fetchAll(
-              eq(ReadQuery.GET_CONCLUDED_EXPERIMENTS), any(Tuple.class), any(Function.class)))
+              eq(ReadQuery.FETCH_CONCLUDED_EXPERIMENTS), any(Tuple.class), any(Function.class)))
           .thenReturn(Single.just(List.of()));
 
       // Act
@@ -267,7 +268,7 @@ class AllocationDAOTest {
       RuntimeException expectedException = new RuntimeException("Database error");
 
       when(pgReaderClient.fetchAll(
-              eq(ReadQuery.GET_CONCLUDED_EXPERIMENTS), any(Tuple.class), any(Function.class)))
+              eq(ReadQuery.FETCH_CONCLUDED_EXPERIMENTS), any(Tuple.class), any(Function.class)))
           .thenReturn(Single.error(expectedException));
 
       // Act

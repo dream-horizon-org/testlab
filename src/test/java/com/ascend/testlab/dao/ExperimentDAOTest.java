@@ -599,7 +599,7 @@ public class ExperimentDAOTest {
       // Arrange
       Experiment expectedExperiment = createMockExperiment();
       when(pgReaderClient.fetchOne(
-              eq(ReadQuery.GET_EXPERIMENT), any(Tuple.class), any(Function.class)))
+              eq(ReadQuery.FETCH_EXPERIMENT), any(Tuple.class), any(Function.class)))
           .thenReturn(Maybe.just(expectedExperiment));
 
       // Act
@@ -611,7 +611,7 @@ public class ExperimentDAOTest {
       testObserver.assertNoErrors();
       testObserver.assertValue(experiment -> experiment.getExperimentId().equals(testExperimentId));
       verify(pgReaderClient, times(1))
-          .fetchOne(eq(ReadQuery.GET_EXPERIMENT), any(Tuple.class), any(Function.class));
+          .fetchOne(eq(ReadQuery.FETCH_EXPERIMENT), any(Tuple.class), any(Function.class));
       testContext.completeNow();
     }
 
@@ -620,7 +620,7 @@ public class ExperimentDAOTest {
     void testGetExperimentNotFound(VertxTestContext testContext) {
       // Arrange
       when(pgReaderClient.fetchOne(
-              eq(ReadQuery.GET_EXPERIMENT), any(Tuple.class), any(Function.class)))
+              eq(ReadQuery.FETCH_EXPERIMENT), any(Tuple.class), any(Function.class)))
           .thenReturn(Maybe.empty());
 
       // Act
@@ -631,7 +631,7 @@ public class ExperimentDAOTest {
       testObserver.assertNoErrors();
       testObserver.assertResult();
       verify(pgReaderClient, times(1))
-          .fetchOne(eq(ReadQuery.GET_EXPERIMENT), any(Tuple.class), any(Function.class));
+          .fetchOne(eq(ReadQuery.FETCH_EXPERIMENT), any(Tuple.class), any(Function.class));
       testContext.completeNow();
     }
 
@@ -641,7 +641,7 @@ public class ExperimentDAOTest {
       // Arrange
       RuntimeException expectedException = new RuntimeException("Database connection failed");
       when(pgReaderClient.fetchOne(
-              eq(ReadQuery.GET_EXPERIMENT), any(Tuple.class), any(Function.class)))
+              eq(ReadQuery.FETCH_EXPERIMENT), any(Tuple.class), any(Function.class)))
           .thenReturn(Maybe.error(expectedException));
 
       // Act
@@ -651,7 +651,7 @@ public class ExperimentDAOTest {
       // Assert
       testObserver.assertError(RuntimeException.class);
       verify(pgReaderClient, times(1))
-          .fetchOne(eq(ReadQuery.GET_EXPERIMENT), any(Tuple.class), any(Function.class));
+          .fetchOne(eq(ReadQuery.FETCH_EXPERIMENT), any(Tuple.class), any(Function.class));
       testContext.completeNow();
     }
   }
@@ -942,7 +942,7 @@ public class ExperimentDAOTest {
 
       doReturn(Maybe.just(experiment))
           .when(pgReaderClient)
-          .fetchOne(eq(ReadQuery.GET_EXPERIMENT), any(Tuple.class), any(Function.class));
+          .fetchOne(eq(ReadQuery.FETCH_EXPERIMENT), any(Tuple.class), any(Function.class));
       doReturn(Single.just(mockRows))
           .when(pgReaderClient)
           .fetchAll(anyString(), any(Tuple.class), any(Function.class));
@@ -979,7 +979,7 @@ public class ExperimentDAOTest {
       deleteObserver.assertComplete().assertNoErrors();
 
       verify(pgReaderClient, times(1))
-          .fetchOne(eq(ReadQuery.GET_EXPERIMENT), any(Tuple.class), any(Function.class));
+          .fetchOne(eq(ReadQuery.FETCH_EXPERIMENT), any(Tuple.class), any(Function.class));
       verify(pgReaderClient, times(1)).fetchAll(anyString(), any(Tuple.class), any(Function.class));
       verify(pgWriterClient, times(1)).executeWithTransaction(any());
       testContext.completeNow();

@@ -76,7 +76,7 @@ public class AllocationDAOImpl implements AllocationDAO {
     String[] experimentKeysArray = experimentKeys.toArray(new String[0]);
     return pgReaderClient
         .fetchAll(
-            ReadQuery.GET_EXPERIMENTS_FROM_KEY,
+            ReadQuery.FETCH_EXPERIMENTS_FROM_KEY,
             Tuple.tuple().addString(projectKey).addArrayOfString(experimentKeysArray),
             row -> ExperimentMapper.mapRowToExperiment(row, objectMapper))
         .doOnSuccess(
@@ -106,7 +106,7 @@ public class AllocationDAOImpl implements AllocationDAO {
   public Single<Experiment> fetchActiveExperiment(String projectKey, String experimentId) {
     return pgReaderClient
         .fetchOne(
-            ReadQuery.GET_LIVE_EXPERIMENT,
+            ReadQuery.FETCH_LIVE_EXPERIMENT,
             Tuple.of(projectKey, experimentId),
             row -> ExperimentMapper.mapRowToExperiment(row, objectMapper))
         .switchIfEmpty(
@@ -448,7 +448,7 @@ public class AllocationDAOImpl implements AllocationDAO {
   public Single<List<Experiment>> fetchConcludedExperiments(String projectKey) {
     return pgReaderClient
         .fetchAll(
-            ReadQuery.GET_CONCLUDED_EXPERIMENTS,
+            ReadQuery.FETCH_CONCLUDED_EXPERIMENTS,
             Tuple.tuple().addString(projectKey),
             row -> ExperimentMapper.mapRowToExperiment(row, objectMapper))
         .doOnSuccess(
