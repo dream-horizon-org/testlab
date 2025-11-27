@@ -9,14 +9,13 @@ import com.ascend.testlab.constants.enums.ExperimentType;
 import com.ascend.testlab.constants.enums.HealthStatus;
 import com.ascend.testlab.dto.entity.experiment.RuleAttributes;
 import com.ascend.testlab.dto.entity.experiment.Variant;
+import com.ascend.testlab.dto.entity.variantweights.VariantWeights;
 import com.ascend.testlab.exception.ErrorMessages;
 import com.ascend.testlab.validation.annotations.ValidMetrics;
 import com.ascend.testlab.validation.annotations.ValidTimeRange;
 import com.ascend.testlab.validation.annotations.ValidUpdateRequest;
 import com.ascend.testlab.validation.annotations.ValidVariantKeys;
 import com.ascend.testlab.validation.annotations.ValidVariantStructure;
-import com.ascend.testlab.validation.annotations.ValidVariantWeights;
-import com.ascend.testlab.variantWeights.VariantWeights;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.validation.Valid;
@@ -100,7 +99,6 @@ public class UpdateExperimentRequest {
 
   @JsonProperty("variant_weights")
   @Valid
-  @ValidVariantWeights
   private VariantWeights variantWeights;
 
   @JsonProperty("variants")

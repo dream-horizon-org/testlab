@@ -155,7 +155,7 @@ class UnassignedExperimentFilterTest {
     return Experiment.builder()
         .experimentId(id)
         .name(name)
-        .key(name)
+        .experimentKey(name)
         .projectKey("test-project")
         .status(ExperimentStatus.LIVE)
         .exposure(100)

@@ -101,7 +101,7 @@ public abstract class AbstractPostgreSQLClient {
    */
   protected Single<RowSet<Row>> rxExecute(
       SqlConnection connection, String preparedQuery, Tuple tuple) {
-    return connection.preparedQuery(preparedQuery).rxExecute(tuple).retry(this.retryCount);
+    return connection.preparedQuery(preparedQuery).rxExecute(tuple);
   }
 
   /**
@@ -114,7 +114,7 @@ public abstract class AbstractPostgreSQLClient {
    */
   protected Single<RowSet<Row>> rxExecute(
       SqlConnection connection, String preparedQuery, List<Tuple> tuples) {
-    return connection.preparedQuery(preparedQuery).rxExecuteBatch(tuples).retry(this.retryCount);
+    return connection.preparedQuery(preparedQuery).rxExecuteBatch(tuples);
   }
 
   /**
@@ -124,11 +124,12 @@ public abstract class AbstractPostgreSQLClient {
    * @param <T> the type of the result
    * @return a Maybe that emits the result of the transactional function
    */
-  protected <T> Maybe<T> rxWithTransaction(
-      Function<SqlConnection, Maybe<T>> transactionalFunction) {
+  protected <T> Single<T> rxWithTransaction(
+      Function<SqlConnection, Maybe<T>> transactionalFunction, T defaultValue) {
     return pgPool
-        .rxWithTransaction(connection -> transactionalFunction.apply(connection))
-        .retry(retryCount);
+        .rxWithTransaction(transactionalFunction)
+        .retry(retryCount)
+        .defaultIfEmpty(defaultValue);
   }
 
   /**

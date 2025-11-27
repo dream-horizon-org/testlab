@@ -12,13 +12,14 @@ import java.lang.annotation.Target;
 /**
  * Generic validation annotation for enum values.
  *
- * <p>This annotation can be used to validate that a field value matches one of the valid enum
- * values. It supports custom error messages and can invoke any method on the enum (like getName(),
- * getValue(), etc.) to compare against the field value.
- *
- * <p>Example usage:
- *
- * <pre>
+ * @author Anudeep Reddy
+ * @version 1.0
+ * @since 1.0
+ *     <p>This annotation can be used to validate that a field value matches one of the valid enum
+ *     values. It supports custom error messages and can invoke any method on the enum (like
+ *     getName(), getValue(), etc.) to compare against the field value.
+ *     <p>Example usage:
+ *     <pre>
  * &#64;ValidEnumValue(
  *     enumClass = ExperimentStatus.class,
  *     method = "getName",

@@ -52,15 +52,15 @@ public final class WriteQuery {
         project_key, experiment_id, name, experiment_key, description, hypothesis,
         status, type, guardrail_health_status, cohorts, variant_weights, variants,
         distribution_strategy, assignment_domain, overrides, rule_attributes,
-        winning_variant, exposure, threshold, start_time, end_time, created_by, name_tsvector
+        exposure, threshold, start_time, end_time, created_by, name_tsvector
       )
       VALUES (
-        $1, $2, $3::varchar, $4, $5, $6, $7::experiment.experiment_status, $8::experiment.experiment_type,
-        $9::experiment.experiment_health, $10::varchar[], $11::jsonb, $12::jsonb,
+        $1, $2, $3::varchar, $4, $5, $6,\s
+        $7::experiment.experiment_status, $8::experiment.experiment_type,$9::experiment.experiment_health, $10::varchar[], $11::jsonb, $12::jsonb,
         $13::experiment.experiment_strategy, $14::experiment.assignment_domain, $15::varchar[], $16::jsonb,
-        $17::jsonb, $18, $19, $20, $21, $22, to_tsvector('simple', LOWER(REGEXP_REPLACE($3::varchar, '[-_.]', ' ', 'g')))
+        $17, $18, $19, $20, $21, to_tsvector('simple', LOWER(REGEXP_REPLACE($3::varchar, '[-_.]', ' ', 'g')))
       )
-      """;
+     \s""";
 
   /**
    * Inserts a tag for an experiment.
@@ -218,9 +218,9 @@ public final class WriteQuery {
   public static final String INSERT_EXPERIMENT_ANALYSIS =
       """
       INSERT INTO experiment.experiment_analysis (
-        project_key, experiment_id, config, primary_metrics, secondary_metrics, metric_tokens
+        project_key, experiment_id, primary_metrics, secondary_metrics
       )
-      VALUES ($1, $2, $3, $4, $5, $6)
+      VALUES ($1, $2, $3, $4)
       ON CONFLICT (project_key, experiment_id)
       DO NOTHING
       """;

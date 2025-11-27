@@ -1,6 +1,7 @@
 package com.ascend.testlab.dto.response;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.PropertyNamingStrategies;
+import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import java.util.UUID;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -16,14 +17,10 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
+@JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
 public class CreateExperimentResponse {
 
-  @JsonProperty("experiment_id")
   private UUID experimentId;
 
-  @JsonProperty("status")
   private boolean status;
-
-  @JsonProperty("message")
-  private String message;
 }

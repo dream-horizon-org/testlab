@@ -3,7 +3,6 @@ package com.ascend.testlab.service.impl;
 import com.ascend.testlab.constants.enums.ExperimentStatus;
 import com.ascend.testlab.dao.ExperimentDAO;
 import com.ascend.testlab.dto.entity.experiment.Experiment;
-import com.ascend.testlab.dto.request.CreateExperimentRequest;
 import com.ascend.testlab.dto.request.FilterExperimentsRequest;
 import com.ascend.testlab.dto.request.UpdateExperimentRequest;
 import com.ascend.testlab.dto.response.CreateExperimentResponse;
@@ -11,6 +10,7 @@ import com.ascend.testlab.dto.response.FilterExperimentsResponse;
 import com.ascend.testlab.dto.response.UpdateExperimentResponse;
 import com.ascend.testlab.exception.ErrorEnum;
 import com.ascend.testlab.service.ExperimentService;
+import com.ascend.testlab.util.CommonUtil;
 import com.ascend.testlab.validation.VariantStructureValidator;
 import com.ascend.testlab.validation.statevalidation.StateValidationContext;
 import com.dream11.rest.exception.RestException;
@@ -18,8 +18,10 @@ import com.google.inject.Inject;
 import io.reactivex.rxjava3.core.Single;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.UUID;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.http.HttpStatus;
 
 /**
  * Implementation of ExperimentService. Handles business logic for experiment retrieval and
@@ -135,41 +137,21 @@ public class ExperimentServiceImpl implements ExperimentService {
    * <p>Sets projectKey and experimentId from headers, creates experiment, tags, and owners in a
    * single transaction. If any operation fails, all changes are rolled back.
    *
-   * @param tenantId tenant identifier for multi-tenancy
    * @param projectKey project identifier from header
    * @param request experiment creation request with all experiment details, tags, and owner
    * @return Single emitting CreateExperimentResponse with id, status, and message
    */
   @Override
-  public Single<CreateExperimentResponse> create(
-      String projectKey, CreateExperimentRequest request) {
+  public Single<CreateExperimentResponse> createExperiment(String projectKey, Experiment request) {
     log.info(
-        "Creating experiment for projectKey: {}, experimentName: {}, tags: {}, owner: {}",
+        "Creating experiment for projectKey: {}, experimentName: {}",
         projectKey,
-        request.getName(),
-        request.getTags(),
-        request.getOwner());
-
-    // Set project_key and experiment_id - both come from header
-    UUID experimentId = UUID.randomUUID();
-    request.setProjectKey(projectKey);
-    request.setExperimentId(experimentId);
-
-    // Generate experiment_key from name: replace spaces and hyphens with underscores
-    String experimentKey = generateExperimentKey(request.getName());
-    request.setExperimentKey(experimentKey);
-
-    log.debug(
-        "Using projectKey: {} from header, generated experimentId: {}, experimentKey: {} for experiment: {}",
-        projectKey,
-        experimentId,
-        experimentKey,
         request.getName());
 
-    // Execute all insert operations in a transaction (delegated to DAO)
+    generateExperimentId(request);
     return experimentDAO
-        .createWithRelatedData(request)
-        .map(id -> new CreateExperimentResponse(experimentId, true, "created"))
+        .createExperiment(projectKey, request)
+        .map(status -> new CreateExperimentResponse(request.getExperimentId(), status))
         .onErrorResumeNext(
             err -> {
               log.error(
@@ -179,28 +161,29 @@ public class ExperimentServiceImpl implements ExperimentService {
                   err.getMessage(),
                   err);
 
-              // Check for unique constraint violation
-              // Note: When a unique constraint is violated in a transaction, PostgreSQL aborts the
-              // transaction
-              // and subsequent operations fail with "25P02 - current transaction is aborted"
-              // We check both the direct unique violation and the aborted transaction error
+              // todo change this
               if (isUniqueConstraintViolation(err)
                   || (err.getMessage() != null && err.getMessage().contains("25P02"))) {
                 String constraintMessage = extractUniqueConstraintMessage(err);
-                log.info(
-                    "Detected unique constraint violation, returning 400: {}", constraintMessage);
                 return Single.error(
                     new RestException(
-                        "DUPLICATE_EXPERIMENT",
-                        constraintMessage,
-                        org.apache.http.HttpStatus.SC_BAD_REQUEST,
-                        err));
+                        "DUPLICATE_EXPERIMENT", constraintMessage, HttpStatus.SC_BAD_REQUEST, err));
               }
 
               return Single.error(
                   ErrorEnum.handleException(
                       err, new RestException(ErrorEnum.EXPERIMENT_CREATION_FAILED, err)));
             });
+  }
+
+  private void generateExperimentId(Experiment request) {
+    UUID experimentId = UUID.randomUUID();
+    request.setExperimentId(experimentId);
+
+    String experimentKey = CommonUtil.generateExperimentKey(request.getName());
+    if (Objects.isNull(request.getExperimentKey())) {
+      request.setExperimentKey(experimentKey);
+    }
   }
 
   /**
@@ -210,14 +193,13 @@ public class ExperimentServiceImpl implements ExperimentService {
    * them separately in a transaction (marks removed tags as inactive, inserts new tags). Also logs
    * the update in experiment_update_log table with previous and current data.
    *
-   * @param tenantId tenant identifier for multi-tenancy
    * @param projectKey project identifier from header
    * @param experimentId experiment identifier
    * @param request validated update experiment request DTO
    * @return Single emitting UpdateExperimentResponse with status and message
    */
   @Override
-  public Single<UpdateExperimentResponse> update(
+  public Single<UpdateExperimentResponse> updateExperiment(
       String projectKey, UUID experimentId, UpdateExperimentRequest request) {
     log.info("Updating experiment for projectKey: {}, experimentId: {}", projectKey, experimentId);
 
@@ -236,7 +218,7 @@ public class ExperimentServiceImpl implements ExperimentService {
         .doOnSuccess(
             response ->
                 log.info(
-                    "Update experiment completed - projectKey: {}, experimentId: {}, status: {}",
+                    "Update experiment completed projectKey: {}, experimentId: {}, status: {}",
                     projectKey,
                     experimentId,
                     response.isStatus()));
@@ -281,7 +263,6 @@ public class ExperimentServiceImpl implements ExperimentService {
   /**
    * Executes transactional update including experiment fields, tags, and update log.
    *
-   * @param tenantId tenant identifier
    * @param projectKey project identifier
    * @param experimentId experiment identifier
    * @param context update context with separated fields
@@ -305,7 +286,6 @@ public class ExperimentServiceImpl implements ExperimentService {
                     previousData.keySet()))
         .flatMap(
             previousData -> {
-              // Check if experiment is in a terminal state (CONCLUDED or TERMINATED)
               Object currentStatusObj = previousData.get("status");
               String currentStatus = currentStatusObj != null ? currentStatusObj.toString() : null;
 
@@ -326,7 +306,6 @@ public class ExperimentServiceImpl implements ExperimentService {
                           null));
                 }
 
-                // Validate state-based field restrictions using Strategy Pattern
                 log.debug(
                     "Validating state-based field restrictions for experimentId: {}, status: {}",
                     experimentId,
@@ -348,21 +327,23 @@ public class ExperimentServiceImpl implements ExperimentService {
                 }
               }
 
-              // Validate variant structure if variants are being updated
               if (context.request.getVariants() != null) {
                 log.debug("Validating variant structure for experimentId: {}", experimentId);
                 try {
                   validateVariantStructure(previousData, context.request, experimentId);
-                } catch (RestException e) {
+                } catch (IllegalArgumentException e) {
                   log.error(
                       "Variant structure validation failed for experimentId: {}, error: {}",
                       experimentId,
                       e.getMessage());
-                  return Single.error(e);
+                  return Single.error(
+                      new RestException(
+                          "INVALID_REQUEST",
+                          e.getMessage(),
+                          org.apache.http.HttpStatus.SC_BAD_REQUEST,
+                          e));
                 }
               }
-
-              // Validate status transition if status is being updated
               if (context.request.getStatus() != null) {
                 String newStatus = context.request.getStatus().name();
 
@@ -385,55 +366,6 @@ public class ExperimentServiceImpl implements ExperimentService {
                 }
               }
 
-              // Validate name uniqueness if name is being updated
-              if (context.request.getName() != null) {
-                String currentName = (String) previousData.get("name");
-                String newName = context.request.getName();
-
-                // Check if name is actually changing
-                if (!newName.equals(currentName)) {
-                  log.debug(
-                      "Name is being changed from '{}' to '{}' for experimentId: {}",
-                      currentName,
-                      newName,
-                      experimentId);
-
-                  // Check if new name already exists in the project
-                  return experimentDAO
-                      .checkExperimentNameExists(projectKey, newName, experimentId)
-                      .flatMap(
-                          nameExists -> {
-                            if (nameExists) {
-                              String errorMsg =
-                                  String.format(
-                                      "Experiment with name '%s' already exists in this project",
-                                      newName);
-                              log.error(
-                                  "Name uniqueness validation failed for experimentId: {}, newName: '{}'",
-                                  experimentId,
-                                  newName);
-                              return Single.error(
-                                  new RestException(
-                                      "DUPLICATE_EXPERIMENT_NAME",
-                                      errorMsg,
-                                      org.apache.http.HttpStatus.SC_BAD_REQUEST,
-                                      null));
-                            }
-
-                            // Name is unique, proceed with update
-                            return experimentDAO.updateWithTransaction(
-                                projectKey,
-                                experimentId,
-                                context.request,
-                                context.tags,
-                                context.owners,
-                                context.metrics,
-                                previousData,
-                                context.updatedBy);
-                          });
-                }
-              }
-
               return experimentDAO.updateWithTransaction(
                   projectKey,
                   experimentId,
@@ -452,10 +384,6 @@ public class ExperimentServiceImpl implements ExperimentService {
                   experimentId,
                   err.getMessage());
 
-              // Check for unique constraint violation
-              // Note: When a unique constraint is violated in a transaction, PostgreSQL aborts the
-              // transaction
-              // and subsequent operations fail with "25P02 - current transaction is aborted"
               if (isUniqueConstraintViolation(err)
                   || (err.getMessage() != null && err.getMessage().contains("25P02"))) {
                 String constraintMessage = extractUniqueConstraintMessage(err);
@@ -471,19 +399,6 @@ public class ExperimentServiceImpl implements ExperimentService {
                   ErrorEnum.handleException(
                       err, new RestException(ErrorEnum.EXPERIMENT_UPDATE_FAILED, err)));
             });
-  }
-
-  /**
-   * Generates experiment key from experiment name by replacing spaces and hyphens with underscores.
-   *
-   * @param name experiment name
-   * @return experiment key with underscores
-   */
-  private String generateExperimentKey(String name) {
-    if (name == null || name.isEmpty()) {
-      return "";
-    }
-    return name.replaceAll("[ -]", "_").toLowerCase();
   }
 
   /**
@@ -609,22 +524,13 @@ public class ExperimentServiceImpl implements ExperimentService {
   /**
    * Validates that variant updates only modify variable values, not keys or data types.
    *
-   * <p>When updating variants, the structure must remain consistent with the original experiment.
-   * The following cannot be changed:
-   *
-   * <ul>
-   *   <li>Variant keys (control, variant1, etc.)
-   *   <li>Variant display names
-   *   <li>Variable keys
-   *   <li>Variable data types
-   * </ul>
-   *
-   * <p>Only variable values can be changed.
+   * <p>When updating variants, the structure (variant keys, variable keys, and data types) must
+   * remain consistent with the original experiment. Only variable values can be changed.
    *
    * @param previousData the existing experiment data
    * @param request the update request
    * @param experimentId the experiment identifier for logging
-   * @throws RestException if variant structure is invalid
+   * @throws IllegalArgumentException if variant structure is invalid
    */
   private void validateVariantStructure(
       Map<String, Object> previousData, UpdateExperimentRequest request, UUID experimentId) {
@@ -694,30 +600,28 @@ public class ExperimentServiceImpl implements ExperimentService {
    * @return true if it's a unique constraint violation
    */
   private boolean isUniqueConstraintViolation(Throwable err) {
-    // Check the error and all its causes
+
     Throwable current = err;
     while (current != null) {
       String message = current.getMessage();
       String className = current.getClass().getName();
 
-      // Check if it's a PgException
       if (className.contains("PgException")) {
         try {
-          // Try to get the SQL state using reflection
+
           java.lang.reflect.Method getSqlStateMethod = current.getClass().getMethod("getSqlState");
           String sqlState = (String) getSqlStateMethod.invoke(current);
-          // 23505 is the PostgreSQL error code for unique_violation
+
           if ("23505".equals(sqlState)) {
             return true;
           }
         } catch (Exception e) {
-          // Reflection failed, continue with message checking
+
         }
       }
 
       if (message != null) {
-        // PostgreSQL unique violation error code is 23505
-        // Error message contains "duplicate key value violates unique constraint"
+
         if (message.contains("duplicate key value violates unique constraint")
             || message.contains("23505")
             || message.contains("experiment_key_unique_check")
@@ -727,7 +631,6 @@ public class ExperimentServiceImpl implements ExperimentService {
         }
       }
 
-      // Also check suppressed exceptions
       for (Throwable suppressed : current.getSuppressed()) {
         if (isUniqueConstraintViolation(suppressed)) {
           return true;
@@ -746,7 +649,6 @@ public class ExperimentServiceImpl implements ExperimentService {
    * @return user-friendly error message
    */
   private String extractUniqueConstraintMessage(Throwable err) {
-    // Check the error and all its causes for constraint information
     Throwable current = err;
     while (current != null) {
       String message = current.getMessage();
@@ -758,7 +660,6 @@ public class ExperimentServiceImpl implements ExperimentService {
         } else if (message.contains("name_unique_check")) {
           return "An experiment with this name already exists in the project";
         } else if (message.contains("duplicate key value violates unique constraint")) {
-          // Generic unique constraint message
           return "A record with the same unique field already exists";
         }
       }

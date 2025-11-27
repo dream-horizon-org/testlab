@@ -6,6 +6,7 @@ import com.ascend.testlab.constants.attributes.Operand;
 import com.ascend.testlab.constants.attributes.RelationalOperator;
 import com.ascend.testlab.constants.enums.DataTypeEnum;
 import com.ascend.testlab.exception.ErrorMessages;
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.*;
 import java.util.List;
 import lombok.AllArgsConstructor;
@@ -29,7 +30,7 @@ public class RuleAttributes {
   @NotBlank(message = ErrorMessages.BLANK_RULE_NAME)
   private String name;
 
-  List<Condition> conditions;
+  @Valid List<Condition> conditions;
 
   @Data
   @Builder

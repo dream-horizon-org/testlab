@@ -34,6 +34,9 @@ public final class Constants {
   /** The delimiter for comma. */
   public static final String COMMA = ",";
 
+  /** The delimiter for empty string. */
+  public static final String EMPTY_STRING = "";
+
   /** The delimiter for colon. */
   public static final String COLON = ":";
 

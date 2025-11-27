@@ -1,7 +1,6 @@
 package com.ascend.testlab.dao;
 
 import com.ascend.testlab.dto.entity.experiment.Experiment;
-import com.ascend.testlab.dto.request.CreateExperimentRequest;
 import com.ascend.testlab.dto.request.FilterExperimentsRequest;
 import com.ascend.testlab.dto.request.UpdateExperimentRequest;
 import com.ascend.testlab.dto.response.FilterExperimentsResponse;
@@ -21,7 +20,8 @@ public interface ExperimentDAO {
    * @param experimentId the unique identifier of the experiment
    * @return a Maybe that emits the Experiment if found, or else empty
    */
-  Maybe<Experiment> getExperiment(String projectKey, String experimentId);
+  Maybe<com.ascend.testlab.dto.entity.experiment.Experiment> getExperiment(
+      String projectKey, String experimentId);
 
   /**
    * Filters experiments based on the provided criteria and returns paginated results. Supports
@@ -42,21 +42,8 @@ public interface ExperimentDAO {
    * @param experiment the experiment data
    * @return a Single
    */
-  Single<Boolean> deleteExperiment(String projectKey, Experiment experiment);
-
-  /**
-   * Creates a new experiment in the database without transaction management.
-   *
-   * <p><b>Deprecated:</b> This method is only for testing purposes. Use createWithRelatedData for
-   * production code.
-   *
-   * @param projectKey project identifier for partitioning
-   * @param request experiment creation request with all experiment details
-   * @return Single emitting experiment ID as String on success
-   * @deprecated Use {@link #createWithRelatedData(CreateExperimentRequest)} instead
-   */
-  @Deprecated
-  Single<String> create(String projectKey, CreateExperimentRequest request);
+  Single<Boolean> deleteExperiment(
+      String projectKey, com.ascend.testlab.dto.entity.experiment.Experiment experiment);
 
   /**
    * Creates experiment with tags, owner, update log, and analysis in a transaction.
@@ -68,7 +55,7 @@ public interface ExperimentDAO {
    *     experimentId, tags, and owner
    * @return Single emitting experiment ID as String on success
    */
-  Single<String> createWithRelatedData(CreateExperimentRequest request);
+  Single<Boolean> createExperiment(String projectKey, Experiment request);
 
   /**
    * Gets current experiment data as a map.
@@ -78,18 +65,6 @@ public interface ExperimentDAO {
    * @return Single emitting map of experiment data
    */
   Single<Map<String, Object>> getExperimentData(String projectKey, UUID experimentId);
-
-  /**
-   * Checks if an experiment name already exists in the project (excluding current experiment).
-   *
-   * <p>Used during update operations to validate name uniqueness before allowing the update.
-   *
-   * @param projectKey project identifier for partitioning
-   * @param name the experiment name to check
-   * @param experimentId current experiment ID to exclude from the check
-   * @return Single emitting true if name exists for a different experiment, false otherwise
-   */
-  Single<Boolean> checkExperimentNameExists(String projectKey, String name, UUID experimentId);
 
   /**
    * Updates experiment fields partially based on provided request map.
@@ -121,20 +96,6 @@ public interface ExperimentDAO {
       Map<String, Object> previousData,
       String updatedBy);
 
-  // ==================== Tag Operations ====================
-
-  /**
-   * Batch inserts tags for an experiment.
-   *
-   * @param connection SQL connection for transaction
-   * @param projectKey project identifier for partitioning
-   * @param experimentId experiment identifier
-   * @param tags list of tags to insert
-   * @return Single emitting true on success, false on failure
-   */
-  Single<Boolean> batchInsertTags(
-      SqlConnection connection, String projectKey, UUID experimentId, List<String> tags);
-
   /**
    * Gets all tags for an experiment.
    *
@@ -156,96 +117,4 @@ public interface ExperimentDAO {
    */
   Single<Boolean> deleteTags(
       SqlConnection connection, String projectKey, UUID experimentId, List<String> tags);
-
-  /**
-   * Deletes all tags for an experiment.
-   *
-   * @param connection SQL connection for transaction
-   * @param projectKey project identifier for partitioning
-   * @param experimentId experiment identifier
-   * @return Single emitting true on success, false on failure
-   */
-  Single<Boolean> deleteTags(SqlConnection connection, String projectKey, UUID experimentId);
-
-  // ==================== Owner Operations ====================
-
-  /**
-   * Inserts an owner for an experiment.
-   *
-   * @param connection SQL connection for transaction
-   * @param projectKey project identifier for partitioning
-   * @param experimentId experiment identifier
-   * @return Single emitting true on success, false on failure
-   */
-  Single<Boolean> batchInsertOwners(
-      SqlConnection connection, String projectKey, UUID experimentId, List<String> owners);
-
-  /**
-   * Deletes all owners for an experiment.
-   *
-   * @param connection SQL connection for transaction
-   * @param projectKey project identifier for partitioning
-   * @param experimentId experiment identifier
-   * @return Single emitting true on success, false on failure
-   */
-  Single<Boolean> deleteOwners(SqlConnection connection, String projectKey, UUID experimentId);
-
-  // ==================== Update Log Operations ====================
-
-  /**
-   * Inserts an experiment update log entry.
-   *
-   * @param connection SQL connection for transaction
-   * @param projectKey project identifier for partitioning
-   * @param experimentId experiment identifier
-   * @param previousData previous experiment data (null for create operation)
-   * @param currentData current experiment data
-   * @param updatedBy user who performed the update
-   * @return Single emitting true on success, false on failure
-   */
-  Single<Boolean> insertUpdateLog(
-      SqlConnection connection,
-      String projectKey,
-      UUID experimentId,
-      Object previousData,
-      Object currentData,
-      String updatedBy);
-
-  // ==================== Analysis Operations ====================
-
-  /**
-   * Inserts an experiment analysis entry with default/null values.
-   *
-   * @param connection SQL connection for transaction
-   * @param projectKey project identifier for partitioning
-   * @param experimentId experiment identifier
-   * @param metrics map of metrics (primary and secondary)
-   * @return Single emitting true on success, false on failure
-   */
-  Single<Boolean> insertAnalysis(
-      SqlConnection connection,
-      String projectKey,
-      UUID experimentId,
-      Map<String, List<String>> metrics);
-
-  /**
-   * Inserts an experiment analysis entry with specified values.
-   *
-   * @param connection SQL connection for transaction
-   * @param projectKey project identifier for partitioning
-   * @param experimentId experiment identifier
-   * @param config analysis configuration
-   * @param primaryMetrics primary metrics for analysis
-   * @param secondaryMetrics secondary metrics for analysis
-   * @param metricTokens metric tokens
-   * @return Single emitting true on success, false on failure
-   */
-  Single<Boolean> insertAnalysis(
-      SqlConnection connection,
-      String projectKey,
-      UUID experimentId,
-      String config,
-      String primaryMetrics,
-      String secondaryMetrics,
-      String metricTokens);
 }

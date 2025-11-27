@@ -2,7 +2,6 @@ package com.ascend.testlab.validation;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-import com.ascend.testlab.entity.RuleAttributes;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.Validation;
 import jakarta.validation.Validator;

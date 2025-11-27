@@ -118,28 +118,15 @@ public final class CommonUtil {
   }
 
   /**
-   * Normalizes experiment name for full-text search by replacing separators with spaces.
+   * Generates experiment key from experiment name by replacing spaces and hyphens with underscores.
    *
-   * <p>Replaces hyphens (-), underscores (_), and dots (.) with spaces to improve searchability in
-   * PostgreSQL full-text search (tsvector). This allows users to search for experiments using any
-   * of these separators or spaces.
-   *
-   * <p>Examples:
-   *
-   * <ul>
-   *   <li>"Test-Experiment" → "Test Experiment"
-   *   <li>"Test_Experiment" → "Test Experiment"
-   *   <li>"Test.Experiment" → "Test Experiment"
-   *   <li>"Test-Experiment_v1.0" → "Test Experiment v1 0"
-   * </ul>
-   *
-   * @param name the experiment name to normalize
-   * @return the normalized name with separators replaced by spaces
+   * @param name experiment name
+   * @return experiment key with underscores
    */
-  public static String normalizeNameForSearch(String name) {
-    if (name == null) {
-      return null;
+  public static String generateExperimentKey(String name) {
+    if (name == null || name.isEmpty()) {
+      return Constants.EMPTY_STRING;
     }
-    return name.replaceAll("[-_.]", " ");
+    return name.replaceAll("[ -]", "_").toLowerCase();
   }
 }

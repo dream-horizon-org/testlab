@@ -12,8 +12,7 @@ import com.ascend.testlab.constants.enums.HealthStatus;
 import com.ascend.testlab.constants.postgresql.ReadQuery;
 import com.ascend.testlab.constants.postgresql.WriteQuery;
 import com.ascend.testlab.dao.impl.ExperimentDAOImpl;
-import com.ascend.testlab.dto.entity.experiment.Experiment;
-import com.ascend.testlab.dto.request.CreateExperimentRequest;
+import com.ascend.testlab.dto.request.Experiment;
 import com.ascend.testlab.dto.request.FilterExperimentsRequest;
 import com.ascend.testlab.dto.response.FilterExperimentsResponse;
 import com.dream11.rest.exception.RestException;
@@ -75,7 +74,7 @@ public class ExperimentDAOTest {
     @DisplayName("Should successfully create experiment with all fields")
     void testCreateExperimentSuccess() {
       // Arrange
-      CreateExperimentRequest request = createValidRequest();
+      Experiment request = createValidRequest();
       when(pgWriterClient.executeWithTransaction(any()))
           .thenAnswer(
               invocation -> {
@@ -101,7 +100,7 @@ public class ExperimentDAOTest {
     @DisplayName("Should create experiment with minimal required fields")
     void testCreateExperimentMinimalFields() {
       // Arrange
-      CreateExperimentRequest request = new CreateExperimentRequest();
+      Experiment request = new Experiment();
       request.setProjectKey(testProjectKey.toString());
       request.setExperimentId(testExperimentId);
       request.setName("minimal_experiment");
@@ -137,7 +136,7 @@ public class ExperimentDAOTest {
     @DisplayName("Should handle database insert failure")
     void testCreateExperimentInsertFailure() {
       // Arrange
-      CreateExperimentRequest request = createValidRequest();
+      Experiment request = createValidRequest();
       when(pgWriterClient.executeWithTransaction(any()))
           .thenAnswer(
               invocation -> {
@@ -161,7 +160,7 @@ public class ExperimentDAOTest {
     @DisplayName("Should handle database error during insert")
     void testCreateExperimentDatabaseError() {
       // Arrange
-      CreateExperimentRequest request = createValidRequest();
+      Experiment request = createValidRequest();
       RuntimeException exception = new RuntimeException("Database connection failed");
       when(pgWriterClient.executeWithTransaction(any()))
           .thenAnswer(
@@ -189,7 +188,7 @@ public class ExperimentDAOTest {
     @DisplayName("Should handle experiment with cohorts array")
     void testCreateExperimentWithCohorts() {
       // Arrange
-      CreateExperimentRequest request = createValidRequest();
+      Experiment request = createValidRequest();
       request.setCohorts(Arrays.asList("premium_users", "mobile_users", "web_users"));
       when(pgWriterClient.executeWithTransaction(any()))
           .thenAnswer(
@@ -215,7 +214,7 @@ public class ExperimentDAOTest {
     @DisplayName("Should handle experiment with JSONB fields")
     void testCreateExperimentWithJsonbFields() {
       // Arrange
-      CreateExperimentRequest request = createValidRequest();
+      Experiment request = createValidRequest();
 
       // Note: variantWeights is now VariantWeights type, not Map
       // Skipping variant weights for this test
@@ -246,7 +245,7 @@ public class ExperimentDAOTest {
     @DisplayName("Should handle null optional fields")
     void testCreateExperimentWithNullFields() {
       // Arrange
-      CreateExperimentRequest request = new CreateExperimentRequest();
+      Experiment request = new Experiment();
       request.setProjectKey(testProjectKey.toString());
       request.setExperimentId(testExperimentId);
       request.setName("test_experiment");
@@ -536,7 +535,7 @@ public class ExperimentDAOTest {
     @DisplayName("Should handle exception in create method")
     void testCreateExceptionHandling() {
       // Arrange
-      CreateExperimentRequest request = createValidRequest();
+      Experiment request = createValidRequest();
       RuntimeException exception = new RuntimeException("Unexpected error");
       when(pgWriterClient.executeWithTransaction(any()))
           .thenAnswer(
@@ -560,8 +559,8 @@ public class ExperimentDAOTest {
   }
 
   // Helper method to create a valid request
-  private CreateExperimentRequest createValidRequest() {
-    CreateExperimentRequest request = new CreateExperimentRequest();
+  private Experiment createValidRequest() {
+    Experiment request = new Experiment();
     request.setProjectKey(testProjectKey.toString());
     request.setExperimentId(testExperimentId);
     request.setName("test_experiment");
@@ -587,13 +586,14 @@ public class ExperimentDAOTest {
     @DisplayName("Should return experiment when found")
     void testGetExperimentSuccess(VertxTestContext testContext) {
       // Arrange
-      Experiment expectedExperiment = createMockExperiment();
+      com.ascend.testlab.dto.entity.experiment.Experiment expectedExperiment =
+          createMockExperiment();
       when(pgReaderClient.fetchOne(
               eq(ReadQuery.FETCH_EXPERIMENT), any(Tuple.class), any(Function.class)))
           .thenReturn(Maybe.just(expectedExperiment));
 
       // Act
-      TestObserver<Experiment> testObserver =
+      TestObserver<com.ascend.testlab.dto.entity.experiment.Experiment> testObserver =
           experimentDAO.getExperiment(PROJECT_KEY, testExperimentId.toString()).test();
 
       // Assert
@@ -614,7 +614,7 @@ public class ExperimentDAOTest {
           .thenReturn(Maybe.empty());
 
       // Act
-      TestObserver<Experiment> testObserver =
+      TestObserver<com.ascend.testlab.dto.entity.experiment.Experiment> testObserver =
           experimentDAO.getExperiment(PROJECT_KEY, testExperimentId.toString()).test();
 
       // Assert
@@ -635,7 +635,7 @@ public class ExperimentDAOTest {
           .thenReturn(Maybe.error(expectedException));
 
       // Act
-      TestObserver<Experiment> testObserver =
+      TestObserver<com.ascend.testlab.dto.entity.experiment.Experiment> testObserver =
           experimentDAO.getExperiment(PROJECT_KEY, testExperimentId.toString()).test();
 
       // Assert
@@ -654,7 +654,7 @@ public class ExperimentDAOTest {
     @DisplayName("Should return experiments without filters")
     void testFilterExperimentsNoFilters(VertxTestContext testContext) {
       // Arrange
-      Experiment experiment = createMockExperiment();
+      com.ascend.testlab.dto.entity.experiment.Experiment experiment = createMockExperiment();
       FilterExperimentsRequest request =
           FilterExperimentsRequest.builder().limit(20).page(1).build();
       List<Row> mockRows = createMockRows(experiment, 1);
@@ -710,7 +710,7 @@ public class ExperimentDAOTest {
     @DisplayName("Should filter experiments by name")
     void testFilterExperimentsWithNameFilter(VertxTestContext testContext) {
       // Arrange
-      Experiment experiment = createMockExperiment();
+      com.ascend.testlab.dto.entity.experiment.Experiment experiment = createMockExperiment();
       FilterExperimentsRequest request =
           FilterExperimentsRequest.builder().name("test experiment").limit(20).page(1).build();
       List<Row> mockRows = createMockRows(experiment, 1);
@@ -736,7 +736,7 @@ public class ExperimentDAOTest {
     @DisplayName("Should filter experiments by status")
     void testFilterExperimentsWithStatusFilter(VertxTestContext testContext) {
       // Arrange
-      Experiment experiment = createMockExperiment();
+      com.ascend.testlab.dto.entity.experiment.Experiment experiment = createMockExperiment();
       FilterExperimentsRequest request =
           FilterExperimentsRequest.builder().status("LIVE,PAUSED").limit(20).page(1).build();
       List<Row> mockRows = createMockRows(experiment, 1);
@@ -762,7 +762,7 @@ public class ExperimentDAOTest {
     @DisplayName("Should filter experiments by type")
     void testFilterExperimentsWithTypeFilter(VertxTestContext testContext) {
       // Arrange
-      Experiment experiment = createMockExperiment();
+      com.ascend.testlab.dto.entity.experiment.Experiment experiment = createMockExperiment();
       FilterExperimentsRequest request =
           FilterExperimentsRequest.builder().type("A/B").limit(20).page(1).build();
       List<Row> mockRows = createMockRows(experiment, 1);
@@ -788,7 +788,7 @@ public class ExperimentDAOTest {
     @DisplayName("Should filter experiments by tag")
     void testFilterExperimentsWithTagFilter(VertxTestContext testContext) {
       // Arrange
-      Experiment experiment = createMockExperiment();
+      com.ascend.testlab.dto.entity.experiment.Experiment experiment = createMockExperiment();
       FilterExperimentsRequest request =
           FilterExperimentsRequest.builder().tag("tag1").limit(20).page(1).build();
       List<Row> mockRows = createMockRows(experiment, 1);
@@ -814,7 +814,7 @@ public class ExperimentDAOTest {
     @DisplayName("Should filter experiments by owner")
     void testFilterExperimentsWithOwnerFilter(VertxTestContext testContext) {
       // Arrange
-      Experiment experiment = createMockExperiment();
+      com.ascend.testlab.dto.entity.experiment.Experiment experiment = createMockExperiment();
       FilterExperimentsRequest request =
           FilterExperimentsRequest.builder().owner("owner1").limit(20).page(1).build();
       List<Row> mockRows = createMockRows(experiment, 1);
@@ -840,7 +840,7 @@ public class ExperimentDAOTest {
     @DisplayName("Should filter experiments with multiple filters")
     void testFilterExperimentsWithMultipleFilters(VertxTestContext testContext) {
       // Arrange
-      Experiment experiment = createMockExperiment();
+      com.ascend.testlab.dto.entity.experiment.Experiment experiment = createMockExperiment();
       FilterExperimentsRequest request =
           FilterExperimentsRequest.builder()
               .name("test")
@@ -872,7 +872,7 @@ public class ExperimentDAOTest {
     @DisplayName("Should handle pagination correctly")
     void testFilterExperimentsWithPagination(VertxTestContext testContext) {
       // Arrange
-      Experiment experiment = createMockExperiment();
+      com.ascend.testlab.dto.entity.experiment.Experiment experiment = createMockExperiment();
       FilterExperimentsRequest request =
           FilterExperimentsRequest.builder().page(2).limit(10).build();
       List<Row> mockRows = createMockRows(experiment, 15);
@@ -924,7 +924,7 @@ public class ExperimentDAOTest {
     @DisplayName("Should handle multiple operations sequentially")
     void testMultipleOperationsSequentially(VertxTestContext testContext) {
       // Arrange
-      Experiment experiment = createMockExperiment();
+      com.ascend.testlab.dto.entity.experiment.Experiment experiment = createMockExperiment();
       FilterExperimentsRequest request =
           FilterExperimentsRequest.builder().limit(20).page(1).build();
       List<Row> mockRows = createMockRows(experiment, 1);
@@ -956,7 +956,7 @@ public class ExperimentDAOTest {
           .thenReturn(Single.just(true));
 
       // Act
-      TestObserver<Experiment> getObserver =
+      TestObserver<com.ascend.testlab.dto.entity.experiment.Experiment> getObserver =
           experimentDAO.getExperiment(PROJECT_KEY, testExperimentId.toString()).test();
       TestObserver<FilterExperimentsResponse> filterObserver =
           experimentDAO.filterExperiments(PROJECT_KEY, request).test();
@@ -981,8 +981,8 @@ public class ExperimentDAOTest {
    *
    * @return a mock Experiment object
    */
-  private Experiment createMockExperiment() {
-    return Experiment.builder()
+  private com.ascend.testlab.dto.entity.experiment.Experiment createMockExperiment() {
+    return com.ascend.testlab.dto.entity.experiment.Experiment.builder()
         .experimentId(testExperimentId)
         .projectKey(PROJECT_KEY)
         .name("Test Experiment")
@@ -1010,7 +1010,8 @@ public class ExperimentDAOTest {
    * @param totalCount the total count value to set in the row (for pagination)
    * @return a list of mock Row objects
    */
-  private List<Row> createMockRows(Experiment experiment, int totalCount) {
+  private List<Row> createMockRows(
+      com.ascend.testlab.dto.entity.experiment.Experiment experiment, int totalCount) {
     Row mockRow = mock(Row.class);
     OffsetDateTime now = OffsetDateTime.now();
 

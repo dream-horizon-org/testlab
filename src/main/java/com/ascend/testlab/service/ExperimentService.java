@@ -1,7 +1,6 @@
 package com.ascend.testlab.service;
 
 import com.ascend.testlab.dto.entity.experiment.Experiment;
-import com.ascend.testlab.dto.request.CreateExperimentRequest;
 import com.ascend.testlab.dto.request.FilterExperimentsRequest;
 import com.ascend.testlab.dto.request.UpdateExperimentRequest;
 import com.ascend.testlab.dto.response.CreateExperimentResponse;
@@ -71,7 +70,7 @@ public interface ExperimentService {
    * @param request experiment creation request with all experiment details
    * @return Single emitting CreateExperimentResponse with id, status, and message
    */
-  Single<CreateExperimentResponse> create(String projectKey, CreateExperimentRequest request);
+  Single<CreateExperimentResponse> createExperiment(String projectKey, Experiment request);
 
   /**
    * Updates experiment fields partially with validation.
@@ -81,6 +80,6 @@ public interface ExperimentService {
    * @param request update experiment request DTO with validated fields
    * @return Single emitting UpdateExperimentResponse with id, status, and message
    */
-  Single<UpdateExperimentResponse> update(
+  Single<UpdateExperimentResponse> updateExperiment(
       String projectKey, UUID experimentId, UpdateExperimentRequest request);
 }

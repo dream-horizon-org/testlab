@@ -1,6 +1,7 @@
 package com.ascend.testlab.rest;
 
 import com.ascend.testlab.dto.ResponseEntity;
+import com.ascend.testlab.dto.entity.experiment.Experiment;
 import com.ascend.testlab.dto.request.CreateExperimentRequest;
 import com.ascend.testlab.dto.request.UpdateExperimentRequest;
 import com.ascend.testlab.dto.response.CreateExperimentResponse;
@@ -28,7 +29,7 @@ import lombok.extern.slf4j.Slf4j;
  * REST API resource for Experiment operations.
  *
  * <p>Provides RESTful endpoints for creating, updating, and assigning experiments. All endpoints
- * require project-key header for partitioning.
+ * require tenant-id and project-key headers for multi-tenancy and partitioning.
  *
  * @author Ravi Pandey
  * @version 1.0
@@ -71,8 +72,9 @@ public class ExperimentResource {
   public CompletionStage<ResponseEntity.Success<CreateExperimentResponse>> create(
       @HeaderParam("x-project-key") String projectKey, @Valid CreateExperimentRequest request) {
 
+    Experiment experiment = Experiment.fromRequest(request);
     return experimentService
-        .create(projectKey, request)
+        .createExperiment(projectKey, experiment)
         .map(ResponseEntity.Success::new)
         .toCompletionStage();
   }
@@ -114,7 +116,7 @@ public class ExperimentResource {
       @Valid UpdateExperimentRequest request) {
 
     return experimentService
-        .update(projectKey, experimentId, request)
+        .updateExperiment(projectKey, experimentId, request)
         .map(ResponseEntity.Success::new)
         .toCompletionStage();
   }

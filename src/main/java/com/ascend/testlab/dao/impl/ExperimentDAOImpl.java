@@ -11,7 +11,7 @@ import com.ascend.testlab.dao.mapper.ExperimentMapper;
 import com.ascend.testlab.dao.querybuilder.core.ParameterizedQuery;
 import com.ascend.testlab.dao.querybuilder.factory.FilterExperimentsQueryFactory;
 import com.ascend.testlab.dto.entity.experiment.Experiment;
-import com.ascend.testlab.dto.request.CreateExperimentRequest;
+import com.ascend.testlab.dto.entity.experiment.Metrics;
 import com.ascend.testlab.dto.request.FilterExperimentsRequest;
 import com.ascend.testlab.dto.request.UpdateExperimentRequest;
 import com.ascend.testlab.dto.response.FilterExperimentsResponse;
@@ -29,14 +29,9 @@ import io.vertx.rxjava3.sqlclient.Row;
 import io.vertx.rxjava3.sqlclient.SqlConnection;
 import io.vertx.rxjava3.sqlclient.Tuple;
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections4.ListUtils;
 
 /**
  * Implementation of the ExperimentDAO interface.
@@ -56,8 +51,8 @@ public class ExperimentDAOImpl implements ExperimentDAO {
   /**
    * Constructs a new ExperimentDAOImpl.
    *
-   * @param pgReaderClient the PostgreSQL reader client
-   * @param pgWriterClient the PostgreSQL writer client
+   * @param pgReaderClient the Postgres reader client
+   * @param pgWriterClient the Postgres writer client
    * @param objectMapper the Jackson ObjectMapper for JSON serialization/deserialization
    */
   @Inject
@@ -70,7 +65,8 @@ public class ExperimentDAOImpl implements ExperimentDAO {
 
   /** {@inheritDoc} */
   @Override
-  public Maybe<Experiment> getExperiment(String projectKey, String experimentId) {
+  public Maybe<com.ascend.testlab.dto.entity.experiment.Experiment> getExperiment(
+      String projectKey, String experimentId) {
     return pgReaderClient.fetchOne(
         ReadQuery.FETCH_EXPERIMENT,
         Tuple.of(projectKey, experimentId),
@@ -97,11 +93,9 @@ public class ExperimentDAOImpl implements ExperimentDAO {
       List<Row> rows, FilterExperimentsRequest req) {
     FilterExperimentsResponse response = new FilterExperimentsResponse();
 
-    // Extract total count from the first row (all rows have the same total_count value)
     int totalCount = (rows.isEmpty()) ? 0 : rows.get(0).getInteger(Columns.TOTAL_COUNT);
 
-    // Map all rows to experiments
-    List<Experiment> experiments =
+    List<com.ascend.testlab.dto.entity.experiment.Experiment> experiments =
         (rows.isEmpty())
             ? List.of()
             : rows.stream()
@@ -125,11 +119,13 @@ public class ExperimentDAOImpl implements ExperimentDAO {
 
   /** {@inheritDoc} */
   @Override
-  public Single<Boolean> deleteExperiment(String projectKey, Experiment experiment) {
+  public Single<Boolean> deleteExperiment(
+      String projectKey, com.ascend.testlab.dto.entity.experiment.Experiment experiment) {
     Tuple tuple = Tuple.of(projectKey, experiment.getExperimentId().toString());
 
     JsonObject previous_data_json = JsonObject.mapFrom(experiment);
 
+    // make this parallel
     return pgWriterClient
         .executeWithTransaction(
             (sqlConnection) ->
@@ -150,8 +146,8 @@ public class ExperimentDAOImpl implements ExperimentDAO {
                                 WriteQuery.INSERT_EXPERIMENT_UPDATE_LOG,
                                 tuple.addJsonObject(previous_data_json).addJsonObject(null)))
                     .map(result -> true)
-                    .toMaybe())
-        .toSingle()
+                    .toMaybe(),
+            false)
         .onErrorResumeNext(
             err -> {
               log.error(
@@ -164,128 +160,68 @@ public class ExperimentDAOImpl implements ExperimentDAO {
   }
 
   /**
-   * Creates a new experiment in the database without transaction management.
-   *
-   * <p><b>Deprecated:</b> This method is only for testing purposes. Use createWithRelatedData for
-   * production code.
-   *
-   * @param tenantId tenant identifier for multi-tenancy
-   * @param projectKey project identifier for partitioning
-   * @param request experiment creation request with all experiment details
-   * @return Single emitting experiment ID as String on success
-   * @deprecated Use {@link #createWithRelatedData(UUID, CreateExperimentRequest)} instead
-   */
-  @Deprecated
-  @Override
-  public Single<String> create(String projectKey, CreateExperimentRequest request) {
-    log.warn("Using deprecated create method - this should only be used in tests");
-    // For testing only - use createWithRelatedData in production
-    return pgWriterClient
-        .executeWithTransaction(
-            connection -> createWithConnection(connection, projectKey, request).toMaybe())
-        .toSingle();
-  }
-
-  /**
    * Creates a new experiment using an existing SQL connection (for transaction support).
    *
    * @param connection the SQL connection to use
-   * @param tenantId tenant identifier for multi-tenancy
    * @param projectKey project identifier for partitioning
-   * @param request experiment creation request
+   * @param experiment experiment creation experiment
    * @return Single emitting experiment ID as String on success
    */
-  private Single<String> createWithConnection(
-      SqlConnection connection, String projectKey, CreateExperimentRequest request) {
+  private Single<String> insertExperiment(
+      SqlConnection connection, String projectKey, Experiment experiment) {
     log.info(
         "DAO: Creating experiment with connection, projectKey: {}, experimentId: {}, name: {}",
         projectKey,
-        request.getExperimentId(),
-        request.getName());
+        experiment.getExperimentId(),
+        experiment.getName());
 
-    return Single.fromCallable(
-            () -> {
-              // Convert cohorts list to array
-              String[] cohortsArray = null;
-              if (request.getCohorts() != null && !request.getCohorts().isEmpty()) {
-                cohortsArray = request.getCohorts().toArray(new String[0]);
-                log.debug("Converted cohorts to array: {}", (Object) cohortsArray);
-              }
+    log.debug(
+        "Executing INSERT query for experiment: {}, projectKey: {}",
+        experiment.getName(),
+        projectKey);
 
-              // Convert JSONB fields to JSON strings
-              String variantWeightsJson = null;
-              String variantsJson = null;
-              String ruleAttributesJson = null;
-              String winningVariantJson = null;
+    Tuple tuple =
+        Tuple.tuple()
+            .addString(projectKey)
+            .addString(experiment.getExperimentId().toString())
+            .addString(experiment.getName())
+            .addString(experiment.getExperimentKey())
+            .addString(experiment.getDescription())
+            .addString(experiment.getHypothesis())
+            .addString(experiment.getStatus().name())
+            .addString(experiment.getType().getValue())
+            .addString(null)
+            .addValue(experiment.getCohorts().toArray(new String[0]))
+            .addJsonObject(JsonObject.mapFrom(experiment.getVariantWeights()))
+            .addJsonObject(JsonObject.mapFrom(experiment.getVariants()))
+            .addString(experiment.getDistributionStrategy().name())
+            .addString(experiment.getAssignmentDomain().name())
+            .addValue(
+                experiment.getOverrides() == null || experiment.getOverrides().isEmpty()
+                    ? null
+                    : experiment.getOverrides().toArray(new String[0]))
+            .addJsonArray(JsonArray.of(experiment.getRuleAttributes()))
+            .addValue(experiment.getExposure())
+            .addValue(experiment.getThreshold())
+            .addValue(experiment.getStartTime())
+            .addValue(experiment.getEndTime())
+            .addValue(experiment.getCreatedBy());
 
-              if (request.getVariantWeights() != null) {
-                variantWeightsJson = objectMapper.writeValueAsString(request.getVariantWeights());
-              }
-              if (request.getVariants() != null) {
-                variantsJson = objectMapper.writeValueAsString(request.getVariants());
-              }
-              if (request.getRuleAttributes() != null) {
-                ruleAttributesJson = objectMapper.writeValueAsString(request.getRuleAttributes());
-              }
-              if (request.getWinningVariant() != null) {
-                winningVariantJson = objectMapper.writeValueAsString(request.getWinningVariant());
-              }
-
-              log.debug(
-                  "Executing INSERT query for experiment: {}, projectKey: {}",
-                  request.getName(),
-                  request.getProjectKey());
-
-              return Tuple.tuple()
-                  .addValue(request.getProjectKey().toString())
-                  .addValue(request.getExperimentId().toString())
-                  .addValue(request.getName())
-                  .addValue(request.getExperimentKey())
-                  .addValue(request.getDescription())
-                  .addValue(request.getHypothesis())
-                  .addValue(request.getStatus() == null ? null : request.getStatus().name())
-                  .addValue(request.getType() == null ? null : request.getType().getValue())
-                  .addValue(
-                      request.getGuardrailHealthStatus() == null
-                          ? null
-                          : request.getGuardrailHealthStatus().name())
-                  .addValue(cohortsArray)
-                  .addValue(variantWeightsJson)
-                  .addValue(variantsJson)
-                  .addValue(
-                      request.getDistributionStrategy() == null
-                          ? null
-                          : request.getDistributionStrategy().name())
-                  .addValue(
-                      request.getAssignmentDomain() == null
-                          ? null
-                          : request.getAssignmentDomain().name())
-                  .addValue(
-                      request.getOverrides() == null || request.getOverrides().isEmpty()
-                          ? null
-                          : request.getOverrides().toArray(new String[0]))
-                  .addValue(ruleAttributesJson)
-                  .addValue(winningVariantJson)
-                  .addValue(request.getExposure())
-                  .addValue(request.getThreshold())
-                  .addValue(request.getStartTime())
-                  .addValue(request.getEndTime())
-                  .addValue(request.getCreatedBy());
-            })
-        .flatMap(params -> pgWriterClient.execute(connection, WriteQuery.INSERT_EXPERIMENT, params))
+    return pgWriterClient
+        .execute(connection, WriteQuery.INSERT_EXPERIMENT, tuple)
         .flatMap(
             success -> {
               if (success) {
                 log.info(
                     "DAO: Experiment inserted successfully with connection, projectKey: {}, experimentId: {}",
-                    request.getProjectKey(),
-                    request.getExperimentId());
-                return Single.just(request.getExperimentId().toString());
+                    projectKey,
+                    experiment.getExperimentId());
+                return Single.just(experiment.getExperimentId().toString());
               } else {
                 log.error(
                     "DAO: Insert returned false, no rows affected for projectKey: {}, experimentId: {}",
-                    request.getProjectKey(),
-                    request.getExperimentId());
+                    experiment.getProjectKey(),
+                    experiment.getExperimentId());
                 RuntimeException err =
                     new RuntimeException("Failed to insert experiment - no rows affected");
                 return Single.error(
@@ -298,93 +234,57 @@ public class ExperimentDAOImpl implements ExperimentDAO {
   /**
    * Creates experiment with tags, owner, update log, and analysis in a transaction.
    *
-   * <p>Extracts projectKey, experimentId, tags, and owner from the request object and executes all
-   * insert operations in parallel within a transaction.
+   * <p>Extracts projectKey, experimentId, tags, and owner from the experiment object and executes
+   * all insert operations in parallel within a transaction.
    *
-   * @param tenantId tenant identifier for multi-tenancy
-   * @param request experiment creation request with all experiment details including projectKey,
-   *     experimentId, tags, and owner
+   * @param experiment experiment creation experiment with all experiment details including
+   *     projectKey, experimentId, tags, and owner
    * @return Single emitting experiment ID as String on success
    */
   @Override
-  public Single<String> createWithRelatedData(CreateExperimentRequest request) {
-
-    String projectKey = request.getProjectKey();
-    UUID experimentId = request.getExperimentId();
-    List<String> tags = request.getTags();
-    List<String> owners = request.getOwner();
+  public Single<Boolean> createExperiment(String projectKey, Experiment experiment) {
 
     log.info(
-        "DAO: Creating experiment with related data, projectKey: {}, experimentId: {}",
+        "DAO: Creating experiment, projectKey: {}, experimentId: {}",
         projectKey,
-        experimentId);
+        experiment.getExperimentId());
 
-    return pgWriterClient
-        .executeWithTransaction(
-            connection ->
-                createWithConnection(connection, projectKey, request)
-                    .flatMap(
-                        success -> {
-                          log.info(
-                              "DAO: Experiment created successfully, inserting related data for experimentId: {}",
-                              experimentId);
+    return pgWriterClient.executeWithTransaction(
+        connection -> createExperiment(connection, projectKey, experiment), false);
+  }
 
-                          // Execute all inserts in parallel using zip
-                          return Single.zip(
-                                  batchInsertTags(connection, projectKey, experimentId, tags),
-                                  batchInsertOwners(connection, projectKey, experimentId, owners),
-                                  insertUpdateLog(
-                                      connection,
-                                      projectKey,
-                                      experimentId,
-                                      null, // previous_data is null for create
-                                      request, // Pass POJO directly
-                                      request.getCreatedBy()),
-                                  insertAnalysis(
-                                      connection, projectKey, experimentId, request.getMetrics()),
-                                  (tagsSuccess,
-                                      ownerSuccess,
-                                      updateLogSuccess,
-                                      analysisSuccess) -> {
-                                    return new Object[] {
-                                      tagsSuccess, ownerSuccess, updateLogSuccess, analysisSuccess
-                                    };
-                                  })
-                              .flatMap(
-                                  results -> {
-                                    Boolean tagsSuccess = (Boolean) results[0];
-                                    Boolean ownerSuccess = (Boolean) results[1];
-                                    Boolean updateLogSuccess = (Boolean) results[2];
-                                    Boolean analysisSuccess = (Boolean) results[3];
+  private Maybe<Boolean> createExperiment(
+      SqlConnection connection, String projectKey, Experiment experiment) {
 
-                                    // Validate all operations succeeded
-                                    if (!tagsSuccess) {
-                                      return Single.error(
-                                          new RestException(ErrorEnum.TAGS_INSERTION_FAILED));
-                                    }
-                                    if (!ownerSuccess) {
-                                      return Single.error(
-                                          new RestException(ErrorEnum.OWNER_INSERTION_FAILED));
-                                    }
-                                    if (!updateLogSuccess) {
-                                      return Single.error(
-                                          new RestException(ErrorEnum.UPDATE_LOG_INSERTION_FAILED));
-                                    }
-                                    if (!analysisSuccess) {
-                                      return Single.error(
-                                          new RestException(ErrorEnum.ANALYSIS_INSERTION_FAILED));
-                                    }
+    return insertExperiment(connection, projectKey, experiment)
+        .flatMap(
+            success -> {
+              log.info(
+                  "DAO: Experiment created successfully, inserting related data for experimentId: {}",
+                  experiment.getExperimentId());
 
-                                    log.info(
-                                        "DAO: Successfully created experiment with all related data in parallel, experimentId: {}, projectKey: {}",
-                                        experimentId,
-                                        projectKey);
-                                    return Single.just(
-                                        experimentId.toString()); // Return experiment ID
-                                  });
-                        })
-                    .toMaybe())
-        .toSingle();
+              return Single.zip(
+                      insertTags(
+                          connection,
+                          projectKey,
+                          experiment.getExperimentId(),
+                          experiment.getTags()),
+                      insertOwners(
+                          connection,
+                          projectKey,
+                          experiment.getExperimentId(),
+                          experiment.getOwners()),
+                      insertUpdateLog(connection, projectKey, null, experiment),
+                      insertAnalysis(
+                          connection,
+                          projectKey,
+                          experiment.getExperimentId(),
+                          experiment.getMetrics()),
+                      (tagsSuccess, ownerSuccess, updateLogSuccess, analysisSuccess) ->
+                          tagsSuccess && ownerSuccess && updateLogSuccess && analysisSuccess)
+                  .map(res -> res);
+            })
+        .toMaybe();
   }
 
   /**
@@ -418,52 +318,6 @@ public class ExperimentDAOImpl implements ExperimentDAO {
                   experimentId,
                   error.getMessage());
               return new HashMap<>();
-            })
-        .toSingle();
-  }
-
-  /**
-   * Checks if an experiment name already exists in the project (excluding current experiment).
-   *
-   * @param projectKey project identifier for partitioning
-   * @param name the experiment name to check
-   * @param experimentId current experiment ID to exclude from the check
-   * @return Single emitting true if name exists for a different experiment, false otherwise
-   */
-  @Override
-  public Single<Boolean> checkExperimentNameExists(
-      String projectKey, String name, UUID experimentId) {
-    log.debug(
-        "DAO: Checking if experiment name '{}' exists for projectKey: {}, excluding experimentId: {}",
-        name,
-        projectKey,
-        experimentId);
-
-    Tuple params =
-        Tuple.tuple().addString(projectKey).addString(name).addString(experimentId.toString());
-
-    return pgReaderClient
-        .fetchOne(
-            ReadQuery.CHECK_EXPERIMENT_NAME_EXISTS,
-            params,
-            row -> row.getBoolean(0)) // EXISTS returns boolean
-        .map(exists -> exists != null && exists)
-        .doOnSuccess(
-            exists ->
-                log.info(
-                    "DAO: Name existence check for '{}' in projectKey: {} (excluding {}): {}",
-                    name,
-                    projectKey,
-                    experimentId,
-                    exists))
-        .onErrorReturn(
-            error -> {
-              log.error(
-                  "DAO: Error checking name existence for '{}', projectKey: {}, error: {}",
-                  name,
-                  projectKey,
-                  error.getMessage());
-              return false; // Default to false on error
             })
         .toSingle();
   }
@@ -922,33 +776,29 @@ public class ExperimentDAOImpl implements ExperimentDAO {
     // Extract non-null fields from request POJO for dynamic SQL generation
     Map<String, Object> experimentFields = extractNonNullFields(request);
 
-    return pgWriterClient
-        .executeWithTransaction(
-            connection ->
-                updateExperimentFields(connection, projectKey, experimentId, experimentFields)
-                    .flatMap(success -> validateUpdateSuccess(success, "experiment fields"))
-                    .flatMap(
-                        unused -> updateTagsIfPresent(connection, projectKey, experimentId, tags))
-                    .flatMap(success -> validateUpdateSuccess(success, "tags"))
-                    .flatMap(
-                        unused ->
-                            updateOwnersIfPresent(connection, projectKey, experimentId, owners))
-                    .flatMap(success -> validateUpdateSuccess(success, "owners"))
-                    .flatMap(
-                        unused ->
-                            updateMetricsIfPresent(connection, projectKey, experimentId, metrics))
-                    .flatMap(success -> validateUpdateSuccess(success, "metrics"))
-                    .flatMap(
-                        unused ->
-                            logUpdate(
-                                connection,
-                                projectKey,
-                                experimentId,
-                                experimentFields,
-                                previousData,
-                                updatedBy))
-                    .toMaybe())
-        .toSingle();
+    return pgWriterClient.executeWithTransaction(
+        connection ->
+            updateExperimentFields(connection, projectKey, experimentId, experimentFields)
+                .flatMap(success -> validateUpdateSuccess(success, "experiment fields"))
+                .flatMap(unused -> updateTagsIfPresent(connection, projectKey, experimentId, tags))
+                .flatMap(success -> validateUpdateSuccess(success, "tags"))
+                .flatMap(
+                    unused -> updateOwnersIfPresent(connection, projectKey, experimentId, owners))
+                .flatMap(success -> validateUpdateSuccess(success, "owners"))
+                .flatMap(
+                    unused -> updateMetricsIfPresent(connection, projectKey, experimentId, metrics))
+                .flatMap(success -> validateUpdateSuccess(success, "metrics"))
+                .flatMap(
+                    unused ->
+                        logUpdate(
+                            connection,
+                            projectKey,
+                            experimentId,
+                            experimentFields,
+                            previousData,
+                            updatedBy))
+                .toMaybe(),
+        false);
   }
 
   /**
@@ -1006,7 +856,7 @@ public class ExperimentDAOImpl implements ExperimentDAO {
               Single<Boolean> insertNew =
                   tagsToAdd.isEmpty()
                       ? Single.just(true)
-                      : batchInsertTags(connection, projectKey, experimentId, tagsToAdd);
+                      : insertTags(connection, projectKey, experimentId, tagsToAdd);
 
               return deleteTags.flatMap(
                   deleteSuccess -> {
@@ -1060,7 +910,7 @@ public class ExperimentDAOImpl implements ExperimentDAO {
               Single<Boolean> insertNew =
                   ownersToAdd.isEmpty()
                       ? Single.just(true)
-                      : batchInsertOwners(connection, projectKey, experimentId, ownersToAdd);
+                      : insertOwners(connection, projectKey, experimentId, ownersToAdd);
 
               return deleteOwners.flatMap(
                   deleteSuccess -> {
@@ -1140,9 +990,11 @@ public class ExperimentDAOImpl implements ExperimentDAO {
 
     log.debug("DAO: Current data computed, logging update for experimentId: {}", experimentId);
 
-    return insertUpdateLog(
-            connection, projectKey, experimentId, previousData, currentData, updatedBy)
-        .map(success -> true);
+    return Single.just(true);
+
+    //    return insertUpdateLog(
+    //            connection, projectKey, experimentId, previousData, currentData, updatedBy)
+    //        .map(success -> true);
   }
 
   /**
@@ -1177,10 +1029,9 @@ public class ExperimentDAOImpl implements ExperimentDAO {
    * @param tags list of tags to insert
    * @return Single emitting true on success, false on failure
    */
-  @Override
-  public Single<Boolean> batchInsertTags(
+  private Single<Boolean> insertTags(
       SqlConnection connection, String projectKey, UUID experimentId, List<String> tags) {
-    if (tags == null || tags.isEmpty()) {
+    if (Objects.isNull(tags) || tags.isEmpty()) {
       log.debug("No tags to insert for experimentId: {}", experimentId);
       return Single.just(true);
     }
@@ -1191,7 +1042,6 @@ public class ExperimentDAOImpl implements ExperimentDAO {
         experimentId,
         projectKey);
 
-    // Build list of tuples for batch insert
     List<Tuple> tuples = new ArrayList<>();
     for (String tag : tags) {
       Tuple params =
@@ -1199,13 +1049,12 @@ public class ExperimentDAOImpl implements ExperimentDAO {
       tuples.add(params);
     }
 
-    // Execute batch insert
     return pgWriterClient
         .executeMultiple(connection, WriteQuery.INSERT_EXPERIMENT_TAG, tuples)
         .doOnSuccess(
             success ->
                 log.info(
-                    "DAO: Successfully batch inserted {} tags for experimentId: {}, projectKey: {}",
+                    "DAO: Successfully inserted {} tags for experimentId: {}, projectKey: {}",
                     tags.size(),
                     experimentId,
                     projectKey))
@@ -1300,41 +1149,6 @@ public class ExperimentDAOImpl implements ExperimentDAO {
   }
 
   /**
-   * Deletes all tags for an experiment.
-   *
-   * @param connection SQL connection for transaction
-   * @param projectKey project identifier for partitioning
-   * @param experimentId experiment identifier
-   * @return Single emitting true on success, false on failure
-   */
-  @Override
-  public Single<Boolean> deleteTags(
-      SqlConnection connection, String projectKey, UUID experimentId) {
-    log.debug("DAO: Deleting tags for experimentId: {}, projectKey: {}", experimentId, projectKey);
-
-    Tuple params = Tuple.tuple().addString(projectKey).addString(experimentId.toString());
-
-    return pgWriterClient
-        .execute(connection, WriteQuery.DELETE_EXPERIMENT_TAGS, params)
-        .doOnSuccess(
-            success ->
-                log.info(
-                    "DAO: Successfully deleted tags for experimentId: {}, projectKey: {}",
-                    experimentId,
-                    projectKey))
-        .onErrorReturn(
-            error -> {
-              log.error(
-                  "DAO: Returning false for tag deletion, experimentId: {}, error: {}",
-                  experimentId,
-                  error.getMessage());
-              return false;
-            });
-  }
-
-  // ==================== Owner Operations ====================
-
-  /**
    * Gets all owners for an experiment.
    *
    * @param connection SQL connection for transaction
@@ -1377,10 +1191,9 @@ public class ExperimentDAOImpl implements ExperimentDAO {
    * @param experimentId experiment identifier
    * @return Single emitting true on success, false on failure
    */
-  @Override
-  public Single<Boolean> batchInsertOwners(
+  private Single<Boolean> insertOwners(
       SqlConnection connection, String projectKey, UUID experimentId, List<String> owners) {
-    if (owners == null || owners.isEmpty()) {
+    if (Objects.isNull(owners) || owners.isEmpty()) {
       log.debug("No owners to insert for experimentId: {}", experimentId);
       return Single.just(true);
     }
@@ -1391,24 +1204,22 @@ public class ExperimentDAOImpl implements ExperimentDAO {
         experimentId,
         projectKey);
 
-    // Build batch insert query
-    StringBuilder queryBuilder = new StringBuilder(WriteQuery.INSERT_EXPERIMENT_OWNER);
-    for (int i = 1; i < owners.size(); i++) {
-      queryBuilder.append(", ($1, $2, $").append(3 + i).append(")");
-    }
-
-    Tuple params = Tuple.tuple().addString(experimentId.toString()).addString(projectKey);
-
-    for (String owner : owners) {
-      params.addString(owner);
-    }
+    List<Tuple> tuples =
+        owners.stream()
+            .map(
+                owner ->
+                    Tuple.tuple()
+                        .addString(experimentId.toString())
+                        .addString(projectKey)
+                        .addString(owner))
+            .toList();
 
     return pgWriterClient
-        .execute(connection, queryBuilder.toString(), params)
+        .executeMultiple(connection, WriteQuery.INSERT_EXPERIMENT_OWNER, tuples)
         .doOnSuccess(
             success ->
                 log.info(
-                    "DAO: Successfully batch inserted {} owners for experimentId: {}, projectKey: {}",
+                    "DAO: Successfully inserted {} owners for experimentId: {}, projectKey: {}",
                     owners.size(),
                     experimentId,
                     projectKey))
@@ -1416,40 +1227,6 @@ public class ExperimentDAOImpl implements ExperimentDAO {
             error -> {
               log.error(
                   "DAO: Returning false for owners batch insert, experimentId: {}, error: {}",
-                  experimentId,
-                  error.getMessage());
-              return false;
-            });
-  }
-
-  /**
-   * Deletes all owners for an experiment.
-   *
-   * @param connection SQL connection for transaction
-   * @param projectKey project identifier for partitioning
-   * @param experimentId experiment identifier
-   * @return Single emitting true on success, false on failure
-   */
-  @Override
-  public Single<Boolean> deleteOwners(
-      SqlConnection connection, String projectKey, UUID experimentId) {
-    log.debug(
-        "DAO: Deleting owners for experimentId: {}, projectKey: {}", experimentId, projectKey);
-
-    Tuple params = Tuple.tuple().addString(projectKey).addString(experimentId.toString());
-
-    return pgWriterClient
-        .execute(connection, WriteQuery.DELETE_EXPERIMENT_OWNERS, params)
-        .doOnSuccess(
-            success ->
-                log.info(
-                    "DAO: Successfully deleted owners for experimentId: {}, projectKey: {}",
-                    experimentId,
-                    projectKey))
-        .onErrorReturn(
-            error -> {
-              log.error(
-                  "DAO: Returning false for owner deletion, experimentId: {}, error: {}",
                   experimentId,
                   error.getMessage());
               return false;
@@ -1480,7 +1257,6 @@ public class ExperimentDAOImpl implements ExperimentDAO {
         experimentId,
         projectKey);
 
-    // Build dynamic query with IN clause
     StringBuilder queryBuilder =
         new StringBuilder(
             "DELETE FROM experiment.owners WHERE project_key = $1 AND experiment_id = $2 AND owner IN (");
@@ -1520,59 +1296,41 @@ public class ExperimentDAOImpl implements ExperimentDAO {
    *
    * @param connection SQL connection for transaction
    * @param projectKey project identifier for partitioning
-   * @param experimentId experiment identifier
    * @param previousData previous experiment data (null for create operation)
    * @param currentData current experiment data
-   * @param updatedBy user who performed the update
    * @return Single emitting true on success, false on failure
    */
-  @Override
-  public Single<Boolean> insertUpdateLog(
+  private Single<Boolean> insertUpdateLog(
       SqlConnection connection,
       String projectKey,
-      UUID experimentId,
-      Object previousData,
-      Object currentData,
-      String updatedBy) {
+      Experiment previousData,
+      Experiment currentData) {
     log.debug(
-        "DAO: Inserting update log for experimentId: {}, projectKey: {}, updatedBy: {}",
-        experimentId,
-        projectKey,
-        updatedBy);
+        "DAO: Inserting update log for experimentId: {}, projectKey: {}",
+        currentData.getExperimentId(),
+        projectKey);
 
-    return Single.fromCallable(
-            () -> {
-              // Convert POJOs/Maps directly to JsonObject for JSONB columns
-              JsonObject previousDataJson =
-                  previousData != null
-                      ? new JsonObject(objectMapper.writeValueAsString(previousData))
-                      : null;
-              JsonObject currentDataJson =
-                  currentData != null
-                      ? new JsonObject(objectMapper.writeValueAsString(currentData))
-                      : null;
+    Tuple tuple =
+        Tuple.tuple()
+            .addString(projectKey)
+            .addString(currentData.getExperimentId().toString())
+            .addJsonObject(JsonObject.mapFrom(previousData))
+            .addJsonObject(JsonObject.mapFrom(currentData))
+            .addString(currentData.getUpdatedBy());
 
-              return Tuple.tuple()
-                  .addString(projectKey)
-                  .addString(experimentId.toString())
-                  .addValue(previousDataJson)
-                  .addValue(currentDataJson)
-                  .addString(updatedBy);
-            })
-        .flatMap(
-            params ->
-                pgWriterClient.execute(connection, WriteQuery.INSERT_EXPERIMENT_UPDATE_LOG, params))
+    return pgWriterClient
+        .execute(connection, WriteQuery.INSERT_EXPERIMENT_UPDATE_LOG, tuple)
         .doOnSuccess(
             success ->
                 log.info(
                     "DAO: Successfully inserted update log for experimentId: {}, projectKey: {}",
-                    experimentId,
+                    currentData.getExperimentId(),
                     projectKey))
         .onErrorReturn(
             error -> {
               log.error(
                   "DAO: Returning false for update log insert, experimentId: {}, error: {}",
-                  experimentId,
+                  currentData.getExperimentId(),
                   error.getMessage());
               return false;
             });
@@ -1675,8 +1433,6 @@ public class ExperimentDAOImpl implements ExperimentDAO {
             });
   }
 
-  // ==================== Analysis Operations ====================
-
   /**
    * Inserts an experiment analysis entry with default/null values.
    *
@@ -1686,62 +1442,13 @@ public class ExperimentDAOImpl implements ExperimentDAO {
    * @param metrics map of metrics (primary and secondary)
    * @return Single emitting true on success, false on failure
    */
-  @Override
-  public Single<Boolean> insertAnalysis(
-      SqlConnection connection,
-      String projectKey,
-      UUID experimentId,
-      Map<String, List<String>> metrics) {
+  private Single<Boolean> insertAnalysis(
+      SqlConnection connection, String projectKey, UUID experimentId, Metrics metrics) {
 
-    // Extract primary and secondary metrics from the map
-    String primaryMetrics = null;
-    String secondaryMetrics = null;
-
-    if (metrics != null && !metrics.isEmpty()) {
-      List<String> primaryMetricsList = metrics.get("primary");
-      List<String> secondaryMetricsList = metrics.get("secondary");
-
-      primaryMetrics =
-          (primaryMetricsList != null && !primaryMetricsList.isEmpty())
-              ? String.join(",", primaryMetricsList)
-              : null;
-      secondaryMetrics =
-          (secondaryMetricsList != null && !secondaryMetricsList.isEmpty())
-              ? String.join(",", secondaryMetricsList)
-              : null;
+    if (Objects.isNull(metrics)) {
+      return Single.just(true);
     }
 
-    log.debug(
-        "DAO: Inserting analysis with primaryMetrics: {}, secondaryMetrics: {} for experimentId: {}",
-        primaryMetrics,
-        secondaryMetrics,
-        experimentId);
-
-    return insertAnalysis(
-        connection, projectKey, experimentId, null, primaryMetrics, secondaryMetrics, null);
-  }
-
-  /**
-   * Inserts an experiment analysis entry with specified values.
-   *
-   * @param connection SQL connection for transaction
-   * @param projectKey project identifier for partitioning
-   * @param experimentId experiment identifier
-   * @param config analysis configuration
-   * @param primaryMetrics primary metrics for analysis
-   * @param secondaryMetrics secondary metrics for analysis
-   * @param metricTokens metric tokens
-   * @return Single emitting true on success, false on failure
-   */
-  @Override
-  public Single<Boolean> insertAnalysis(
-      SqlConnection connection,
-      String projectKey,
-      UUID experimentId,
-      String config,
-      String primaryMetrics,
-      String secondaryMetrics,
-      String metricTokens) {
     log.debug(
         "DAO: Inserting analysis for experimentId: {}, projectKey: {}", experimentId, projectKey);
 
@@ -1749,11 +1456,8 @@ public class ExperimentDAOImpl implements ExperimentDAO {
         Tuple.tuple()
             .addString(projectKey)
             .addString(experimentId.toString())
-            .addString(config)
-            .addString(primaryMetrics)
-            .addString(secondaryMetrics)
-            .addString(metricTokens);
-
+            .addArrayOfString(ListUtils.emptyIfNull(metrics.getPrimary()).toArray(new String[0]))
+            .addArrayOfString(ListUtils.emptyIfNull(metrics.getSecondary()).toArray(new String[0]));
     return pgWriterClient
         .execute(connection, WriteQuery.INSERT_EXPERIMENT_ANALYSIS, params)
         .doOnSuccess(

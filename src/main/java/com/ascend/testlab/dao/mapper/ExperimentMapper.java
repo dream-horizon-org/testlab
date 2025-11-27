@@ -97,7 +97,7 @@ public class ExperimentMapper {
           .projectKey(row.getString(Columns.PROJECT_KEY))
           .experimentId(experimentId)
           .name(row.getString(Columns.NAME))
-          .key(row.getString(Columns.EXPERIMENT_KEY))
+          .experimentKey(row.getString(Columns.EXPERIMENT_KEY))
           .description(row.getString(Columns.DESCRIPTION))
           .hypothesis(row.getString(Columns.HYPOTHESIS))
           .status(ExperimentStatus.valueOf(row.getString(Columns.STATUS)))

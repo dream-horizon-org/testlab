@@ -843,7 +843,7 @@ class AllocationDAOTest {
         .experimentId(EXPERIMENT_ID)
         .projectKey(PROJECT_KEY)
         .name("Test Experiment")
-        .key("test_experiment")
+        .experimentKey("test_experiment")
         .status(ExperimentStatus.LIVE)
         .build();
   }

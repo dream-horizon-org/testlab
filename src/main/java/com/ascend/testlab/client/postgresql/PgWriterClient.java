@@ -106,7 +106,8 @@ public interface PgWriterClient {
    * @return a Maybe that emits the result of the transactional function
    */
   // TODO: add support to begin/commit/rollback a transaction
-  <T> Maybe<T> executeWithTransaction(Function<SqlConnection, Maybe<T>> transactionalFunction);
+  <T> Single<T> executeWithTransaction(
+      Function<SqlConnection, Maybe<T>> transactionalFunction, T defaultValue);
 
   /**
    * Execute a prepared query with a tuple and fetch one row.
