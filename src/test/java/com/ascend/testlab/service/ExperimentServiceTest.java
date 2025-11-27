@@ -1363,19 +1363,18 @@ public class ExperimentServiceTest {
 
       // Act
       TestObserver<CreateExperimentResponse> observer1 =
-          experimentService.create(testTenantId, testProjectKey, request1).test();
+          experimentService.create(testProjectKey, request1).test();
       TestObserver<CreateExperimentResponse> observer2 =
-          experimentService.create(testTenantId, testProjectKey, request2).test();
+          experimentService.create(testProjectKey, request2).test();
       TestObserver<CreateExperimentResponse> observer3 =
-          experimentService.create(testTenantId, testProjectKey, request3).test();
+          experimentService.create(testProjectKey, request3).test();
 
       // Assert
       observer1.assertComplete().assertNoErrors();
       observer2.assertComplete().assertNoErrors();
       observer3.assertComplete().assertNoErrors();
 
-      verify(experimentDAO, times(3))
-          .createWithRelatedData(any(UUID.class), any(CreateExperimentRequest.class));
+      verify(experimentDAO, times(3)).createWithRelatedData(any(CreateExperimentRequest.class));
     }
 
     @Test
@@ -1407,11 +1406,11 @@ public class ExperimentServiceTest {
 
       // Act
       TestObserver<UpdateExperimentResponse> observer1 =
-          experimentService.update(testTenantId, testProjectKey, testExperimentId, updates1).test();
+          experimentService.update(testProjectKey, testExperimentId, updates1).test();
       TestObserver<UpdateExperimentResponse> observer2 =
-          experimentService.update(testTenantId, testProjectKey, testExperimentId, updates2).test();
+          experimentService.update(testProjectKey, testExperimentId, updates2).test();
       TestObserver<UpdateExperimentResponse> observer3 =
-          experimentService.update(testTenantId, testProjectKey, testExperimentId, updates3).test();
+          experimentService.update(testProjectKey, testExperimentId, updates3).test();
 
       // Assert
       observer1.assertComplete().assertNoErrors().assertValue(response -> response.isStatus());
