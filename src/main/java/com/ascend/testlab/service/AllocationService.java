@@ -3,8 +3,7 @@ package com.ascend.testlab.service;
 import com.ascend.testlab.dto.entity.allocation.UserExperimentMap;
 import com.ascend.testlab.dto.request.AllocationRequest;
 import com.ascend.testlab.dto.request.ReallocateRequest;
-import com.ascend.testlab.dto.response.AllocationResponse;
-import com.ascend.testlab.dto.response.GetAllocationsResponse;
+import com.ascend.testlab.dto.response.AllocationsResponse;
 import io.reactivex.rxjava3.core.Single;
 
 /**
@@ -24,7 +23,7 @@ public interface AllocationService {
    * @param allocationRequest the allocation request containing filters and attributes
    * @return a Single that emits the allocation response
    */
-  Single<AllocationResponse> allotExperiments(
+  Single<AllocationsResponse> allotExperiments(
       String projectKey, AllocationRequest allocationRequest);
 
   /**
@@ -32,10 +31,10 @@ public interface AllocationService {
    *
    * @param userId the unique identifier of the user whose allocations are being retrieved
    * @param projectKey the project identifier to scope the allocations
-   * @return a Single that emits the GetAllocationsResponse containing the user's experiment
+   * @return a Single that emits the AllocationsResponse containing the user's experiment
    *     allocations
    */
-  Single<GetAllocationsResponse> getAllocations(String userId, String projectKey);
+  Single<AllocationsResponse> getAllocations(String userId, String projectKey);
 
   /**
    * Reassigns an experiment allocation for a user within the given project.

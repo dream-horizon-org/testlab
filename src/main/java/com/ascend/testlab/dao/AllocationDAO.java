@@ -21,6 +21,7 @@ public interface AllocationDAO {
    * Fetches all active experiments for a given tenant
    *
    * @param projectKey project identifier
+   * @param experimentKeys list of experiment keys
    * @return list of active experiments
    */
   Single<List<Experiment>> fetchActiveExperiments(String projectKey, List<String> experimentKeys);
@@ -74,6 +75,7 @@ public interface AllocationDAO {
   /**
    * Checks if experiment has reached threshold
    *
+   * @param projectKey project identifier
    * @param experimentId experiment identifier
    * @return true if threshold not breached
    */

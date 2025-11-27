@@ -15,6 +15,7 @@ import lombok.extern.slf4j.Slf4j;
 @UtilityClass
 public class ConcludedStrategyFactory {
 
+  /** Enum for strategy types. */
   public enum StrategyType {
     /** Only override winning variant for users who were already assigned */
     ASSIGNED_ONLY,

@@ -178,7 +178,7 @@ public class AdminDAOImpl implements AdminDAO {
             });
   }
 
-  /** Generates Aerospike Key objects from variant names for a given experiment.*/
+  /** Generates Aerospike Key objects from variant names for a given experiment. */
   private List<Key> getKeyFromVariantName(
       String projectKey, String experimentId, List<String> variants) {
     String set = CommonUtil.getSetName(aerospikeConfig.getVariantCountSet(), projectKey);

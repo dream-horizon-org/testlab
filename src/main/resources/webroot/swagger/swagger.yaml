@@ -22,7 +22,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/SuccessGetAllocationsResponse'
+                $ref: '#/components/schemas/SuccessAllocationsResponse'
         "304":
           description: Successful Not Modified Response
         "400":
@@ -100,7 +100,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/SuccessAllocationResponse'
+                $ref: '#/components/schemas/SuccessAllocationsResponse'
         "304":
           description: Successful Not Modified Response
         "400":
@@ -121,7 +121,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Failure'
-  /v1/experiments/{experimentId}:
+  /v1/experiments/{experiment_id}:
     get:
       operationId: getExperimentHandle
       parameters:
@@ -130,7 +130,7 @@ paths:
         required: true
         schema:
           type: string
-      - name: experimentId
+      - name: experiment_id
         in: path
         required: true
         schema:
@@ -168,7 +168,7 @@ paths:
         required: true
         schema:
           type: string
-      - name: experimentId
+      - name: experiment_id
         in: path
         required: true
         schema:
@@ -179,7 +179,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/SuccessBoolean'
+                $ref: '#/components/schemas/SuccessDeleteExperimentResponse'
         "400":
           description: Project id is missing or Experiment id is invalid
           content:
@@ -207,7 +207,7 @@ paths:
         required: true
         schema:
           type: string
-      - name: experimentKey
+      - name: experiment_key
         in: query
         required: true
         schema:
@@ -293,7 +293,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Failure'
-  /v1/experiments/{experimentId}/history:
+  /v1/experiments/{experiment_id}/history:
     get:
       operationId: getExperimentHistoryHandle
       parameters:
@@ -302,7 +302,7 @@ paths:
         required: true
         schema:
           type: string
-      - name: experimentId
+      - name: experiment_id
         in: path
         required: true
         schema:
@@ -388,30 +388,30 @@ components:
       properties:
         error:
           $ref: '#/components/schemas/ErrorEntity'
-    AllocationResponse:
+    AllocationsResponse:
       type: object
       properties:
         experiment_map:
           type: array
           items:
             $ref: '#/components/schemas/UserExperimentMap'
-    SuccessAllocationResponse:
+    SuccessAllocationsResponse:
       type: object
       properties:
         data:
-          $ref: '#/components/schemas/AllocationResponse'
+          $ref: '#/components/schemas/AllocationsResponse'
     UserExperimentMap:
       type: object
       properties:
-        status:
-          type: string
-        variant:
-          $ref: '#/components/schemas/Variant'
         experiment_id:
           type: string
           format: uuid
         experiment_name:
           type: string
+        status:
+          type: string
+        variant:
+          $ref: '#/components/schemas/Variant'
         variant_name:
           type: string
         assigned_at:
@@ -419,33 +419,33 @@ components:
           format: int64
     Variables:
       required:
-      - dataType
+      - data_type
       type: object
       properties:
         value:
           type: string
         key:
           type: string
-        dataType:
+        data_type:
           type: string
     Variant:
       type: object
       properties:
+        display_name:
+          type: string
         variables:
           type: array
           items:
             $ref: '#/components/schemas/Variables'
-        display_name:
-          type: string
     AllocationRequest:
       type: object
       properties:
-        attributes:
-          $ref: '#/components/schemas/Attributes'
         experiment_keys:
           type: array
           items:
             type: string
+        attributes:
+          $ref: '#/components/schemas/Attributes'
         stable_id:
           type: string
         user_id:
@@ -453,15 +453,15 @@ components:
     Attributes:
       type: object
       properties:
+        build_version:
+          type: string
         model:
           type: string
         device:
           type: string
-        platform:
-          type: string
-        build_version:
-          type: string
         app_name:
+          type: string
+        platform:
           type: string
         os_version:
           type: string
@@ -469,18 +469,6 @@ components:
           type: string
         build_number:
           type: string
-    GetAllocationsResponse:
-      type: object
-      properties:
-        experiment_map:
-          type: array
-          items:
-            $ref: '#/components/schemas/UserExperimentMap'
-    SuccessGetAllocationsResponse:
-      type: object
-      properties:
-        data:
-          $ref: '#/components/schemas/GetAllocationsResponse'
     SuccessUserExperimentMap:
       type: object
       properties:
@@ -493,23 +481,30 @@ components:
       - variant_name
       type: object
       properties:
-        reason:
-          type: string
         experiment_id:
           type: string
         variant_name:
           type: string
+        reason:
+          type: string
         user_id:
           type: string
-    SuccessBoolean:
+    DeleteExperimentResponse:
+      type: object
+      properties:
+        experiment_id:
+          type: string
+        success:
+          type: boolean
+    SuccessDeleteExperimentResponse:
       type: object
       properties:
         data:
-          type: boolean
+          $ref: '#/components/schemas/DeleteExperimentResponse'
     ExperimentKeyAvailabilityResponse:
       type: object
       properties:
-        isAvailable:
+        is_available:
           type: boolean
     SuccessExperimentKeyAvailabilityResponse:
       type: object
@@ -546,32 +541,6 @@ components:
     Experiment:
       type: object
       properties:
-        rule_attributes:
-          type: array
-          items:
-            $ref: '#/components/schemas/RuleAttributes'
-        distribution_strategy:
-          type: string
-          enum:
-          - ROUND_ROBIN
-          - RANDOM
-        assignment_domain:
-          type: string
-          enum:
-          - STRATIFIED
-          - COHORT
-        overrides:
-          type: array
-          items:
-            type: string
-        tags:
-          type: array
-          items:
-            type: string
-        owners:
-          type: array
-          items:
-            type: string
         experiment_id:
           type: string
           format: uuid
@@ -579,13 +548,13 @@ components:
           type: string
         name:
           type: string
-        experiment_key:
+        key:
           type: string
         description:
           type: string
         hypothesis:
           type: string
-        experiment_status:
+        status:
           type: string
           enum:
           - LIVE
@@ -593,7 +562,7 @@ components:
           - DRAFT
           - CONCLUDED
           - TERMINATED
-        experiment_type:
+        type:
           type: string
           enum:
           - A/A
@@ -615,6 +584,24 @@ components:
           type: object
           additionalProperties:
             $ref: '#/components/schemas/Variant'
+        rule_attributes:
+          type: array
+          items:
+            $ref: '#/components/schemas/RuleAttributes'
+        distribution_strategy:
+          type: string
+          enum:
+          - ROUND_ROBIN
+          - RANDOM
+        assignment_domain:
+          type: string
+          enum:
+          - STRATIFIED
+          - COHORT
+        overrides:
+          type: array
+          items:
+            type: string
         winning_variant:
           $ref: '#/components/schemas/JsonObject'
         exposure:
@@ -637,6 +624,14 @@ components:
         updated_at:
           type: string
           format: date-time
+        tags:
+          type: array
+          items:
+            type: string
+        owners:
+          type: array
+          items:
+            type: string
         variant_counts:
           type: object
           additionalProperties:
@@ -720,22 +715,22 @@ components:
     ExperimentHistoryEntry:
       type: object
       properties:
-        updatedBy:
+        updated_by:
           type: string
-        previousData:
+        previous_data:
           $ref: '#/components/schemas/JsonObject'
-        currentData:
+        current_data:
           $ref: '#/components/schemas/JsonObject'
-        createdAt:
+        created_at:
           type: string
           format: date-time
-        updatedAt:
+        updated_at:
           type: string
           format: date-time
     ExperimentHistoryResponse:
       type: object
       properties:
-        experimentId:
+        experiment_id:
           type: string
         history:
           type: array

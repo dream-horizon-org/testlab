@@ -66,7 +66,7 @@ class FilterExperimentsIT {
     response.contentType(WebConstants.APPLICATION_JSON);
     response.body("data.experiments", Matchers.notNullValue());
     response.body("data.experiments.size()", Matchers.equalTo(1));
-    response.body("data.experiments[0].experiment_status", Matchers.equalTo("LIVE"));
+    response.body("data.experiments[0].status", Matchers.equalTo("LIVE"));
     response.body("data.experiments[0].experiment_id", Matchers.equalTo(EXPERIMENT_ID_1));
   }
 
@@ -179,7 +179,7 @@ class FilterExperimentsIT {
     response.contentType(WebConstants.APPLICATION_JSON);
     response.body("data.experiments", Matchers.notNullValue());
     response.body("data.experiments.size()", Matchers.equalTo(1));
-    response.body("data.experiments[0].experiment_status", Matchers.equalTo("LIVE"));
+    response.body("data.experiments[0].status", Matchers.equalTo("LIVE"));
     response.body("data.experiments[0].name", Matchers.equalTo("Filter Test Experiment 1"));
     response.body("data.experiments[0].experiment_id", Matchers.equalTo(EXPERIMENT_ID_1));
   }

@@ -22,7 +22,7 @@ class GetExperimentHistoryIT {
 
   private static final String PROJECT_KEY = "history_it";
   private static final String EXPERIMENT_ID = "123e4567-e89b-12d3-a456-426614174000";
-  private final String route = "/v1/experiments/{experimentId}/history";
+  private final String route = "/v1/experiments/{experiment_id}/history";
 
   @BeforeAll
   public static void initialize() throws SQLException {
@@ -52,14 +52,14 @@ class GetExperimentHistoryIT {
     response.statusCode(HttpStatus.SC_OK);
     response.contentType(WebConstants.APPLICATION_JSON);
     response.body("data", Matchers.notNullValue());
-    response.body("data.experimentId", Matchers.equalTo(EXPERIMENT_ID));
+    response.body("data.experiment_id", Matchers.equalTo(EXPERIMENT_ID));
     response.body("data.history", Matchers.notNullValue());
     response.body("data.history.size()", Matchers.greaterThanOrEqualTo(1));
     response.body("data.pagination", Matchers.notNullValue());
     response.body("data.pagination.total_count", Matchers.greaterThanOrEqualTo(1));
     response.body("data.pagination.current_page", Matchers.equalTo(1));
     response.body("data.pagination.page_size", Matchers.greaterThanOrEqualTo(1));
-    response.body("data.history[0].updatedBy", Matchers.notNullValue());
+    response.body("data.history[0].updated_by", Matchers.notNullValue());
   }
 
   @Test
@@ -115,7 +115,7 @@ class GetExperimentHistoryIT {
     response.statusCode(HttpStatus.SC_OK);
     response.contentType(WebConstants.APPLICATION_JSON);
     response.body("data", Matchers.notNullValue());
-    response.body("data.experimentId", Matchers.equalTo(EXPERIMENT_ID));
+    response.body("data.experiment_id", Matchers.equalTo(EXPERIMENT_ID));
     response.body("data.history", Matchers.notNullValue());
     response.body("data.pagination", Matchers.notNullValue());
     response.body("data.pagination.current_page", Matchers.equalTo(1));
@@ -260,11 +260,11 @@ class GetExperimentHistoryIT {
     response.statusCode(HttpStatus.SC_OK);
     response.contentType(WebConstants.APPLICATION_JSON);
     response.body("data.history.size()", Matchers.greaterThanOrEqualTo(5));
-    response.body("data.history[0].updatedBy", Matchers.equalTo("test-user-0"));
-    response.body("data.history[1].updatedBy", Matchers.equalTo("test-user-1"));
-    response.body("data.history[2].updatedBy", Matchers.equalTo("test-user-2"));
-    response.body("data.history[3].updatedBy", Matchers.equalTo("test-user-3"));
-    response.body("data.history[4].updatedBy", Matchers.equalTo("test-user-4"));
+    response.body("data.history[0].updated_by", Matchers.equalTo("test-user-0"));
+    response.body("data.history[1].updated_by", Matchers.equalTo("test-user-1"));
+    response.body("data.history[2].updated_by", Matchers.equalTo("test-user-2"));
+    response.body("data.history[3].updated_by", Matchers.equalTo("test-user-3"));
+    response.body("data.history[4].updated_by", Matchers.equalTo("test-user-4"));
   }
 
   @Test

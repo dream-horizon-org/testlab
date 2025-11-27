@@ -21,7 +21,7 @@ class GetExperimentIT {
   private static final String PROJECT_KEY = "get_exp_it";
   private static final String EXPERIMENT_ID = "11111111-1111-1111-1111-111111111111";
   private static final String INVALID_EXPERIMENT_ID = "00000000-0000-0000-0000-000000000000";
-  private final String route = "/v1/experiments/{experimentId}";
+  private final String route = "/v1/experiments/{experiment_id}";
 
   @BeforeAll
   public static void initialize() {
