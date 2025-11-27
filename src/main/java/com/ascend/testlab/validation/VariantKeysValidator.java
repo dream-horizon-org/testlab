@@ -1,6 +1,6 @@
 package com.ascend.testlab.validation;
 
-import com.ascend.testlab.entity.Variant;
+import com.ascend.testlab.dto.entity.experiment.Variant;
 import com.ascend.testlab.validation.annotations.ValidVariantKeys;
 import jakarta.validation.ConstraintValidator;
 import jakarta.validation.ConstraintValidatorContext;

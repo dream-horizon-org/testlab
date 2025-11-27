@@ -1,7 +1,9 @@
 package com.ascend.testlab.validation;
 
-import com.ascend.testlab.entity.Variables;
-import com.ascend.testlab.entity.Variant;
+import com.ascend.testlab.dto.entity.experiment.Variables;
+import com.ascend.testlab.dto.entity.experiment.Variant;
+import com.ascend.testlab.exception.ErrorEnum;
+import com.dream11.rest.exception.RestException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.inject.Inject;
 import java.util.*;
@@ -90,7 +92,11 @@ public class VariantStructureValidator {
             "Variant structure validation failed for experimentId: {}, error: {}",
             experimentId,
             errorMsg);
-        throw new IllegalArgumentException(errorMsg);
+        throw new RestException(
+            ErrorEnum.VARIANT_KEYS_CHANGED.getErrorCode(),
+            errorMsg,
+            ErrorEnum.VARIANT_KEYS_CHANGED.getHttpStatusCode(),
+            null);
       }
 
       // Validate each variant's variable structure
@@ -104,15 +110,19 @@ public class VariantStructureValidator {
 
       log.info("Variant structure validation passed for experimentId: {}", experimentId);
 
-    } catch (IllegalArgumentException e) {
-      throw e; // Re-throw validation errors
+    } catch (RestException e) {
+      throw e; // Re-throw RestException validation errors
     } catch (Exception e) {
       log.error(
           "Error during variant structure validation for experimentId: {}, error: {}",
           experimentId,
-          e.getMessage());
-      throw new IllegalArgumentException(
-          "Failed to validate variant structure: " + e.getMessage(), e);
+          e.getMessage(),
+          e);
+      throw new RestException(
+          ErrorEnum.VARIANT_STRUCTURE_VALIDATION_FAILED.getErrorCode(),
+          "Failed to validate variant structure: " + e.getMessage(),
+          ErrorEnum.VARIANT_STRUCTURE_VALIDATION_FAILED.getHttpStatusCode(),
+          e);
     }
   }
 
@@ -152,7 +162,11 @@ public class VariantStructureValidator {
             "Variant structure validation failed for experimentId: {}, error: {}",
             experimentId,
             errorMsg);
-        throw new IllegalArgumentException(errorMsg);
+        throw new RestException(
+            ErrorEnum.VARIANT_DISPLAY_NAME_CHANGED.getErrorCode(),
+            errorMsg,
+            ErrorEnum.VARIANT_DISPLAY_NAME_CHANGED.getHttpStatusCode(),
+            null);
       }
 
       // Get existing variables
@@ -176,7 +190,11 @@ public class VariantStructureValidator {
             "Variant structure validation failed for experimentId: {}, error: {}",
             experimentId,
             errorMsg);
-        throw new IllegalArgumentException(errorMsg);
+        throw new RestException(
+            ErrorEnum.VARIABLE_COUNT_MISMATCH.getErrorCode(),
+            errorMsg,
+            ErrorEnum.VARIABLE_COUNT_MISMATCH.getHttpStatusCode(),
+            null);
       }
 
       // Build maps for comparison (key -> data_type)
@@ -206,7 +224,11 @@ public class VariantStructureValidator {
             "Variant structure validation failed for experimentId: {}, error: {}",
             experimentId,
             errorMsg);
-        throw new IllegalArgumentException(errorMsg);
+        throw new RestException(
+            ErrorEnum.VARIABLE_KEYS_CHANGED.getErrorCode(),
+            errorMsg,
+            ErrorEnum.VARIABLE_KEYS_CHANGED.getHttpStatusCode(),
+            null);
       }
 
       // Validate data types match for each key
@@ -223,7 +245,11 @@ public class VariantStructureValidator {
               "Variant structure validation failed for experimentId: {}, error: {}",
               experimentId,
               errorMsg);
-          throw new IllegalArgumentException(errorMsg);
+          throw new RestException(
+              ErrorEnum.VARIABLE_DATA_TYPE_CHANGED.getErrorCode(),
+              errorMsg,
+              ErrorEnum.VARIABLE_DATA_TYPE_CHANGED.getHttpStatusCode(),
+              null);
         }
       }
 
@@ -232,16 +258,20 @@ public class VariantStructureValidator {
           variantKey,
           experimentId);
 
-    } catch (IllegalArgumentException e) {
-      throw e; // Re-throw validation errors
+    } catch (RestException e) {
+      throw e; // Re-throw RestException validation errors
     } catch (Exception e) {
       log.error(
           "Error validating variant '{}' for experimentId: {}, error: {}",
           variantKey,
           experimentId,
-          e.getMessage());
-      throw new IllegalArgumentException(
-          "Failed to validate variant '" + variantKey + "': " + e.getMessage(), e);
+          e.getMessage(),
+          e);
+      throw new RestException(
+          ErrorEnum.VARIANT_STRUCTURE_VALIDATION_FAILED.getErrorCode(),
+          "Failed to validate variant '" + variantKey + "': " + e.getMessage(),
+          ErrorEnum.VARIANT_STRUCTURE_VALIDATION_FAILED.getHttpStatusCode(),
+          e);
     }
   }
 }

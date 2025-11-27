@@ -1,7 +1,7 @@
 package com.ascend.testlab.validation;
 
+import com.ascend.testlab.dto.entity.experiment.Variant;
 import com.ascend.testlab.dto.request.CreateExperimentRequest;
-import com.ascend.testlab.entity.Variant;
 import com.ascend.testlab.validation.annotations.ValidVariantWeightKeys;
 import com.ascend.testlab.variantWeights.CohortVariantWeights;
 import com.ascend.testlab.variantWeights.StratifiedVariantWeights;

@@ -1,6 +1,6 @@
 package com.ascend.testlab.validation;
 
-import com.ascend.testlab.entity.RuleAttributes;
+import com.ascend.testlab.dto.entity.experiment.RuleAttributes;
 import com.ascend.testlab.validation.annotations.ValidConditionValue;
 import jakarta.validation.ConstraintValidator;
 import jakarta.validation.ConstraintValidatorContext;

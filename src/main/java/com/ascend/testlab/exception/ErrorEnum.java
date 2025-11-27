@@ -194,6 +194,44 @@ public enum ErrorEnum implements RestError {
   FIELD_ACCESS_FAILED(
       "FIELD_ACCESS_FAILED",
       "Failed to access field during validation",
+      HttpStatus.SC_INTERNAL_SERVER_ERROR),
+
+  /* Variant Validation Errors */
+
+  /** The error code when variant keys are changed during update. */
+  VARIANT_KEYS_CHANGED(
+      "VARIANT_KEYS_CHANGED",
+      "Variant keys cannot be changed during update",
+      HttpStatus.SC_BAD_REQUEST),
+
+  /** The error code when variant display name is changed during update. */
+  VARIANT_DISPLAY_NAME_CHANGED(
+      "VARIANT_DISPLAY_NAME_CHANGED",
+      "Variant display name cannot be changed during update",
+      HttpStatus.SC_BAD_REQUEST),
+
+  /** The error code when variable keys are changed during update. */
+  VARIABLE_KEYS_CHANGED(
+      "VARIABLE_KEYS_CHANGED",
+      "Variable keys cannot be changed during update",
+      HttpStatus.SC_BAD_REQUEST),
+
+  /** The error code when variable data types are changed during update. */
+  VARIABLE_DATA_TYPE_CHANGED(
+      "VARIABLE_DATA_TYPE_CHANGED",
+      "Variable data types cannot be changed during update",
+      HttpStatus.SC_BAD_REQUEST),
+
+  /** The error code when variable count doesn't match during update. */
+  VARIABLE_COUNT_MISMATCH(
+      "VARIABLE_COUNT_MISMATCH",
+      "Variable count must remain the same during update",
+      HttpStatus.SC_BAD_REQUEST),
+
+  /** The error code for failed variant structure validation. */
+  VARIANT_STRUCTURE_VALIDATION_FAILED(
+      "VARIANT_STRUCTURE_VALIDATION_FAILED",
+      "Failed to validate variant structure",
       HttpStatus.SC_INTERNAL_SERVER_ERROR);
 
   /** The error code. */

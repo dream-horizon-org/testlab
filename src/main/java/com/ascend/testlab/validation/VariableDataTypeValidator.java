@@ -1,6 +1,6 @@
 package com.ascend.testlab.validation;
 
-import com.ascend.testlab.entity.Variables;
+import com.ascend.testlab.dto.entity.experiment.Variables;
 import com.ascend.testlab.validation.annotations.ValidVariableDataType;
 import jakarta.validation.ConstraintValidator;
 import jakarta.validation.ConstraintValidatorContext;

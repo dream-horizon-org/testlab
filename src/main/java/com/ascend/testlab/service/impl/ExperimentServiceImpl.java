@@ -361,17 +361,12 @@ public class ExperimentServiceImpl implements ExperimentService {
                 log.debug("Validating variant structure for experimentId: {}", experimentId);
                 try {
                   validateVariantStructure(previousData, context.request, experimentId);
-                } catch (IllegalArgumentException e) {
+                } catch (RestException e) {
                   log.error(
                       "Variant structure validation failed for experimentId: {}, error: {}",
                       experimentId,
                       e.getMessage());
-                  return Single.error(
-                      new RestException(
-                          "INVALID_REQUEST",
-                          e.getMessage(),
-                          org.apache.http.HttpStatus.SC_BAD_REQUEST,
-                          e));
+                  return Single.error(e);
                 }
               }
 
@@ -623,13 +618,22 @@ public class ExperimentServiceImpl implements ExperimentService {
   /**
    * Validates that variant updates only modify variable values, not keys or data types.
    *
-   * <p>When updating variants, the structure (variant keys, variable keys, and data types) must
-   * remain consistent with the original experiment. Only variable values can be changed.
+   * <p>When updating variants, the structure must remain consistent with the original experiment.
+   * The following cannot be changed:
+   *
+   * <ul>
+   *   <li>Variant keys (control, variant1, etc.)
+   *   <li>Variant display names
+   *   <li>Variable keys
+   *   <li>Variable data types
+   * </ul>
+   *
+   * <p>Only variable values can be changed.
    *
    * @param previousData the existing experiment data
    * @param request the update request
    * @param experimentId the experiment identifier for logging
-   * @throws IllegalArgumentException if variant structure is invalid
+   * @throws RestException if variant structure is invalid
    */
   private void validateVariantStructure(
       Map<String, Object> previousData, UpdateExperimentRequest request, UUID experimentId) {
