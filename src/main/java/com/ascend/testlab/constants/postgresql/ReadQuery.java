@@ -70,7 +70,7 @@ public final class ReadQuery {
         guardrail_health_status, cohorts, variant_weights, variants, distribution_strategy,
         assignment_domain, overrides, rule_attributes, winning_variant, exposure, threshold,
         start_time, end_time, created_by, created_at, updated_at
-      FROM experiments
+      FROM experiment.experiments
       WHERE project_key = $1 AND experiment_id = $2
       """;
 
