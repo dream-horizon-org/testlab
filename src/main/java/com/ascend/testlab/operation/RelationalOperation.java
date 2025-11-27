@@ -34,7 +34,7 @@ public final class RelationalOperation {
   }
 
   public static boolean isNotEqual(Object op1, Object op2) {
-    return Boolean.FALSE.equals(op1.equals(op2));
+    return !op1.equals(op2);
   }
 
   public static boolean containsRegex(String op1, String op2) {
@@ -54,15 +54,15 @@ public final class RelationalOperation {
   }
 
   public static <T> boolean doesNotContain(T op1, Collection<T> op2) {
-    return Boolean.FALSE.equals(op2.contains(op1));
+    return !op2.contains(op1);
   }
 
   public static <T> boolean doesNotContain(Collection<T> op1, Collection<T> op2) {
-    return Boolean.FALSE.equals(op2.stream().anyMatch(op1::contains));
+    return !op2.contains(op1);
   }
 
   public static boolean doesNotContain(String op1, String op2) {
-    return Boolean.FALSE.equals(op2.contains(op1));
+    return !op2.contains(op1);
   }
 
   private RelationalOperation() {

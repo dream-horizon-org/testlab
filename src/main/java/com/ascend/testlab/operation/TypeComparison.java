@@ -1,6 +1,6 @@
 package com.ascend.testlab.operation;
 
-import com.ascend.testlab.constants.attributes.RelationalOperator;
+import com.ascend.testlab.constants.enums.RelationalOperator;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import java.util.List;

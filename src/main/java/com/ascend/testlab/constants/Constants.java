@@ -24,6 +24,8 @@ public final class Constants {
   /** The default application environment. */
   public static final String DEFAULT_APP_ENV = "dev";
 
+  public static final String ADMIN = "ADMIN";
+
   /** The maximum number of REST verticles. */
   public static final Integer MAX_NUM_REST_VERTICLES = 16;
 
@@ -35,8 +37,8 @@ public final class Constants {
   /** The delimiter for colon. */
   public static final String COLON = ":";
 
-  /** The delimiter for space. */
-  public static final String SPACE = " ";
+  /** The delimiter for underscore. */
+  public static final String UNDER_SCORE = "_";
 
   public static final String GET_TYPE = "getType";
 
@@ -107,9 +109,6 @@ public final class Constants {
 
   /** The delimiter for apostrophe. */
   public static final String APOSTROPHE = "'";
-
-  /** The delimiter for underscore. */
-  public static final String UNDER_SCORE = "_";
 
   /** The maximum length for experiment key. */
   public static final int MAX_EXPERIMENT_KEY_LENGTH = 255;

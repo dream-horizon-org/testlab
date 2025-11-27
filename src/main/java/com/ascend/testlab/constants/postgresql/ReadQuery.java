@@ -74,18 +74,33 @@ public final class ReadQuery {
       WHERE project_key = $1 AND experiment_id = $2
       """;
 
+  /** Query to fetch active experiments for a tenant within a time range */
+  public static final String GET_EXPERIMENTS_FROM_KEY =
+      "SELECT * FROM experiment.experiments WHERE project_key = $1 AND status = 'LIVE' AND experiment_key = ANY($2::text[])";
+
+  /** Query to fetch a single live experiment by project_key and experiment_id. */
+  public static final String GET_LIVE_EXPERIMENT =
+      "SELECT * FROM experiment.experiments WHERE project_key = $1 AND experiment_id = $2 AND status = 'LIVE'";
+
+  /** Query to fetch concluded experiments for a tenant with winning variants */
+  public static final String GET_CONCLUDED_EXPERIMENTS =
+      """
+      SELECT *
+      FROM experiment.experiments
+      WHERE project_key = $1
+        AND status = 'CONCLUDED'
+        AND winning_variant IS NOT NULL
+      """;
+
   /**
    * Query to retrieve a single experiment by project_key and experiment_id. Returns experiment
    * details including tags and owners aggregated as comma-separated strings.
    */
   public static final String GET_EXPERIMENT =
       """
-      SELECT e.project_key, e.experiment_id, e.name, e.description, e.hypothesis, e.status, e.type,
-             e.guardrail_health_status, e.cohorts, e.variant_weights, e.assignment_strategy, e.overrides,
-             e.rule_attributes, e.winning_variant, e.exposure, e.threshold, e.start_time, e.end_time,
-             e.created_by, e.created_at, e.updated_at,
-             string_agg(DISTINCT t.tag, ',') as tags,
-             string_agg(DISTINCT o.owner, ',') as owners
+      SELECT e.*,
+             array_agg(DISTINCT t.tag) as tags,
+             array_agg(DISTINCT o.owner) as owners
       FROM experiment.experiments e
       LEFT JOIN experiment.tags t ON e.project_key = t.project_key AND e.experiment_id = t.experiment_id
       LEFT JOIN experiment.owners o ON e.project_key = o.project_key AND e.experiment_id = o.experiment_id
@@ -144,12 +159,9 @@ public final class ReadQuery {
    */
   public static final String FILTER_EXPERIMENT =
       """
-      SELECT e.project_key, e.experiment_id, e.name, e.description, e.hypothesis, e.status, e.type,
-             e.guardrail_health_status, e.cohorts, e.variant_weights, e.assignment_strategy, e.overrides,
-             e.rule_attributes, e.winning_variant, e.exposure, e.threshold, e.start_time, e.end_time,
-             e.created_by, e.created_at, e.updated_at,
-             string_agg(DISTINCT t.tag, ',') as tags,
-             string_agg(DISTINCT o.owner, ',') as owners,
+      SELECT e.*,
+             array_agg(DISTINCT t.tag) as tags,
+             array_agg(DISTINCT o.owner) as owners,
              COUNT(*) OVER() as total_count
       FROM experiment.experiments e
       LEFT JOIN experiment.tags t ON e.project_key = t.project_key AND e.experiment_id = t.experiment_id

@@ -13,10 +13,12 @@ import com.ascend.testlab.constants.postgresql.ReadQuery;
 import com.ascend.testlab.constants.postgresql.WriteQuery;
 import com.ascend.testlab.dao.impl.ExperimentDAOImpl;
 import com.ascend.testlab.dto.entity.Experiment;
+import com.ascend.testlab.dto.entity.experiment.Experiment;
 import com.ascend.testlab.dto.request.CreateExperimentRequest;
 import com.ascend.testlab.dto.request.FilterExperimentsRequest;
 import com.ascend.testlab.dto.response.FilterExperimentsResponse;
 import com.dream11.rest.exception.RestException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.reactivex.rxjava3.core.Maybe;
 import io.reactivex.rxjava3.core.Single;
 import io.reactivex.rxjava3.observers.TestObserver;
@@ -40,6 +42,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 /**
  * Comprehensive unit tests for ExperimentDAO.
  *
+ * @author Yashita Bansal
  * @version 1.0
  * @since 1.0
  */
@@ -47,8 +50,9 @@ import org.mockito.junit.jupiter.MockitoExtension;
 @DisplayName("ExperimentDAO Tests")
 public class ExperimentDAOTest {
 
-  @Mock private PgWriterClient pgWriterClient;
   @Mock private PgReaderClient pgReaderClient;
+  @Mock private PgWriterClient pgWriterClient;
+  private final ObjectMapper objectMapper = new ObjectMapper();
 
   private ExperimentDAO experimentDAO;
 
@@ -64,6 +68,7 @@ public class ExperimentDAOTest {
     testTenantId = UUID.randomUUID();
     testProjectKey = UUID.randomUUID().toString();
     testExperimentId = UUID.randomUUID();
+    this.experimentDAO = new ExperimentDAOImpl(pgReaderClient, pgWriterClient, objectMapper);
   }
 
   @Nested
@@ -89,6 +94,7 @@ public class ExperimentDAOTest {
       // Act
       TestObserver<String> testObserver =
           experimentDAO.create(testTenantId, testProjectKey, request).test();
+      ExperimentDAO dao = new ExperimentDAOImpl(pgReaderClient, pgWriterClient, objectMapper);
 
       // Assert
       testObserver.assertComplete();
@@ -963,7 +969,7 @@ public class ExperimentDAOTest {
 
       // Act
       TestObserver<Experiment> getObserver =
-          experimentDAO.getExperiment(PROJECT_KEY, testExperimentId.toString()).test();
+          experimentDAO.getExperiment(PROJECT_KEY, EXPERIMENT_ID).test();
       TestObserver<FilterExperimentsResponse> filterObserver =
           experimentDAO.filterExperiments(PROJECT_KEY, request).test();
       TestObserver<Boolean> deleteObserver =
@@ -992,10 +998,13 @@ public class ExperimentDAOTest {
         .experimentId(testExperimentId)
         .projectKey(PROJECT_KEY)
         .name("Test Experiment")
+        .key("test_experiment")
         .description("Test Description")
         .hypothesis("Test Hypothesis")
         .status(ExperimentStatus.LIVE)
         .type(ExperimentType.A_B)
+        .assignmentDomain(AssignmentDomain.COHORT)
+        .distributionStrategy(DistributionStrategy.RANDOM)
         .exposure(100)
         .threshold(1000L)
         .startTime(System.currentTimeMillis())
@@ -1003,8 +1012,8 @@ public class ExperimentDAOTest {
         .createdBy("test-user")
         .createdAt(Instant.now())
         .updatedAt(Instant.now())
-        .tags("tag1,tag2")
-        .owner("owner1")
+        .tags(List.of("tag1", "tag2"))
+        .owners(List.of("owner1"))
         .build();
   }
 
@@ -1024,18 +1033,29 @@ public class ExperimentDAOTest {
     when(mockRow.getString("project_key")).thenReturn(experiment.getProjectKey());
     when(mockRow.getString("experiment_id")).thenReturn(experiment.getExperimentId().toString());
     when(mockRow.getString("name")).thenReturn(experiment.getName());
+    when(mockRow.getString("experiment_key")).thenReturn(experiment.getKey());
     when(mockRow.getString("description")).thenReturn(experiment.getDescription());
     when(mockRow.getString("hypothesis")).thenReturn(experiment.getHypothesis());
     when(mockRow.getString("status"))
-        .thenReturn(experiment.getStatus() != null ? experiment.getStatus().name() : null);
+        .thenReturn(experiment.getStatus() != null ? experiment.getStatus().toString() : null);
     when(mockRow.getString("type"))
         .thenReturn(experiment.getType() != null ? experiment.getType().toString() : null);
     when(mockRow.getString("guardrail_health_status")).thenReturn(null);
     when(mockRow.getArrayOfStrings("cohorts")).thenReturn(new String[0]);
     when(mockRow.getJsonObject("variant_weights")).thenReturn(null);
-    when(mockRow.getString("assignment_strategy")).thenReturn(null);
-    when(mockRow.getJsonObject("overrides")).thenReturn(null);
-    when(mockRow.getJsonObject("rule_attributes")).thenReturn(null);
+    when(mockRow.getJsonObject("variants")).thenReturn(null);
+    when(mockRow.getString("distribution_strategy"))
+        .thenReturn(
+            experiment.getDistributionStrategy() != null
+                ? experiment.getDistributionStrategy().toString()
+                : DistributionStrategy.RANDOM.toString());
+    when(mockRow.getString("assignment_domain"))
+        .thenReturn(
+            experiment.getAssignmentDomain() != null
+                ? experiment.getAssignmentDomain().toString()
+                : AssignmentDomain.COHORT.toString());
+    when(mockRow.getArrayOfStrings("overrides")).thenReturn(null);
+    when(mockRow.getJsonArray("rule_attributes")).thenReturn(null);
     when(mockRow.getJsonObject("winning_variant")).thenReturn(null);
     when(mockRow.getInteger("exposure")).thenReturn(experiment.getExposure());
     when(mockRow.getLong("threshold")).thenReturn(experiment.getThreshold());
@@ -1044,8 +1064,9 @@ public class ExperimentDAOTest {
     when(mockRow.getString("created_by")).thenReturn(experiment.getCreatedBy());
     when(mockRow.getOffsetDateTime("created_at")).thenReturn(now);
     when(mockRow.getOffsetDateTime("updated_at")).thenReturn(now);
-    when(mockRow.getString("tags")).thenReturn(experiment.getTags());
-    when(mockRow.getString("owners")).thenReturn(experiment.getOwner());
+    when(mockRow.getArrayOfStrings("tags")).thenReturn(experiment.getTags().toArray(String[]::new));
+    when(mockRow.getArrayOfStrings("owners"))
+        .thenReturn(experiment.getOwners().toArray(String[]::new));
     // Add total_count for pagination
     when(mockRow.getInteger("total_count")).thenReturn(totalCount);
 

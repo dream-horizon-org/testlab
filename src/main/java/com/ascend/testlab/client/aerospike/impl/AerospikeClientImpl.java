@@ -4,10 +4,7 @@ import com.aerospike.client.Bin;
 import com.aerospike.client.Key;
 import com.aerospike.client.Operation;
 import com.aerospike.client.Record;
-import com.aerospike.client.policy.CommitLevel;
-import com.aerospike.client.policy.Policy;
-import com.aerospike.client.policy.Replica;
-import com.aerospike.client.policy.WritePolicy;
+import com.aerospike.client.policy.*;
 import com.ascend.testlab.client.aerospike.AerospikeClient;
 import com.ascend.testlab.config.AerospikeConfig;
 import com.ascend.testlab.util.VertxUtil;
@@ -19,6 +16,7 @@ import io.reactivex.rxjava3.core.Single;
 import io.vertx.core.Future;
 import io.vertx.rxjava3.core.Vertx;
 import io.vertx.rxjava3.impl.AsyncResultSingle;
+import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -113,6 +111,17 @@ public class AerospikeClientImpl implements AerospikeClient {
         handler ->
             getClient()
                 .onSuccess(client -> client.get(policy, key, binNames, handler))
+                .onFailure(err -> handler.handle(Future.failedFuture(err))));
+  }
+
+  /** {@inheritDoc} */
+  @Override
+  public Single<List<Record>> get(BatchPolicy batchPolicy, List<Key> keys, String... binNames) {
+    return AsyncResultSingle.toSingle(
+        handler ->
+            getClient()
+                .onSuccess(
+                    client -> client.get(batchPolicy, keys.toArray(Key[]::new), binNames, handler))
                 .onFailure(err -> handler.handle(Future.failedFuture(err))));
   }
 
