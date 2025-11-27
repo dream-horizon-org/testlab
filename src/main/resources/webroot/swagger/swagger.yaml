@@ -238,11 +238,6 @@ paths:
       summary: Create a new experiment
       operationId: create
       parameters:
-      - name: x-tenant-id
-        in: header
-        schema:
-          type: string
-          format: uuid
       - name: x-project-key
         in: header
         schema:
@@ -266,11 +261,6 @@ paths:
       summary: Update experiment partially with optional tag replace
       operationId: update
       parameters:
-      - name: x-tenant-id
-        in: header
-        schema:
-          type: string
-          format: uuid
       - name: x-project-key
         in: header
         schema:
@@ -588,6 +578,11 @@ components:
           type: boolean
         message:
           type: string
+    SuccessCreateExperimentResponse:
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/CreateExperimentResponse'
     CohortVariantWeights:
       type: object
       allOf:

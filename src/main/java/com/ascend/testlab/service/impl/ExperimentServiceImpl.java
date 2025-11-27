@@ -142,10 +142,9 @@ public class ExperimentServiceImpl implements ExperimentService {
    */
   @Override
   public Single<CreateExperimentResponse> create(
-      UUID tenantId, String projectKey, CreateExperimentRequest request) {
+      String projectKey, CreateExperimentRequest request) {
     log.info(
-        "Creating experiment for tenantId: {}, projectKey: {}, experimentName: {}, tags: {}, owner: {}",
-        tenantId,
+        "Creating experiment for projectKey: {}, experimentName: {}, tags: {}, owner: {}",
         projectKey,
         request.getName(),
         request.getTags(),
@@ -161,8 +160,7 @@ public class ExperimentServiceImpl implements ExperimentService {
     request.setExperimentKey(experimentKey);
 
     log.debug(
-        "Using tenantId: {}, projectKey: {} from header, generated experimentId: {}, experimentKey: {} for experiment: {}",
-        tenantId,
+        "Using projectKey: {} from header, generated experimentId: {}, experimentKey: {} for experiment: {}",
         projectKey,
         experimentId,
         experimentKey,
@@ -170,13 +168,12 @@ public class ExperimentServiceImpl implements ExperimentService {
 
     // Execute all insert operations in a transaction (delegated to DAO)
     return experimentDAO
-        .createWithRelatedData(tenantId, request)
+        .createWithRelatedData(request)
         .map(id -> new CreateExperimentResponse(experimentId, true, "created"))
         .onErrorResumeNext(
             err -> {
               log.error(
-                  "Failed to create experiment for tenantId: {}, projectKey: {}, experimentName: {}, error: {}",
-                  tenantId,
+                  "Failed to create experiment for projectKey: {}, experimentName: {}, error: {}",
                   projectKey,
                   request.getName(),
                   err.getMessage(),
@@ -221,12 +218,8 @@ public class ExperimentServiceImpl implements ExperimentService {
    */
   @Override
   public Single<UpdateExperimentResponse> update(
-      UUID tenantId, String projectKey, UUID experimentId, UpdateExperimentRequest request) {
-    log.info(
-        "Updating experiment for tenantId: {}, projectKey: {}, experimentId: {}",
-        tenantId,
-        projectKey,
-        experimentId);
+      String projectKey, UUID experimentId, UpdateExperimentRequest request) {
+    log.info("Updating experiment for projectKey: {}, experimentId: {}", projectKey, experimentId);
 
     UpdateContext context = extractUpdateContext(request, experimentId);
 
@@ -235,7 +228,7 @@ public class ExperimentServiceImpl implements ExperimentService {
       return Single.just(new UpdateExperimentResponse(experimentId, true, "No updates provided"));
     }
 
-    return executeTransactionalUpdate(tenantId, projectKey, experimentId, context)
+    return executeTransactionalUpdate(projectKey, experimentId, context)
         .map(
             success ->
                 new UpdateExperimentResponse(
@@ -243,8 +236,7 @@ public class ExperimentServiceImpl implements ExperimentService {
         .doOnSuccess(
             response ->
                 log.info(
-                    "Update experiment completed - tenantId: {}, projectKey: {}, experimentId: {}, status: {}",
-                    tenantId,
+                    "Update experiment completed - projectKey: {}, experimentId: {}, status: {}",
                     projectKey,
                     experimentId,
                     response.isStatus()));
@@ -296,7 +288,7 @@ public class ExperimentServiceImpl implements ExperimentService {
    * @return Single emitting true on success
    */
   private Single<Boolean> executeTransactionalUpdate(
-      UUID tenantId, String projectKey, UUID experimentId, UpdateContext context) {
+      String projectKey, UUID experimentId, UpdateContext context) {
 
     log.info(
         "Executing transactional update for experimentId: {}, projectKey: {}",
@@ -455,8 +447,7 @@ public class ExperimentServiceImpl implements ExperimentService {
         .onErrorResumeNext(
             err -> {
               log.error(
-                  "Failed to update experiment for tenantId: {}, projectKey: {}, experimentId: {}, error: {}",
-                  tenantId,
+                  "Failed to update experiment for projectKey: {}, experimentId: {}, error: {}",
                   projectKey,
                   experimentId,
                   err.getMessage());

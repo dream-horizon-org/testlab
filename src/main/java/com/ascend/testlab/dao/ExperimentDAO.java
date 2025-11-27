@@ -50,14 +50,13 @@ public interface ExperimentDAO {
    * <p><b>Deprecated:</b> This method is only for testing purposes. Use createWithRelatedData for
    * production code.
    *
-   * @param tenantId tenant identifier for multi-tenancy
    * @param projectKey project identifier for partitioning
    * @param request experiment creation request with all experiment details
    * @return Single emitting experiment ID as String on success
-   * @deprecated Use {@link #createWithRelatedData(UUID, CreateExperimentRequest)} instead
+   * @deprecated Use {@link #createWithRelatedData(CreateExperimentRequest)} instead
    */
   @Deprecated
-  Single<String> create(UUID tenantId, String projectKey, CreateExperimentRequest request);
+  Single<String> create(String projectKey, CreateExperimentRequest request);
 
   /**
    * Creates experiment with tags, owner, update log, and analysis in a transaction.
@@ -65,12 +64,11 @@ public interface ExperimentDAO {
    * <p>All necessary data (projectKey, experimentId, tags, owner) is extracted from the request
    * object.
    *
-   * @param tenantId tenant identifier for multi-tenancy
    * @param request experiment creation request with all experiment details including projectKey,
    *     experimentId, tags, and owner
    * @return Single emitting experiment ID as String on success
    */
-  Single<String> createWithRelatedData(UUID tenantId, CreateExperimentRequest request);
+  Single<String> createWithRelatedData(CreateExperimentRequest request);
 
   /**
    * Gets current experiment data as a map.

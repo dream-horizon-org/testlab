@@ -177,12 +177,12 @@ public class ExperimentDAOImpl implements ExperimentDAO {
    */
   @Deprecated
   @Override
-  public Single<String> create(UUID tenantId, String projectKey, CreateExperimentRequest request) {
+  public Single<String> create(String projectKey, CreateExperimentRequest request) {
     log.warn("Using deprecated create method - this should only be used in tests");
     // For testing only - use createWithRelatedData in production
     return pgWriterClient
         .executeWithTransaction(
-            connection -> createWithConnection(connection, tenantId, projectKey, request).toMaybe())
+            connection -> createWithConnection(connection, projectKey, request).toMaybe())
         .toSingle();
   }
 
@@ -196,10 +196,9 @@ public class ExperimentDAOImpl implements ExperimentDAO {
    * @return Single emitting experiment ID as String on success
    */
   private Single<String> createWithConnection(
-      SqlConnection connection, UUID tenantId, String projectKey, CreateExperimentRequest request) {
+      SqlConnection connection, String projectKey, CreateExperimentRequest request) {
     log.info(
-        "DAO: Creating experiment with connection, tenantId: {}, projectKey: {}, experimentId: {}, name: {}",
-        tenantId,
+        "DAO: Creating experiment with connection, projectKey: {}, experimentId: {}, name: {}",
         projectKey,
         request.getExperimentId(),
         request.getName());
@@ -308,7 +307,7 @@ public class ExperimentDAOImpl implements ExperimentDAO {
    * @return Single emitting experiment ID as String on success
    */
   @Override
-  public Single<String> createWithRelatedData(UUID tenantId, CreateExperimentRequest request) {
+  public Single<String> createWithRelatedData(CreateExperimentRequest request) {
 
     String projectKey = request.getProjectKey();
     UUID experimentId = request.getExperimentId();
@@ -323,7 +322,7 @@ public class ExperimentDAOImpl implements ExperimentDAO {
     return pgWriterClient
         .executeWithTransaction(
             connection ->
-                createWithConnection(connection, tenantId, projectKey, request)
+                createWithConnection(connection, projectKey, request)
                     .flatMap(
                         success -> {
                           log.info(

@@ -28,7 +28,7 @@ import lombok.extern.slf4j.Slf4j;
  * REST API resource for Experiment operations.
  *
  * <p>Provides RESTful endpoints for creating, updating, and assigning experiments. All endpoints
- * require tenant-id and project-key headers for multi-tenancy and partitioning.
+ * require project-key header for partitioning.
  *
  * @author Ravi Pandey
  * @version 1.0
@@ -49,7 +49,6 @@ public class ExperimentResource {
    * assignment strategies. Requires validation of request body. Validates that status, type,
    * guardrail_health_status, and assignment_strategy match existing enum values.
    *
-   * @param tenantId tenant identifier from x-tenant-id header
    * @param projectKey project identifier from x-project-key header
    * @param request validated experiment creation request
    * @return CompletionStage with CreateExperimentResponse containing id, status, and message
@@ -70,12 +69,10 @@ public class ExperimentResource {
         @ApiResponse(responseCode = "400", description = "Invalid enum values for status or type")
       })
   public CompletionStage<ResponseEntity.Success<CreateExperimentResponse>> create(
-      @HeaderParam("x-tenant-id") UUID tenantId,
-      @HeaderParam("x-project-key") String projectKey,
-      @Valid CreateExperimentRequest request) {
+      @HeaderParam("x-project-key") String projectKey, @Valid CreateExperimentRequest request) {
 
     return experimentService
-        .create(tenantId, projectKey, request)
+        .create(projectKey, request)
         .map(ResponseEntity.Success::new)
         .toCompletionStage();
   }
@@ -88,7 +85,6 @@ public class ExperimentResource {
    * <p>Performs dynamic partial update of experiment fields. Only provided fields are updated.
    * Supports updating enums, arrays, JSONB fields, and scalar values.
    *
-   * @param tenantId tenant identifier from x-tenant-id header
    * @param projectKey project identifier from x-project-key header
    * @param experimentId experiment identifier from path parameter
    * @param request map of field names to values for update
@@ -113,13 +109,12 @@ public class ExperimentResource {
             description = "Invalid enum values or validation constraints")
       })
   public CompletionStage<ResponseEntity.Success<UpdateExperimentResponse>> update(
-      @HeaderParam("x-tenant-id") UUID tenantId,
       @HeaderParam("x-project-key") String projectKey,
       @PathParam("experiment_id") UUID experimentId,
       @Valid UpdateExperimentRequest request) {
 
     return experimentService
-        .update(tenantId, projectKey, experimentId, request)
+        .update(projectKey, experimentId, request)
         .map(ResponseEntity.Success::new)
         .toCompletionStage();
   }
