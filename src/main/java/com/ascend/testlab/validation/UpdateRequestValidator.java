@@ -1,13 +1,12 @@
 package com.ascend.testlab.validation;
 
-import com.ascend.testlab.exception.ErrorEnum;
 import com.ascend.testlab.validation.annotations.ValidUpdateRequest;
-import com.dream11.rest.exception.RestException;
 import jakarta.validation.ConstraintValidator;
 import jakarta.validation.ConstraintValidatorContext;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.List;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * Validator for {@link ValidUpdateRequest} annotation.
@@ -19,6 +18,7 @@ import java.util.List;
  * @version 1.0
  * @since 1.0
  */
+@Slf4j
 public class UpdateRequestValidator implements ConstraintValidator<ValidUpdateRequest, Object> {
 
   private String[] nonUpdatableFields;
@@ -53,7 +53,14 @@ public class UpdateRequestValidator implements ConstraintValidator<ValidUpdateRe
         // Field doesn't exist in the class, skip it
         continue;
       } catch (IllegalAccessException e) {
-        throw new RestException(ErrorEnum.FIELD_ACCESS_FAILED, e);
+        log.error(
+            "Failed to access field '{}' during validation: {}", fieldName, e.getMessage(), e);
+        context.disableDefaultConstraintViolation();
+        context
+            .buildConstraintViolationWithTemplate(
+                "Internal validation error: Failed to access field '" + fieldName + "'")
+            .addConstraintViolation();
+        return false;
       }
     }
 
