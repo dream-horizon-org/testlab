@@ -87,12 +87,3 @@ CREATE TABLE IF NOT EXISTS experiment.experiment_analysis (
     updated_at        TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (project_key, experiment_id)
 ) PARTITION BY LIST (project_key);
-
-CREATE TABLE IF NOT EXISTS experiment.cron_process (
-    process_key         VARCHAR(255) NOT NULL,
-    execution_timestamp TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
-    executor_ip         VARCHAR(50),
-    next_execution_time TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    cron_expression     VARCHAR(255),
-    PRIMARY KEY (process_key)
-);

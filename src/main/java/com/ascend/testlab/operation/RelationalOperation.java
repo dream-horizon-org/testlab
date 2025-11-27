@@ -58,11 +58,11 @@ public final class RelationalOperation {
   }
 
   public static <T> boolean doesNotContain(Collection<T> op1, Collection<T> op2) {
-    return !op2.contains(op1);
+    return Boolean.FALSE.equals(op2.stream().anyMatch(op1::contains));
   }
 
   public static boolean doesNotContain(String op1, String op2) {
-    return !op2.contains(op1);
+    return Boolean.FALSE.equals(op2.contains(op1));
   }
 
   private RelationalOperation() {

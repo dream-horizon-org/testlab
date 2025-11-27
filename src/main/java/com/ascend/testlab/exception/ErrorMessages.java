@@ -41,16 +41,16 @@ public final class ErrorMessages {
   /** The error message for invalid limit value. */
   public static final String INVALID_LIMIT_VALUE = "Limit must be greater than zero";
 
-  /** The error message for the variant name missing. */
-  public static final String VARIANT_NAME_MISSING = "variant name parameter is missing";
-
-  /** The error message for the user id missing. */
-  public static final String USER_ID_MISSING = "user id parameter is missing";
-
   /** The error message for invalid page value. */
   public static final String INVALID_PAGE_VALUE = "Page value must be greater than zero";
 
   /** The error message for experiment key too long. */
   public static final String EXPERIMENT_KEY_TOO_LONG =
       "Experiment key is too long (max 255 characters)";
+
+  /** The error message for variant name missing. */
+  public static final String VARIANT_NAME_MISSING = "Variant name is required";
+
+  /** The error message for user ID missing. */
+  public static final String USER_ID_MISSING = "User ID is required";
 }
