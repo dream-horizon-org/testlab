@@ -1,8 +1,8 @@
 package com.ascend.testlab.allocation.filter.impl;
 
 import com.ascend.testlab.allocation.filter.AbstractExperimentFilter;
+import com.ascend.testlab.constants.attributes.RelationalOperator;
 import com.ascend.testlab.constants.enums.DataTypeEnum;
-import com.ascend.testlab.constants.enums.RelationalOperator;
 import com.ascend.testlab.dto.entity.allocation.Attributes;
 import com.ascend.testlab.dto.entity.experiment.Experiment;
 import com.ascend.testlab.dto.entity.experiment.RuleAttributes;

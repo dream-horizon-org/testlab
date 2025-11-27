@@ -2,7 +2,7 @@ package com.ascend.testlab.operation;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-import com.ascend.testlab.constants.enums.RelationalOperator;
+import com.ascend.testlab.constants.attributes.RelationalOperator;
 import java.util.Arrays;
 import java.util.List;
 import org.junit.jupiter.api.DisplayName;

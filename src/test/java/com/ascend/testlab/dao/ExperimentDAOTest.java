@@ -6,13 +6,14 @@ import static org.mockito.Mockito.*;
 
 import com.ascend.testlab.client.postgresql.PgReaderClient;
 import com.ascend.testlab.client.postgresql.PgWriterClient;
+import com.ascend.testlab.constants.enums.AssignmentDomain;
+import com.ascend.testlab.constants.enums.DistributionStrategy;
 import com.ascend.testlab.constants.enums.ExperimentHealth;
 import com.ascend.testlab.constants.enums.ExperimentStatus;
 import com.ascend.testlab.constants.enums.ExperimentType;
 import com.ascend.testlab.constants.postgresql.ReadQuery;
 import com.ascend.testlab.constants.postgresql.WriteQuery;
 import com.ascend.testlab.dao.impl.ExperimentDAOImpl;
-import com.ascend.testlab.dto.entity.Experiment;
 import com.ascend.testlab.dto.entity.experiment.Experiment;
 import com.ascend.testlab.dto.request.CreateExperimentRequest;
 import com.ascend.testlab.dto.request.FilterExperimentsRequest;
@@ -969,7 +970,7 @@ public class ExperimentDAOTest {
 
       // Act
       TestObserver<Experiment> getObserver =
-          experimentDAO.getExperiment(PROJECT_KEY, EXPERIMENT_ID).test();
+          experimentDAO.getExperiment(PROJECT_KEY, testExperimentId.toString()).test();
       TestObserver<FilterExperimentsResponse> filterObserver =
           experimentDAO.filterExperiments(PROJECT_KEY, request).test();
       TestObserver<Boolean> deleteObserver =
