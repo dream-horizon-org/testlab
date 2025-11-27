@@ -1,6 +1,6 @@
 package com.ascend.testlab.dao;
 
-import com.ascend.testlab.dto.entity.Experiment;
+import com.ascend.testlab.dto.entity.experiment.Experiment;
 import com.ascend.testlab.dto.request.CreateExperimentRequest;
 import com.ascend.testlab.dto.request.FilterExperimentsRequest;
 import com.ascend.testlab.dto.request.UpdateExperimentRequest;
@@ -40,7 +40,7 @@ public interface ExperimentDAO {
    *
    * @param projectKey the project Key
    * @param experiment the experiment data
-   * @return a Single
+   * @return a Single that emits true if deletion is successful, false otherwise
    */
   Single<Boolean> deleteExperiment(String projectKey, Experiment experiment);
 

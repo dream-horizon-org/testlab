@@ -27,7 +27,7 @@ import lombok.extern.slf4j.Slf4j;
  * @since 1.0
  * @see ExperimentService
  */
-@Path(WebConstants.FILTER_EXPERIMENTS_PATH)
+@Path("/v1")
 @Slf4j
 public class FilterExperiments {
 
@@ -60,6 +60,7 @@ public class FilterExperiments {
    * @return a CompletionStage containing a successful response with paginated experiment data
    */
   @GET
+  @Path("/experiments")
   @Produces(MediaType.APPLICATION_JSON)
   @Consumes(MediaType.APPLICATION_JSON)
   @ApiResponse(

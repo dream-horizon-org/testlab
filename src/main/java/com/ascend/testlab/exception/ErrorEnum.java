@@ -69,16 +69,63 @@ public enum ErrorEnum implements RestError {
       "Delete experiment failed due to: %s",
       HttpStatus.SC_INTERNAL_SERVER_ERROR),
 
+  /** The error code for failing reallocation. */
+  REST_REALLOCATION_FAILED(
+      "testlab_REST_REALLOCATION_FAILED",
+      "Failed to reallocate user experiment",
+      HttpStatus.SC_INTERNAL_SERVER_ERROR),
+
+  USER_COHORTS_SERVICE_REQUEST_FAILED(
+      "USER_COHORTS_SERVICE_REQUEST_FAILED",
+      "Cohorts service request failed with statusCode:%s",
+      HttpStatus.SC_INTERNAL_SERVER_ERROR),
+
   /* Client Errors */
+
+  MISSING_USER_IDENTIFIER(
+      "MISSING_USER_IDENTIFIER",
+      "Missing User Identifier, pass user-id/guest-id",
+      HttpStatus.SC_BAD_REQUEST),
+
+  INVALID_REQUEST_BODY(
+      "INVALID_REQUEST_BODY",
+      "Request body param(s) is/are missing/invalid",
+      HttpStatus.SC_BAD_REQUEST),
+
+  /** The error code when an invalid variant is present in the request payload. */
+  INVALID_VARIANT_FOUND(
+      "INVALID_VARIANT_FOUND", "Invalid variant found in request", HttpStatus.SC_BAD_REQUEST),
+
+  /** The error code when the requested variant is already assigned to the user. */
+  VARIANT_ALREADY_ASSIGNED(
+      "VARIANT_ALREADY_ASSIGNED", "Given variant already assigned", HttpStatus.SC_BAD_REQUEST),
+
+  /** The error code when no allotment is found. */
+  NO_ALLOTMENT_FOUND(
+      "NO_ALLOTMENT_FOUND",
+      "No assignment found for given user, use overrides to allot variant",
+      HttpStatus.SC_NOT_FOUND),
+
   /** The error code when experiment is not found. */
   EXPERIMENT_NOT_FOUND(
       "EXPERIMENT_NOT_FOUND",
       "Experiment not found for the given experimentId",
       HttpStatus.SC_NOT_FOUND),
 
+  /** The error code when active experiment is not found. */
+  ACTIVE_EXPERIMENT_NOT_FOUND(
+      "ACTIVE_EXPERIMENT_NOT_FOUND",
+      "Active Experiment not found for the given experimentId",
+      HttpStatus.SC_NOT_FOUND),
+
   /** The error code for validating experiment status failed. */
   INVALID_EXPERIMENT_STATUS(
       "INVALID_EXPERIMENT_STATUS", "Experiment status is not valid", HttpStatus.SC_BAD_REQUEST),
+
+  UPSTREAM_PARSING_ERROR(
+      "UPSTREAM_PARSING_ERROR",
+      "Upstream response json parsing error",
+      HttpStatus.SC_INTERNAL_SERVER_ERROR),
 
   /** The error code for validating experiment type failed. */
   INVALID_EXPERIMENT_TYPE(

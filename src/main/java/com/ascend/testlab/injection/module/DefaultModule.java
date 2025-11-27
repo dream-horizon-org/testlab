@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.json.JsonMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.google.inject.AbstractModule;
 import io.vertx.rxjava3.core.Vertx;
 import java.util.Objects;
@@ -25,6 +26,7 @@ public class DefaultModule extends AbstractModule {
   /** The ObjectMapper instance. */
   private final ObjectMapper objectMapper =
       JsonMapper.builder()
+          .addModule(new JavaTimeModule())
           .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
           .configure(DeserializationFeature.FAIL_ON_IGNORED_PROPERTIES, false)
           .configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, true)

@@ -2,7 +2,7 @@ package com.ascend.testlab.rest;
 
 import com.ascend.testlab.constants.web.WebConstants;
 import com.ascend.testlab.dto.ResponseEntity;
-import com.ascend.testlab.dto.entity.Experiment;
+import com.ascend.testlab.dto.entity.experiment.Experiment;
 import com.ascend.testlab.exception.ErrorMessages;
 import com.ascend.testlab.service.ExperimentService;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -24,7 +24,7 @@ import lombok.extern.slf4j.Slf4j;
  * @since 1.0
  * @see ExperimentService
  */
-@Path(WebConstants.GET_EXPERIMENT_PATH)
+@Path("/v1")
 @Slf4j
 public class GetExperiment {
 
@@ -53,6 +53,7 @@ public class GetExperiment {
    *     failure response if the experiment ID is invalid or the experiment is not found
    */
   @GET
+  @Path("/experiments/{experimentId}")
   @Produces(MediaType.APPLICATION_JSON)
   @Consumes(MediaType.APPLICATION_JSON)
   @ApiResponse(

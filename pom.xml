@@ -62,8 +62,8 @@
     <rest-assured.version>5.3.2</rest-assured.version>
     <resteasy.version>6.2.8.Final</resteasy.version>
     <scram-client.version>2.1</scram-client.version>
+    <semver4j.version>5.2.2</semver4j.version>
     <slf4j.version>2.0.9</slf4j.version>
-    <swagger-validator.version>2.40.0</swagger-validator.version>
     <testcontainers.version>1.19.8</testcontainers.version>
     <typesafe.version>1.4.3</typesafe.version>
     <vertx.version>4.4.9</vertx.version>
@@ -96,13 +96,6 @@
       <groupId>com.aerospike</groupId>
       <artifactId>aerospike-client</artifactId>
       <version>${aerospike-client.version}</version>
-    </dependency>
-
-    <dependency>
-      <groupId>com.atlassian.oai</groupId>
-      <artifactId>swagger-request-validator-restassured</artifactId>
-      <version>${swagger-validator.version}</version>
-      <scope>test</scope>
     </dependency>
 
     <dependency>
@@ -304,6 +297,12 @@
       <artifactId>lombok</artifactId>
       <version>${lombok.version}</version>
       <scope>provided</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>org.semver4j</groupId>
+      <artifactId>semver4j</artifactId>
+      <version>${semver4j.version}</version>
     </dependency>
 
     <dependency>

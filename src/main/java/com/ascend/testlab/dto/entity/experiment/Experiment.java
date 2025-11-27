@@ -1,12 +1,15 @@
-package com.ascend.testlab.dto.entity;
+package com.ascend.testlab.dto.entity.experiment;
 
-import com.ascend.testlab.constants.enums.AssignmentStrategy;
+import com.ascend.testlab.constants.enums.AssignmentDomain;
+import com.ascend.testlab.constants.enums.DistributionStrategy;
 import com.ascend.testlab.constants.enums.ExperimentStatus;
 import com.ascend.testlab.constants.enums.ExperimentType;
 import com.ascend.testlab.constants.enums.HealthStatus;
+import com.ascend.testlab.dto.entity.variantweights.VariantWeights;
 import io.vertx.core.json.JsonObject;
 import java.time.Instant;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import lombok.*;
 
@@ -25,16 +28,19 @@ public class Experiment {
   private UUID experimentId;
   private String projectKey;
   private String name;
+  private String key;
   private String description;
   private String hypothesis;
   private ExperimentStatus status;
   private ExperimentType type;
   private HealthStatus guardrailHealthStatus;
   private List<String> cohorts;
-  private JsonObject variantWeights;
-  private AssignmentStrategy assignmentStrategy;
-  private JsonObject overrides;
-  private JsonObject ruleAttributes;
+  private VariantWeights variantWeights;
+  private Map<String, Variant> variants;
+  private List<RuleAttributes> ruleAttributes;
+  private DistributionStrategy distributionStrategy;
+  private AssignmentDomain assignmentDomain;
+  private List<String> overrides;
   private JsonObject winningVariant;
   private Integer exposure;
   private Long threshold;
@@ -43,6 +49,6 @@ public class Experiment {
   private String createdBy;
   private Instant createdAt;
   private Instant updatedAt;
-  private String tags;
-  private String owner;
+  private List<String> tags;
+  private List<String> owners;
 }

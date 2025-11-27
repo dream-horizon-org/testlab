@@ -27,7 +27,7 @@ import lombok.extern.slf4j.Slf4j;
  * @since 1.0
  * @see ExperimentService
  */
-@Path(WebConstants.GET_EXPERIMENT_PATH)
+@Path("/v1")
 @Slf4j
 public class DeleteExperiment {
 
@@ -65,6 +65,7 @@ public class DeleteExperiment {
    *     experiment ID is invalid, or the experiment does not exist
    */
   @DELETE
+  @Path("/experiments/{experimentId}")
   @Produces(MediaType.APPLICATION_JSON)
   @Consumes(MediaType.APPLICATION_JSON)
   @ApiResponse(
