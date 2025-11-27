@@ -1,7 +1,8 @@
 package com.ascend.testlab.dto.response;
 
 import com.ascend.testlab.dto.entity.allocation.UserExperimentMap;
-import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.PropertyNamingStrategies;
+import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -19,7 +20,7 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
+@JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
 public class AllocationResponse {
-  @JsonProperty(value = "experiment_map")
   private List<UserExperimentMap> experimentMap;
 }

@@ -34,12 +34,25 @@ public class Allocation {
   private final AllocationService allocationService;
   private final ApplicationConfig applicationConfig;
 
+  /**
+   * Constructor for Allocation resource.
+   *
+   * @param allocationService the allocation service
+   * @param applicationConfig the application configuration
+   */
   @Inject
   public Allocation(AllocationService allocationService, ApplicationConfig applicationConfig) {
     this.allocationService = allocationService;
     this.applicationConfig = applicationConfig;
   }
 
+  /**
+   * Handles allocation requests.
+   *
+   * @param projectKey the project key
+   * @param assignRequest the allocation request
+   * @return the allocation response
+   */
   @POST
   @Path("/allocations")
   @Consumes(MediaType.APPLICATION_JSON)
@@ -75,6 +88,13 @@ public class Allocation {
         .toCompletionStage();
   }
 
+  /**
+   * Handles get allocations requests.
+   *
+   * @param projectKey the project key
+   * @param userId the user id
+   * @return the allocations response
+   */
   @GET
   @Path("/allocations")
   @Consumes(MediaType.APPLICATION_JSON)
@@ -109,6 +129,13 @@ public class Allocation {
         .toCompletionStage();
   }
 
+  /**
+   * Handles re-allocation requests.
+   *
+   * @param projectKey the project key
+   * @param reallocateRequest the reallocate request
+   * @return the reallocation response
+   */
   @PUT
   @Path("/allocations")
   @Consumes(MediaType.APPLICATION_JSON)

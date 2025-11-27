@@ -45,6 +45,13 @@ public class AllocationServiceImpl implements AllocationService {
   private final CohortService cohortService;
   private final ObjectMapper objectMapper;
 
+  /**
+   * Constructor for AllocationServiceImpl.
+   *
+   * @param allocationDAO the allocation DAO
+   * @param cohortService the cohort service
+   * @param objectMapper the object mapper
+   */
   @Inject
   public AllocationServiceImpl(
       AllocationDAO allocationDAO, CohortService cohortService, ObjectMapper objectMapper) {

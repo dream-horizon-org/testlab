@@ -1,7 +1,8 @@
 package com.ascend.testlab.dto.entity.allocation;
 
 import com.ascend.testlab.dto.entity.experiment.Variant;
-import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.PropertyNamingStrategies;
+import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import java.util.UUID;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -19,19 +20,16 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
+@JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
 public class UserExperimentMap {
-  @JsonProperty(value = "experiment_id")
   private UUID experimentId;
 
-  @JsonProperty(value = "experiment_name")
   private String experimentName;
 
   private String status;
   private Variant variant;
 
-  @JsonProperty(value = "variant_name")
   private String variantName;
 
-  @JsonProperty(value = "assigned_at")
   private Long assignedAt;
 }

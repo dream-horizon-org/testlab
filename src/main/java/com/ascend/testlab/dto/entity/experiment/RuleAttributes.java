@@ -31,6 +31,13 @@ public class RuleAttributes {
 
   List<Condition> conditions;
 
+  /**
+   * Inner class representing a single condition in a rule.
+   *
+   * @author Anudeep Reddy
+   * @version 1.0
+   * @since 1.0
+   */
   @Data
   @Builder
   @NoArgsConstructor

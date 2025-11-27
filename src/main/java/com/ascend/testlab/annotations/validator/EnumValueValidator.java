@@ -6,6 +6,13 @@ import jakarta.validation.ConstraintValidatorContext;
 import java.lang.reflect.Method;
 import java.util.Arrays;
 
+/**
+ * Validator for the EnumValue annotation.
+ *
+ * @author Anudeep Reddy
+ * @version 1.0
+ * @since 1.0
+ */
 public class EnumValueValidator implements ConstraintValidator<ValidEnumValue, Object> {
   private Class<? extends Enum<?>> enumClass;
   private String methodName;

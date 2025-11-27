@@ -1,5 +1,7 @@
 package com.ascend.testlab.dto.response;
 
+import com.fasterxml.jackson.databind.PropertyNamingStrategies;
+import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import java.util.List;
 
 /**
@@ -10,4 +12,5 @@ import java.util.List;
  * @since 1.0
  * @param tags the list of distinct tag strings for the project
  */
+@JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
 public record TagsResponse(List<String> tags) {}

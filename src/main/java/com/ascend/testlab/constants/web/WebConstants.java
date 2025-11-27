@@ -18,8 +18,13 @@ public final class WebConstants {
   /** The value for the application/json content type. */
   public static final String APPLICATION_JSON = "application/json";
 
+  /** The header for user ID. */
   public static final String USER_ID_HEADER = "x-user-Id";
+
+  /** The header for guest ID. */
   public static final String GUEST_ID_HEADER = "x-guest-Id";
+
+  /** The header for tenant ID. */
   public static final String TENANT_ID_HEADER = "x-tenant-Id";
 
   /* Circuit Breaker Constants */

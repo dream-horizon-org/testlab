@@ -1,7 +1,8 @@
 package com.ascend.testlab.dto.entity.allocation;
 
 import com.ascend.testlab.constants.Constants;
-import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.PropertyNamingStrategies;
+import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -22,22 +23,16 @@ import lombok.NoArgsConstructor;
 @Builder(toBuilder = true)
 @NoArgsConstructor
 @AllArgsConstructor
+@JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
 public class ReallocationLogEntry {
 
-  @JsonProperty(value = "timestamp")
   private Long timestamp;
 
-  @JsonProperty(value = "old_variant")
   private String oldVariant;
 
-  @JsonProperty(value = "new_variant")
   private String newVariant;
 
-  @JsonProperty(value = "reason")
-  @Builder.Default
-  private String reason = "No reason provided";
+  @Builder.Default private String reason = "No reason provided";
 
-  @JsonProperty(value = "changed_by")
-  @Builder.Default
-  private String changedBy = Constants.ADMIN;
+  @Builder.Default private String changedBy = Constants.ADMIN;
 }
