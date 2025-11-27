@@ -149,7 +149,9 @@ public class ExperimentDAOImpl implements ExperimentDAO {
                                 sqlConnection,
                                 WriteQuery.INSERT_EXPERIMENT_UPDATE_LOG,
                                 tuple.addJsonObject(previous_data_json).addJsonObject(null)))
-                    .map(result -> true))
+                    .map(result -> true)
+                    .toMaybe())
+        .toSingle()
         .onErrorResumeNext(
             err -> {
               log.error(
@@ -178,8 +180,10 @@ public class ExperimentDAOImpl implements ExperimentDAO {
   public Single<String> create(UUID tenantId, String projectKey, CreateExperimentRequest request) {
     log.warn("Using deprecated create method - this should only be used in tests");
     // For testing only - use createWithRelatedData in production
-    return pgWriterClient.executeWithTransaction(
-        connection -> createWithConnection(connection, tenantId, projectKey, request));
+    return pgWriterClient
+        .executeWithTransaction(
+            connection -> createWithConnection(connection, tenantId, projectKey, request).toMaybe())
+        .toSingle();
   }
 
   /**
@@ -316,65 +320,72 @@ public class ExperimentDAOImpl implements ExperimentDAO {
         projectKey,
         experimentId);
 
-    return pgWriterClient.executeWithTransaction(
-        connection ->
-            createWithConnection(connection, tenantId, projectKey, request)
-                .flatMap(
-                    success -> {
-                      log.info(
-                          "DAO: Experiment created successfully, inserting related data for experimentId: {}",
-                          experimentId);
+    return pgWriterClient
+        .executeWithTransaction(
+            connection ->
+                createWithConnection(connection, tenantId, projectKey, request)
+                    .flatMap(
+                        success -> {
+                          log.info(
+                              "DAO: Experiment created successfully, inserting related data for experimentId: {}",
+                              experimentId);
 
-                      // Execute all inserts in parallel using zip
-                      return Single.zip(
-                              batchInsertTags(connection, projectKey, experimentId, tags),
-                              batchInsertOwners(connection, projectKey, experimentId, owners),
-                              insertUpdateLog(
-                                  connection,
-                                  projectKey,
-                                  experimentId,
-                                  null, // previous_data is null for create
-                                  request, // Pass POJO directly
-                                  request.getCreatedBy()),
-                              insertAnalysis(
-                                  connection, projectKey, experimentId, request.getMetrics()),
-                              (tagsSuccess, ownerSuccess, updateLogSuccess, analysisSuccess) -> {
-                                return new Object[] {
-                                  tagsSuccess, ownerSuccess, updateLogSuccess, analysisSuccess
-                                };
-                              })
-                          .flatMap(
-                              results -> {
-                                Boolean tagsSuccess = (Boolean) results[0];
-                                Boolean ownerSuccess = (Boolean) results[1];
-                                Boolean updateLogSuccess = (Boolean) results[2];
-                                Boolean analysisSuccess = (Boolean) results[3];
+                          // Execute all inserts in parallel using zip
+                          return Single.zip(
+                                  batchInsertTags(connection, projectKey, experimentId, tags),
+                                  batchInsertOwners(connection, projectKey, experimentId, owners),
+                                  insertUpdateLog(
+                                      connection,
+                                      projectKey,
+                                      experimentId,
+                                      null, // previous_data is null for create
+                                      request, // Pass POJO directly
+                                      request.getCreatedBy()),
+                                  insertAnalysis(
+                                      connection, projectKey, experimentId, request.getMetrics()),
+                                  (tagsSuccess,
+                                      ownerSuccess,
+                                      updateLogSuccess,
+                                      analysisSuccess) -> {
+                                    return new Object[] {
+                                      tagsSuccess, ownerSuccess, updateLogSuccess, analysisSuccess
+                                    };
+                                  })
+                              .flatMap(
+                                  results -> {
+                                    Boolean tagsSuccess = (Boolean) results[0];
+                                    Boolean ownerSuccess = (Boolean) results[1];
+                                    Boolean updateLogSuccess = (Boolean) results[2];
+                                    Boolean analysisSuccess = (Boolean) results[3];
 
-                                // Validate all operations succeeded
-                                if (!tagsSuccess) {
-                                  return Single.error(
-                                      new RestException(ErrorEnum.TAGS_INSERTION_FAILED));
-                                }
-                                if (!ownerSuccess) {
-                                  return Single.error(
-                                      new RestException(ErrorEnum.OWNER_INSERTION_FAILED));
-                                }
-                                if (!updateLogSuccess) {
-                                  return Single.error(
-                                      new RestException(ErrorEnum.UPDATE_LOG_INSERTION_FAILED));
-                                }
-                                if (!analysisSuccess) {
-                                  return Single.error(
-                                      new RestException(ErrorEnum.ANALYSIS_INSERTION_FAILED));
-                                }
+                                    // Validate all operations succeeded
+                                    if (!tagsSuccess) {
+                                      return Single.error(
+                                          new RestException(ErrorEnum.TAGS_INSERTION_FAILED));
+                                    }
+                                    if (!ownerSuccess) {
+                                      return Single.error(
+                                          new RestException(ErrorEnum.OWNER_INSERTION_FAILED));
+                                    }
+                                    if (!updateLogSuccess) {
+                                      return Single.error(
+                                          new RestException(ErrorEnum.UPDATE_LOG_INSERTION_FAILED));
+                                    }
+                                    if (!analysisSuccess) {
+                                      return Single.error(
+                                          new RestException(ErrorEnum.ANALYSIS_INSERTION_FAILED));
+                                    }
 
-                                log.info(
-                                    "DAO: Successfully created experiment with all related data in parallel, experimentId: {}, projectKey: {}",
-                                    experimentId,
-                                    projectKey);
-                                return Single.just(experimentId.toString()); // Return experiment ID
-                              });
-                    }));
+                                    log.info(
+                                        "DAO: Successfully created experiment with all related data in parallel, experimentId: {}, projectKey: {}",
+                                        experimentId,
+                                        projectKey);
+                                    return Single.just(
+                                        experimentId.toString()); // Return experiment ID
+                                  });
+                        })
+                    .toMaybe())
+        .toSingle();
   }
 
   /**
@@ -866,27 +877,33 @@ public class ExperimentDAOImpl implements ExperimentDAO {
     // Extract non-null fields from request POJO for dynamic SQL generation
     Map<String, Object> experimentFields = extractNonNullFields(request);
 
-    return pgWriterClient.executeWithTransaction(
-        connection ->
-            updateExperimentFields(connection, projectKey, experimentId, experimentFields)
-                .flatMap(success -> validateUpdateSuccess(success, "experiment fields"))
-                .flatMap(unused -> updateTagsIfPresent(connection, projectKey, experimentId, tags))
-                .flatMap(success -> validateUpdateSuccess(success, "tags"))
-                .flatMap(
-                    unused -> updateOwnersIfPresent(connection, projectKey, experimentId, owners))
-                .flatMap(success -> validateUpdateSuccess(success, "owners"))
-                .flatMap(
-                    unused -> updateMetricsIfPresent(connection, projectKey, experimentId, metrics))
-                .flatMap(success -> validateUpdateSuccess(success, "metrics"))
-                .flatMap(
-                    unused ->
-                        logUpdate(
-                            connection,
-                            projectKey,
-                            experimentId,
-                            experimentFields,
-                            previousData,
-                            updatedBy)));
+    return pgWriterClient
+        .executeWithTransaction(
+            connection ->
+                updateExperimentFields(connection, projectKey, experimentId, experimentFields)
+                    .flatMap(success -> validateUpdateSuccess(success, "experiment fields"))
+                    .flatMap(
+                        unused -> updateTagsIfPresent(connection, projectKey, experimentId, tags))
+                    .flatMap(success -> validateUpdateSuccess(success, "tags"))
+                    .flatMap(
+                        unused ->
+                            updateOwnersIfPresent(connection, projectKey, experimentId, owners))
+                    .flatMap(success -> validateUpdateSuccess(success, "owners"))
+                    .flatMap(
+                        unused ->
+                            updateMetricsIfPresent(connection, projectKey, experimentId, metrics))
+                    .flatMap(success -> validateUpdateSuccess(success, "metrics"))
+                    .flatMap(
+                        unused ->
+                            logUpdate(
+                                connection,
+                                projectKey,
+                                experimentId,
+                                experimentFields,
+                                previousData,
+                                updatedBy))
+                    .toMaybe())
+        .toSingle();
   }
 
   /**

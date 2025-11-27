@@ -81,7 +81,7 @@ public class ExperimentDAOTest {
       when(pgWriterClient.executeWithTransaction(any()))
           .thenAnswer(
               invocation -> {
-                Function<SqlConnection, Single<String>> function = invocation.getArgument(0);
+                Function<SqlConnection, Maybe<String>> function = invocation.getArgument(0);
                 SqlConnection mockConnection = mock(SqlConnection.class);
                 when(pgWriterClient.execute(
                         any(SqlConnection.class), anyString(), any(Tuple.class)))
@@ -119,7 +119,7 @@ public class ExperimentDAOTest {
       when(pgWriterClient.executeWithTransaction(any()))
           .thenAnswer(
               invocation -> {
-                Function<SqlConnection, Single<String>> function = invocation.getArgument(0);
+                Function<SqlConnection, Maybe<String>> function = invocation.getArgument(0);
                 SqlConnection mockConnection = mock(SqlConnection.class);
                 when(pgWriterClient.execute(
                         any(SqlConnection.class), anyString(), any(Tuple.class)))
@@ -200,7 +200,7 @@ public class ExperimentDAOTest {
       when(pgWriterClient.executeWithTransaction(any()))
           .thenAnswer(
               invocation -> {
-                Function<SqlConnection, Single<String>> function = invocation.getArgument(0);
+                Function<SqlConnection, Maybe<String>> function = invocation.getArgument(0);
                 SqlConnection mockConnection = mock(SqlConnection.class);
                 when(pgWriterClient.execute(
                         any(SqlConnection.class), anyString(), any(Tuple.class)))
@@ -232,7 +232,7 @@ public class ExperimentDAOTest {
       when(pgWriterClient.executeWithTransaction(any()))
           .thenAnswer(
               invocation -> {
-                Function<SqlConnection, Single<String>> function = invocation.getArgument(0);
+                Function<SqlConnection, Maybe<String>> function = invocation.getArgument(0);
                 SqlConnection mockConnection = mock(SqlConnection.class);
                 when(pgWriterClient.execute(
                         any(SqlConnection.class), anyString(), any(Tuple.class)))
@@ -274,7 +274,7 @@ public class ExperimentDAOTest {
       when(pgWriterClient.executeWithTransaction(any()))
           .thenAnswer(
               invocation -> {
-                Function<SqlConnection, Single<String>> function = invocation.getArgument(0);
+                Function<SqlConnection, Maybe<String>> function = invocation.getArgument(0);
                 SqlConnection mockConnection = mock(SqlConnection.class);
                 when(pgWriterClient.execute(
                         any(SqlConnection.class), anyString(), any(Tuple.class)))

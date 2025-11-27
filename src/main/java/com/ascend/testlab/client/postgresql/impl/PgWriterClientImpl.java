@@ -5,6 +5,7 @@ import com.ascend.testlab.client.postgresql.PgWriterClient;
 import com.ascend.testlab.config.PostgreSQLConfig;
 import com.google.inject.Inject;
 import io.reactivex.rxjava3.core.Completable;
+import io.reactivex.rxjava3.core.Maybe;
 import io.reactivex.rxjava3.core.Single;
 import io.vertx.rxjava3.core.Vertx;
 import io.vertx.rxjava3.sqlclient.Row;
@@ -104,8 +105,8 @@ public class PgWriterClientImpl extends AbstractPostgreSQLClient implements PgWr
 
   /** {@inheritDoc} */
   @Override
-  public <T> Single<T> executeWithTransaction(
-      Function<SqlConnection, Single<T>> transactionalFunction) {
+  public <T> Maybe<T> executeWithTransaction(
+      Function<SqlConnection, Maybe<T>> transactionalFunction) {
     return super.rxWithTransaction(transactionalFunction);
   }
 

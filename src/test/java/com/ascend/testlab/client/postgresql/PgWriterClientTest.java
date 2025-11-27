@@ -615,8 +615,8 @@ class PgWriterClientTest {
     @DisplayName("Should execute transactional function")
     void testExecuteWithTransaction(VertxTestContext testContext) {
       // Arrange
-      Function<SqlConnection, Single<String>> transactionalFunction =
-          conn -> Single.just("transaction result");
+      Function<SqlConnection, Maybe<String>> transactionalFunction =
+          conn -> Maybe.just("transaction result");
 
       when(mockPgPool.rxWithTransaction(any())).thenReturn(Maybe.just("transaction result"));
 
@@ -637,7 +637,7 @@ class PgWriterClientTest {
     void testExecuteWithTransactionError(VertxTestContext testContext) {
       // Arrange
       Exception error = new RuntimeException("Transaction failed");
-      Function<SqlConnection, Single<String>> transactionalFunction = conn -> Single.error(error);
+      Function<SqlConnection, Maybe<String>> transactionalFunction = conn -> Maybe.error(error);
 
       when(mockPgPool.rxWithTransaction(any())).thenReturn(Maybe.error(error));
 
@@ -656,7 +656,7 @@ class PgWriterClientTest {
     @DisplayName("Should handle empty transaction result")
     void testExecuteWithTransactionEmpty(VertxTestContext testContext) {
       // Arrange
-      Function<SqlConnection, Single<String>> transactionalFunction = conn -> Single.just("result");
+      Function<SqlConnection, Maybe<String>> transactionalFunction = conn -> Maybe.just("result");
 
       when(mockPgPool.rxWithTransaction(any())).thenReturn(Maybe.just("result"));
 
