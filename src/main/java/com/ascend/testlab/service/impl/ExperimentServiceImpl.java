@@ -398,6 +398,55 @@ public class ExperimentServiceImpl implements ExperimentService {
                 }
               }
 
+              // Validate name uniqueness if name is being updated
+              if (context.request.getName() != null) {
+                String currentName = (String) previousData.get("name");
+                String newName = context.request.getName();
+
+                // Check if name is actually changing
+                if (!newName.equals(currentName)) {
+                  log.debug(
+                      "Name is being changed from '{}' to '{}' for experimentId: {}",
+                      currentName,
+                      newName,
+                      experimentId);
+
+                  // Check if new name already exists in the project
+                  return experimentDAO
+                      .checkExperimentNameExists(projectKey, newName, experimentId)
+                      .flatMap(
+                          nameExists -> {
+                            if (nameExists) {
+                              String errorMsg =
+                                  String.format(
+                                      "Experiment with name '%s' already exists in this project",
+                                      newName);
+                              log.error(
+                                  "Name uniqueness validation failed for experimentId: {}, newName: '{}'",
+                                  experimentId,
+                                  newName);
+                              return Single.error(
+                                  new RestException(
+                                      "DUPLICATE_EXPERIMENT_NAME",
+                                      errorMsg,
+                                      org.apache.http.HttpStatus.SC_BAD_REQUEST,
+                                      null));
+                            }
+
+                            // Name is unique, proceed with update
+                            return experimentDAO.updateWithTransaction(
+                                projectKey,
+                                experimentId,
+                                context.request,
+                                context.tags,
+                                context.owners,
+                                context.metrics,
+                                previousData,
+                                context.updatedBy);
+                          });
+                }
+              }
+
               return experimentDAO.updateWithTransaction(
                   projectKey,
                   experimentId,

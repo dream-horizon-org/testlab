@@ -36,6 +36,33 @@ public final class ReadQuery {
          );
          """;
 
+  /**
+   * Query to check if an experiment name already exists in a project (excluding current
+   * experiment).
+   *
+   * <p>Used during update operations to prevent duplicate experiment names within the same project.
+   *
+   * <p>Parameters:
+   *
+   * <ol>
+   *   <li>$1: project_key (VARCHAR)
+   *   <li>$2: name (VARCHAR) - the name to check
+   *   <li>$3: experiment_id (UUID) - current experiment ID to exclude from check
+   * </ol>
+   *
+   * @return Boolean - true if name exists for a different experiment, false otherwise
+   */
+  public static final String CHECK_EXPERIMENT_NAME_EXISTS =
+      """
+         SELECT EXISTS (
+             SELECT 1
+             FROM experiment.experiments
+             WHERE project_key = $1
+               AND LOWER(name) = LOWER($2)
+               AND experiment_id != $3
+         );
+         """;
+
   /** The query to retrieve the update history of a specific experiment with pagination. */
   public static final String FETCH_EXPERIMENT_HISTORY =
       """

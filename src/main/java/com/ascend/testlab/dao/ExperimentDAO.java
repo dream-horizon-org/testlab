@@ -82,6 +82,18 @@ public interface ExperimentDAO {
   Single<Map<String, Object>> getExperimentData(String projectKey, UUID experimentId);
 
   /**
+   * Checks if an experiment name already exists in the project (excluding current experiment).
+   *
+   * <p>Used during update operations to validate name uniqueness before allowing the update.
+   *
+   * @param projectKey project identifier for partitioning
+   * @param name the experiment name to check
+   * @param experimentId current experiment ID to exclude from the check
+   * @return Single emitting true if name exists for a different experiment, false otherwise
+   */
+  Single<Boolean> checkExperimentNameExists(String projectKey, String name, UUID experimentId);
+
+  /**
    * Updates experiment fields partially based on provided request map.
    *
    * @param projectKey project identifier for partitioning

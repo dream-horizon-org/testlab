@@ -424,6 +424,52 @@ public class ExperimentDAOImpl implements ExperimentDAO {
   }
 
   /**
+   * Checks if an experiment name already exists in the project (excluding current experiment).
+   *
+   * @param projectKey project identifier for partitioning
+   * @param name the experiment name to check
+   * @param experimentId current experiment ID to exclude from the check
+   * @return Single emitting true if name exists for a different experiment, false otherwise
+   */
+  @Override
+  public Single<Boolean> checkExperimentNameExists(
+      String projectKey, String name, UUID experimentId) {
+    log.debug(
+        "DAO: Checking if experiment name '{}' exists for projectKey: {}, excluding experimentId: {}",
+        name,
+        projectKey,
+        experimentId);
+
+    Tuple params =
+        Tuple.tuple().addString(projectKey).addString(name).addString(experimentId.toString());
+
+    return pgReaderClient
+        .fetchOne(
+            ReadQuery.CHECK_EXPERIMENT_NAME_EXISTS,
+            params,
+            row -> row.getBoolean(0)) // EXISTS returns boolean
+        .map(exists -> exists != null && exists)
+        .doOnSuccess(
+            exists ->
+                log.info(
+                    "DAO: Name existence check for '{}' in projectKey: {} (excluding {}): {}",
+                    name,
+                    projectKey,
+                    experimentId,
+                    exists))
+        .onErrorReturn(
+            error -> {
+              log.error(
+                  "DAO: Error checking name existence for '{}', projectKey: {}, error: {}",
+                  name,
+                  projectKey,
+                  error.getMessage());
+              return false; // Default to false on error
+            })
+        .toSingle();
+  }
+
+  /**
    * Converts database row to map.
    *
    * @param row database row

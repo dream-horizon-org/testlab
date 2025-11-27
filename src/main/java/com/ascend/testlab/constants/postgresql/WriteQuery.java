@@ -231,8 +231,8 @@ public final class WriteQuery {
    * <p>This prefix is combined with dynamically generated SET clauses based on which fields are
    * being updated. The WHERE clause is appended separately.
    *
-   * <p>Example usage: UPDATE_EXPERIMENT_PREFIX + "name = $1, status = $2 WHERE project_key = $3
-   * AND experiment_id = $4"
+   * <p>Example usage: UPDATE_EXPERIMENT_PREFIX + "name = $1, status = $2 WHERE project_key = $3 AND
+   * experiment_id = $4"
    */
   public static final String UPDATE_EXPERIMENT_PREFIX = "UPDATE experiment.experiments SET ";
 

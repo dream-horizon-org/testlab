@@ -55,6 +55,7 @@ public final class Constants {
    */
   public static final Set<String> UPDATABLE_FIELDS =
       Set.of(
+          "name",
           "description",
           "hypothesis",
           "status",
@@ -75,6 +76,7 @@ public final class Constants {
           "tags",
           "owner",
           "metrics",
+          "experiment_key",
           "updated_by");
 
   /**
@@ -95,7 +97,6 @@ public final class Constants {
   public static final Set<String> LIVE_STATE_UPDATABLE_FIELDS =
       Set.of(
           "description",
-          "hypothesis",
           "status",
           "guardrail_health_status",
           "winning_variant",
