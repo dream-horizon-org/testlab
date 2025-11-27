@@ -69,9 +69,9 @@ public class DeleteExperiment {
   @Produces(MediaType.APPLICATION_JSON)
   @Consumes(MediaType.APPLICATION_JSON)
   @ApiResponse(
-      content = @Content(schema = @Schema(implementation = ResponseEntity.Success.class)),
       responseCode = "200",
-      description = "Successful Response")
+      description = "Successful Response",
+      useReturnTypeSchema = true)
   @ApiResponse(
       content = @Content(schema = @Schema(implementation = ResponseEntity.Failure.class)),
       responseCode = "400",

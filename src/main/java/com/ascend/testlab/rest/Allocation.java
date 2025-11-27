@@ -47,7 +47,7 @@ public class Allocation {
   @ApiResponse(
       responseCode = "200",
       description = "Successful Response",
-      content = @Content(schema = @Schema(implementation = ResponseEntity.Success.class)))
+      useReturnTypeSchema = true)
   @ApiResponse(responseCode = "304", description = "Successful Not Modified Response")
   @ApiResponse(
       responseCode = "400",
@@ -82,7 +82,7 @@ public class Allocation {
   @ApiResponse(
       responseCode = "200",
       description = "Successful Response",
-      content = @Content(schema = @Schema(implementation = ResponseEntity.Success.class)))
+      useReturnTypeSchema = true)
   @ApiResponse(responseCode = "304", description = "Successful Not Modified Response")
   @ApiResponse(
       responseCode = "400",
@@ -115,8 +115,8 @@ public class Allocation {
   @Produces(MediaType.APPLICATION_JSON)
   @ApiResponse(
       responseCode = "200",
-      description = "Successfully reallocated user to new variant",
-      content = @Content(schema = @Schema(implementation = ResponseEntity.Success.class)))
+      description = "Successful Response",
+      useReturnTypeSchema = true)
   @ApiResponse(
       responseCode = "400",
       description = "Bad Request - invalid/missing body params or header",
