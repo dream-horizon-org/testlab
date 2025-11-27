@@ -2,11 +2,11 @@ package com.ascend.testlab.dto.request;
 
 import com.ascend.testlab.annotations.ValidEnumValue;
 import com.ascend.testlab.constants.Constants;
+import com.ascend.testlab.constants.enums.AssignmentDomain;
 import com.ascend.testlab.constants.enums.DistributionStrategy;
 import com.ascend.testlab.constants.enums.ExperimentStatus;
 import com.ascend.testlab.constants.enums.ExperimentType;
 import com.ascend.testlab.constants.enums.HealthStatus;
-import com.ascend.testlab.entity.AssignmentDomain;
 import com.ascend.testlab.entity.RuleAttributes;
 import com.ascend.testlab.entity.Variant;
 import com.ascend.testlab.exception.ErrorMessages;

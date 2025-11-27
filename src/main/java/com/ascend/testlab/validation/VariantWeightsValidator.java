@@ -2,7 +2,7 @@ package com.ascend.testlab.validation;
 
 import com.ascend.testlab.validation.annotations.ValidVariantWeights;
 import com.ascend.testlab.variantWeights.CohortVariantWeights;
-import com.ascend.testlab.variantWeights.ManualVariantWeights;
+import com.ascend.testlab.variantWeights.StratifiedVariantWeights;
 import com.ascend.testlab.variantWeights.VariantWeights;
 import jakarta.validation.ConstraintValidator;
 import jakarta.validation.ConstraintValidatorContext;
@@ -51,8 +51,8 @@ public class VariantWeightsValidator
           return false;
         }
       }
-    } else if (value instanceof ManualVariantWeights) {
-      ManualVariantWeights manualWeights = (ManualVariantWeights) value;
+    } else if (value instanceof StratifiedVariantWeights) {
+      StratifiedVariantWeights manualWeights = (StratifiedVariantWeights) value;
       if (manualWeights.getWeights() == null || manualWeights.getWeights().isEmpty()) {
         context.disableDefaultConstraintViolation();
         context

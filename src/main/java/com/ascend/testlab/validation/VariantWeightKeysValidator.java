@@ -4,7 +4,7 @@ import com.ascend.testlab.dto.request.CreateExperimentRequest;
 import com.ascend.testlab.entity.Variant;
 import com.ascend.testlab.validation.annotations.ValidVariantWeightKeys;
 import com.ascend.testlab.variantWeights.CohortVariantWeights;
-import com.ascend.testlab.variantWeights.ManualVariantWeights;
+import com.ascend.testlab.variantWeights.StratifiedVariantWeights;
 import com.ascend.testlab.variantWeights.VariantWeights;
 import jakarta.validation.ConstraintValidator;
 import jakarta.validation.ConstraintValidatorContext;
@@ -115,8 +115,8 @@ public class VariantWeightKeysValidator
       CohortVariantWeights cohortWeights = (CohortVariantWeights) variantWeights;
       Map<String, Double> weights = cohortWeights.getWeights();
       return weights != null ? new ArrayList<>(weights.keySet()) : new ArrayList<>();
-    } else if (variantWeights instanceof ManualVariantWeights) {
-      ManualVariantWeights manualWeights = (ManualVariantWeights) variantWeights;
+    } else if (variantWeights instanceof StratifiedVariantWeights) {
+      StratifiedVariantWeights manualWeights = (StratifiedVariantWeights) variantWeights;
       Map<String, List<String>> weights = manualWeights.getWeights();
       return weights != null ? new ArrayList<>(weights.keySet()) : new ArrayList<>();
     }

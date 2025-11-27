@@ -1,6 +1,6 @@
 package com.ascend.testlab.variantWeights;
 
-import com.ascend.testlab.entity.AssignmentDomain;
+import com.ascend.testlab.constants.enums.AssignmentDomain;
 import com.ascend.testlab.validation.annotations.ValidWeightSum;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;

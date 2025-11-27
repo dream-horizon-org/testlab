@@ -1,7 +1,6 @@
 package com.ascend.testlab.filter;
 
 import com.ascend.testlab.constants.enums.*;
-import com.ascend.testlab.entity.AssignmentDomain;
 import com.dream11.rest.exception.RestException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;

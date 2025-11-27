@@ -716,9 +716,8 @@ components:
         assignment_domain:
           type: string
           enum:
-          - MANUAL
+          - STRATIFIED
           - COHORT
-          - DEFAULT
         overrides:
           maxItems: 100
           minItems: 0
@@ -754,20 +753,6 @@ components:
         updated_at:
           type: integer
           format: int64
-    ManualVariantWeights:
-      required:
-      - weights
-      type: object
-      allOf:
-      - $ref: '#/components/schemas/VariantWeights'
-      - type: object
-        properties:
-          weights:
-            type: object
-            additionalProperties:
-              type: array
-              items:
-                type: string
     RuleAttributes:
       required:
       - name
@@ -779,6 +764,18 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Condition'
+    StratifiedVariantWeights:
+      type: object
+      allOf:
+      - $ref: '#/components/schemas/VariantWeights'
+      - type: object
+        properties:
+          weights:
+            type: object
+            additionalProperties:
+              type: array
+              items:
+                type: string
     VariantWeights:
       type: object
       properties:
@@ -862,9 +859,8 @@ components:
         assignment_domain:
           type: string
           enum:
-          - MANUAL
+          - STRATIFIED
           - COHORT
-          - DEFAULT
         rule_attributes:
           maxItems: 50
           minItems: 0
@@ -1030,18 +1026,6 @@ components:
         totalCount:
           type: integer
           format: int32
-    StratifiedVariantWeights:
-      type: object
-      allOf:
-      - $ref: '#/components/schemas/VariantWeights'
-      - type: object
-        properties:
-          weights:
-            type: object
-            additionalProperties:
-              type: array
-              items:
-                type: string
     SuccessFilterExperimentsResponse:
       type: object
       properties:

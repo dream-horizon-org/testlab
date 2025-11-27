@@ -1,6 +1,6 @@
 package com.ascend.testlab.variantWeights;
 
-import com.ascend.testlab.entity.AssignmentDomain;
+import com.ascend.testlab.constants.enums.AssignmentDomain;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 
@@ -14,9 +14,7 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
  */
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.PROPERTY, property = "type")
 @JsonSubTypes({
-  @JsonSubTypes.Type(
-      value = com.ascend.testlab.variantWeights.ManualVariantWeights.class,
-      name = "MANUAL"),
+  @JsonSubTypes.Type(value = StratifiedVariantWeights.class, name = "STRATIFIED"),
   @JsonSubTypes.Type(
       value = com.ascend.testlab.variantWeights.CohortVariantWeights.class,
       name = "COHORT"),

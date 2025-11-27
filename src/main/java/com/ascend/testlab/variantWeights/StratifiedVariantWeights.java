@@ -1,6 +1,6 @@
 package com.ascend.testlab.variantWeights;
 
-import com.ascend.testlab.entity.AssignmentDomain;
+import com.ascend.testlab.constants.enums.AssignmentDomain;
 import com.ascend.testlab.validation.annotations.ValidManualVariantKeys;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
@@ -29,7 +29,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 @EqualsAndHashCode(callSuper = false)
-public class ManualVariantWeights extends VariantWeights {
+public class StratifiedVariantWeights extends VariantWeights {
 
   @NotNull(message = "Weights map is required for manual variant weights")
   @NotEmpty(message = "At least one variant with user assignments must be specified")
@@ -38,7 +38,7 @@ public class ManualVariantWeights extends VariantWeights {
 
   @Override
   public AssignmentDomain getType() {
-    return AssignmentDomain.MANUAL;
+    return AssignmentDomain.STRATIFIED;
   }
 
   /**
