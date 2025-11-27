@@ -12,6 +12,8 @@ import com.ascend.testlab.dto.entity.experiment.Variant;
 import com.ascend.testlab.dto.entity.variantweights.CohortVariantWeights;
 import com.ascend.testlab.dto.entity.variantweights.StratifiedVariantWeights;
 import com.ascend.testlab.dto.entity.variantweights.VariantWeights;
+import com.ascend.testlab.exception.ErrorEnum;
+import com.dream11.rest.exception.RestException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
@@ -122,7 +124,7 @@ public class ExperimentMapper {
           .build();
     } catch (Exception e) {
       log.error("Error mapping row to Experiment: {}", e.getMessage(), e);
-      throw new RuntimeException("Failed to map row to Experiment", e);
+      throw new RestException(ErrorEnum.ROW_MAPPING_FAILED, e);
     }
   }
 

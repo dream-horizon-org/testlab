@@ -695,14 +695,14 @@ public class ExperimentDAOImpl implements ExperimentDAO {
    * @param key field name for error logging
    * @param value object to serialize
    * @return JSON string representation
-   * @throws RuntimeException if serialization fails
+   * @throws RestException if serialization fails
    */
   private String serializeToJson(String key, Object value) {
     try {
       return objectMapper.writeValueAsString(value);
     } catch (Exception ex) {
-      log.error("Failed to serialize JSONB field {}: {}", key, ex.getMessage());
-      throw new RuntimeException("Failed to serialize JSONB field: " + key, ex);
+      log.error("Failed to serialize JSONB field {}: {}", key, ex.getMessage(), ex);
+      throw new RestException(ErrorEnum.JSONB_SERIALIZATION_FAILED, ex);
     }
   }
 
@@ -1776,7 +1776,7 @@ public class ExperimentDAOImpl implements ExperimentDAO {
     } catch (IllegalAccessException e) {
       log.error(
           "DAO: Failed to extract fields from UpdateExperimentRequest: {}", e.getMessage(), e);
-      throw new RuntimeException("Failed to extract fields from request", e);
+      throw new RestException(ErrorEnum.REQUEST_FIELD_EXTRACTION_FAILED, e);
     }
   }
 }

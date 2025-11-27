@@ -1,6 +1,8 @@
 package com.ascend.testlab.validation;
 
+import com.ascend.testlab.exception.ErrorEnum;
 import com.ascend.testlab.validation.annotations.ValidUpdateRequest;
+import com.dream11.rest.exception.RestException;
 import jakarta.validation.ConstraintValidator;
 import jakarta.validation.ConstraintValidatorContext;
 import java.lang.reflect.Field;
@@ -51,7 +53,7 @@ public class UpdateRequestValidator implements ConstraintValidator<ValidUpdateRe
         // Field doesn't exist in the class, skip it
         continue;
       } catch (IllegalAccessException e) {
-        throw new RuntimeException("Failed to access field: " + fieldName, e);
+        throw new RestException(ErrorEnum.FIELD_ACCESS_FAILED, e);
       }
     }
 

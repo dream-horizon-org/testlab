@@ -1,6 +1,8 @@
 package com.ascend.testlab.annotations.validator;
 
 import com.ascend.testlab.annotations.ValidEnumValue;
+import com.ascend.testlab.exception.ErrorEnum;
+import com.dream11.rest.exception.RestException;
 import jakarta.validation.ConstraintValidator;
 import jakarta.validation.ConstraintValidatorContext;
 import java.lang.reflect.Method;
@@ -76,8 +78,7 @@ public class EnumValueValidator implements ConstraintValidator<ValidEnumValue, O
       Method method = enumClass.getMethod(methodName);
       return validateValue(method, value);
     } catch (Exception e) {
-      throw new RuntimeException(
-          "Failed to invoke method '" + methodName + "' on enum " + enumClass.getSimpleName(), e);
+      throw new RestException(ErrorEnum.ENUM_VALIDATION_FAILED, e);
     }
   }
 
@@ -95,9 +96,7 @@ public class EnumValueValidator implements ConstraintValidator<ValidEnumValue, O
               try {
                 return method.invoke(enumConstant);
               } catch (Exception e) {
-                throw new RuntimeException(
-                    "Failed to invoke method '" + methodName + "' on enum constant " + enumConstant,
-                    e);
+                throw new RestException(ErrorEnum.ENUM_VALIDATION_FAILED, e);
               }
             })
         .anyMatch(enumValue -> enumValue.equals(value));

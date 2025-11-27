@@ -160,7 +160,37 @@ public enum ErrorEnum implements RestError {
   EXPERIMENT_UPDATE_FAILED(
       "EXPERIMENT_UPDATE_FAILED",
       "Failed to update experiment. Please check your request and try again.",
-      HttpStatus.SC_BAD_REQUEST);
+      HttpStatus.SC_BAD_REQUEST),
+
+  /* Data Serialization/Mapping Errors */
+
+  /** The error code for failed JSONB field serialization. */
+  JSONB_SERIALIZATION_FAILED(
+      "JSONB_SERIALIZATION_FAILED",
+      "Failed to serialize field to JSONB format",
+      HttpStatus.SC_INTERNAL_SERVER_ERROR),
+
+  /** The error code for failed request field extraction. */
+  REQUEST_FIELD_EXTRACTION_FAILED(
+      "REQUEST_FIELD_EXTRACTION_FAILED",
+      "Failed to extract fields from request",
+      HttpStatus.SC_INTERNAL_SERVER_ERROR),
+
+  /** The error code for failed enum validation. */
+  ENUM_VALIDATION_FAILED(
+      "ENUM_VALIDATION_FAILED", "Failed to validate enum value", HttpStatus.SC_BAD_REQUEST),
+
+  /** The error code for failed row to experiment mapping. */
+  ROW_MAPPING_FAILED(
+      "ROW_MAPPING_FAILED",
+      "Failed to map database row to experiment object",
+      HttpStatus.SC_INTERNAL_SERVER_ERROR),
+
+  /** The error code for failed field access during validation. */
+  FIELD_ACCESS_FAILED(
+      "FIELD_ACCESS_FAILED",
+      "Failed to access field during validation",
+      HttpStatus.SC_INTERNAL_SERVER_ERROR);
 
   /** The error code. */
   private final String errorCode;

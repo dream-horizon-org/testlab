@@ -87,20 +87,21 @@ public class AdminServiceImpl implements AdminService {
               if (response.history().isEmpty()) {
                 return adminDAO
                     .getExperimentHistoryCount(request.getProjectKey(), request.getExperimentId())
-                    .map(
+                    .flatMap(
                         historyCount -> {
                           if (historyCount <= 0)
-                            throw new RestException(ErrorEnum.EXPERIMENT_NOT_FOUND);
-                          return ExperimentHistoryResponse.builder()
-                              .experimentId(request.getExperimentId())
-                              .history(List.of())
-                              .pagination(
-                                  PaginationMeta.builder()
-                                      .currentPage(request.getPage())
-                                      .pageSize(0)
-                                      .totalCount(historyCount)
-                                      .build())
-                              .build();
+                            return Single.error(new RestException(ErrorEnum.EXPERIMENT_NOT_FOUND));
+                          return Single.just(
+                              ExperimentHistoryResponse.builder()
+                                  .experimentId(request.getExperimentId())
+                                  .history(List.of())
+                                  .pagination(
+                                      PaginationMeta.builder()
+                                          .currentPage(request.getPage())
+                                          .pageSize(0)
+                                          .totalCount(historyCount)
+                                          .build())
+                                  .build());
                         });
               } else return Single.just(response);
             })
