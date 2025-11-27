@@ -156,4 +156,25 @@ public final class ReadQuery {
       LEFT JOIN experiment.owners o ON e.project_key = o.project_key AND e.experiment_id = o.experiment_id
       WHERE e.project_key = $1
       """;
+
+  /** The query to get experiments from experiment keys. */
+  public static final String GET_EXPERIMENTS_FROM_KEY =
+      """
+      SELECT * FROM experiment.experiments
+      WHERE project_key = $1 AND experiment_key = ANY($2)
+      """;
+
+  /** The query to get live experiments. */
+  public static final String GET_LIVE_EXPERIMENT =
+      """
+      SELECT * FROM experiment.experiments
+      WHERE project_key = $1 AND status = 'LIVE'
+      """;
+
+  /** The query to get concluded experiments. */
+  public static final String GET_CONCLUDED_EXPERIMENTS =
+      """
+      SELECT * FROM experiment.experiments
+      WHERE project_key = $1 AND status = 'CONCLUDED'
+      """;
 }

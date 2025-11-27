@@ -74,7 +74,7 @@ public class ExperimentDAOImpl implements ExperimentDAO {
     return pgReaderClient.fetchOne(
         ReadQuery.GET_EXPERIMENT,
         Tuple.of(projectKey, experimentId),
-        ExperimentMapper::mapRowToExperiment);
+        row -> ExperimentMapper.mapRowToExperiment(row, objectMapper));
   }
 
   /** {@inheritDoc} */
@@ -104,7 +104,9 @@ public class ExperimentDAOImpl implements ExperimentDAO {
     List<Experiment> experiments =
         (rows.isEmpty())
             ? List.of()
-            : rows.stream().map(ExperimentMapper::mapRowToExperiment).toList();
+            : rows.stream()
+                .map(row -> ExperimentMapper.mapRowToExperiment(row, objectMapper))
+                .toList();
 
     response.setExperiments(experiments);
 
