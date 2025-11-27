@@ -53,7 +53,7 @@ public class GetExperiment {
    *     failure response if the experiment ID is invalid or the experiment is not found
    */
   @GET
-  @Path("/experiments/{experimentId}")
+  @Path("/experiments/{experiment_id}")
   @Produces(MediaType.APPLICATION_JSON)
   @Consumes(MediaType.APPLICATION_JSON)
   @ApiResponse(

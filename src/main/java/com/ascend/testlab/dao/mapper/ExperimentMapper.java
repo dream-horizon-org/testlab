@@ -35,9 +35,6 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class ExperimentMapper {
 
-  /** Default constructor for ExperimentMapper. */
-  public ExperimentMapper() {}
-
   /**
    * Maps a database row to an Experiment entity.
    *

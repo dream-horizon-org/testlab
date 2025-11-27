@@ -1,6 +1,8 @@
 package com.ascend.testlab.dto.response;
 
 import com.ascend.testlab.dto.entity.ExperimentHistoryEntry;
+import com.fasterxml.jackson.databind.PropertyNamingStrategies;
+import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import java.util.List;
 import lombok.Builder;
 
@@ -16,5 +18,6 @@ import lombok.Builder;
  * @since 1.0
  */
 @Builder
+@JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
 public record ExperimentHistoryResponse(
     String experimentId, List<ExperimentHistoryEntry> history, PaginationMeta pagination) {}

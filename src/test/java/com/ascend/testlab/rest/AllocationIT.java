@@ -810,8 +810,8 @@ class AllocationIT {
   private void seedExperiment(
       String projectKey, String experimentId, String experimentName, String experimentKey) {
     String variantsJson =
-        "'{\"control\": {\"displayName\": \"Control\", \"variantName\": \"control\", \"variables\": []}, "
-            + "\"treatment\": {\"displayName\": \"Treatment\", \"variantName\": \"treatment\", \"variables\": []}}'";
+        "'{\"control\": {\"display_name\": \"Control\", \"variant_name\": \"control\", \"variables\": []}, "
+            + "\"treatment\": {\"display_name\": \"Treatment\", \"variant_name\": \"treatment\", \"variables\": []}}'";
 
     String variantWeightsJson = "'{\"weights\":{\"control\": 50, \"treatment\": 50}}'";
 

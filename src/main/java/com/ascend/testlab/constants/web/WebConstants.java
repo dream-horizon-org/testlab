@@ -65,7 +65,7 @@ public final class WebConstants {
   public static final String PROJECT_KEY_HEADER = "x-project-key";
 
   /** The path parameter name for experiment ID. */
-  public static final String EXPERIMENT_ID = "experimentId";
+  public static final String EXPERIMENT_ID = "experiment_id";
 
   /* Query Parameter Constants */
 
@@ -85,7 +85,7 @@ public final class WebConstants {
   public static final String NAME = "name";
 
   /** The query parameter name for experiment key. */
-  public static final String EXPERIMENT_KEY = "experimentKey";
+  public static final String EXPERIMENT_KEY = "experiment_key";
 
   /* Pagination Parameter Constants */
 

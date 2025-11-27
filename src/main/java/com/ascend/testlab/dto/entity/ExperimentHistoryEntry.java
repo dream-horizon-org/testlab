@@ -1,5 +1,7 @@
 package com.ascend.testlab.dto.entity;
 
+import com.fasterxml.jackson.databind.PropertyNamingStrategies;
+import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import io.vertx.core.json.JsonObject;
 import java.time.Instant;
 import lombok.Builder;
@@ -17,6 +19,7 @@ import lombok.Builder;
  * @since 1.0
  */
 @Builder
+@JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
 public record ExperimentHistoryEntry(
     String updatedBy,
     JsonObject previousData,

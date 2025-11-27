@@ -57,7 +57,7 @@ class ExperimentKeyAvailabilityIT {
 
     response.statusCode(HttpStatus.SC_OK);
     response.contentType(WebConstants.APPLICATION_JSON);
-    response.body("data.isAvailable", Matchers.equalTo(true));
+    response.body("data.is_available", Matchers.equalTo(true));
   }
 
   @Test
@@ -70,7 +70,7 @@ class ExperimentKeyAvailabilityIT {
 
     response.statusCode(HttpStatus.SC_OK);
     response.contentType(WebConstants.APPLICATION_JSON);
-    response.body("data.isAvailable", Matchers.equalTo(false));
+    response.body("data.is_available", Matchers.equalTo(false));
   }
 
   @Test

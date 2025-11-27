@@ -22,7 +22,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/SuccessGetAllocationsResponse'
+                $ref: '#/components/schemas/SuccessAllocationsResponse'
         "304":
           description: Successful Not Modified Response
         "400":
@@ -100,7 +100,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/SuccessAllocationResponse'
+                $ref: '#/components/schemas/SuccessAllocationsResponse'
         "304":
           description: Successful Not Modified Response
         "400":
@@ -121,7 +121,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Failure'
-  /v1/experiments/{experimentId}:
+  /v1/experiments/{experiment_id}:
     get:
       operationId: getExperimentHandle
       parameters:
@@ -130,7 +130,7 @@ paths:
         required: true
         schema:
           type: string
-      - name: experimentId
+      - name: experiment_id
         in: path
         required: true
         schema:
@@ -168,7 +168,7 @@ paths:
         required: true
         schema:
           type: string
-      - name: experimentId
+      - name: experiment_id
         in: path
         required: true
         schema:
@@ -207,7 +207,7 @@ paths:
         required: true
         schema:
           type: string
-      - name: experimentKey
+      - name: experiment_key
         in: query
         required: true
         schema:
@@ -293,7 +293,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Failure'
-  /v1/experiments/{experimentId}/history:
+  /v1/experiments/{experiment_id}/history:
     get:
       operationId: getExperimentHistoryHandle
       parameters:
@@ -302,7 +302,7 @@ paths:
         required: true
         schema:
           type: string
-      - name: experimentId
+      - name: experiment_id
         in: path
         required: true
         schema:
@@ -388,18 +388,18 @@ components:
       properties:
         error:
           $ref: '#/components/schemas/ErrorEntity'
-    AllocationResponse:
+    AllocationsResponse:
       type: object
       properties:
         experiment_map:
           type: array
           items:
             $ref: '#/components/schemas/UserExperimentMap'
-    SuccessAllocationResponse:
+    SuccessAllocationsResponse:
       type: object
       properties:
         data:
-          $ref: '#/components/schemas/AllocationResponse'
+          $ref: '#/components/schemas/AllocationsResponse'
     UserExperimentMap:
       type: object
       properties:
@@ -440,15 +440,15 @@ components:
     AllocationRequest:
       type: object
       properties:
-        experimentKeys:
+        experiment_keys:
           type: array
           items:
             type: string
         attributes:
           $ref: '#/components/schemas/Attributes'
-        stableId:
+        stable_id:
           type: string
-        userId:
+        user_id:
           type: string
     Attributes:
       type: object
@@ -469,18 +469,6 @@ components:
           type: string
         build_number:
           type: string
-    GetAllocationsResponse:
-      type: object
-      properties:
-        experimentMap:
-          type: array
-          items:
-            $ref: '#/components/schemas/UserExperimentMap'
-    SuccessGetAllocationsResponse:
-      type: object
-      properties:
-        data:
-          $ref: '#/components/schemas/GetAllocationsResponse'
     SuccessUserExperimentMap:
       type: object
       properties:
@@ -509,7 +497,7 @@ components:
     ExperimentKeyAvailabilityResponse:
       type: object
       properties:
-        isAvailable:
+        is_available:
           type: boolean
     SuccessExperimentKeyAvailabilityResponse:
       type: object
@@ -658,13 +646,13 @@ components:
     PaginationMeta:
       type: object
       properties:
-        currentPage:
+        current_page:
           type: integer
           format: int32
-        pageSize:
+        page_size:
           type: integer
           format: int32
-        totalCount:
+        total_count:
           type: integer
           format: int32
     RuleAttributes:
@@ -713,22 +701,22 @@ components:
     ExperimentHistoryEntry:
       type: object
       properties:
-        updatedBy:
+        updated_by:
           type: string
-        previousData:
+        previous_data:
           $ref: '#/components/schemas/JsonObject'
-        currentData:
+        current_data:
           $ref: '#/components/schemas/JsonObject'
-        createdAt:
+        created_at:
           type: string
           format: date-time
-        updatedAt:
+        updated_at:
           type: string
           format: date-time
     ExperimentHistoryResponse:
       type: object
       properties:
-        experimentId:
+        experiment_id:
           type: string
         history:
           type: array

@@ -1,5 +1,7 @@
 package com.ascend.testlab.dto.response;
 
+import com.fasterxml.jackson.databind.PropertyNamingStrategies;
+import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import lombok.Builder;
 
 /**
@@ -13,4 +15,5 @@ import lombok.Builder;
  * @since 1.0
  */
 @Builder
+@JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
 public record PaginationMeta(int currentPage, int pageSize, int totalCount) {}

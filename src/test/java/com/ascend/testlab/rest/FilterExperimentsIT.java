@@ -49,9 +49,9 @@ class FilterExperimentsIT {
     response.body("data.experiments", Matchers.notNullValue());
     response.body("data.experiments.size()", Matchers.equalTo(2));
     response.body("data.pagination", Matchers.notNullValue());
-    response.body("data.pagination.currentPage", Matchers.notNullValue());
-    response.body("data.pagination.pageSize", Matchers.notNullValue());
-    response.body("data.pagination.totalCount", Matchers.equalTo(2));
+    response.body("data.pagination.current_page", Matchers.notNullValue());
+    response.body("data.pagination.page_size", Matchers.notNullValue());
+    response.body("data.pagination.total_count", Matchers.equalTo(2));
   }
 
   @Test
@@ -67,7 +67,7 @@ class FilterExperimentsIT {
     response.body("data.experiments", Matchers.notNullValue());
     response.body("data.experiments.size()", Matchers.equalTo(1));
     response.body("data.experiments[0].status", Matchers.equalTo("LIVE"));
-    response.body("data.experiments[0].experimentId", Matchers.equalTo(EXPERIMENT_ID_1));
+    response.body("data.experiments[0].experiment_id", Matchers.equalTo(EXPERIMENT_ID_1));
   }
 
   @Test
@@ -112,7 +112,7 @@ class FilterExperimentsIT {
     response.body("data.experiments", Matchers.notNullValue());
     response.body("data.experiments.size()", Matchers.equalTo(1));
     response.body("data.experiments[0].tags", Matchers.notNullValue());
-    response.body("data.experiments[0].experimentId", Matchers.equalTo(EXPERIMENT_ID_1));
+    response.body("data.experiments[0].experiment_id", Matchers.equalTo(EXPERIMENT_ID_1));
   }
 
   @Test
@@ -155,9 +155,9 @@ class FilterExperimentsIT {
     response.contentType(WebConstants.APPLICATION_JSON);
     response.body("data.experiments", Matchers.notNullValue());
     response.body("data.experiments.size()", Matchers.equalTo(1));
-    response.body("data.pagination.pageSize", Matchers.equalTo(1));
-    response.body("data.pagination.currentPage", Matchers.equalTo(1));
-    response.body("data.pagination.totalCount", Matchers.equalTo(2));
+    response.body("data.pagination.page_size", Matchers.equalTo(1));
+    response.body("data.pagination.current_page", Matchers.equalTo(1));
+    response.body("data.pagination.total_count", Matchers.equalTo(2));
   }
 
   @Test
@@ -181,7 +181,7 @@ class FilterExperimentsIT {
     response.body("data.experiments.size()", Matchers.equalTo(1));
     response.body("data.experiments[0].status", Matchers.equalTo("LIVE"));
     response.body("data.experiments[0].name", Matchers.equalTo("Filter Test Experiment 1"));
-    response.body("data.experiments[0].experimentId", Matchers.equalTo(EXPERIMENT_ID_1));
+    response.body("data.experiments[0].experiment_id", Matchers.equalTo(EXPERIMENT_ID_1));
   }
 
   @Test
@@ -237,7 +237,7 @@ class FilterExperimentsIT {
     response.contentType(WebConstants.APPLICATION_JSON);
     response.body("data.experiments", Matchers.notNullValue());
     response.body("data.experiments.size()", Matchers.equalTo(0));
-    response.body("data.pagination.totalCount", Matchers.equalTo(0));
+    response.body("data.pagination.total_count", Matchers.equalTo(0));
   }
 
   @Test
@@ -298,8 +298,8 @@ class FilterExperimentsIT {
 
     response.statusCode(HttpStatus.SC_OK);
     response.body("data.experiments.size()", Matchers.equalTo(0));
-    response.body("data.pagination.currentPage", Matchers.equalTo(1000));
-    response.body("data.pagination.totalCount", Matchers.equalTo(0));
+    response.body("data.pagination.current_page", Matchers.equalTo(1000));
+    response.body("data.pagination.total_count", Matchers.equalTo(0));
     // totalCount is implementation specific, and for `count(*) over ()` it returns 0 when no rows
   }
 
@@ -314,7 +314,7 @@ class FilterExperimentsIT {
     response.statusCode(HttpStatus.SC_OK);
     response.body("data.experiments", Matchers.notNullValue());
     response.body("data.experiments.size()", Matchers.equalTo(2));
-    response.body("data.pagination.pageSize", Matchers.equalTo(2));
+    response.body("data.pagination.page_size", Matchers.equalTo(2));
   }
 
   @Test
@@ -418,8 +418,8 @@ class FilterExperimentsIT {
 
     response.statusCode(HttpStatus.SC_OK);
     response.body("data.experiments.size()", Matchers.equalTo(1));
-    response.body("data.pagination.pageSize", Matchers.equalTo(1));
-    response.body("data.pagination.currentPage", Matchers.equalTo(1));
+    response.body("data.pagination.page_size", Matchers.equalTo(1));
+    response.body("data.pagination.current_page", Matchers.equalTo(1));
   }
 
   @Test
@@ -432,8 +432,8 @@ class FilterExperimentsIT {
 
     response.statusCode(HttpStatus.SC_OK);
     response.body("data.experiments.size()", Matchers.equalTo(1));
-    response.body("data.pagination.currentPage", Matchers.equalTo(2));
-    response.body("data.pagination.pageSize", Matchers.equalTo(1));
+    response.body("data.pagination.current_page", Matchers.equalTo(2));
+    response.body("data.pagination.page_size", Matchers.equalTo(1));
   }
 
   @Test
@@ -444,8 +444,8 @@ class FilterExperimentsIT {
         TestUtil.executeRequest(null, headers, null, spec -> spec.get(this.route));
 
     response.statusCode(HttpStatus.SC_OK);
-    response.body("data.pagination.currentPage", Matchers.equalTo(1));
-    response.body("data.pagination.pageSize", Matchers.equalTo(2));
+    response.body("data.pagination.current_page", Matchers.equalTo(1));
+    response.body("data.pagination.page_size", Matchers.equalTo(2));
   }
 
   @Test
