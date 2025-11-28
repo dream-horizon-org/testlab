@@ -179,10 +179,8 @@ public class ExperimentServiceImpl implements ExperimentService {
   private void generateExperimentId(Experiment request) {
     UUID experimentId = UUID.randomUUID();
     request.setExperimentId(experimentId);
-
-    String experimentKey = CommonUtil.generateExperimentKey(request.getName());
     if (Objects.isNull(request.getExperimentKey())) {
-      request.setExperimentKey(experimentKey);
+      request.setExperimentKey(CommonUtil.generateExperimentKey(request.getName()));
     }
   }
 

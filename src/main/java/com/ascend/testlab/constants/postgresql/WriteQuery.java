@@ -50,7 +50,7 @@ public final class WriteQuery {
       """
       INSERT INTO experiment.experiments (
         project_key, experiment_id, name, experiment_key, description, hypothesis,
-        status, type, guardrail_health_status, cohorts, variant_weights, variants,
+        status, type, cohorts, variant_weights, variants,
         distribution_strategy, assignment_domain, overrides, rule_attributes,
         exposure, threshold, start_time, end_time, created_by
       )

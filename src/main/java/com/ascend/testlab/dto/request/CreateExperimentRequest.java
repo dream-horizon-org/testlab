@@ -97,9 +97,9 @@ public class CreateExperimentRequest {
   private long threshold;
 
   @Min(value = 0, message = "Start time must be a valid epoch timestamp")
-  private Long startTime;
+  private Long startTime = System.currentTimeMillis();
 
-  private Long endTime;
+  private Long endTime = null;
 
   @NotBlank(message = "Created by is required")
   @Size(max = 255, message = "Created by must not exceed 255 characters")
