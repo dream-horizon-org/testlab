@@ -5,7 +5,6 @@ import static org.mockito.Mockito.*;
 
 import com.ascend.testlab.constants.enums.ExperimentStatus;
 import com.ascend.testlab.constants.enums.ExperimentType;
-import com.ascend.testlab.constants.enums.HealthStatus;
 import com.ascend.testlab.dao.ExperimentDAO;
 import com.ascend.testlab.dto.entity.experiment.Experiment;
 import com.ascend.testlab.dto.request.CreateExperimentRequest;
@@ -1442,7 +1441,7 @@ public class ExperimentServiceTest {
     }
     request.setCohorts(largeCohorts);
 
-    when(experimentDAO.createWithRelatedData(any(UUID.class), any(CreateExperimentRequest.class)))
+    when(experimentDAO.createWithRelatedData(any(CreateExperimentRequest.class)))
         .thenReturn(Single.just(testExperimentId.toString()));
 
     // Act
@@ -1460,11 +1459,10 @@ public class ExperimentServiceTest {
     request.setName("test_experiment");
     request.setDescription("Test description");
     request.setHypothesis("Test hypothesis");
-    request.setStatus(ExperimentStatus.DRAFT);
-    request.setType(ExperimentType.A_B);
-    request.setGuardrailHealthStatus(HealthStatus.PASSED);
+    request.setStatus(ExperimentStatus.DRAFT.name());
+    request.setType(ExperimentType.A_B.name());
     request.setExposure(50);
-    request.setThreshold(1000);
+    request.setThreshold(1000L);
     request.setStartTime(System.currentTimeMillis() / 1000);
     request.setEndTime(System.currentTimeMillis() / 1000 + 86400);
     request.setCreatedBy("test@example.com");

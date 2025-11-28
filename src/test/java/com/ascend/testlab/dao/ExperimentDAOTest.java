@@ -8,11 +8,10 @@ import com.ascend.testlab.client.postgresql.PgReaderClient;
 import com.ascend.testlab.client.postgresql.PgWriterClient;
 import com.ascend.testlab.constants.enums.ExperimentStatus;
 import com.ascend.testlab.constants.enums.ExperimentType;
-import com.ascend.testlab.constants.enums.HealthStatus;
 import com.ascend.testlab.constants.postgresql.ReadQuery;
 import com.ascend.testlab.constants.postgresql.WriteQuery;
 import com.ascend.testlab.dao.impl.ExperimentDAOImpl;
-import com.ascend.testlab.dto.request.Experiment;
+import com.ascend.testlab.dto.entity.experiment.Experiment;
 import com.ascend.testlab.dto.request.FilterExperimentsRequest;
 import com.ascend.testlab.dto.response.FilterExperimentsResponse;
 import com.dream11.rest.exception.RestException;
@@ -74,7 +73,7 @@ public class ExperimentDAOTest {
     @DisplayName("Should successfully create experiment with all fields")
     void testCreateExperimentSuccess() {
       // Arrange
-      Experiment request = createValidRequest();
+      com.ascend.testlab.dto.request.CreateExperimentRequest request = createValidRequest();
       when(pgWriterClient.executeWithTransaction(any()))
           .thenAnswer(
               invocation -> {
@@ -136,7 +135,7 @@ public class ExperimentDAOTest {
     @DisplayName("Should handle database insert failure")
     void testCreateExperimentInsertFailure() {
       // Arrange
-      Experiment request = createValidRequest();
+      com.ascend.testlab.dto.request.CreateExperimentRequest request = createValidRequest();
       when(pgWriterClient.executeWithTransaction(any()))
           .thenAnswer(
               invocation -> {
@@ -160,7 +159,7 @@ public class ExperimentDAOTest {
     @DisplayName("Should handle database error during insert")
     void testCreateExperimentDatabaseError() {
       // Arrange
-      Experiment request = createValidRequest();
+      com.ascend.testlab.dto.request.CreateExperimentRequest request = createValidRequest();
       RuntimeException exception = new RuntimeException("Database connection failed");
       when(pgWriterClient.executeWithTransaction(any()))
           .thenAnswer(
@@ -188,7 +187,7 @@ public class ExperimentDAOTest {
     @DisplayName("Should handle experiment with cohorts array")
     void testCreateExperimentWithCohorts() {
       // Arrange
-      Experiment request = createValidRequest();
+      com.ascend.testlab.dto.request.CreateExperimentRequest request = createValidRequest();
       request.setCohorts(Arrays.asList("premium_users", "mobile_users", "web_users"));
       when(pgWriterClient.executeWithTransaction(any()))
           .thenAnswer(
@@ -214,7 +213,7 @@ public class ExperimentDAOTest {
     @DisplayName("Should handle experiment with JSONB fields")
     void testCreateExperimentWithJsonbFields() {
       // Arrange
-      Experiment request = createValidRequest();
+      com.ascend.testlab.dto.request.CreateExperimentRequest request = createValidRequest();
 
       // Note: variantWeights is now VariantWeights type, not Map
       // Skipping variant weights for this test
@@ -535,7 +534,7 @@ public class ExperimentDAOTest {
     @DisplayName("Should handle exception in create method")
     void testCreateExceptionHandling() {
       // Arrange
-      Experiment request = createValidRequest();
+      com.ascend.testlab.dto.request.CreateExperimentRequest request = createValidRequest();
       RuntimeException exception = new RuntimeException("Unexpected error");
       when(pgWriterClient.executeWithTransaction(any()))
           .thenAnswer(
@@ -559,19 +558,19 @@ public class ExperimentDAOTest {
   }
 
   // Helper method to create a valid request
-  private Experiment createValidRequest() {
-    Experiment request = new Experiment();
+  private com.ascend.testlab.dto.request.CreateExperimentRequest createValidRequest() {
+    com.ascend.testlab.dto.request.CreateExperimentRequest request =
+        new com.ascend.testlab.dto.request.CreateExperimentRequest();
     request.setProjectKey(testProjectKey.toString());
     request.setExperimentId(testExperimentId);
     request.setName("test_experiment");
     request.setDescription("Test description");
     request.setHypothesis("Test hypothesis");
-    request.setStatus(ExperimentStatus.DRAFT);
-    request.setType(ExperimentType.A_B);
-    request.setGuardrailHealthStatus(HealthStatus.PASSED);
+    request.setStatus(ExperimentStatus.DRAFT.name());
+    request.setType(ExperimentType.A_B.name());
     request.setCohorts(Arrays.asList("test_cohort"));
     request.setExposure(50);
-    request.setThreshold(1000);
+    request.setThreshold(1000L);
     request.setStartTime(System.currentTimeMillis() / 1000);
     request.setEndTime(System.currentTimeMillis() / 1000 + 86400);
     request.setCreatedBy("test@example.com");
