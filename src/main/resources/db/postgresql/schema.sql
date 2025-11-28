@@ -5,12 +5,13 @@ CREATE DATABASE experiment;
 \c experiment;
 CREATE SCHEMA IF NOT EXISTS experiment;
 
+CREATE EXTENSION IF NOT EXISTS pg_trgm;
+
 CREATE TYPE experiment.experiment_status AS ENUM ('LIVE','PAUSED','DRAFT','CONCLUDED','TERMINATED');
 CREATE TYPE experiment.experiment_type AS ENUM ('A/A','A/B');
 CREATE TYPE experiment.experiment_health AS ENUM ('WARNING','PASSED','NO_CHECKS_AVAILABLE','FAILED');
 CREATE TYPE experiment.experiment_strategy AS ENUM ('RANDOM','ROUND_ROBIN');
 CREATE TYPE experiment.assignment_domain AS ENUM ('STRATIFIED', 'COHORT');
-CREATE extension if not exists pg_trgm;
 
 CREATE TABLE IF NOT EXISTS experiment.experiments (
     project_key         VARCHAR(255) NOT NULL,

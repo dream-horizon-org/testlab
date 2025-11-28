@@ -139,6 +139,7 @@ public class AdminDAOImpl implements AdminDAO {
 
   /** {@inheritDoc} */
   @Override
+  // TODO: change record to batch record to get key
   public Single<Map<String, Long>> getVariantCount(String projectKey, Experiment experiment) {
     if (Objects.isNull(experiment.getVariants()) || experiment.getVariants().isEmpty()) {
       return Single.just(new HashMap<>());
