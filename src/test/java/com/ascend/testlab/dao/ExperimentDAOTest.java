@@ -110,6 +110,10 @@ public class ExperimentDAOTest {
       request.setName("minimal_experiment");
       request.setDescription("Minimal description");
       request.setHypothesis("Minimal hypothesis");
+      request.setStatus(ExperimentStatus.DRAFT);
+      request.setType(ExperimentType.A_B);
+      request.setDistributionStrategy(DistributionStrategy.RANDOM);
+      request.setAssignmentDomain(AssignmentDomain.COHORT);
       request.setExposure(50);
       request.setThreshold(1000L);
       request.setStartTime(System.currentTimeMillis() / 1000);
@@ -263,8 +267,10 @@ public class ExperimentDAOTest {
       request.setName("test_experiment");
       request.setDescription("Test description");
       request.setHypothesis("Test hypothesis");
-      request.setStatus(null);
-      request.setType(null);
+      request.setStatus(ExperimentStatus.DRAFT);
+      request.setType(ExperimentType.A_B);
+      request.setDistributionStrategy(DistributionStrategy.RANDOM);
+      request.setAssignmentDomain(AssignmentDomain.COHORT);
       request.setGuardrailHealthStatus(null);
       request.setCohorts(null);
       request.setVariantWeights(null);
