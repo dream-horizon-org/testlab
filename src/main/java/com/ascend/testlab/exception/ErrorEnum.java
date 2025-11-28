@@ -126,32 +126,6 @@ public enum ErrorEnum implements RestError {
   INVALID_EXPERIMENT_TYPE(
       "INVALID_EXPERIMENT_TYPE", "Experiment type is not valid", HttpStatus.SC_BAD_REQUEST),
 
-  /* Database Operation Errors */
-
-  /** The error code for failed tags insertion. */
-  TAGS_INSERTION_FAILED(
-      "TAGS_INSERTION_FAILED",
-      "Failed to insert tags for experiment",
-      HttpStatus.SC_INTERNAL_SERVER_ERROR),
-
-  /** The error code for failed owner insertion. */
-  OWNER_INSERTION_FAILED(
-      "OWNER_INSERTION_FAILED",
-      "Failed to insert owner for experiment",
-      HttpStatus.SC_INTERNAL_SERVER_ERROR),
-
-  /** The error code for failed update log insertion. */
-  UPDATE_LOG_INSERTION_FAILED(
-      "UPDATE_LOG_INSERTION_FAILED",
-      "Failed to insert update log for experiment",
-      HttpStatus.SC_INTERNAL_SERVER_ERROR),
-
-  /** The error code for failed analysis insertion. */
-  ANALYSIS_INSERTION_FAILED(
-      "ANALYSIS_INSERTION_FAILED",
-      "Failed to insert analysis data for experiment",
-      HttpStatus.SC_INTERNAL_SERVER_ERROR),
-
   /* Experiment Operation Errors */
 
   /** The error code for failed experiment creation. */
@@ -188,12 +162,6 @@ public enum ErrorEnum implements RestError {
   ROW_MAPPING_FAILED(
       "ROW_MAPPING_FAILED",
       "Failed to map database row to experiment object",
-      HttpStatus.SC_INTERNAL_SERVER_ERROR),
-
-  /** The error code for failed field access during validation. */
-  FIELD_ACCESS_FAILED(
-      "FIELD_ACCESS_FAILED",
-      "Failed to access field during validation",
       HttpStatus.SC_INTERNAL_SERVER_ERROR),
 
   /* Variant Validation Errors */

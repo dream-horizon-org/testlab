@@ -39,6 +39,11 @@ public class CreateExperimentValidator
 
   private boolean validateTime(
       CreateExperimentRequest request, ConstraintValidatorContext context) {
+    if (request.getStartTime() != null && request.getStartTime() < System.currentTimeMillis()) {
+      addError(context, "Start time must be in the future", "startTime");
+      return false;
+    }
+
     if (request.getEndTime() != null && request.getStartTime() >= request.getEndTime()) {
       addError(context, "End time must be greater than start time", "endTime");
       return false;

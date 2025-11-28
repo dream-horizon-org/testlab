@@ -95,7 +95,7 @@ public class ExperimentDAOImpl implements ExperimentDAO {
 
     int totalCount = (rows.isEmpty()) ? 0 : rows.get(0).getInteger(Columns.TOTAL_COUNT);
 
-    List<com.ascend.testlab.dto.entity.experiment.Experiment> experiments =
+    List<Experiment> experiments =
         (rows.isEmpty())
             ? List.of()
             : rows.stream()
@@ -119,8 +119,7 @@ public class ExperimentDAOImpl implements ExperimentDAO {
 
   /** {@inheritDoc} */
   @Override
-  public Single<Boolean> deleteExperiment(
-      String projectKey, com.ascend.testlab.dto.entity.experiment.Experiment experiment) {
+  public Single<Boolean> deleteExperiment(String projectKey, Experiment experiment) {
     Tuple tuple = Tuple.of(projectKey, experiment.getExperimentId().toString());
 
     JsonObject previous_data_json = JsonObject.mapFrom(experiment);
@@ -167,18 +166,13 @@ public class ExperimentDAOImpl implements ExperimentDAO {
    * @param experiment experiment creation experiment
    * @return Single emitting experiment ID as String on success
    */
-  private Single<String> insertExperiment(
+  private Single<Boolean> insertExperiment(
       SqlConnection connection, String projectKey, Experiment experiment) {
     log.info(
         "DAO: Creating experiment with connection, projectKey: {}, experimentId: {}, name: {}",
         projectKey,
         experiment.getExperimentId(),
         experiment.getName());
-
-    log.debug(
-        "Executing INSERT query for experiment: {}, projectKey: {}",
-        experiment.getName(),
-        projectKey);
 
     Tuple tuple =
         Tuple.tuple()
@@ -190,7 +184,6 @@ public class ExperimentDAOImpl implements ExperimentDAO {
             .addString(experiment.getHypothesis())
             .addString(experiment.getStatus().name())
             .addString(experiment.getType().getValue())
-            .addString(null)
             .addValue(experiment.getCohorts().toArray(new String[0]))
             .addJsonObject(JsonObject.mapFrom(experiment.getVariantWeights()))
             .addJsonObject(JsonObject.mapFrom(experiment.getVariants()))
@@ -209,25 +202,10 @@ public class ExperimentDAOImpl implements ExperimentDAO {
 
     return pgWriterClient
         .execute(connection, WriteQuery.INSERT_EXPERIMENT, tuple)
-        .flatMap(
-            success -> {
-              if (success) {
-                log.info(
-                    "DAO: Experiment inserted successfully with connection, projectKey: {}, experimentId: {}",
-                    projectKey,
-                    experiment.getExperimentId());
-                return Single.just(experiment.getExperimentId().toString());
-              } else {
-                log.error(
-                    "DAO: Insert returned false, no rows affected for projectKey: {}, experimentId: {}",
-                    experiment.getProjectKey(),
-                    experiment.getExperimentId());
-                RuntimeException err =
-                    new RuntimeException("Failed to insert experiment - no rows affected");
-                return Single.error(
-                    ErrorEnum.handleException(
-                        err, new RestException(ErrorEnum.EXPERIMENT_CREATION_FAILED, err)));
-              }
+        .onErrorReturn(
+            err -> {
+              log.error("Error while inserting experiment", err);
+              return false;
             });
   }
 
