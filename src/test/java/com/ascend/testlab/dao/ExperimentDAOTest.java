@@ -6,13 +6,15 @@ import static org.mockito.Mockito.*;
 
 import com.ascend.testlab.client.postgresql.PgReaderClient;
 import com.ascend.testlab.client.postgresql.PgWriterClient;
+import com.ascend.testlab.constants.enums.AssignmentDomain;
+import com.ascend.testlab.constants.enums.DistributionStrategy;
 import com.ascend.testlab.constants.enums.ExperimentStatus;
 import com.ascend.testlab.constants.enums.ExperimentType;
 import com.ascend.testlab.constants.enums.HealthStatus;
 import com.ascend.testlab.constants.postgresql.ReadQuery;
 import com.ascend.testlab.constants.postgresql.WriteQuery;
 import com.ascend.testlab.dao.impl.ExperimentDAOImpl;
-import com.ascend.testlab.dto.request.Experiment;
+import com.ascend.testlab.dto.entity.experiment.Experiment;
 import com.ascend.testlab.dto.request.FilterExperimentsRequest;
 import com.ascend.testlab.dto.response.FilterExperimentsResponse;
 import com.dream11.rest.exception.RestException;
@@ -75,25 +77,27 @@ public class ExperimentDAOTest {
     void testCreateExperimentSuccess() {
       // Arrange
       Experiment request = createValidRequest();
-      when(pgWriterClient.executeWithTransaction(any()))
+      when(pgWriterClient.executeWithTransaction(any(), any()))
           .thenAnswer(
               invocation -> {
-                Function<SqlConnection, Maybe<String>> function = invocation.getArgument(0);
+                Function<SqlConnection, Maybe<Boolean>> function = invocation.getArgument(0);
+                Boolean defaultValue = invocation.getArgument(1);
                 SqlConnection mockConnection = mock(SqlConnection.class);
                 when(pgWriterClient.execute(
                         any(SqlConnection.class), anyString(), any(Tuple.class)))
                     .thenReturn(Single.just(true));
-                return function.apply(mockConnection);
+                return function.apply(mockConnection).defaultIfEmpty(defaultValue);
               });
 
       // Act
-      TestObserver<String> testObserver = experimentDAO.create(testProjectKey, request).test();
+      TestObserver<Boolean> testObserver =
+          experimentDAO.createExperiment(testProjectKey, request).test();
       ExperimentDAO dao = new ExperimentDAOImpl(pgReaderClient, pgWriterClient, objectMapper);
 
       // Assert
       testObserver.assertComplete();
       testObserver.assertNoErrors();
-      testObserver.assertValue(request.getExperimentId().toString());
+      testObserver.assertValue(true);
     }
 
     @Test
@@ -107,29 +111,31 @@ public class ExperimentDAOTest {
       request.setDescription("Minimal description");
       request.setHypothesis("Minimal hypothesis");
       request.setExposure(50);
-      request.setThreshold(1000);
+      request.setThreshold(1000L);
       request.setStartTime(System.currentTimeMillis() / 1000);
       request.setEndTime(System.currentTimeMillis() / 1000 + 86400);
       request.setCreatedBy("test@example.com");
 
-      when(pgWriterClient.executeWithTransaction(any()))
+      when(pgWriterClient.executeWithTransaction(any(), any()))
           .thenAnswer(
               invocation -> {
-                Function<SqlConnection, Maybe<String>> function = invocation.getArgument(0);
+                Function<SqlConnection, Maybe<Boolean>> function = invocation.getArgument(0);
+                Boolean defaultValue = invocation.getArgument(1);
                 SqlConnection mockConnection = mock(SqlConnection.class);
                 when(pgWriterClient.execute(
                         any(SqlConnection.class), anyString(), any(Tuple.class)))
                     .thenReturn(Single.just(true));
-                return function.apply(mockConnection);
+                return function.apply(mockConnection).defaultIfEmpty(defaultValue);
               });
 
       // Act
-      TestObserver<String> testObserver = experimentDAO.create(testProjectKey, request).test();
+      TestObserver<Boolean> testObserver =
+          experimentDAO.createExperiment(testProjectKey, request).test();
 
       // Assert
       testObserver.assertComplete();
       testObserver.assertNoErrors();
-      testObserver.assertValue(testExperimentId.toString());
+      testObserver.assertValue(true);
     }
 
     @Test
@@ -137,7 +143,7 @@ public class ExperimentDAOTest {
     void testCreateExperimentInsertFailure() {
       // Arrange
       Experiment request = createValidRequest();
-      when(pgWriterClient.executeWithTransaction(any()))
+      when(pgWriterClient.executeWithTransaction(any(), any()))
           .thenAnswer(
               invocation -> {
                 Function<SqlConnection, Single<String>> function = invocation.getArgument(0);
@@ -149,7 +155,8 @@ public class ExperimentDAOTest {
               });
 
       // Act
-      TestObserver<String> testObserver = experimentDAO.create(testProjectKey, request).test();
+      TestObserver<Boolean> testObserver =
+          experimentDAO.createExperiment(testProjectKey, request).test();
 
       // Assert
       testObserver.assertNotComplete();
@@ -162,7 +169,7 @@ public class ExperimentDAOTest {
       // Arrange
       Experiment request = createValidRequest();
       RuntimeException exception = new RuntimeException("Database connection failed");
-      when(pgWriterClient.executeWithTransaction(any()))
+      when(pgWriterClient.executeWithTransaction(any(), any()))
           .thenAnswer(
               invocation -> {
                 Function<SqlConnection, Single<String>> function = invocation.getArgument(0);
@@ -174,7 +181,8 @@ public class ExperimentDAOTest {
               });
 
       // Act
-      TestObserver<String> testObserver = experimentDAO.create(testProjectKey, request).test();
+      TestObserver<Boolean> testObserver =
+          experimentDAO.createExperiment(testProjectKey, request).test();
 
       // Assert
       testObserver.assertNotComplete();
@@ -190,24 +198,26 @@ public class ExperimentDAOTest {
       // Arrange
       Experiment request = createValidRequest();
       request.setCohorts(Arrays.asList("premium_users", "mobile_users", "web_users"));
-      when(pgWriterClient.executeWithTransaction(any()))
+      when(pgWriterClient.executeWithTransaction(any(), any()))
           .thenAnswer(
               invocation -> {
-                Function<SqlConnection, Maybe<String>> function = invocation.getArgument(0);
+                Function<SqlConnection, Maybe<Boolean>> function = invocation.getArgument(0);
+                Boolean defaultValue = invocation.getArgument(1);
                 SqlConnection mockConnection = mock(SqlConnection.class);
                 when(pgWriterClient.execute(
                         any(SqlConnection.class), anyString(), any(Tuple.class)))
                     .thenReturn(Single.just(true));
-                return function.apply(mockConnection);
+                return function.apply(mockConnection).defaultIfEmpty(defaultValue);
               });
 
       // Act
-      TestObserver<String> testObserver = experimentDAO.create(testProjectKey, request).test();
+      TestObserver<Boolean> testObserver =
+          experimentDAO.createExperiment(testProjectKey, request).test();
 
       // Assert
       testObserver.assertComplete();
       testObserver.assertNoErrors();
-      testObserver.assertValue(testExperimentId.toString());
+      testObserver.assertValue(true);
     }
 
     @Test
@@ -221,24 +231,26 @@ public class ExperimentDAOTest {
 
       request.setOverrides(List.of("user1@example.com", "user2@example.com"));
 
-      when(pgWriterClient.executeWithTransaction(any()))
+      when(pgWriterClient.executeWithTransaction(any(), any()))
           .thenAnswer(
               invocation -> {
-                Function<SqlConnection, Maybe<String>> function = invocation.getArgument(0);
+                Function<SqlConnection, Maybe<Boolean>> function = invocation.getArgument(0);
+                Boolean defaultValue = invocation.getArgument(1);
                 SqlConnection mockConnection = mock(SqlConnection.class);
                 when(pgWriterClient.execute(
                         any(SqlConnection.class), anyString(), any(Tuple.class)))
                     .thenReturn(Single.just(true));
-                return function.apply(mockConnection);
+                return function.apply(mockConnection).defaultIfEmpty(defaultValue);
               });
 
       // Act
-      TestObserver<String> testObserver = experimentDAO.create(testProjectKey, request).test();
+      TestObserver<Boolean> testObserver =
+          experimentDAO.createExperiment(testProjectKey, request).test();
 
       // Assert
       testObserver.assertComplete();
       testObserver.assertNoErrors();
-      testObserver.assertValue(testExperimentId.toString());
+      testObserver.assertValue(true);
     }
 
     @Test
@@ -257,29 +269,31 @@ public class ExperimentDAOTest {
       request.setCohorts(null);
       request.setVariantWeights(null);
       request.setExposure(50);
-      request.setThreshold(1000);
+      request.setThreshold(1000L);
       request.setStartTime(System.currentTimeMillis() / 1000);
       request.setEndTime(System.currentTimeMillis() / 1000 + 86400);
       request.setCreatedBy("test@example.com");
 
-      when(pgWriterClient.executeWithTransaction(any()))
+      when(pgWriterClient.executeWithTransaction(any(), any()))
           .thenAnswer(
               invocation -> {
-                Function<SqlConnection, Maybe<String>> function = invocation.getArgument(0);
+                Function<SqlConnection, Maybe<Boolean>> function = invocation.getArgument(0);
+                Boolean defaultValue = invocation.getArgument(1);
                 SqlConnection mockConnection = mock(SqlConnection.class);
                 when(pgWriterClient.execute(
                         any(SqlConnection.class), anyString(), any(Tuple.class)))
                     .thenReturn(Single.just(true));
-                return function.apply(mockConnection);
+                return function.apply(mockConnection).defaultIfEmpty(defaultValue);
               });
 
       // Act
-      TestObserver<String> testObserver = experimentDAO.create(testProjectKey, request).test();
+      TestObserver<Boolean> testObserver =
+          experimentDAO.createExperiment(testProjectKey, request).test();
 
       // Assert
       testObserver.assertComplete();
       testObserver.assertNoErrors();
-      testObserver.assertValue(testExperimentId.toString());
+      testObserver.assertValue(true);
     }
   }
 
@@ -537,7 +551,7 @@ public class ExperimentDAOTest {
       // Arrange
       Experiment request = createValidRequest();
       RuntimeException exception = new RuntimeException("Unexpected error");
-      when(pgWriterClient.executeWithTransaction(any()))
+      when(pgWriterClient.executeWithTransaction(any(), any()))
           .thenAnswer(
               invocation -> {
                 Function<SqlConnection, Single<String>> function = invocation.getArgument(0);
@@ -549,7 +563,8 @@ public class ExperimentDAOTest {
               });
 
       // Act
-      TestObserver<String> testObserver = experimentDAO.create(testProjectKey, request).test();
+      TestObserver<Boolean> testObserver =
+          experimentDAO.createExperiment(testProjectKey, request).test();
 
       // Assert
       testObserver.assertNotComplete();
@@ -560,22 +575,24 @@ public class ExperimentDAOTest {
 
   // Helper method to create a valid request
   private Experiment createValidRequest() {
-    Experiment request = new Experiment();
-    request.setProjectKey(testProjectKey.toString());
-    request.setExperimentId(testExperimentId);
-    request.setName("test_experiment");
-    request.setDescription("Test description");
-    request.setHypothesis("Test hypothesis");
-    request.setStatus(ExperimentStatus.DRAFT);
-    request.setType(ExperimentType.A_B);
-    request.setGuardrailHealthStatus(HealthStatus.PASSED);
-    request.setCohorts(Arrays.asList("test_cohort"));
-    request.setExposure(50);
-    request.setThreshold(1000);
-    request.setStartTime(System.currentTimeMillis() / 1000);
-    request.setEndTime(System.currentTimeMillis() / 1000 + 86400);
-    request.setCreatedBy("test@example.com");
-    return request;
+    return Experiment.builder()
+        .projectKey(testProjectKey.toString())
+        .experimentId(testExperimentId)
+        .name("test_experiment")
+        .description("Test description")
+        .hypothesis("Test hypothesis")
+        .status(ExperimentStatus.DRAFT)
+        .type(ExperimentType.A_B)
+        .guardrailHealthStatus(HealthStatus.PASSED)
+        .distributionStrategy(DistributionStrategy.RANDOM)
+        .assignmentDomain(AssignmentDomain.COHORT)
+        .cohorts(Arrays.asList("test_cohort"))
+        .exposure(50)
+        .threshold(1000L)
+        .startTime(System.currentTimeMillis() / 1000)
+        .endTime(System.currentTimeMillis() / 1000 + 86400)
+        .createdBy("test@example.com")
+        .build();
   }
 
   @Nested
@@ -936,11 +953,11 @@ public class ExperimentDAOTest {
       doReturn(Single.just(mockRows))
           .when(pgReaderClient)
           .fetchAll(anyString(), any(Tuple.class), any(Function.class));
-      when(pgWriterClient.executeWithTransaction(any()))
+      when(pgWriterClient.executeWithTransaction(any(), any()))
           .thenAnswer(
               invocation -> {
                 Function<SqlConnection, Maybe<Boolean>> function = invocation.getArgument(0);
-                return function.apply(mockConnection);
+                return function.apply(mockConnection).toSingle();
               });
       when(pgWriterClient.execute(
               eq(mockConnection), eq(WriteQuery.DELETE_EXPERIMENT_BY_ID), any(Tuple.class)))
@@ -971,7 +988,7 @@ public class ExperimentDAOTest {
       verify(pgReaderClient, times(1))
           .fetchOne(eq(ReadQuery.FETCH_EXPERIMENT), any(Tuple.class), any(Function.class));
       verify(pgReaderClient, times(1)).fetchAll(anyString(), any(Tuple.class), any(Function.class));
-      verify(pgWriterClient, times(1)).executeWithTransaction(any());
+      verify(pgWriterClient, times(1)).executeWithTransaction(any(), any());
       testContext.completeNow();
     }
   }

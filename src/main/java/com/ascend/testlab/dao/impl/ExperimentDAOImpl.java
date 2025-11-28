@@ -228,10 +228,10 @@ public class ExperimentDAOImpl implements ExperimentDAO {
         experiment.getExperimentId());
 
     return pgWriterClient.executeWithTransaction(
-        connection -> createExperiment(connection, projectKey, experiment), false);
+        connection -> createExperimentWithConnection(connection, projectKey, experiment), false);
   }
 
-  private Maybe<Boolean> createExperiment(
+  private Maybe<Boolean> createExperimentWithConnection(
       SqlConnection connection, String projectKey, Experiment experiment) {
 
     return insertExperiment(connection, projectKey, experiment)

@@ -622,7 +622,7 @@ class PgWriterClientTest {
 
       // Act
       TestObserver<String> testObserver =
-          client.executeWithTransaction(transactionalFunction).test();
+          client.executeWithTransaction(transactionalFunction, "default").test();
 
       // Assert
       testObserver.awaitDone(1, TimeUnit.SECONDS);
@@ -643,7 +643,7 @@ class PgWriterClientTest {
 
       // Act
       TestObserver<String> testObserver =
-          client.executeWithTransaction(transactionalFunction).test();
+          client.executeWithTransaction(transactionalFunction, "default").test();
 
       // Assert
       testObserver.awaitDone(1, TimeUnit.SECONDS);
@@ -662,7 +662,7 @@ class PgWriterClientTest {
 
       // Act
       TestObserver<String> testObserver =
-          client.executeWithTransaction(transactionalFunction).test();
+          client.executeWithTransaction(transactionalFunction, "default").test();
 
       // Assert
       testObserver.awaitDone(1, TimeUnit.SECONDS);

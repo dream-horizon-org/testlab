@@ -471,24 +471,26 @@ components:
           format: int64
     Variables:
       required:
-      - dataType
+      - data_type
       type: object
       properties:
         value:
           type: string
         key:
           type: string
-        dataType:
+        data_type:
           type: string
     Variant:
+      required:
+      - display_name
       type: object
       properties:
+        display_name:
+          type: string
         variables:
           type: array
           items:
             $ref: '#/components/schemas/Variables'
-        display_name:
-          type: string
     AllocationRequest:
       type: object
       properties:
@@ -576,8 +578,6 @@ components:
           format: uuid
         status:
           type: boolean
-        message:
-          type: string
     SuccessCreateExperimentResponse:
       type: object
       properties:
@@ -614,30 +614,17 @@ components:
       required:
       - assignment_domain
       - created_by
-      - description
       - distribution_strategy
-      - hypothesis
       - name
-      - owner
       - status
       - type
       - variant_weights
       - variants
       type: object
       properties:
-        project_key:
-          type: string
-        tenant_id:
-          type: string
-          format: uuid
-        experiment_id:
-          type: string
-          format: uuid
         name:
           maxLength: 64
           minLength: 1
-          type: string
-        experiment_key:
           type: string
         description:
           maxLength: 255
@@ -649,77 +636,41 @@ components:
           type: string
         status:
           type: string
-          enum:
-          - LIVE
-          - PAUSED
-          - DRAFT
-          - CONCLUDED
-          - TERMINATED
         type:
           type: string
-          enum:
-          - A/A
-          - A/B
-        guardrail_health_status:
+        distribution_strategy:
           type: string
-          enum:
-          - WARNING
-          - PASSED
-          - NO_CHECKS_AVAILABLE
-          - FAILED
+        assignment_domain:
+          type: string
+        experiment_key:
+          type: string
         metrics:
+          $ref: '#/components/schemas/Metrics'
+        cohorts:
+          type: array
+          items:
+            type: string
+        owners:
+          type: array
+          items:
+            type: string
+        variant_weights:
+          $ref: '#/components/schemas/VariantWeights'
+        variants:
           type: object
           additionalProperties:
-            type: array
-            items:
-              type: string
-        cohorts:
+            $ref: '#/components/schemas/Variant'
+        rule_attributes:
+          type: array
+          items:
+            $ref: '#/components/schemas/RuleAttributes'
+        overrides:
           type: array
           items:
             type: string
         tags:
           type: array
           items:
-            type: string
-        owner:
-          maxItems: 10
-          minItems: 0
-          type: array
-          items:
-            maxLength: 10
-            minLength: 0
-            type: string
-        variant_weights:
-          $ref: '#/components/schemas/VariantWeights'
-        rule_attributes:
-          type: array
-          items:
-            $ref: '#/components/schemas/RuleAttributes'
-        winning_variant:
-          type: object
-          additionalProperties:
-            $ref: '#/components/schemas/Variant'
-        variants:
-          type: object
-          additionalProperties:
-            $ref: '#/components/schemas/Variant'
-        distribution_strategy:
-          type: string
-          enum:
-          - ROUND_ROBIN
-          - RANDOM
-        assignment_domain:
-          type: string
-          enum:
-          - STRATIFIED
-          - COHORT
-        overrides:
-          maxItems: 100
-          minItems: 0
-          type: array
-          items:
-            maxLength: 100
-            minLength: 0
             type: string
         exposure:
           maximum: 100
@@ -735,7 +686,6 @@ components:
           type: integer
           format: int64
         end_time:
-          minimum: 0
           type: integer
           format: int64
         created_by:
@@ -748,6 +698,17 @@ components:
         updated_at:
           type: integer
           format: int64
+    Metrics:
+      type: object
+      properties:
+        primary:
+          type: array
+          items:
+            type: string
+        secondary:
+          type: array
+          items:
+            type: string
     RuleAttributes:
       required:
       - name
@@ -907,7 +868,7 @@ components:
           type: string
         name:
           type: string
-        key:
+        experimentKey:
           type: string
         description:
           type: string
@@ -977,6 +938,8 @@ components:
           format: int64
         createdBy:
           type: string
+        updatedBy:
+          type: string
         createdAt:
           type: string
           format: date-time
@@ -991,6 +954,8 @@ components:
           type: array
           items:
             type: string
+        metrics:
+          $ref: '#/components/schemas/Metrics'
     FilterExperimentsResponse:
       type: object
       properties:
