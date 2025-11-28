@@ -1,7 +1,6 @@
 package com.ascend.testlab.constants.postgresql;
 
 import java.util.function.BiFunction;
-import java.util.function.Function;
 import java.util.function.IntFunction;
 import lombok.experimental.UtilityClass;
 
@@ -168,6 +167,12 @@ public final class ReadQuery {
    * Wraps a filtered experiment query to count the total number of matching experiments. Accepts a
    * query string and returns a COUNT query wrapped around it.
    */
-  public static final Function<String, String> COUNT_FILTERED_EXPERIMENTS =
-      "SELECT COUNT(*) as total_count FROM (%s) AS grouped_results"::formatted;
+  public static final String COUNT_FILTERED_EXPERIMENTS =
+      """
+                  SELECT COUNT(*) as total_count
+                  FROM experiment.experiments e
+                  LEFT JOIN experiment.tags t ON e.project_key = t.project_key AND e.experiment_id = t.experiment_id
+                  LEFT JOIN experiment.owners o ON e.project_key = o.project_key AND e.experiment_id = o.experiment_id
+      WHERE e.project_key = $1
+                  """;
 }

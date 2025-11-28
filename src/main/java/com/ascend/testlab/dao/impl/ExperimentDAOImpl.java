@@ -71,7 +71,7 @@ public class ExperimentDAOImpl implements ExperimentDAO {
   public Single<FilterExperimentsResponse> filterExperiments(
       String projectKey, FilterExperimentsRequest req) {
     ParameterizedQuery parameterizedQuery =
-        FilterExperimentsQueryFactory.buildQuery(projectKey, req, true);
+        FilterExperimentsQueryFactory.buildQuery(projectKey, req);
 
     return pgReaderClient
         .fetchAll(parameterizedQuery.query(), parameterizedQuery.tuple(), row -> row)
@@ -115,7 +115,7 @@ public class ExperimentDAOImpl implements ExperimentDAO {
   private Single<Integer> getTotalFilteredExperimentsCount(
       String projectKey, FilterExperimentsRequest request) {
     ParameterizedQuery parameterizedQuery =
-        FilterExperimentsQueryFactory.buildQuery(projectKey, request, false);
+        FilterExperimentsQueryFactory.buildCountQuery(projectKey, request);
 
     return pgReaderClient
         .fetchOne(

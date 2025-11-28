@@ -1,6 +1,5 @@
 package com.ascend.testlab.dao.querybuilder.core;
 
-import com.ascend.testlab.constants.postgresql.ReadQuery;
 import io.vertx.rxjava3.sqlclient.Tuple;
 
 /**
@@ -23,8 +22,8 @@ public class BaseQueryBuilder implements FilterQueryBuilder {
    *
    * @param projectKey the project key to filter experiments by
    */
-  public BaseQueryBuilder(String projectKey) {
-    this.query = ReadQuery.FILTER_EXPERIMENT;
+  public BaseQueryBuilder(String projectKey, String query) {
+    this.query = query;
     this.projectKey = projectKey;
   }
 
