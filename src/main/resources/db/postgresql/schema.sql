@@ -36,7 +36,6 @@ CREATE TABLE IF NOT EXISTS experiment.experiments (
     created_by          VARCHAR(255),
     created_at  TIMESTAMPTZ   NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at  TIMESTAMPTZ   NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    name_tsvector       TSVECTOR,
     PRIMARY KEY ( project_key, experiment_id),
     CONSTRAINT experiment_key_unique_check UNIQUE (project_key, experiment_key)
 ) PARTITION BY LIST (project_key);

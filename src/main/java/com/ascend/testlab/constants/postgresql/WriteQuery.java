@@ -52,13 +52,13 @@ public final class WriteQuery {
         project_key, experiment_id, name, experiment_key, description, hypothesis,
         status, type, guardrail_health_status, cohorts, variant_weights, variants,
         distribution_strategy, assignment_domain, overrides, rule_attributes,
-        exposure, threshold, start_time, end_time, created_by, name_tsvector
+        exposure, threshold, start_time, end_time, created_by
       )
       VALUES (
         $1, $2, $3::varchar, $4, $5, $6,\s
         $7::experiment.experiment_status, $8::experiment.experiment_type,$9::experiment.experiment_health, $10::varchar[], $11::jsonb, $12::jsonb,
         $13::experiment.experiment_strategy, $14::experiment.assignment_domain, $15::varchar[], $16::jsonb,
-        $17, $18, $19, $20, $21, to_tsvector('simple', LOWER(REGEXP_REPLACE($3::varchar, '[-_.]', ' ', 'g')))
+        $17, $18, $19, $20, $21
       )
      \s""";
 
