@@ -163,16 +163,13 @@ public final class ReadQuery {
       WHERE e.project_key = $1
       """;
 
-  /**
-   * Wraps a filtered experiment query to count the total number of matching experiments. Accepts a
-   * query string and returns a COUNT query wrapped around it.
-   */
+  /** Count query to count the total number of matching experiments. */
   public static final String COUNT_FILTERED_EXPERIMENTS =
       """
-                  SELECT COUNT(*) as total_count
-                  FROM experiment.experiments e
-                  LEFT JOIN experiment.tags t ON e.project_key = t.project_key AND e.experiment_id = t.experiment_id
-                  LEFT JOIN experiment.owners o ON e.project_key = o.project_key AND e.experiment_id = o.experiment_id
+      SELECT COUNT(DISTINCT e.experiment_id) as total_count
+      FROM experiment.experiments e
+      LEFT JOIN experiment.tags t ON e.project_key = t.project_key AND e.experiment_id = t.experiment_id
+      LEFT JOIN experiment.owners o ON e.project_key = o.project_key AND e.experiment_id = o.experiment_id
       WHERE e.project_key = $1
                   """;
 }

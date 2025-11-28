@@ -98,7 +98,7 @@ public final class FilterExperimentsQueryFactory {
     if (request.hasOwnerFilter()) {
       baseQuery = new OwnerFilterQueryDecorator(baseQuery, request.getOwner());
     }
-    baseQuery = new GroupAndOrderQueryDecorator(baseQuery);
+    // Note: Count queries don't need GROUP BY or ORDER BY as they return a single row
 
     return baseQuery.buildQuery();
   }
