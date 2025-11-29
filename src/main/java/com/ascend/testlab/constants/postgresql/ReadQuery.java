@@ -50,7 +50,7 @@ public final class ReadQuery {
    *   <li>$3: experiment_id (UUID) - current experiment ID to exclude from check
    * </ol>
    *
-   * @return Boolean - true if name exists for a different experiment, false otherwise
+   * <p>Returns: Boolean - true if name exists for a different experiment, false otherwise
    */
   public static final String CHECK_EXPERIMENT_NAME_EXISTS =
       """
@@ -125,9 +125,9 @@ public final class ReadQuery {
    */
   public static final String FETCH_EXPERIMENT =
       """
-      SELECT e.project_key, e.experiment_id, e.name, e.description, e.hypothesis, e.status, e.type,
-             e.guardrail_health_status, e.cohorts, e.variant_weights, e.assignment_strategy, e.overrides,
-             e.rule_attributes, e.winning_variant, e.exposure, e.threshold, e.start_time, e.end_time,
+      SELECT e.project_key, e.experiment_id, e.name, e.description, e.hypothesis, e.status, e.type,e.experiment_key,
+             e.guardrail_health_status, e.cohorts, e.variant_weights, e.distribution_strategy, e.overrides,e.assignment_domain,
+             e.variants,e.rule_attributes, e.winning_variant, e.exposure, e.threshold, e.start_time, e.end_time,
              e.created_by, e.created_at, e.updated_at,
              string_agg(DISTINCT t.tag, ',') as tags,
              string_agg(DISTINCT o.owner, ',') as owners

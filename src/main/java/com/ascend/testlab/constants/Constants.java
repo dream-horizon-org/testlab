@@ -1,6 +1,5 @@
 package com.ascend.testlab.constants;
 
-import java.util.Set;
 import lombok.experimental.UtilityClass;
 
 /**
@@ -26,6 +25,9 @@ public final class Constants {
 
   public static final String ADMIN = "ADMIN";
 
+  /** Default value for updatedBy field when not provided. */
+  public static final String SYSTEM = "SYSTEM";
+
   /** The maximum number of REST verticles. */
   public static final Integer MAX_NUM_REST_VERTICLES = 16;
 
@@ -48,68 +50,6 @@ public final class Constants {
   public static final String GET_NAME = "getName";
 
   public static final String NAME = "name";
-
-  /* Experiment Update Field Constants */
-
-  /**
-   * Set of fields that are allowed to be updated in an experiment.
-   *
-   * <p>Excludes primary keys, auto-managed fields, and immutable fields.
-   */
-  public static final Set<String> UPDATABLE_FIELDS =
-      Set.of(
-          "name",
-          "description",
-          "hypothesis",
-          "status",
-          "type",
-          "guardrail_health_status",
-          "cohorts",
-          "variant_weights",
-          "variants",
-          "distribution_strategy",
-          "assignment_domain",
-          "overrides",
-          "rule_attributes",
-          "winning_variant",
-          "exposure",
-          "threshold",
-          "start_time",
-          "end_time",
-          "tags",
-          "owner",
-          "metrics",
-          "experiment_key",
-          "updated_by");
-
-  /**
-   * Set of fields that are NOT allowed to be updated in an experiment.
-   *
-   * <p>These fields are either immutable, auto-managed, or should only be set during creation.
-   */
-  public static final Set<String> NON_UPDATABLE_FIELDS =
-      Set.of("name", "experiment_key", "project_key", "experiment_id", "created_by", "created_at");
-
-  /* State-Based Validation Constants */
-
-  /**
-   * Fields allowed to be updated when experiment is in LIVE state.
-   *
-   * <p>Only metadata and non-critical fields that don't affect experiment behavior.
-   */
-  public static final Set<String> LIVE_STATE_UPDATABLE_FIELDS =
-      Set.of(
-          "description",
-          "status",
-          "guardrail_health_status",
-          "winning_variant",
-          "exposure",
-          "threshold",
-          "end_time",
-          "tags",
-          "owner",
-          "metrics",
-          "updated_by");
 
   /** The delimiter for apostrophe. */
   public static final String APOSTROPHE = "'";

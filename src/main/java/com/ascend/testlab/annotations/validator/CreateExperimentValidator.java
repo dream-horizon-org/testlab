@@ -11,9 +11,27 @@ import jakarta.validation.ConstraintValidator;
 import jakarta.validation.ConstraintValidatorContext;
 import java.util.*;
 
+/**
+ * Validator for create experiment requests.
+ *
+ * <p>Validates:
+ *
+ * <ul>
+ *   <li>Time constraints (end time must be greater than start time)
+ *   <li>Targeting criteria (must have cohorts or rules)
+ *   <li>Variant weights consistency with assignment domain
+ *   <li>Variant naming sequence (control, variant1, variant2, ...)
+ *   <li>Status must be LIVE or DRAFT
+ * </ul>
+ *
+ * @author Anudeep Reddy
+ * @version 1.0
+ * @since 1.0
+ */
 public class CreateExperimentValidator
     implements ConstraintValidator<ValidCreateExperiment, CreateExperimentRequest> {
 
+  /** {@inheritDoc} */
   @Override
   public boolean isValid(CreateExperimentRequest request, ConstraintValidatorContext context) {
     if (request == null) return true;
@@ -113,6 +131,7 @@ public class CreateExperimentValidator
     if (Math.abs(sum - 100.0) > 0.001) {
       addError(
           context, "For COHORT domain, variant weights must sum to exactly 100", "variantWeights");
+      return null;
     }
     return map.keySet();
   }

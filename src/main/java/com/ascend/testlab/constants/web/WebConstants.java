@@ -19,8 +19,6 @@ public final class WebConstants {
   public static final String APPLICATION_JSON = "application/json";
 
   public static final String USER_ID_HEADER = "x-user-Id";
-  public static final String GUEST_ID_HEADER = "x-guest-Id";
-  public static final String TENANT_ID_HEADER = "x-tenant-Id";
 
   /* Circuit Breaker Constants */
 

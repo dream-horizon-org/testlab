@@ -7,7 +7,6 @@ import com.ascend.testlab.constants.enums.ExperimentType;
 import com.ascend.testlab.constants.enums.HealthStatus;
 import com.ascend.testlab.dto.entity.variantweights.VariantWeights;
 import com.ascend.testlab.dto.request.CreateExperimentRequest;
-import io.vertx.core.json.JsonObject;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
@@ -42,7 +41,7 @@ public class Experiment {
   private DistributionStrategy distributionStrategy;
   private AssignmentDomain assignmentDomain;
   private List<String> overrides;
-  private JsonObject winningVariant;
+  private WinningVariant winningVariant;
   private Integer exposure;
   private Long threshold;
   private Long startTime;

@@ -63,7 +63,7 @@ public @interface ValidEnumValue {
   Class<? extends Enum<?>> enumClass();
 
   /**
-   * < The method name to invoke on the enum to get the value to compare. Defaults to "name" which
+   * The method name to invoke on the enum to get the value to compare. Defaults to "name" which
    * returns the enum constant name.
    *
    * <p>Common methods:

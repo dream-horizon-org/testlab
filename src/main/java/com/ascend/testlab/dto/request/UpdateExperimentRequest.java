@@ -7,17 +7,15 @@ import com.ascend.testlab.constants.enums.DistributionStrategy;
 import com.ascend.testlab.constants.enums.ExperimentStatus;
 import com.ascend.testlab.constants.enums.ExperimentType;
 import com.ascend.testlab.constants.enums.HealthStatus;
+import com.ascend.testlab.dto.entity.experiment.Metrics;
 import com.ascend.testlab.dto.entity.experiment.RuleAttributes;
 import com.ascend.testlab.dto.entity.experiment.Variant;
+import com.ascend.testlab.dto.entity.experiment.WinningVariant;
 import com.ascend.testlab.dto.entity.variantweights.VariantWeights;
 import com.ascend.testlab.exception.ErrorMessages;
-import com.ascend.testlab.validation.annotations.ValidMetrics;
-import com.ascend.testlab.validation.annotations.ValidTimeRange;
-import com.ascend.testlab.validation.annotations.ValidUpdateRequest;
-import com.ascend.testlab.validation.annotations.ValidVariantKeys;
-import com.ascend.testlab.validation.annotations.ValidVariantStructure;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.PropertyNamingStrategies;
+import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.*;
 import java.util.List;
@@ -36,129 +34,84 @@ import lombok.Data;
  */
 @Data
 @JsonIgnoreProperties(ignoreUnknown = true)
-@ValidUpdateRequest(
-    nonUpdatableFields = {"name", "experimentKey", "createdBy"},
-    message =
-        "The following fields cannot be updated: name, experiment_key, project_key, experiment_id, created_by, created_at")
-@ValidTimeRange(message = "End time must be greater than start time")
+@JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
 public class UpdateExperimentRequest {
 
-  // Non-updatable fields - included only to capture and reject in validation
-  @JsonProperty("name")
   private String name;
 
-  @JsonProperty("experiment_key")
   private String experimentKey;
 
-  @JsonProperty("created_by")
-  private String createdBy;
+  private Metrics metrics;
 
-  @JsonProperty("metrics")
-  @ValidMetrics
-  private Map<String, List<String>> metrics;
-
-  @JsonProperty("tags")
   private List<String> tags;
 
-  @JsonProperty("owner")
   private List<String> owner;
 
-  // Updatable fields
-  @JsonProperty("description")
   @Size(max = 255, message = "Description must not exceed 255 characters")
   private String description;
 
-  @JsonProperty("hypothesis")
   @Size(max = 1000, message = "Hypothesis must not exceed 1000 characters")
   private String hypothesis;
 
-  @JsonProperty("status")
   @ValidEnumValue(
       enumClass = ExperimentStatus.class,
       method = Constants.NAME,
       message = ErrorMessages.INVALID_EXPERIMENT_STATUS)
   private ExperimentStatus status;
 
-  @JsonProperty("type")
   @ValidEnumValue(
       enumClass = ExperimentType.class,
-      method = Constants.NAME,
+      method = Constants.GET_TYPE,
       message = ErrorMessages.INVALID_EXPERIMENT_TYPE)
   private ExperimentType type;
 
-  @JsonProperty("guardrail_health_status")
-  @ValidEnumValue(
-      enumClass = HealthStatus.class,
-      method = Constants.NAME,
-      message = ErrorMessages.INVALID_EXPERIMENT_HEALTH)
-  private HealthStatus guardrailHealthStatus;
-
-  @JsonProperty("cohorts")
-  @Size(min = 1, max = 20, message = "Number of cohorts must be between 1 and 20")
-  private List<@NotBlank(message = "Cohort name cannot be blank") String> cohorts;
-
-  @JsonProperty("variant_weights")
-  @Valid
-  private VariantWeights variantWeights;
-
-  @JsonProperty("variants")
-  @Valid
-  @ValidVariantKeys
-  @ValidVariantStructure
-  @Size(max = 50, message = "Maximum 50 variants allowed")
-  private Map<String, @Valid Variant> variants;
-
-  @JsonProperty("distribution_strategy")
-  @ValidEnumValue(
-      enumClass = DistributionStrategy.class,
-      method = Constants.NAME,
-      message = ErrorMessages.INVALID_EXPERIMENT_STRATEGY)
-  private DistributionStrategy distributionStrategy;
-
-  @JsonProperty("assignment_domain")
   @ValidEnumValue(
       enumClass = AssignmentDomain.class,
       method = Constants.NAME,
       message = ErrorMessages.INVALID_ASSIGNMENT_DOMAIN)
   private AssignmentDomain assignmentDomain;
 
-  @JsonProperty("rule_attributes")
+  @ValidEnumValue(
+      enumClass = DistributionStrategy.class,
+      method = Constants.NAME,
+      message = ErrorMessages.INVALID_EXPERIMENT_STRATEGY)
+  private DistributionStrategy distributionStrategy;
+
+  @ValidEnumValue(
+      enumClass = HealthStatus.class,
+      method = Constants.NAME,
+      message = ErrorMessages.INVALID_EXPERIMENT_HEALTH)
+  private HealthStatus guardrailHealthStatus;
+
+  @Size(min = 1, max = 20, message = "Number of cohorts must be between 1 and 20")
+  private List<@NotBlank(message = "Cohort name cannot be blank") String> cohorts;
+
+  @Valid private VariantWeights variantWeights;
+
+  @Valid private Map<String, @Valid Variant> variants;
+
   @Valid
   @Size(max = 50, message = "Maximum 50 rule attributes allowed")
   private List<RuleAttributes> ruleAttributes;
 
-  @JsonProperty("overrides")
   @Size(max = 100, message = "Maximum 100 overrides allowed")
   private List<@NotBlank(message = "Override cannot be blank") String> overrides;
 
-  @JsonProperty("winning_variant")
-  @Valid
-  @ValidVariantKeys
-  @Size(max = 50, message = "Maximum 50 variants allowed")
-  private Map<String, @Valid Variant> winningVariant;
+  @Valid private WinningVariant winningVariant;
 
-  @JsonProperty("exposure")
   @Min(value = 0, message = "Exposure must be at least 0")
   @Max(value = 100, message = "Exposure must not exceed 100")
   private Integer exposure;
 
-  @JsonProperty("threshold")
   @Min(value = 0, message = "Threshold must be at least 0")
   private Long threshold;
 
-  @JsonProperty("start_time")
   @Min(value = 0, message = "Start time must be a valid epoch timestamp")
   private Long startTime;
 
-  @JsonProperty("end_time")
   @Min(value = 0, message = "End time must be a valid epoch timestamp")
   private Long endTime;
 
-  @JsonProperty("updated_by")
   @Size(max = 255, message = "Updated by must not exceed 255 characters")
   private String updatedBy;
-
-  // Accept ISO end_date string; if present and end_time is null, service may parse it.
-  @JsonProperty("end_date")
-  private String endDate;
 }

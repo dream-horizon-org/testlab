@@ -11,8 +11,6 @@ package com.ascend.testlab.constants.postgresql;
  * @since 1.0
  */
 public final class WriteQuery {
-  private WriteQuery() {}
-
   /**
    * Inserts a new experiment into the experiments table.
    *
@@ -101,25 +99,6 @@ public final class WriteQuery {
       """;
 
   /**
-   * Retrieves all tags associated with an experiment.
-   *
-   * <p>Parameters:
-   *
-   * <ol>
-   *   <li>$1: project_key (VARCHAR)
-   *   <li>$2: experiment_id (UUID)
-   * </ol>
-   *
-   * @return List of tag strings
-   */
-  public static final String GET_TAGS =
-      """
-      SELECT tag
-      FROM experiment.tags
-      WHERE project_key = $1 AND experiment_id = $2
-      """;
-
-  /**
    * Deletes specific tags from an experiment.
    *
    * <p>Uses the ANY operator to delete multiple tags in a single query.
@@ -139,6 +118,25 @@ public final class WriteQuery {
       """;
 
   /**
+   * Deletes specific owners from an experiment.
+   *
+   * <p>Uses the ANY operator to delete multiple owners in a single query.
+   *
+   * <p>Parameters:
+   *
+   * <ol>
+   *   <li>$1: project_key (VARCHAR)
+   *   <li>$2: experiment_id (UUID)
+   *   <li>$3: owners (VARCHAR[]) - array of owners to delete
+   * </ol>
+   */
+  public static final String DELETE_OWNERS =
+      """
+      DELETE FROM experiment.owners
+      WHERE project_key = $1 AND experiment_id = $2 AND owner = ANY($3)
+      """;
+
+  /**
    * Deletes all tags associated with an experiment.
    *
    * <p>Used during experiment deletion or when clearing all tags.
@@ -153,24 +151,6 @@ public final class WriteQuery {
   public static final String DELETE_EXPERIMENT_TAGS =
       """
       DELETE FROM experiment.tags
-      WHERE project_key = $1 AND experiment_id = $2
-      """;
-
-  /**
-   * Deletes all owners associated with an experiment.
-   *
-   * <p>Used during experiment deletion or when updating the owner list.
-   *
-   * <p>Parameters:
-   *
-   * <ol>
-   *   <li>$1: project_key (VARCHAR)
-   *   <li>$2: experiment_id (UUID)
-   * </ol>
-   */
-  public static final String DELETE_EXPERIMENT_OWNERS =
-      """
-      DELETE FROM experiment.owners
       WHERE project_key = $1 AND experiment_id = $2
       """;
 
@@ -226,15 +206,25 @@ public final class WriteQuery {
       """;
 
   /**
-   * SQL prefix for dynamic UPDATE queries on experiments table.
+   * Updates experiment analysis metrics.
    *
-   * <p>This prefix is combined with dynamically generated SET clauses based on which fields are
-   * being updated. The WHERE clause is appended separately.
+   * <p>Updates the primary and secondary metrics for an existing experiment analysis record.
    *
-   * <p>Example usage: UPDATE_EXPERIMENT_PREFIX + "name = $1, status = $2 WHERE project_key = $3 AND
-   * experiment_id = $4"
+   * <p>Parameters:
+   *
+   * <ol>
+   *   <li>$1: project_key (VARCHAR)
+   *   <li>$2: experiment_id (UUID)
+   *   <li>$3: primary_metrics (VARCHAR)
+   *   <li>$4: secondary_metrics (VARCHAR)
+   * </ol>
    */
-  public static final String UPDATE_EXPERIMENT_PREFIX = "UPDATE experiment.experiments SET ";
+  public static final String UPDATE_EXPERIMENT_ANALYSIS =
+      """
+      UPDATE experiment.experiment_analysis
+      SET primary_metrics = $3, secondary_metrics = $4
+      WHERE project_key = $1 AND experiment_id = $2
+      """;
 
   /**
    * Deletes an experiment by project key and experiment ID.

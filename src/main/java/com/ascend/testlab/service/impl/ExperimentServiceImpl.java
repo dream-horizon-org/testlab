@@ -1,6 +1,6 @@
 package com.ascend.testlab.service.impl;
 
-import com.ascend.testlab.constants.enums.ExperimentStatus;
+import com.ascend.testlab.constants.Constants;
 import com.ascend.testlab.dao.ExperimentDAO;
 import com.ascend.testlab.dto.entity.experiment.Experiment;
 import com.ascend.testlab.dto.request.FilterExperimentsRequest;
@@ -10,18 +10,17 @@ import com.ascend.testlab.dto.response.FilterExperimentsResponse;
 import com.ascend.testlab.dto.response.UpdateExperimentResponse;
 import com.ascend.testlab.exception.ErrorEnum;
 import com.ascend.testlab.service.ExperimentService;
+import com.ascend.testlab.service.validator.UpdateExperimentValidator;
 import com.ascend.testlab.util.CommonUtil;
-import com.ascend.testlab.validation.VariantStructureValidator;
-import com.ascend.testlab.validation.statevalidation.StateValidationContext;
+import com.ascend.testlab.util.DbExceptionUtil;
+import com.ascend.testlab.util.ExperimentMergeUtil;
 import com.dream11.rest.exception.RestException;
+import com.dream11.rest.util.ExceptionUtil;
 import com.google.inject.Inject;
 import io.reactivex.rxjava3.core.Single;
-import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.http.HttpStatus;
 
 /**
  * Implementation of ExperimentService. Handles business logic for experiment retrieval and
@@ -38,24 +37,15 @@ import org.apache.http.HttpStatus;
 public class ExperimentServiceImpl implements ExperimentService {
 
   private final ExperimentDAO experimentDAO;
-  private final StateValidationContext stateValidationContext;
-  private final VariantStructureValidator variantStructureValidator;
 
   /**
    * Constructor for ExperimentServiceImpl.
    *
    * @param experimentDAO the experiment DAO to use for data access
-   * @param stateValidationContext the state validation context for state-based field restrictions
-   * @param variantStructureValidator the validator for variant structure consistency
    */
   @Inject
-  public ExperimentServiceImpl(
-      ExperimentDAO experimentDAO,
-      StateValidationContext stateValidationContext,
-      VariantStructureValidator variantStructureValidator) {
+  public ExperimentServiceImpl(ExperimentDAO experimentDAO) {
     this.experimentDAO = experimentDAO;
-    this.stateValidationContext = stateValidationContext;
-    this.variantStructureValidator = variantStructureValidator;
   }
 
   /**
@@ -73,7 +63,7 @@ public class ExperimentServiceImpl implements ExperimentService {
   public Single<Experiment> getExperiment(String projectKey, String experimentId) {
     return experimentDAO
         .getExperiment(projectKey, experimentId)
-        .switchIfEmpty(Single.error(new RestException(ErrorEnum.EXPERIMENT_NOT_FOUND)))
+        .switchIfEmpty(Single.error(ExceptionUtil.getException(ErrorEnum.EXPERIMENT_NOT_FOUND)))
         .onErrorResumeNext(
             err -> {
               log.error(
@@ -119,7 +109,7 @@ public class ExperimentServiceImpl implements ExperimentService {
   public Single<Boolean> deleteExperiment(String projectKey, String experimentId) {
     return experimentDAO
         .getExperiment(projectKey, experimentId)
-        .switchIfEmpty(Single.error(new RestException(ErrorEnum.EXPERIMENT_NOT_FOUND)))
+        .switchIfEmpty(Single.error(ExceptionUtil.getException(ErrorEnum.EXPERIMENT_NOT_FOUND)))
         .flatMap(experiment -> experimentDAO.deleteExperiment(projectKey, experiment))
         .onErrorResumeNext(
             err -> {
@@ -161,18 +151,8 @@ public class ExperimentServiceImpl implements ExperimentService {
                   err.getMessage(),
                   err);
 
-              // todo change this
-              if (isUniqueConstraintViolation(err)
-                  || (err.getMessage() != null && err.getMessage().contains("25P02"))) {
-                String constraintMessage = extractUniqueConstraintMessage(err);
-                return Single.error(
-                    new RestException(
-                        "DUPLICATE_EXPERIMENT", constraintMessage, HttpStatus.SC_BAD_REQUEST, err));
-              }
-
               return Single.error(
-                  ErrorEnum.handleException(
-                      err, new RestException(ErrorEnum.EXPERIMENT_CREATION_FAILED, err)));
+                  DbExceptionUtil.handleDbError(err, ErrorEnum.EXPERIMENT_CREATION_FAILED));
             });
   }
 
@@ -187,483 +167,102 @@ public class ExperimentServiceImpl implements ExperimentService {
   /**
    * Updates experiment fields partially with validation.
    *
-   * <p>Delegates to DAO for dynamic partial updates. If tags are included in the request, handles
-   * them separately in a transaction (marks removed tags as inactive, inserts new tags). Also logs
-   * the update in experiment_update_log table with previous and current data.
+   * <p>Flow: Get → Validate → Merge → Update in transaction
+   *
+   * <p>Validation rules enforced:
+   *
+   * <ul>
+   *   <li>No changes in CONCLUDED/TERMINATED state
+   *   <li>Cohort type (COHORT/STRATIFIED) cannot change
+   *   <li>Stratified cohorts must exist in cohorts list
+   *   <li>Existing variants: only value can change
+   *   <li>New variants allowed with contiguous naming
+   *   <li>experiment_key, hypothesis, cohorts, startTime: DRAFT only
+   *   <li>startTime/endTime must be in future
+   * </ul>
    *
    * @param projectKey project identifier from header
    * @param experimentId experiment identifier
    * @param request validated update experiment request DTO
-   * @return Single emitting UpdateExperimentResponse with status and message
+   * @return Single emitting UpdateExperimentResponse with status
    */
   @Override
   public Single<UpdateExperimentResponse> updateExperiment(
       String projectKey, UUID experimentId, UpdateExperimentRequest request) {
+
     log.info("Updating experiment for projectKey: {}, experimentId: {}", projectKey, experimentId);
 
-    UpdateContext context = extractUpdateContext(request, experimentId);
-
-    if (!context.hasUpdates()) {
-      log.warn("No fields to update for experimentId: {}", experimentId);
-      return Single.just(new UpdateExperimentResponse(experimentId, true, "No updates provided"));
-    }
-
-    return executeTransactionalUpdate(projectKey, experimentId, context)
-        .map(
-            success ->
-                new UpdateExperimentResponse(
-                    experimentId, success, success ? "updated" : "Update failed"))
-        .doOnSuccess(
-            response ->
-                log.info(
-                    "Update experiment completed projectKey: {}, experimentId: {}, status: {}",
-                    projectKey,
-                    experimentId,
-                    response.isStatus()));
-  }
-
-  /**
-   * Extracts update context from DTO, separating tags, owners, metrics and metadata.
-   *
-   * @param request validated update experiment request DTO
-   * @param experimentId experiment identifier for logging
-   * @return UpdateContext containing the request, tags, owners, metrics, and updatedBy
-   */
-  private UpdateContext extractUpdateContext(UpdateExperimentRequest request, UUID experimentId) {
-    List<String> tags = request.getTags();
-    if (tags != null) {
-      log.debug("Tags found in update request for experimentId: {}, tags: {}", experimentId, tags);
-    }
-
-    List<String> owners = request.getOwner();
-    if (owners != null) {
-      log.debug(
-          "Owners found in update request for experimentId: {}, owners: {}", experimentId, owners);
-    }
-
-    Map<String, List<String>> metrics = request.getMetrics();
-    if (metrics != null) {
-      log.debug(
-          "Metrics found in update request for experimentId: {}, metrics: {}",
-          experimentId,
-          metrics);
-    }
-
-    String updatedBy = request.getUpdatedBy();
-    if (updatedBy != null) {
-      log.debug("updated_by found in update request: {}", updatedBy);
-    }
-
-    return new UpdateContext(
-        request, tags, owners, metrics, updatedBy != null ? updatedBy : "system");
-  }
-
-  /**
-   * Executes transactional update including experiment fields, tags, and update log.
-   *
-   * @param projectKey project identifier
-   * @param experimentId experiment identifier
-   * @param context update context with separated fields
-   * @return Single emitting true on success
-   */
-  private Single<Boolean> executeTransactionalUpdate(
-      String projectKey, UUID experimentId, UpdateContext context) {
-
-    log.info(
-        "Executing transactional update for experimentId: {}, projectKey: {}",
-        experimentId,
-        projectKey);
-
     return experimentDAO
-        .getExperimentData(projectKey, experimentId)
-        .doOnSuccess(
-            previousData ->
-                log.debug(
-                    "Retrieved previous data for experimentId: {}, fields: {}",
-                    experimentId,
-                    previousData.keySet()))
+        .getExperiment(projectKey, experimentId.toString())
+        .switchIfEmpty(Single.error(ExceptionUtil.getException(ErrorEnum.EXPERIMENT_NOT_FOUND)))
         .flatMap(
-            previousData -> {
-              Object currentStatusObj = previousData.get("status");
-              String currentStatus = currentStatusObj != null ? currentStatusObj.toString() : null;
-
-              if (currentStatus != null) {
-                ExperimentStatus status = ExperimentStatus.valueOf(currentStatus);
-                if (status == ExperimentStatus.CONCLUDED || status == ExperimentStatus.TERMINATED) {
-                  String errorMsg =
-                      String.format(
-                          "Cannot update experiment in %s state. This is a terminal state.",
-                          status);
-                  log.error(
-                      "Update blocked for experimentId: {}, reason: {}", experimentId, errorMsg);
-                  return Single.error(
-                      new RestException(
-                          "INVALID_REQUEST",
-                          "Cannot update experiment: " + errorMsg,
-                          org.apache.http.HttpStatus.SC_BAD_REQUEST,
-                          null));
-                }
-
-                log.debug(
-                    "Validating state-based field restrictions for experimentId: {}, status: {}",
-                    experimentId,
-                    currentStatus);
-                try {
-                  stateValidationContext.validate(context.request, currentStatus, experimentId);
-                } catch (IllegalArgumentException e) {
-                  log.error(
-                      "State-based validation failed for experimentId: {}, status: {}, error: {}",
-                      experimentId,
-                      currentStatus,
-                      e.getMessage());
-                  return Single.error(
-                      new RestException(
-                          "INVALID_REQUEST",
-                          e.getMessage(),
-                          org.apache.http.HttpStatus.SC_BAD_REQUEST,
-                          e));
-                }
-              }
-
-              if (context.request.getVariants() != null) {
-                log.debug("Validating variant structure for experimentId: {}", experimentId);
-                try {
-                  validateVariantStructure(previousData, context.request, experimentId);
-                } catch (IllegalArgumentException e) {
-                  log.error(
-                      "Variant structure validation failed for experimentId: {}, error: {}",
-                      experimentId,
-                      e.getMessage());
-                  return Single.error(
-                      new RestException(
-                          "INVALID_REQUEST",
-                          e.getMessage(),
-                          org.apache.http.HttpStatus.SC_BAD_REQUEST,
-                          e));
-                }
-              }
-              if (context.request.getStatus() != null) {
-                String newStatus = context.request.getStatus().name();
-
-                log.debug(
-                    "Status transition check - current: {}, new: {}, experimentId: {}",
-                    currentStatus,
-                    newStatus,
-                    experimentId);
-
-                try {
-                  validateStatusTransition(currentStatus, newStatus, experimentId);
-                } catch (IllegalArgumentException e) {
-                  log.error("Status transition validation failed: {}", e.getMessage());
-                  return Single.error(
-                      new RestException(
-                          "INVALID_REQUEST",
-                          "Invalid status transition: " + e.getMessage(),
-                          org.apache.http.HttpStatus.SC_BAD_REQUEST,
-                          e));
-                }
-              }
-
-              return experimentDAO.updateWithTransaction(
-                  projectKey,
-                  experimentId,
-                  context.request,
-                  context.tags,
-                  context.owners,
-                  context.metrics,
-                  previousData,
-                  context.updatedBy);
+            existing -> {
+              UpdateExperimentValidator.validate(existing, request);
+              Experiment updated = mergeUpdate(existing, request);
+              return experimentDAO.updateExperiment(projectKey, existing, updated);
             })
+        .map(success -> new UpdateExperimentResponse(experimentId, success))
         .onErrorResumeNext(
             err -> {
               log.error(
                   "Failed to update experiment for projectKey: {}, experimentId: {}, error: {}",
                   projectKey,
                   experimentId,
-                  err.getMessage());
-
-              if (isUniqueConstraintViolation(err)
-                  || (err.getMessage() != null && err.getMessage().contains("25P02"))) {
-                String constraintMessage = extractUniqueConstraintMessage(err);
-                return Single.error(
-                    new RestException(
-                        "DUPLICATE_EXPERIMENT",
-                        constraintMessage,
-                        org.apache.http.HttpStatus.SC_BAD_REQUEST,
-                        err));
-              }
-
+                  err.getMessage(),
+                  err);
               return Single.error(
-                  ErrorEnum.handleException(
-                      err, new RestException(ErrorEnum.EXPERIMENT_UPDATE_FAILED, err)));
+                  DbExceptionUtil.handleDbError(err, ErrorEnum.EXPERIMENT_UPDATE_FAILED));
             });
   }
 
   /**
-   * Validates status transition based on business rules.
+   * Merges the update request into the existing experiment.
    *
-   * <p>Status transition rules:
+   * <p>Only non-null fields from request are applied. Tags, owners, and metrics are replaced
+   * entirely (not merged).
    *
-   * <ul>
-   *   <li>DRAFT → LIVE, PAUSED, CONCLUDED, TERMINATED
-   *   <li>LIVE → PAUSED, CONCLUDED, TERMINATED
-   *   <li>PAUSED → LIVE, CONCLUDED, TERMINATED
-   *   <li>CONCLUDED → No transitions allowed (terminal state)
-   *   <li>TERMINATED → No transitions allowed (terminal state)
-   * </ul>
-   *
-   * @param currentStatus current experiment status
-   * @param newStatus new status to transition to
-   * @param experimentId experiment identifier for logging
-   * @throws IllegalArgumentException if transition is not allowed
-   */
-  private void validateStatusTransition(String currentStatus, String newStatus, UUID experimentId) {
-    if (currentStatus == null || newStatus == null) {
-      log.warn(
-          "Status validation skipped - currentStatus: {}, newStatus: {}, experimentId: {}",
-          currentStatus,
-          newStatus,
-          experimentId);
-      return;
-    }
-
-    // If status is not changing, allow it
-    if (currentStatus.equals(newStatus)) {
-      log.debug(
-          "Status not changing for experimentId: {}, status: {}", experimentId, currentStatus);
-      return;
-    }
-
-    log.info(
-        "Validating status transition for experimentId: {}, from: {} to: {}",
-        experimentId,
-        currentStatus,
-        newStatus);
-
-    ExperimentStatus current = ExperimentStatus.valueOf(currentStatus);
-    ExperimentStatus target = ExperimentStatus.valueOf(newStatus);
-
-    boolean isValidTransition = false;
-    String errorMessage = null;
-
-    switch (current) {
-      case DRAFT:
-        // DRAFT can transition to LIVE, PAUSED, CONCLUDED, TERMINATED
-        isValidTransition =
-            target == ExperimentStatus.LIVE
-                || target == ExperimentStatus.PAUSED
-                || target == ExperimentStatus.CONCLUDED
-                || target == ExperimentStatus.TERMINATED;
-        if (!isValidTransition) {
-          errorMessage =
-              String.format(
-                  "Invalid status transition from DRAFT to %s. Allowed transitions: LIVE, PAUSED, CONCLUDED, TERMINATED",
-                  target);
-        }
-        break;
-
-      case LIVE:
-        // LIVE can transition to PAUSED, CONCLUDED, TERMINATED
-        isValidTransition =
-            target == ExperimentStatus.PAUSED
-                || target == ExperimentStatus.CONCLUDED
-                || target == ExperimentStatus.TERMINATED;
-        if (!isValidTransition) {
-          errorMessage =
-              String.format(
-                  "Invalid status transition from LIVE to %s. Allowed transitions: PAUSED, CONCLUDED, TERMINATED",
-                  target);
-        }
-        break;
-
-      case PAUSED:
-        // PAUSED can transition to LIVE, CONCLUDED, TERMINATED
-        isValidTransition =
-            target == ExperimentStatus.LIVE
-                || target == ExperimentStatus.CONCLUDED
-                || target == ExperimentStatus.TERMINATED;
-        if (!isValidTransition) {
-          errorMessage =
-              String.format(
-                  "Invalid status transition from PAUSED to %s. Allowed transitions: LIVE, CONCLUDED, TERMINATED",
-                  target);
-        }
-        break;
-
-      case CONCLUDED:
-      case TERMINATED:
-        // Terminal states - no transitions allowed
-        errorMessage =
-            String.format(
-                "Cannot update status from %s. This is a terminal state and cannot be changed.",
-                current);
-        break;
-
-      default:
-        errorMessage = String.format("Unknown current status: %s", current);
-        break;
-    }
-
-    if (!isValidTransition) {
-      log.error(
-          "Status transition validation failed for experimentId: {}, error: {}",
-          experimentId,
-          errorMessage);
-      throw new IllegalArgumentException(errorMessage);
-    }
-
-    log.info(
-        "Status transition validated successfully for experimentId: {}, from: {} to: {}",
-        experimentId,
-        currentStatus,
-        newStatus);
-  }
-
-  /**
-   * Validates that variant updates only modify variable values, not keys or data types.
-   *
-   * <p>When updating variants, the structure (variant keys, variable keys, and data types) must
-   * remain consistent with the original experiment. Only variable values can be changed.
-   *
-   * @param previousData the existing experiment data
+   * @param existing the existing experiment
    * @param request the update request
-   * @param experimentId the experiment identifier for logging
-   * @throws IllegalArgumentException if variant structure is invalid
+   * @return merged experiment
    */
-  private void validateVariantStructure(
-      Map<String, Object> previousData, UpdateExperimentRequest request, UUID experimentId) {
-
-    log.debug("Validating variant structure consistency for experimentId: {}", experimentId);
-
-    // Get existing variants from previous data
-    Object existingVariantsObj = previousData.get("variants");
-    if (existingVariantsObj == null) {
-      log.warn("No existing variants found for experimentId: {}", experimentId);
-      return; // If no existing variants, allow the update (edge case)
-    }
-
-    // Delegate to VariantStructureValidator
-    variantStructureValidator.validate(existingVariantsObj, request.getVariants(), experimentId);
+  private Experiment mergeUpdate(Experiment existing, UpdateExperimentRequest request) {
+    return Experiment.builder()
+        .experimentId(existing.getExperimentId())
+        .projectKey(existing.getProjectKey())
+        .name(getOrDefault(request.getName(), existing.getName()))
+        .experimentKey(getOrDefault(request.getExperimentKey(), existing.getExperimentKey()))
+        .description(getOrDefault(request.getDescription(), existing.getDescription()))
+        .hypothesis(getOrDefault(request.getHypothesis(), existing.getHypothesis()))
+        .status(getOrDefault(request.getStatus(), existing.getStatus()))
+        .type(existing.getType())
+        .guardrailHealthStatus(
+            getOrDefault(request.getGuardrailHealthStatus(), existing.getGuardrailHealthStatus()))
+        .cohorts(getOrDefault(request.getCohorts(), existing.getCohorts()))
+        .variantWeights(
+            ExperimentMergeUtil.mergeVariantWeights(
+                existing.getVariantWeights(), request.getVariantWeights()))
+        .variants(ExperimentMergeUtil.mergeVariants(existing.getVariants(), request.getVariants()))
+        .ruleAttributes(
+            ExperimentMergeUtil.mergeRuleAttributes(
+                existing.getRuleAttributes(), request.getRuleAttributes()))
+        .distributionStrategy(existing.getDistributionStrategy())
+        .assignmentDomain(existing.getAssignmentDomain())
+        .overrides(getOrDefault(request.getOverrides(), existing.getOverrides()))
+        .winningVariant(getOrDefault(request.getWinningVariant(), existing.getWinningVariant()))
+        .exposure(getOrDefault(request.getExposure(), existing.getExposure()))
+        .threshold(getOrDefault(request.getThreshold(), existing.getThreshold()))
+        .startTime(getOrDefault(request.getStartTime(), existing.getStartTime()))
+        .endTime(getOrDefault(request.getEndTime(), existing.getEndTime()))
+        .createdBy(existing.getCreatedBy())
+        .updatedBy(getOrDefault(request.getUpdatedBy(), Constants.SYSTEM))
+        .createdAt(existing.getCreatedAt())
+        .tags(getOrDefault(request.getTags(), existing.getTags()))
+        .owners(getOrDefault(request.getOwner(), existing.getOwners()))
+        .metrics(getOrDefault(request.getMetrics(), existing.getMetrics()))
+        .build();
   }
 
-  /** Context holder for update operation containing request, tags, and metadata. */
-  private static class UpdateContext {
-    final UpdateExperimentRequest request;
-    final List<String> tags;
-    final List<String> owners;
-    final Map<String, List<String>> metrics;
-    final String updatedBy;
-
-    UpdateContext(
-        UpdateExperimentRequest request,
-        List<String> tags,
-        List<String> owners,
-        Map<String, List<String>> metrics,
-        String updatedBy) {
-      this.request = request;
-      this.tags = tags;
-      this.owners = owners;
-      this.metrics = metrics;
-      this.updatedBy = updatedBy;
-    }
-
-    boolean hasUpdates() {
-      // Check if request has any non-null fields (excluding tags and updatedBy)
-      return request.getName() != null
-          || request.getDescription() != null
-          || request.getHypothesis() != null
-          || request.getStatus() != null
-          || request.getType() != null
-          || request.getGuardrailHealthStatus() != null
-          || request.getCohorts() != null
-          || request.getVariantWeights() != null
-          || request.getVariants() != null
-          || request.getDistributionStrategy() != null
-          || request.getAssignmentDomain() != null
-          || request.getOverrides() != null
-          || request.getRuleAttributes() != null
-          || request.getWinningVariant() != null
-          || request.getExposure() != null
-          || request.getThreshold() != null
-          || request.getStartTime() != null
-          || request.getEndTime() != null
-          || tags != null;
-    }
-  }
-
-  /**
-   * Checks if the error is a unique constraint violation from PostgreSQL.
-   *
-   * @param err the throwable error
-   * @return true if it's a unique constraint violation
-   */
-  private boolean isUniqueConstraintViolation(Throwable err) {
-
-    Throwable current = err;
-    while (current != null) {
-      String message = current.getMessage();
-      String className = current.getClass().getName();
-
-      if (className.contains("PgException")) {
-        try {
-
-          java.lang.reflect.Method getSqlStateMethod = current.getClass().getMethod("getSqlState");
-          String sqlState = (String) getSqlStateMethod.invoke(current);
-
-          if ("23505".equals(sqlState)) {
-            return true;
-          }
-        } catch (Exception e) {
-
-        }
-      }
-
-      if (message != null) {
-
-        if (message.contains("duplicate key value violates unique constraint")
-            || message.contains("23505")
-            || message.contains("experiment_key_unique_check")
-            || message.contains("name_unique_check")
-            || message.contains("experiment_key_key")) {
-          return true;
-        }
-      }
-
-      for (Throwable suppressed : current.getSuppressed()) {
-        if (isUniqueConstraintViolation(suppressed)) {
-          return true;
-        }
-      }
-
-      current = current.getCause();
-    }
-    return false;
-  }
-
-  /**
-   * Extracts a user-friendly message from the unique constraint violation error.
-   *
-   * @param err the throwable error
-   * @return user-friendly error message
-   */
-  private String extractUniqueConstraintMessage(Throwable err) {
-    Throwable current = err;
-    while (current != null) {
-      String message = current.getMessage();
-      if (message != null) {
-        // Extract constraint name
-        if (message.contains("experiment_key_unique_check")
-            || message.contains("experiment_key_key")) {
-          return "An experiment with this experiment_key already exists in the project";
-        } else if (message.contains("name_unique_check")) {
-          return "An experiment with this name already exists in the project";
-        } else if (message.contains("duplicate key value violates unique constraint")) {
-          return "A record with the same unique field already exists";
-        }
-      }
-      current = current.getCause();
-    }
-
-    return "Duplicate entry detected";
+  private <T> T getOrDefault(T value, T defaultValue) {
+    return value != null ? value : defaultValue;
   }
 }

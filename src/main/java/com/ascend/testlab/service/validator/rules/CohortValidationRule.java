@@ -1,0 +1,119 @@
+package com.ascend.testlab.service.validator.rules;
+
+import com.ascend.testlab.constants.enums.AssignmentDomain;
+import com.ascend.testlab.constants.enums.ExperimentStatus;
+import com.ascend.testlab.dto.entity.experiment.Experiment;
+import com.ascend.testlab.dto.entity.variantweights.StratifiedVariantWeights;
+import com.ascend.testlab.dto.entity.variantweights.VariantWeights;
+import com.ascend.testlab.dto.request.UpdateExperimentRequest;
+import com.ascend.testlab.exception.ErrorEnum;
+import com.dream11.rest.exception.RestException;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Objects;
+import java.util.Set;
+
+/**
+ * Validates cohort-related constraints.
+ *
+ * <ul>
+ *   <li>Cohort type (COHORT/STRATIFIED) cannot be changed
+ *   <li>In STRATIFIED experiments, cohorts in variant weights must exist in cohorts list
+ *   <li>Cohorts can only be removed in DRAFT mode
+ * </ul>
+ *
+ * @author Anudeep Reddy
+ * @version 1.0
+ * @since 1.0
+ */
+public class CohortValidationRule implements UpdateValidationRule {
+
+  /** {@inheritDoc} */
+  @Override
+  public boolean appliesTo(Experiment existing, UpdateExperimentRequest request) {
+    return request.getCohorts() != null || request.getVariantWeights() != null;
+  }
+
+  /** {@inheritDoc} */
+  @Override
+  public void validate(Experiment existing, UpdateExperimentRequest request) {
+    validateCohortTypeUnchanged(existing, request);
+    validateCohortRemoval(existing.getStatus(), existing.getCohorts(), request.getCohorts());
+    validateStratifiedCohorts(existing, request);
+  }
+
+  /** Validates that the cohort type (COHORT vs STRATIFIED) cannot be changed. */
+  private void validateCohortTypeUnchanged(Experiment existing, UpdateExperimentRequest request) {
+    if (request.getVariantWeights() == null) {
+      return;
+    }
+
+    VariantWeights existingWeights = existing.getVariantWeights();
+    VariantWeights newWeights = request.getVariantWeights();
+
+    if (existingWeights != null && newWeights != null) {
+      AssignmentDomain existingType = existingWeights.getType();
+      AssignmentDomain newType = newWeights.getType();
+
+      if (Objects.isNull(newType) || !existingType.equals(newType)) {
+        throw new RestException(ErrorEnum.COHORT_TYPE_CHANGE_NOT_ALLOWED);
+      }
+    }
+  }
+
+  /**
+   * Validates cohort changes: - Cohorts can only be removed in DRAFT mode - Adding cohorts is
+   * allowed in any non-terminal state
+   */
+  private void validateCohortRemoval(
+      ExperimentStatus status, List<String> existingCohorts, List<String> requestCohorts) {
+
+    if (requestCohorts == null || status == ExperimentStatus.DRAFT) {
+      return;
+    }
+
+    if (existingCohorts == null) {
+      return;
+    }
+
+    Set<String> existing = new HashSet<>(existingCohorts);
+    Set<String> updated = new HashSet<>(requestCohorts);
+
+    for (String cohort : existing) {
+      if (!updated.contains(cohort)) {
+        throw new RestException(ErrorEnum.COHORT_REMOVAL_NOT_ALLOWED);
+      }
+    }
+  }
+
+  /** Validates that cohorts used in stratified variant weights exist in the cohorts list. */
+  private void validateStratifiedCohorts(Experiment existing, UpdateExperimentRequest request) {
+    VariantWeights weights =
+        request.getVariantWeights() != null
+            ? request.getVariantWeights()
+            : existing.getVariantWeights();
+
+    if (!(weights instanceof StratifiedVariantWeights stratifiedWeights)) {
+      return;
+    }
+
+    List<String> effectiveCohorts =
+        request.getCohorts() != null ? request.getCohorts() : existing.getCohorts();
+
+    if (effectiveCohorts == null || stratifiedWeights.getWeights() == null) {
+      return;
+    }
+
+    Set<String> validCohorts = new HashSet<>(effectiveCohorts);
+
+    for (List<String> variantCohorts : stratifiedWeights.getWeights().values()) {
+      if (variantCohorts != null) {
+        for (String cohort : variantCohorts) {
+          if (!validCohorts.contains(cohort)) {
+            throw new RestException(ErrorEnum.STRATIFIED_COHORT_NOT_IN_COHORTS_LIST);
+          }
+        }
+      }
+    }
+  }
+}
