@@ -48,6 +48,7 @@ public class ExperimentMapper {
    * database result.
    *
    * @param row the database row containing experiment data
+   * @param mapper the object mapper
    * @return an Experiment object populated with data from the row
    */
   public static Experiment mapRowToExperiment(Row row, ObjectMapper mapper) {

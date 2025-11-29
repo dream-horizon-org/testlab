@@ -26,6 +26,11 @@ public enum ExperimentType {
     this.value = value;
   }
 
+  /**
+   * Returns the string value of the experiment type.
+   *
+   * @return the experiment type value
+   */
   public String getValue() {
     return value;
   }

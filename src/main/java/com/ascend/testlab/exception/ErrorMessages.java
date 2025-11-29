@@ -9,7 +9,7 @@ import lombok.experimental.UtilityClass;
  * and invalid values. All messages are public static final strings that can be used across
  * different layers of the application for consistent error reporting.
  *
- * @author Ravi Pandey
+ * @author Anudeep Reddy
  * @version 1.0
  * @since 1.0
  */
@@ -18,25 +18,25 @@ public final class ErrorMessages {
   /** Error message when the required x-project-key header is missing from the request. */
   public static final String PROJECT_KEY_MISSING = "x-project-key header is missing";
 
-  /** Error message when an invalid data type is provided in the request. */
+  /** The error message for invalid data type. */
   public static final String INVALID_DATA_TYPE = "invalid dataType present";
 
-  /** Error message when a condition value does not meet validation requirements. */
+  /** The error message for invalid condition value. */
   public static final String INVALID_CONDITION_VALUE = "invalid condition value";
 
-  /** Error message when an enum value provided does not match any valid enum constant. */
+  /** The error message for invalid enum value. */
   public static final String INVALID_ENUM_VALUE = "invalid enum value";
 
-  /** Error message when an operator value is not recognized or supported. */
+  /** The error message for invalid operator. */
   public static final String INVALID_OPERATOR = "invalid operator value";
 
-  /** Error message when a rule name is blank or empty. */
+  /** The error message for blank rule name. */
   public static final String BLANK_RULE_NAME = "rule name cannot be blank";
 
-  /** Error message when an operand value is invalid or not supported. */
+  /** The error message for invalid operand. */
   public static final String INVALID_OPERAND = "invalid operand value";
 
-  /** Error message when an operand data type is invalid or not recognized. */
+  /** The error message for invalid operand data type. */
   public static final String INVALID_OPERAND_DATA_TYPE = "invalid operand data type";
 
   /** Error message when an experiment status value is invalid. */

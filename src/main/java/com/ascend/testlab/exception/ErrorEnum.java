@@ -33,11 +33,6 @@ public enum ErrorEnum implements RestError {
       "Tags Listing failed due to: %s",
       HttpStatus.SC_INTERNAL_SERVER_ERROR),
 
-  INVALID_REQUEST_BODY(
-      "INVALID_REQUEST_BODY",
-      "Request body param(s) is/are missing/invalid",
-      HttpStatus.SC_BAD_REQUEST),
-
   /* Client Errors */
   /** The error code for experiment key availability check failed. */
   REST_EXPERIMENT_KEY_CHECK_FAILED(
@@ -75,6 +70,7 @@ public enum ErrorEnum implements RestError {
       "Failed to reallocate user experiment",
       HttpStatus.SC_INTERNAL_SERVER_ERROR),
 
+  /** The error code for user cohorts service request failed. */
   USER_COHORTS_SERVICE_REQUEST_FAILED(
       "USER_COHORTS_SERVICE_REQUEST_FAILED",
       "Cohorts service request failed with statusCode:%s",
@@ -82,9 +78,16 @@ public enum ErrorEnum implements RestError {
 
   /* Client Errors */
 
+  /** The error code for missing user identifier. */
   MISSING_USER_IDENTIFIER(
       "MISSING_USER_IDENTIFIER",
       "Missing User Identifier, pass user-id/guest-id",
+      HttpStatus.SC_BAD_REQUEST),
+
+  /** The error code for invalid request body. */
+  INVALID_REQUEST_BODY(
+      "INVALID_REQUEST_BODY",
+      "Request body param(s) is/are missing/invalid",
       HttpStatus.SC_BAD_REQUEST),
 
   /** The error code when an invalid variant is present in the request payload. */
@@ -117,6 +120,7 @@ public enum ErrorEnum implements RestError {
   INVALID_EXPERIMENT_STATUS(
       "INVALID_EXPERIMENT_STATUS", "Experiment status is not valid", HttpStatus.SC_BAD_REQUEST),
 
+  /** The error code for upstream parsing error. */
   UPSTREAM_PARSING_ERROR(
       "UPSTREAM_PARSING_ERROR",
       "Upstream response json parsing error",

@@ -38,6 +38,17 @@ public interface WebClient {
   @Fluent
   WebClient setCircuitBreaker(CircuitBreaker circuitBreaker);
 
+  /**
+   * Sends an HTTP GET request.
+   *
+   * @param serviceConfig the service configuration
+   * @param queryParams the query parameters
+   * @param headers the headers
+   * @param errorEnum the error enum to use in case of failure
+   * @param responseMapper the function to map the response
+   * @param <R> the type of the response
+   * @return a Single emitting the mapped response
+   */
   <R> Single<R> sendHTTPGETRequest(
       ApplicationConfig.ServiceConfig serviceConfig,
       Map<String, String> queryParams,

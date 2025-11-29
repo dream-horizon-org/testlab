@@ -27,20 +27,20 @@ class AllocationIT {
 
   private final String allocationRoute = "/v1/allocations";
 
-  private static final String projectKey = "allocation_test_exp_it";
+  private static final String PROJECT_KEY = "allocation_test_exp_it";
 
   @BeforeAll
   public static void initialize() {
 
     log.info("Starting tests for {}", AllocationIT.class.getSimpleName());
-    TestUtil.createPartitionForProject("experiments", projectKey);
+    TestUtil.createPartitionForProject("experiments", PROJECT_KEY);
   }
 
   @AfterAll
   public static void cleanup() {
 
     log.info("Cleaning up {} resources", AllocationIT.class.getSimpleName());
-    TestUtil.dropTestPartition("experiments", projectKey);
+    TestUtil.dropTestPartition("experiments", PROJECT_KEY);
   }
 
   @Test
@@ -48,9 +48,9 @@ class AllocationIT {
     String experimentId = UUID.randomUUID().toString();
     String experimentKey = "test-experiment-11";
 
-    seedExperiment(projectKey, experimentId, "Test Experiment 11", experimentKey);
+    seedExperiment(PROJECT_KEY, experimentId, "Test Experiment 11", experimentKey);
 
-    Map<String, String> headers = Map.of(WebConstants.PROJECT_KEY_HEADER, projectKey);
+    Map<String, String> headers = Map.of(WebConstants.PROJECT_KEY_HEADER, PROJECT_KEY);
 
     Map<String, Object> requestBody = new HashMap<>();
     requestBody.put("user_id", "user-123");
@@ -82,11 +82,11 @@ class AllocationIT {
     String experimentKey2 = "test-experiment-2";
     String experimentKey3 = "test-experiment-3";
 
-    seedExperiment(projectKey, experimentId1, "Test Experiment 1", experimentKey1);
-    seedExperiment(projectKey, experimentId2, "Test Experiment 2", experimentKey2);
-    seedExperiment(projectKey, experimentId3, "Test Experiment 3", experimentKey3);
+    seedExperiment(PROJECT_KEY, experimentId1, "Test Experiment 1", experimentKey1);
+    seedExperiment(PROJECT_KEY, experimentId2, "Test Experiment 2", experimentKey2);
+    seedExperiment(PROJECT_KEY, experimentId3, "Test Experiment 3", experimentKey3);
 
-    Map<String, String> headers = Map.of(WebConstants.PROJECT_KEY_HEADER, projectKey);
+    Map<String, String> headers = Map.of(WebConstants.PROJECT_KEY_HEADER, PROJECT_KEY);
 
     Map<String, Object> requestBody = new HashMap<>();
     requestBody.put("user_id", "user-456");
@@ -108,7 +108,7 @@ class AllocationIT {
   @Test
   void testAllocation_Missinguser_id_Success() {
 
-    Map<String, String> headers = Map.of(WebConstants.PROJECT_KEY_HEADER, projectKey);
+    Map<String, String> headers = Map.of(WebConstants.PROJECT_KEY_HEADER, PROJECT_KEY);
 
     Map<String, Object> requestBody = new HashMap<>();
     requestBody.put("stable_id", "guest-789");
@@ -126,7 +126,7 @@ class AllocationIT {
   @Test
   void testAllocation_Missingstable_id_Success() {
 
-    Map<String, String> headers = Map.of(WebConstants.PROJECT_KEY_HEADER, projectKey);
+    Map<String, String> headers = Map.of(WebConstants.PROJECT_KEY_HEADER, PROJECT_KEY);
 
     Map<String, Object> requestBody = new HashMap<>();
     requestBody.put("user_id", "user-789");
@@ -144,7 +144,7 @@ class AllocationIT {
   @Test
   void testAllocation_Emptyexperiment_keysList_BadRequest() {
 
-    Map<String, String> headers = Map.of(WebConstants.PROJECT_KEY_HEADER, projectKey);
+    Map<String, String> headers = Map.of(WebConstants.PROJECT_KEY_HEADER, PROJECT_KEY);
 
     Map<String, Object> requestBody = new HashMap<>();
     requestBody.put("user_id", "user-789");
@@ -162,7 +162,7 @@ class AllocationIT {
   @Test
   void testAllocation_Blankuser_id_Success() {
 
-    Map<String, String> headers = Map.of(WebConstants.PROJECT_KEY_HEADER, projectKey);
+    Map<String, String> headers = Map.of(WebConstants.PROJECT_KEY_HEADER, PROJECT_KEY);
 
     Map<String, Object> requestBody = new HashMap<>();
     requestBody.put("user_id", "   ");
@@ -181,7 +181,7 @@ class AllocationIT {
   @Test
   void testAllocation_Blankstable_id_Success() {
 
-    Map<String, String> headers = Map.of(WebConstants.PROJECT_KEY_HEADER, projectKey);
+    Map<String, String> headers = Map.of(WebConstants.PROJECT_KEY_HEADER, PROJECT_KEY);
 
     Map<String, Object> requestBody = new HashMap<>();
     requestBody.put("user_id", "user-789");
@@ -200,7 +200,7 @@ class AllocationIT {
   @Test
   void testAllocation_MissingRequestBody_BadRequest() {
 
-    Map<String, String> headers = Map.of(WebConstants.PROJECT_KEY_HEADER, projectKey);
+    Map<String, String> headers = Map.of(WebConstants.PROJECT_KEY_HEADER, PROJECT_KEY);
 
     ValidatableResponse response =
         TestUtil.executeRequest(null, headers, null, spec -> spec.post(this.allocationRoute));
@@ -214,7 +214,7 @@ class AllocationIT {
     String experimentId = UUID.randomUUID().toString();
     String experimentKey = "test-experiment-default";
 
-    seedExperiment(projectKey, experimentId, "Test Experiment Default", experimentKey);
+    seedExperiment(PROJECT_KEY, experimentId, "Test Experiment Default", experimentKey);
 
     // No project key header - should use default
     Map<String, String> headers = new HashMap<>();
@@ -239,9 +239,9 @@ class AllocationIT {
     String experimentId = UUID.randomUUID().toString();
     String experimentKey = "test-experiment-duplicate";
 
-    seedExperiment(projectKey, experimentId, "Test Experiment Duplicate", experimentKey);
+    seedExperiment(PROJECT_KEY, experimentId, "Test Experiment Duplicate", experimentKey);
 
-    Map<String, String> headers = Map.of(WebConstants.PROJECT_KEY_HEADER, projectKey);
+    Map<String, String> headers = Map.of(WebConstants.PROJECT_KEY_HEADER, PROJECT_KEY);
 
     // Request with duplicate experiment keys - should only process unique keys
     Map<String, Object> requestBody = new HashMap<>();
@@ -272,10 +272,10 @@ class AllocationIT {
     String experimentId = UUID.randomUUID().toString();
     String experimentKey = "test-experiment-get";
 
-    seedExperiment(projectKey, experimentId, "Test Experiment Get", experimentKey);
+    seedExperiment(PROJECT_KEY, experimentId, "Test Experiment Get", experimentKey);
 
     // First, allocate an experiment to the user
-    Map<String, String> postHeaders = Map.of(WebConstants.PROJECT_KEY_HEADER, projectKey);
+    Map<String, String> postHeaders = Map.of(WebConstants.PROJECT_KEY_HEADER, PROJECT_KEY);
 
     Map<String, Object> allocateRequestBody = new HashMap<>();
     allocateRequestBody.put("user_id", user_id);
@@ -288,7 +288,7 @@ class AllocationIT {
 
     // Now retrieve the allocations
     Map<String, String> getHeaders = new HashMap<>();
-    getHeaders.put(WebConstants.PROJECT_KEY_HEADER, projectKey);
+    getHeaders.put(WebConstants.PROJECT_KEY_HEADER, PROJECT_KEY);
     getHeaders.put(WebConstants.USER_ID_HEADER, user_id);
 
     ValidatableResponse response =
@@ -306,7 +306,7 @@ class AllocationIT {
     String user_id = "user-new-no-allocations";
 
     Map<String, String> headers = new HashMap<>();
-    headers.put(WebConstants.PROJECT_KEY_HEADER, projectKey);
+    headers.put(WebConstants.PROJECT_KEY_HEADER, PROJECT_KEY);
     headers.put(WebConstants.USER_ID_HEADER, user_id);
 
     ValidatableResponse response =
@@ -322,7 +322,7 @@ class AllocationIT {
   @Test
   void testGetAllocations_Missinguser_idHeader_ReturnsEmptyList() {
 
-    Map<String, String> headers = Map.of(WebConstants.PROJECT_KEY_HEADER, projectKey);
+    Map<String, String> headers = Map.of(WebConstants.PROJECT_KEY_HEADER, PROJECT_KEY);
 
     ValidatableResponse response =
         TestUtil.executeRequest(null, headers, null, spec -> spec.get(this.allocationRoute));
@@ -359,12 +359,12 @@ class AllocationIT {
     String experimentKey2 = "test-experiment-multi-2";
     String experimentKey3 = "test-experiment-multi-3";
 
-    seedExperiment(projectKey, experimentId1, "Test Experiment Multi 1", experimentKey1);
-    seedExperiment(projectKey, experimentId2, "Test Experiment Multi 2", experimentKey2);
-    seedExperiment(projectKey, experimentId3, "Test Experiment Multi 3", experimentKey3);
+    seedExperiment(PROJECT_KEY, experimentId1, "Test Experiment Multi 1", experimentKey1);
+    seedExperiment(PROJECT_KEY, experimentId2, "Test Experiment Multi 2", experimentKey2);
+    seedExperiment(PROJECT_KEY, experimentId3, "Test Experiment Multi 3", experimentKey3);
 
     // First, allocate multiple experiments to the user
-    Map<String, String> postHeaders = Map.of(WebConstants.PROJECT_KEY_HEADER, projectKey);
+    Map<String, String> postHeaders = Map.of(WebConstants.PROJECT_KEY_HEADER, PROJECT_KEY);
 
     Map<String, Object> allocateRequestBody = new HashMap<>();
     allocateRequestBody.put("user_id", user_id);
@@ -378,7 +378,7 @@ class AllocationIT {
 
     // Now retrieve the allocations
     Map<String, String> getHeaders = new HashMap<>();
-    getHeaders.put(WebConstants.PROJECT_KEY_HEADER, projectKey);
+    getHeaders.put(WebConstants.PROJECT_KEY_HEADER, PROJECT_KEY);
     getHeaders.put(WebConstants.USER_ID_HEADER, user_id);
 
     ValidatableResponse response =
@@ -397,10 +397,10 @@ class AllocationIT {
     String experimentId = UUID.randomUUID().toString();
     String experimentKey = "test-experiment-consistent";
 
-    seedExperiment(projectKey, experimentId, "Test Experiment Consistent", experimentKey);
+    seedExperiment(PROJECT_KEY, experimentId, "Test Experiment Consistent", experimentKey);
 
     // Allocate an experiment
-    Map<String, String> postHeaders = Map.of(WebConstants.PROJECT_KEY_HEADER, projectKey);
+    Map<String, String> postHeaders = Map.of(WebConstants.PROJECT_KEY_HEADER, PROJECT_KEY);
 
     Map<String, Object> allocateRequestBody = new HashMap<>();
     allocateRequestBody.put("user_id", user_id);
@@ -413,7 +413,7 @@ class AllocationIT {
 
     // Retrieve allocations first time
     Map<String, String> getHeaders = new HashMap<>();
-    getHeaders.put(WebConstants.PROJECT_KEY_HEADER, projectKey);
+    getHeaders.put(WebConstants.PROJECT_KEY_HEADER, PROJECT_KEY);
     getHeaders.put(WebConstants.USER_ID_HEADER, user_id);
 
     ValidatableResponse response1 =
@@ -443,10 +443,10 @@ class AllocationIT {
     String experimentId = UUID.randomUUID().toString();
     String experimentKey = "test-experiment-realloc";
 
-    seedExperiment(projectKey, experimentId, "Test Experiment Reallocation", experimentKey);
+    seedExperiment(PROJECT_KEY, experimentId, "Test Experiment Reallocation", experimentKey);
 
     // First, allocate user to experiment (will be assigned to control or treatment)
-    Map<String, String> postHeaders = Map.of(WebConstants.PROJECT_KEY_HEADER, projectKey);
+    Map<String, String> postHeaders = Map.of(WebConstants.PROJECT_KEY_HEADER, PROJECT_KEY);
 
     Map<String, Object> allocateRequestBody = new HashMap<>();
     allocateRequestBody.put("user_id", user_id);
@@ -488,10 +488,10 @@ class AllocationIT {
     String experimentId = UUID.randomUUID().toString();
     String experimentKey = "test-experiment-realloc-verify";
 
-    seedExperiment(projectKey, experimentId, "Test Experiment Realloc Verify", experimentKey);
+    seedExperiment(PROJECT_KEY, experimentId, "Test Experiment Realloc Verify", experimentKey);
 
     // Allocate user
-    Map<String, String> headers = Map.of(WebConstants.PROJECT_KEY_HEADER, projectKey);
+    Map<String, String> headers = Map.of(WebConstants.PROJECT_KEY_HEADER, PROJECT_KEY);
 
     Map<String, Object> allocateRequestBody = new HashMap<>();
     allocateRequestBody.put("user_id", user_id);
@@ -504,7 +504,7 @@ class AllocationIT {
 
     // Get initial allocation
     Map<String, String> getHeaders = new HashMap<>();
-    getHeaders.put(WebConstants.PROJECT_KEY_HEADER, projectKey);
+    getHeaders.put(WebConstants.PROJECT_KEY_HEADER, PROJECT_KEY);
     getHeaders.put(WebConstants.USER_ID_HEADER, user_id);
 
     ValidatableResponse getResponse1 =
@@ -538,7 +538,7 @@ class AllocationIT {
   @Test
   void testReallocation_MissingExperimentId_BadRequest() {
 
-    Map<String, String> headers = Map.of(WebConstants.PROJECT_KEY_HEADER, projectKey);
+    Map<String, String> headers = Map.of(WebConstants.PROJECT_KEY_HEADER, PROJECT_KEY);
 
     Map<String, Object> reallocateRequestBody = new HashMap<>();
     // Missing experiment_id
@@ -556,7 +556,7 @@ class AllocationIT {
   @Test
   void testReallocation_MissingVariantName_BadRequest() {
 
-    Map<String, String> headers = Map.of(WebConstants.PROJECT_KEY_HEADER, projectKey);
+    Map<String, String> headers = Map.of(WebConstants.PROJECT_KEY_HEADER, PROJECT_KEY);
 
     String experimentId = UUID.randomUUID().toString();
 
@@ -576,7 +576,7 @@ class AllocationIT {
   @Test
   void testReallocation_MissingUserId_BadRequest() {
 
-    Map<String, String> headers = Map.of(WebConstants.PROJECT_KEY_HEADER, projectKey);
+    Map<String, String> headers = Map.of(WebConstants.PROJECT_KEY_HEADER, PROJECT_KEY);
 
     String experimentId = UUID.randomUUID().toString();
 
@@ -596,7 +596,7 @@ class AllocationIT {
   @Test
   void testReallocation_ExperimentNotFound_NotFound() {
 
-    Map<String, String> headers = Map.of(WebConstants.PROJECT_KEY_HEADER, projectKey);
+    Map<String, String> headers = Map.of(WebConstants.PROJECT_KEY_HEADER, PROJECT_KEY);
 
     String nonExistentExperimentId = UUID.randomUUID().toString();
 
@@ -620,9 +620,9 @@ class AllocationIT {
     String experimentId = UUID.randomUUID().toString();
     String experimentKey = "test-experiment-no-allocation";
 
-    seedExperiment(projectKey, experimentId, "Test Experiment No Allocation", experimentKey);
+    seedExperiment(PROJECT_KEY, experimentId, "Test Experiment No Allocation", experimentKey);
 
-    Map<String, String> headers = Map.of(WebConstants.PROJECT_KEY_HEADER, projectKey);
+    Map<String, String> headers = Map.of(WebConstants.PROJECT_KEY_HEADER, PROJECT_KEY);
 
     Map<String, Object> reallocateRequestBody = new HashMap<>();
     reallocateRequestBody.put("experiment_id", experimentId);
@@ -645,10 +645,10 @@ class AllocationIT {
     String experimentId = UUID.randomUUID().toString();
     String experimentKey = "test-experiment-invalid-variant";
 
-    seedExperiment(projectKey, experimentId, "Test Experiment Invalid Variant", experimentKey);
+    seedExperiment(PROJECT_KEY, experimentId, "Test Experiment Invalid Variant", experimentKey);
 
     // First allocate user
-    Map<String, String> headers = Map.of(WebConstants.PROJECT_KEY_HEADER, projectKey);
+    Map<String, String> headers = Map.of(WebConstants.PROJECT_KEY_HEADER, PROJECT_KEY);
 
     Map<String, Object> allocateRequestBody = new HashMap<>();
     allocateRequestBody.put("user_id", user_id);
@@ -681,10 +681,10 @@ class AllocationIT {
     String experimentId = UUID.randomUUID().toString();
     String experimentKey = "test-experiment-with-reason";
 
-    seedExperiment(projectKey, experimentId, "Test Experiment With Reason", experimentKey);
+    seedExperiment(PROJECT_KEY, experimentId, "Test Experiment With Reason", experimentKey);
 
     // Allocate user
-    Map<String, String> headers = Map.of(WebConstants.PROJECT_KEY_HEADER, projectKey);
+    Map<String, String> headers = Map.of(WebConstants.PROJECT_KEY_HEADER, PROJECT_KEY);
 
     Map<String, Object> allocateRequestBody = new HashMap<>();
     allocateRequestBody.put("user_id", user_id);
@@ -723,10 +723,10 @@ class AllocationIT {
     String experimentId = UUID.randomUUID().toString();
     String experimentKey = "test-experiment-without-reason";
 
-    seedExperiment(projectKey, experimentId, "Test Experiment Without Reason", experimentKey);
+    seedExperiment(PROJECT_KEY, experimentId, "Test Experiment Without Reason", experimentKey);
 
     // Allocate user
-    Map<String, String> headers = Map.of(WebConstants.PROJECT_KEY_HEADER, projectKey);
+    Map<String, String> headers = Map.of(WebConstants.PROJECT_KEY_HEADER, PROJECT_KEY);
 
     Map<String, Object> allocateRequestBody = new HashMap<>();
     allocateRequestBody.put("user_id", user_id);
@@ -762,10 +762,10 @@ class AllocationIT {
     String experimentId = UUID.randomUUID().toString();
     String experimentKey = "test-experiment-default-realloc";
 
-    seedExperiment(projectKey, experimentId, "Test Experiment Default Realloc", experimentKey);
+    seedExperiment(PROJECT_KEY, experimentId, "Test Experiment Default Realloc", experimentKey);
 
     // Allocate user with explicit project key
-    Map<String, String> allocateHeaders = Map.of(WebConstants.PROJECT_KEY_HEADER, projectKey);
+    Map<String, String> allocateHeaders = Map.of(WebConstants.PROJECT_KEY_HEADER, PROJECT_KEY);
 
     Map<String, Object> allocateRequestBody = new HashMap<>();
     allocateRequestBody.put("user_id", user_id);
@@ -781,7 +781,7 @@ class AllocationIT {
     String newVariant = "treatment".equals(originalVariant) ? "control" : "treatment";
 
     // Reallocate with the same project key to ensure it's found
-    Map<String, String> reallocateHeaders = Map.of(WebConstants.PROJECT_KEY_HEADER, projectKey);
+    Map<String, String> reallocateHeaders = Map.of(WebConstants.PROJECT_KEY_HEADER, PROJECT_KEY);
 
     Map<String, Object> reallocateRequestBody = new HashMap<>();
     reallocateRequestBody.put("experiment_id", experimentId);
@@ -810,8 +810,8 @@ class AllocationIT {
   private void seedExperiment(
       String projectKey, String experimentId, String experimentName, String experimentKey) {
     String variantsJson =
-        "'{\"control\": {\"displayName\": \"Control\", \"variantName\": \"control\", \"variables\": []}, "
-            + "\"treatment\": {\"displayName\": \"Treatment\", \"variantName\": \"treatment\", \"variables\": []}}'";
+        "'{\"control\": {\"display_name\": \"Control\", \"variant_name\": \"control\", \"variables\": []}, "
+            + "\"treatment\": {\"display_name\": \"Treatment\", \"variant_name\": \"treatment\", \"variables\": []}}'";
 
     String variantWeightsJson = "'{\"weights\":{\"control\": 50, \"treatment\": 50}}'";
 

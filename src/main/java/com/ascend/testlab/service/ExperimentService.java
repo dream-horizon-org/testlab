@@ -4,6 +4,7 @@ import com.ascend.testlab.dto.entity.experiment.Experiment;
 import com.ascend.testlab.dto.request.FilterExperimentsRequest;
 import com.ascend.testlab.dto.request.UpdateExperimentRequest;
 import com.ascend.testlab.dto.response.CreateExperimentResponse;
+import com.ascend.testlab.dto.response.DeleteExperimentResponse;
 import com.ascend.testlab.dto.response.FilterExperimentsResponse;
 import com.ascend.testlab.dto.response.UpdateExperimentResponse;
 import io.reactivex.rxjava3.core.Single;
@@ -61,7 +62,7 @@ public interface ExperimentService {
    * @return a Single containing DeleteExperimentResponse with deletion details, or an error if the
    *     experiment ID is invalid, the experiment does not exist, or on failure
    */
-  Single<Boolean> deleteExperiment(String projectKey, String experimentId);
+  Single<DeleteExperimentResponse> deleteExperiment(String projectKey, String experimentId);
 
   /**
    * Creates a new experiment with validation and error handling.

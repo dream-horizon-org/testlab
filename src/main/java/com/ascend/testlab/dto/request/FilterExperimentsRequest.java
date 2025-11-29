@@ -7,6 +7,8 @@ import com.ascend.testlab.exception.ErrorMessages;
 import com.ascend.testlab.util.CommonUtil;
 import com.dream11.rest.exception.RestException;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.databind.PropertyNamingStrategies;
+import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import jakarta.validation.constraints.AssertTrue;
 import jakarta.validation.constraints.Positive;
 import jakarta.ws.rs.DefaultValue;
@@ -28,12 +30,13 @@ import org.apache.commons.lang3.StringUtils;
  * @version 1.0
  * @since 1.0
  */
+@Slf4j
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
 @JsonIgnoreProperties(ignoreUnknown = true)
-@Slf4j
+@JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
 public class FilterExperimentsRequest {
   // TODO: use @ValidEnum annotation
   @QueryParam(WebConstants.EXPERIMENT_STATUS)

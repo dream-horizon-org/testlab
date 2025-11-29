@@ -3,6 +3,8 @@ package com.ascend.testlab.dto.entity.variantweights;
 import com.ascend.testlab.constants.enums.AssignmentDomain;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import com.fasterxml.jackson.databind.PropertyNamingStrategies;
+import com.fasterxml.jackson.databind.annotation.JsonNaming;
 
 /**
  * Abstract base class for variant weights. Uses Jackson polymorphic deserialization to handle
@@ -21,6 +23,7 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
   @JsonSubTypes.Type(value = StratifiedVariantWeights.class, name = "STRATIFIED"),
   @JsonSubTypes.Type(value = CohortVariantWeights.class, name = "COHORT"),
 })
+@JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
 public abstract class VariantWeights {
 
   /**

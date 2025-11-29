@@ -6,6 +6,7 @@ import com.ascend.testlab.dto.entity.experiment.Experiment;
 import com.ascend.testlab.dto.request.FilterExperimentsRequest;
 import com.ascend.testlab.dto.request.UpdateExperimentRequest;
 import com.ascend.testlab.dto.response.CreateExperimentResponse;
+import com.ascend.testlab.dto.response.DeleteExperimentResponse;
 import com.ascend.testlab.dto.response.FilterExperimentsResponse;
 import com.ascend.testlab.dto.response.UpdateExperimentResponse;
 import com.ascend.testlab.exception.ErrorEnum;
@@ -106,11 +107,12 @@ public class ExperimentServiceImpl implements ExperimentService {
 
   /** {@inheritDoc}* */
   @Override
-  public Single<Boolean> deleteExperiment(String projectKey, String experimentId) {
+  public Single<DeleteExperimentResponse> deleteExperiment(String projectKey, String experimentId) {
     return experimentDAO
         .getExperiment(projectKey, experimentId)
         .switchIfEmpty(Single.error(ExceptionUtil.getException(ErrorEnum.EXPERIMENT_NOT_FOUND)))
         .flatMap(experiment -> experimentDAO.deleteExperiment(projectKey, experiment))
+        .map(isDeleted -> new DeleteExperimentResponse(experimentId, isDeleted))
         .onErrorResumeNext(
             err -> {
               log.error(

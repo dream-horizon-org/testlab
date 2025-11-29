@@ -45,9 +45,9 @@ public interface ExperimentDAO {
    * <p>All necessary data (projectKey, experimentId, tags, owner) is extracted from the request
    * object.
    *
-   * @param request experiment creation request with all experiment details including projectKey,
-   *     experimentId, tags, and owner
-   * @return Single emitting experiment ID as String on success
+   * @param projectKey project identifier for partitioning
+   * @param request experiment entity with all experiment details
+   * @return Single emitting true on success
    */
   Single<Boolean> createExperiment(String projectKey, Experiment request);
 

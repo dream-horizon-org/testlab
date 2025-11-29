@@ -7,6 +7,8 @@ import com.ascend.testlab.constants.enums.ExperimentType;
 import com.ascend.testlab.constants.enums.HealthStatus;
 import com.ascend.testlab.dto.entity.variantweights.VariantWeights;
 import com.ascend.testlab.dto.request.CreateExperimentRequest;
+import com.fasterxml.jackson.databind.PropertyNamingStrategies;
+import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
@@ -24,6 +26,7 @@ import lombok.*;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
+@JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
 public class Experiment {
   private UUID experimentId;
   private String projectKey;
@@ -54,6 +57,12 @@ public class Experiment {
   private List<String> owners;
   private Metrics metrics;
 
+  /**
+   * Creates an Experiment entity from a CreateExperimentRequest.
+   *
+   * @param request the create experiment request
+   * @return the experiment entity
+   */
   public static Experiment fromRequest(CreateExperimentRequest request) {
     return Experiment.builder()
         .name(request.getName())

@@ -23,6 +23,7 @@ public final class Constants {
   /** The default application environment. */
   public static final String DEFAULT_APP_ENV = "dev";
 
+  /** The admin role. */
   public static final String ADMIN = "ADMIN";
 
   /** Default value for updatedBy field when not provided. */
@@ -45,10 +46,7 @@ public final class Constants {
   /** The delimiter for underscore. */
   public static final String UNDER_SCORE = "_";
 
-  public static final String GET_TYPE = "getType";
-
-  public static final String GET_NAME = "getName";
-
+  /** The method name for getting enum name. */
   public static final String NAME = "name";
 
   /** The delimiter for apostrophe. */
@@ -56,4 +54,10 @@ public final class Constants {
 
   /** The maximum length for experiment key. */
   public static final int MAX_EXPERIMENT_KEY_LENGTH = 255;
+
+  /** The name of the getType method. */
+  public static final String GET_TYPE = "getType";
+
+  /** The name of the getName method. */
+  public static final String GET_NAME = "getName";
 }
