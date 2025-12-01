@@ -21,6 +21,7 @@ public class BaseQueryBuilder implements FilterQueryBuilder {
    * Constructs a new BaseQueryBuilder with the base filter experiment query and projectKey.
    *
    * @param projectKey the project key to filter experiments by
+   * @param query the base query to filter experiments by
    */
   public BaseQueryBuilder(String projectKey, String query) {
     this.query = query;

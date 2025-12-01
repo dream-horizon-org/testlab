@@ -1,11 +1,10 @@
 package com.ascend.testlab.dao.impl;
 
 import com.aerospike.client.Key;
-import com.aerospike.client.policy.BatchPolicy;
+import com.aerospike.client.policy.Policy;
 import com.ascend.testlab.client.aerospike.AerospikeClient;
 import com.ascend.testlab.client.postgresql.PgReaderClient;
 import com.ascend.testlab.config.AerospikeConfig;
-import com.ascend.testlab.constants.Constants;
 import com.ascend.testlab.constants.postgresql.Columns;
 import com.ascend.testlab.constants.postgresql.ReadQuery;
 import com.ascend.testlab.dao.AdminDAO;
@@ -47,6 +46,8 @@ public class AdminDAOImpl implements AdminDAO {
    * Constructor for the AdminDAOImpl.
    *
    * @param pgReaderClient the PostgreSQL reader client
+   * @param aerospikeClient the Aerospike client
+   * @param aerospikeConfig the Aerospike config
    */
   @Inject
   public AdminDAOImpl(
@@ -139,57 +140,34 @@ public class AdminDAOImpl implements AdminDAO {
 
   /** {@inheritDoc} */
   @Override
-  // TODO: change record to batch record to get key
   public Single<Map<String, Long>> getVariantCount(String projectKey, Experiment experiment) {
     if (Objects.isNull(experiment.getVariants()) || experiment.getVariants().isEmpty()) {
       return Single.just(new HashMap<>());
     }
 
-    List<String> variants = experiment.getVariants().keySet().stream().toList();
+    Key key =
+        new Key(
+            aerospikeConfig.getNamespace(),
+            CommonUtil.getSetName(aerospikeConfig.getVariantCountSet(), projectKey),
+            experiment.getExperimentId().toString());
 
-    List<Key> keys =
-        getKeyFromVariantName(projectKey, String.valueOf(experiment.getExperimentId()), variants);
-
-    BatchPolicy batchPolicy = new BatchPolicy();
-    batchPolicy.sendKey = true;
+    Policy policy = new Policy();
 
     return aerospikeClient
-        .get(batchPolicy, keys, aerospikeConfig.getVariantCountBin())
+        .get(policy, key, aerospikeConfig.getVariantCountBin())
         .map(
-            records -> {
-              if (records == null || records.isEmpty()) return new HashMap<String, Long>();
+            record -> {
+              if (record == null) return new HashMap<String, Long>();
 
-              Map<String, Long> variantCountMap = new HashMap<>();
-
-              for (int i = 0; i < records.size(); i++) {
-                if (records.get(i) == null) continue;
-                Long count = records.get(i).getLong(aerospikeConfig.getVariantCountBin());
-                String variantName = variants.get(i);
-
-                variantCountMap.put(variantName, count);
-              }
-
-              return variantCountMap;
+              @SuppressWarnings("unchecked")
+              Map<String, Long> countMap =
+                  (Map<String, Long>) record.getMap(aerospikeConfig.getVariantCountBin());
+              return countMap;
             })
         .onErrorReturn(
             err -> {
-              log.error(
-                  "Failed to fetch variant count for project: {}", experiment.getProjectKey(), err);
+              log.error("Failed to fetch variant count for project: {}", projectKey, err);
               return new HashMap<>();
             });
-  }
-
-  /** Generates Aerospike Key objects from variant names for a given experiment. */
-  private List<Key> getKeyFromVariantName(
-      String projectKey, String experimentId, List<String> variants) {
-    String set = CommonUtil.getSetName(aerospikeConfig.getVariantCountSet(), projectKey);
-    return variants.stream()
-        .map(
-            variantName ->
-                new Key(
-                    aerospikeConfig.getNamespace(),
-                    set,
-                    experimentId + Constants.COLON + variantName))
-        .toList();
   }
 }
