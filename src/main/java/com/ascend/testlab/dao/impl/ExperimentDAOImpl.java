@@ -102,9 +102,10 @@ public class ExperimentDAOImpl implements ExperimentDAO {
     PaginationMeta paginationMeta;
     paginationMeta =
         PaginationMeta.builder()
-            .pageSize(experiments.size())
-            .currentPage(req.getPage())
-            .totalCount(totalCount)
+            .page_size(experiments.size())
+            .current_page(req.getPage())
+            .total_count(totalCount)
+            .has_next(req.getPage() * req.getLimit() < totalCount)
             .build();
 
     response.setPagination(paginationMeta);

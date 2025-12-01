@@ -361,7 +361,8 @@ public class ExperimentServiceTest {
       // Arrange
       FilterExperimentsRequest request = new FilterExperimentsRequest();
       FilterExperimentsResponse emptyResponse =
-          new FilterExperimentsResponse(Collections.emptyList(), new PaginationMeta(1, 0, 0));
+          new FilterExperimentsResponse(
+              Collections.emptyList(), new PaginationMeta(1, 0, 0, false));
       when(experimentDAO.filterExperiments(PROJECT_KEY, request))
           .thenReturn(Single.just(emptyResponse));
 
@@ -383,7 +384,7 @@ public class ExperimentServiceTest {
       FilterExperimentsRequest request =
           FilterExperimentsRequest.builder().limit(10).page(2).build();
       List<Experiment> mockExperiments = List.of(createMockExperiment());
-      PaginationMeta paginationMeta = new PaginationMeta(2, mockExperiments.size(), 25);
+      PaginationMeta paginationMeta = new PaginationMeta(2, mockExperiments.size(), 25, true);
       FilterExperimentsResponse expectedResponse =
           new FilterExperimentsResponse(mockExperiments, paginationMeta);
       when(experimentDAO.filterExperiments(PROJECT_KEY, request))
@@ -399,9 +400,9 @@ public class ExperimentServiceTest {
       testObserver.assertValue(
           response -> {
             PaginationMeta meta = response.getPagination();
-            return meta.currentPage() == 2
-                && meta.pageSize() == response.getExperiments().size()
-                && meta.totalCount() == 25;
+            return meta.current_page() == 2
+                && meta.page_size() == response.getExperiments().size()
+                && meta.total_count() == 25;
           });
       verify(experimentDAO, times(1)).filterExperiments(PROJECT_KEY, request);
     }
@@ -937,7 +938,7 @@ public class ExperimentServiceTest {
    * @return a mock FilterExperimentsResponse object
    */
   private FilterExperimentsResponse createMockFilterResponse() {
-    PaginationMeta paginationMeta = new PaginationMeta(1, 20, 1);
+    PaginationMeta paginationMeta = new PaginationMeta(1, 20, 1, false);
     return new FilterExperimentsResponse(List.of(createMockExperiment()), paginationMeta);
   }
 }

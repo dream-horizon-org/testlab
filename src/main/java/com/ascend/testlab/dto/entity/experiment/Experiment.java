@@ -6,6 +6,7 @@ import com.ascend.testlab.constants.enums.ExperimentStatus;
 import com.ascend.testlab.constants.enums.ExperimentType;
 import com.ascend.testlab.constants.enums.HealthStatus;
 import com.ascend.testlab.dto.entity.variantweights.VariantWeights;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import io.vertx.core.json.JsonObject;
 import java.time.Instant;
 import java.util.List;
@@ -25,7 +26,9 @@ import lombok.*;
 @NoArgsConstructor
 @AllArgsConstructor
 public class Experiment {
+  @JsonProperty("experiment_id")
   private UUID experimentId;
+
   private String projectKey;
   private String name;
   private String key;

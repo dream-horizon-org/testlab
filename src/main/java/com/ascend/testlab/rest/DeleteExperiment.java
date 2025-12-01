@@ -65,7 +65,7 @@ public class DeleteExperiment {
    *     experiment ID is invalid, or the experiment does not exist
    */
   @DELETE
-  @Path("/experiments/{experimentId}")
+  @Path("/experiments/{experiment_id}")
   @Produces(MediaType.APPLICATION_JSON)
   @Consumes(MediaType.APPLICATION_JSON)
   @ApiResponse(

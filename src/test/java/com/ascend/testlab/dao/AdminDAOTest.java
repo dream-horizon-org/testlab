@@ -263,11 +263,11 @@ class AdminDAOTest {
       testObserver.assertValueCount(1);
       ExperimentHistoryResponse actualResult = testObserver.values().get(0);
       assertNotNull(actualResult);
-      assertEquals(EXPERIMENT_ID, actualResult.experimentId());
+      assertEquals(EXPERIMENT_ID, actualResult.experiment_id());
       assertEquals(2, actualResult.history().size());
-      assertEquals(totalCount, actualResult.pagination().totalCount());
-      assertEquals(page, actualResult.pagination().currentPage());
-      assertEquals(actualResult.history().size(), actualResult.pagination().pageSize());
+      assertEquals(totalCount, actualResult.pagination().total_count());
+      assertEquals(page, actualResult.pagination().current_page());
+      assertEquals(actualResult.history().size(), actualResult.pagination().page_size());
       assertEquals("user1", actualResult.history().get(0).updatedBy());
       assertEquals("user2", actualResult.history().get(1).updatedBy());
       verify(pgReaderClient, times(1))
@@ -303,9 +303,9 @@ class AdminDAOTest {
       ExperimentHistoryResponse actualResult = testObserver.values().get(0);
       assertNotNull(actualResult);
       assertEquals(10, actualResult.history().size());
-      assertEquals(totalCount, actualResult.pagination().totalCount());
-      assertEquals(page, actualResult.pagination().currentPage());
-      assertEquals(actualResult.history().size(), actualResult.pagination().pageSize());
+      assertEquals(totalCount, actualResult.pagination().total_count());
+      assertEquals(page, actualResult.pagination().current_page());
+      assertEquals(actualResult.history().size(), actualResult.pagination().page_size());
       verify(pgReaderClient, times(1))
           .fetchAll(eq(ReadQuery.FETCH_EXPERIMENT_HISTORY), any(Tuple.class), any(Function.class));
     }
@@ -341,13 +341,13 @@ class AdminDAOTest {
       ExperimentHistoryResponse actualResult = testObserver.values().get(0);
       assertNotNull(actualResult);
       assertEquals(actualRowsReturned, actualResult.history().size());
-      assertEquals(totalCount, actualResult.pagination().totalCount());
-      assertEquals(page, actualResult.pagination().currentPage());
-      assertEquals(actualRowsReturned, actualResult.pagination().pageSize());
+      assertEquals(totalCount, actualResult.pagination().total_count());
+      assertEquals(page, actualResult.pagination().current_page());
+      assertEquals(actualRowsReturned, actualResult.pagination().page_size());
       assertNotEquals(
           limit,
-          actualResult.pagination().pageSize(),
-          "pageSize should be actual rows returned, not the requested limit");
+          actualResult.pagination().page_size(),
+          "page_size should be actual rows returned, not the requested limit");
       verify(pgReaderClient, times(1))
           .fetchAll(eq(ReadQuery.FETCH_EXPERIMENT_HISTORY), any(Tuple.class), any(Function.class));
     }
@@ -380,9 +380,9 @@ class AdminDAOTest {
       ExperimentHistoryResponse actualResult = testObserver.values().get(0);
       assertNotNull(actualResult);
       assertTrue(actualResult.history().isEmpty());
-      assertEquals(0, actualResult.pagination().totalCount());
-      assertEquals(page, actualResult.pagination().currentPage());
-      assertEquals(actualResult.history().size(), actualResult.pagination().pageSize());
+      assertEquals(0, actualResult.pagination().total_count());
+      assertEquals(page, actualResult.pagination().current_page());
+      assertEquals(actualResult.history().size(), actualResult.pagination().page_size());
       verify(pgReaderClient, times(1))
           .fetchAll(eq(ReadQuery.FETCH_EXPERIMENT_HISTORY), any(Tuple.class), any(Function.class));
     }

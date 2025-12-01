@@ -121,7 +121,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Failure'
-  /v1/experiments/{experimentId}:
+  /v1/experiments/{experiment_id}:
     get:
       operationId: getExperimentHandle
       parameters:
@@ -130,7 +130,7 @@ paths:
         required: true
         schema:
           type: string
-      - name: experimentId
+      - name: experiment_id
         in: path
         required: true
         schema:
@@ -168,7 +168,7 @@ paths:
         required: true
         schema:
           type: string
-      - name: experimentId
+      - name: experiment_id
         in: path
         required: true
         schema:
@@ -207,7 +207,7 @@ paths:
         required: true
         schema:
           type: string
-      - name: experimentKey
+      - name: experiment_key
         in: query
         required: true
         schema:
@@ -293,7 +293,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Failure'
-  /v1/experiments/{experimentId}/history:
+  /v1/experiments/{experiment_id}/history:
     get:
       operationId: getExperimentHistoryHandle
       parameters:
@@ -302,7 +302,7 @@ paths:
         required: true
         schema:
           type: string
-      - name: experimentId
+      - name: experiment_id
         in: path
         required: true
         schema:
@@ -514,7 +514,7 @@ components:
     ExperimentKeyAvailabilityResponse:
       type: object
       properties:
-        isAvailable:
+        is_available:
           type: boolean
     SuccessExperimentKeyAvailabilityResponse:
       type: object
@@ -551,9 +551,6 @@ components:
     Experiment:
       type: object
       properties:
-        experimentId:
-          type: string
-          format: uuid
         projectKey:
           type: string
         name:
@@ -642,6 +639,9 @@ components:
           type: array
           items:
             type: string
+        experiment_id:
+          type: string
+          format: uuid
     FilterExperimentsResponse:
       type: object
       properties:
@@ -663,15 +663,17 @@ components:
     PaginationMeta:
       type: object
       properties:
-        currentPage:
+        current_page:
           type: integer
           format: int32
-        pageSize:
+        page_size:
           type: integer
           format: int32
-        totalCount:
+        total_count:
           type: integer
           format: int32
+        has_next:
+          type: boolean
     RuleAttributes:
       required:
       - name
@@ -733,7 +735,7 @@ components:
     ExperimentHistoryResponse:
       type: object
       properties:
-        experimentId:
+        experiment_id:
           type: string
         history:
           type: array

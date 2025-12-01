@@ -1,6 +1,6 @@
 package com.ascend.testlab.dto.response;
 
-import com.ascend.testlab.dto.entity.ExperimentHistoryEntry;
+import com.ascend.testlab.dto.entity.experiment.ExperimentHistoryEntry;
 import java.util.List;
 import lombok.Builder;
 
@@ -14,4 +14,4 @@ import lombok.Builder;
  */
 @Builder
 public record ExperimentHistoryResponse(
-    String experimentId, List<ExperimentHistoryEntry> history, PaginationMeta pagination) {}
+    String experiment_id, List<ExperimentHistoryEntry> history, PaginationMeta pagination) {}

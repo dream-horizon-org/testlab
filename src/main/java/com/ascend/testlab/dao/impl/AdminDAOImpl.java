@@ -4,7 +4,7 @@ import com.ascend.testlab.client.postgresql.PgReaderClient;
 import com.ascend.testlab.constants.postgresql.Columns;
 import com.ascend.testlab.constants.postgresql.ReadQuery;
 import com.ascend.testlab.dao.AdminDAO;
-import com.ascend.testlab.dto.entity.ExperimentHistoryEntry;
+import com.ascend.testlab.dto.entity.experiment.ExperimentHistoryEntry;
 import com.ascend.testlab.dto.request.ExperimentHistoryRequest;
 import com.ascend.testlab.dto.response.ExperimentHistoryResponse;
 import com.ascend.testlab.dto.response.PaginationMeta;
@@ -81,13 +81,14 @@ public class AdminDAOImpl implements AdminDAO {
               List<ExperimentHistoryEntry> historyEntries =
                   rows.stream().map(this::mapRowToExperimentHistoryEntry).toList();
               return ExperimentHistoryResponse.builder()
-                  .experimentId(request.getExperimentId())
+                  .experiment_id(request.getExperimentId())
                   .history(historyEntries)
                   .pagination(
                       PaginationMeta.builder()
-                          .currentPage(request.getPage())
-                          .pageSize(historyEntries.size())
-                          .totalCount(totalCount)
+                          .current_page(request.getPage())
+                          .page_size(historyEntries.size())
+                          .total_count(totalCount)
+                          .has_next(request.getPage() * request.getLimit() < totalCount)
                           .build())
                   .build();
             });

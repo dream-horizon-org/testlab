@@ -1,4 +1,4 @@
-package com.ascend.testlab.dto.entity;
+package com.ascend.testlab.dto.entity.experiment;
 
 import io.vertx.core.json.JsonObject;
 import java.time.Instant;

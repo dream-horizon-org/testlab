@@ -20,7 +20,7 @@ class DeleteExperimentIT {
   private static final String PROJECT_KEY = "delete_exp_it";
   private static final String EXPERIMENT_ID = "22222222-2222-2222-2222-222222222222";
   private static final String INVALID_EXPERIMENT_ID = "00000000-0000-0000-0000-000000000000";
-  private final String route = "/v1/experiments/{experimentId}";
+  private final String route = "/v1/experiments/{experiment_id}";
 
   @BeforeAll
   public static void initialize() {

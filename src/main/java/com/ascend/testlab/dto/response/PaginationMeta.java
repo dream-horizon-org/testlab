@@ -10,4 +10,4 @@ import lombok.Builder;
  * @since 1.0
  */
 @Builder
-public record PaginationMeta(int currentPage, int pageSize, int totalCount) {}
+public record PaginationMeta(int current_page, int page_size, int total_count, boolean has_next) {}

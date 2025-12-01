@@ -7,4 +7,4 @@ package com.ascend.testlab.dto.response;
  * @version 1.0
  * @since 1.0
  */
-public record ExperimentKeyAvailabilityResponse(Boolean isAvailable) {}
+public record ExperimentKeyAvailabilityResponse(Boolean is_available) {}

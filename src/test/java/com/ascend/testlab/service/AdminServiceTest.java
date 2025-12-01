@@ -4,7 +4,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 import com.ascend.testlab.dao.AdminDAO;
-import com.ascend.testlab.dto.entity.ExperimentHistoryEntry;
+import com.ascend.testlab.dto.entity.experiment.ExperimentHistoryEntry;
 import com.ascend.testlab.dto.request.ExperimentHistoryRequest;
 import com.ascend.testlab.dto.response.ExperimentHistoryResponse;
 import com.ascend.testlab.dto.response.ExperimentKeyAvailabilityResponse;
@@ -160,7 +160,7 @@ public class AdminServiceTest {
       testObserver.assertValueCount(1);
       ExperimentKeyAvailabilityResponse response = testObserver.values().get(0);
       assertNotNull(response);
-      assertTrue(response.isAvailable());
+      assertTrue(response.is_available());
       verify(adminDAO, times(1)).isExperimentKeyAvailable(PROJECT_KEY, EXPERIMENT_KEY);
     }
 
@@ -181,7 +181,7 @@ public class AdminServiceTest {
       testObserver.assertValueCount(1);
       ExperimentKeyAvailabilityResponse response = testObserver.values().get(0);
       assertNotNull(response);
-      assertFalse(response.isAvailable());
+      assertFalse(response.is_available());
       verify(adminDAO, times(1)).isExperimentKeyAvailable(PROJECT_KEY, EXPERIMENT_KEY);
     }
 
@@ -233,13 +233,13 @@ public class AdminServiceTest {
       List<ExperimentHistoryEntry> mockHistory = Arrays.asList(entry1, entry2);
       ExperimentHistoryResponse mockResult =
           ExperimentHistoryResponse.builder()
-              .experimentId(EXPERIMENT_ID)
+              .experiment_id(EXPERIMENT_ID)
               .history(mockHistory)
               .pagination(
                   PaginationMeta.builder()
-                      .currentPage(page)
-                      .pageSize(mockHistory.size())
-                      .totalCount(2)
+                      .current_page(page)
+                      .page_size(mockHistory.size())
+                      .total_count(2)
                       .build())
               .build();
       ExperimentHistoryRequest request =
@@ -261,13 +261,13 @@ public class AdminServiceTest {
       testObserver.assertValueCount(1);
       ExperimentHistoryResponse response = testObserver.values().get(0);
       assertNotNull(response);
-      assertEquals(EXPERIMENT_ID, response.experimentId());
+      assertEquals(EXPERIMENT_ID, response.experiment_id());
       assertNotNull(response.history());
       assertEquals(2, response.history().size());
       assertNotNull(response.pagination());
-      assertEquals(page, response.pagination().currentPage());
-      assertEquals(response.history().size(), response.pagination().pageSize());
-      assertEquals(2, response.pagination().totalCount());
+      assertEquals(page, response.pagination().current_page());
+      assertEquals(response.history().size(), response.pagination().page_size());
+      assertEquals(2, response.pagination().total_count());
       assertEquals("user1", response.history().get(0).updatedBy());
       assertEquals("user2", response.history().get(1).updatedBy());
       verify(adminDAO, times(1)).fetchExperimentHistory(request);
@@ -291,13 +291,13 @@ public class AdminServiceTest {
                   .build());
       ExperimentHistoryResponse mockResult =
           ExperimentHistoryResponse.builder()
-              .experimentId(EXPERIMENT_ID)
+              .experiment_id(EXPERIMENT_ID)
               .history(mockHistory)
               .pagination(
                   PaginationMeta.builder()
-                      .currentPage(page)
-                      .pageSize(mockHistory.size())
-                      .totalCount(totalCount)
+                      .current_page(page)
+                      .page_size(mockHistory.size())
+                      .total_count(totalCount)
                       .build())
               .build();
       ExperimentHistoryRequest request =
@@ -318,9 +318,9 @@ public class AdminServiceTest {
       testObserver.assertNoErrors();
       ExperimentHistoryResponse response = testObserver.values().get(0);
       assertNotNull(response);
-      assertEquals(page, response.pagination().currentPage());
-      assertEquals(response.history().size(), response.pagination().pageSize());
-      assertEquals(totalCount, response.pagination().totalCount());
+      assertEquals(page, response.pagination().current_page());
+      assertEquals(response.history().size(), response.pagination().page_size());
+      assertEquals(totalCount, response.pagination().total_count());
       verify(adminDAO, times(1)).fetchExperimentHistory(request);
     }
 
@@ -332,10 +332,10 @@ public class AdminServiceTest {
       int page = 2;
       ExperimentHistoryResponse mockResult =
           ExperimentHistoryResponse.builder()
-              .experimentId(EXPERIMENT_ID)
+              .experiment_id(EXPERIMENT_ID)
               .history(List.of())
               .pagination(
-                  PaginationMeta.builder().currentPage(page).pageSize(0).totalCount(0).build())
+                  PaginationMeta.builder().current_page(page).page_size(0).total_count(0).build())
               .build();
       ExperimentHistoryRequest request =
           ExperimentHistoryRequest.builder()
@@ -404,10 +404,10 @@ public class AdminServiceTest {
               .build();
       ExperimentHistoryResponse emptyResponse =
           ExperimentHistoryResponse.builder()
-              .experimentId(EXPERIMENT_ID)
+              .experiment_id(EXPERIMENT_ID)
               .history(List.of())
               .pagination(
-                  PaginationMeta.builder().currentPage(page).pageSize(0).totalCount(0).build())
+                  PaginationMeta.builder().current_page(page).page_size(0).total_count(0).build())
               .build();
       when(adminDAO.fetchExperimentHistory(request)).thenReturn(Single.just(emptyResponse));
       when(adminDAO.getExperimentHistoryCount(PROJECT_KEY, EXPERIMENT_ID))
@@ -422,11 +422,11 @@ public class AdminServiceTest {
       testObserver.assertNoErrors();
       testObserver.assertValueCount(1);
       ExperimentHistoryResponse resp = testObserver.values().get(0);
-      assertEquals(EXPERIMENT_ID, resp.experimentId());
+      assertEquals(EXPERIMENT_ID, resp.experiment_id());
       assertTrue(resp.history().isEmpty());
-      assertEquals(page, resp.pagination().currentPage());
-      assertEquals(0, resp.pagination().pageSize());
-      assertEquals(daoCount, resp.pagination().totalCount());
+      assertEquals(page, resp.pagination().current_page());
+      assertEquals(0, resp.pagination().page_size());
+      assertEquals(daoCount, resp.pagination().total_count());
       verify(adminDAO, times(1)).fetchExperimentHistory(request);
       verify(adminDAO, times(1)).getExperimentHistoryCount(PROJECT_KEY, EXPERIMENT_ID);
     }
@@ -447,10 +447,10 @@ public class AdminServiceTest {
               .build();
       ExperimentHistoryResponse emptyResponse =
           ExperimentHistoryResponse.builder()
-              .experimentId(EXPERIMENT_ID)
+              .experiment_id(EXPERIMENT_ID)
               .history(List.of())
               .pagination(
-                  PaginationMeta.builder().currentPage(page).pageSize(0).totalCount(0).build())
+                  PaginationMeta.builder().current_page(page).page_size(0).total_count(0).build())
               .build();
       when(adminDAO.fetchExperimentHistory(request)).thenReturn(Single.just(emptyResponse));
       when(adminDAO.getExperimentHistoryCount(PROJECT_KEY, EXPERIMENT_ID))
