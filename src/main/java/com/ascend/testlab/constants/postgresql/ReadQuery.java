@@ -103,7 +103,12 @@ public final class ReadQuery {
 
   /** Query to fetch active experiments for a tenant within a time range */
   public static final String FETCH_EXPERIMENTS_FROM_KEY =
-      "SELECT * FROM experiment.experiments WHERE project_key = $1 AND status = 'LIVE' AND experiment_key = ANY($2::text[])";
+      """
+      SELECT * FROM experiment.experiments
+      WHERE project_key = $1
+        AND experiment_key = ANY($2::text[])
+        AND (status = 'LIVE' OR (status = 'CONCLUDED' AND winning_variant IS NOT NULL))
+      """;
 
   /** Query to fetch a single live experiment by project_key and experiment_id. */
   public static final String FETCH_LIVE_EXPERIMENT =
