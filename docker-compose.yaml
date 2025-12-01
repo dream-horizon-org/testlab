@@ -31,23 +31,23 @@ services:
     volumes:
       - aerospike_data:/opt/aerospike/data
 
-#  backend:
-#    build:
-#      context: .
-#      dockerfile: Dockerfile
-#    container_name: backend
-#    environment:
-#      <<: [*pg-env, *aerospike-env]
-#      PG_READER_HOST: postgresql
-#      PG_WRITER_HOST: postgresql
-#      AEROSPIKE_HOST: aerospike
-#    depends_on:
-#      postgresql:
-#        condition: service_started
-#      aerospike:
-#        condition: service_started
-#    ports:
-#      - '8080:8080'
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: backend
+    environment:
+      <<: [*pg-env, *aerospike-env]
+      PG_READER_HOST: postgresql
+      PG_WRITER_HOST: postgresql
+      AEROSPIKE_HOST: aerospike
+    depends_on:
+      postgresql:
+        condition: service_started
+      aerospike:
+        condition: service_started
+    ports:
+      - '8080:8080'
 
 volumes:
   pg_data: {}
