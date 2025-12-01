@@ -300,7 +300,7 @@ class FilterExperimentsIT {
     response.body("data.experiments.size()", Matchers.equalTo(0));
     response.body("data.pagination.current_page", Matchers.equalTo(1000));
     response.body("data.pagination.total_count", Matchers.equalTo(0));
-    // total_count is implementation specific, and for `count(*) over ()` it returns 0 when no rows
+    // totalCount is implementation specific, and for `count(*) over ()` it returns 0 when no rows
   }
 
   @Test

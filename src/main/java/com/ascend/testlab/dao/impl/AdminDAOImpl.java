@@ -81,14 +81,14 @@ public class AdminDAOImpl implements AdminDAO {
               List<ExperimentHistoryEntry> historyEntries =
                   rows.stream().map(this::mapRowToExperimentHistoryEntry).toList();
               return ExperimentHistoryResponse.builder()
-                  .experiment_id(request.getExperimentId())
+                  .experimentId(request.getExperimentId())
                   .history(historyEntries)
                   .pagination(
                       PaginationMeta.builder()
-                          .current_page(request.getPage())
-                          .page_size(historyEntries.size())
-                          .total_count(totalCount)
-                          .has_next(request.getPage() * request.getLimit() < totalCount)
+                          .currentPage(request.getPage())
+                          .pageSize(historyEntries.size())
+                          .totalCount(totalCount)
+                          .hasNext(request.getPage() * request.getLimit() < totalCount)
                           .build())
                   .build();
             });

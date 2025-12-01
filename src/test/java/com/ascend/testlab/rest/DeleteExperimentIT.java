@@ -46,7 +46,7 @@ class DeleteExperimentIT {
 
       response.statusCode(HttpStatus.SC_OK);
       response.contentType(WebConstants.APPLICATION_JSON);
-      response.body("data", Matchers.equalTo(true));
+      response.body("data.success", Matchers.equalTo(true));
     } finally {
       TestUtil.dropTestPartition("experiments", PROJECT_KEY);
     }

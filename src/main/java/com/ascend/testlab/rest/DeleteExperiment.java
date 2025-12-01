@@ -2,6 +2,7 @@ package com.ascend.testlab.rest;
 
 import com.ascend.testlab.constants.web.WebConstants;
 import com.ascend.testlab.dto.ResponseEntity;
+import com.ascend.testlab.dto.response.DeleteExperimentResponse;
 import com.ascend.testlab.exception.ErrorMessages;
 import com.ascend.testlab.service.ExperimentService;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -69,9 +70,9 @@ public class DeleteExperiment {
   @Produces(MediaType.APPLICATION_JSON)
   @Consumes(MediaType.APPLICATION_JSON)
   @ApiResponse(
-      content = @Content(schema = @Schema(implementation = ResponseEntity.Success.class)),
       responseCode = "200",
-      description = "Successful Response")
+      description = "Successful Response",
+      useReturnTypeSchema = true)
   @ApiResponse(
       content = @Content(schema = @Schema(implementation = ResponseEntity.Failure.class)),
       responseCode = "400",
@@ -84,7 +85,7 @@ public class DeleteExperiment {
       content = @Content(schema = @Schema(implementation = ResponseEntity.Failure.class)),
       responseCode = "500",
       description = "Internal Server Error")
-  public CompletionStage<ResponseEntity.Success<Boolean>> handle(
+  public CompletionStage<ResponseEntity.Success<DeleteExperimentResponse>> handle(
       @HeaderParam(WebConstants.PROJECT_KEY_HEADER)
           @NotBlank(message = ErrorMessages.PROJECT_KEY_MISSING)
           String projectKey,

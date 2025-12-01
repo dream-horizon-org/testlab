@@ -94,14 +94,14 @@ public class AdminServiceImpl implements AdminService {
                           if (historyCount <= 0)
                             throw new RestException(ErrorEnum.EXPERIMENT_NOT_FOUND);
                           return ExperimentHistoryResponse.builder()
-                              .experiment_id(request.getExperimentId())
+                              .experimentId(request.getExperimentId())
                               .history(List.of())
                               .pagination(
                                   PaginationMeta.builder()
-                                      .current_page(request.getPage())
-                                      .page_size(0)
-                                      .total_count(historyCount)
-                                      .has_next(false)
+                                      .currentPage(request.getPage())
+                                      .pageSize(0)
+                                      .totalCount(historyCount)
+                                      .hasNext(false)
                                       .build())
                               .build();
                         });

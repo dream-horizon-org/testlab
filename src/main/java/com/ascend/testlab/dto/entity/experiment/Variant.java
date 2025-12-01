@@ -1,6 +1,7 @@
 package com.ascend.testlab.dto.entity.experiment;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.PropertyNamingStrategies;
+import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -18,8 +19,8 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
+@JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
 public class Variant {
-  @JsonProperty(value = "display_name")
   private String displayName;
 
   private List<Variables> variables;

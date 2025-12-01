@@ -29,14 +29,19 @@ public class CohortServiceImpl implements CohortService {
 
   private final WebClient webClient;
   private final ApplicationConfig.ServiceConfig cohortsConfig;
-  private final ObjectMapper objectMapper;
 
+  /**
+   * Constructor for CohortServiceImpl.
+   *
+   * @param webClient the web client
+   * @param applicationConfig the application configuration
+   * @param objectMapper the object mapper
+   */
   @Inject
   public CohortServiceImpl(
       WebClient webClient, ApplicationConfig applicationConfig, ObjectMapper objectMapper) {
     this.webClient = webClient;
     this.cohortsConfig = applicationConfig.getCohortsConfig();
-    this.objectMapper = objectMapper;
   }
 
   @Override

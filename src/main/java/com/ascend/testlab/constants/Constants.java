@@ -23,6 +23,7 @@ public final class Constants {
   /** The default application environment. */
   public static final String DEFAULT_APP_ENV = "dev";
 
+  /** The admin role. */
   public static final String ADMIN = "ADMIN";
 
   /** The maximum number of REST verticles. */
@@ -45,6 +46,9 @@ public final class Constants {
   /** The maximum length for experiment key. */
   public static final int MAX_EXPERIMENT_KEY_LENGTH = 255;
 
+  /** The name of the getType method. */
   public static final String GET_TYPE = "getType";
+
+  /** The name of the getName method. */
   public static final String GET_NAME = "getName";
 }

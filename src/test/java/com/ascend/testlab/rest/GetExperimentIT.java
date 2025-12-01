@@ -48,7 +48,7 @@ class GetExperimentIT {
       response.contentType(WebConstants.APPLICATION_JSON);
       response.body("data", Matchers.notNullValue());
       response.body("data.experiment_id", Matchers.equalTo(EXPERIMENT_ID));
-      response.body("data.projectKey", Matchers.equalTo(PROJECT_KEY));
+      response.body("data.project_key", Matchers.equalTo(PROJECT_KEY));
     } finally {
       TestUtil.dropTestPartition("experiments", PROJECT_KEY);
     }

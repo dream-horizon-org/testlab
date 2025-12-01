@@ -14,18 +14,25 @@ public final class ErrorMessages {
   /** The error message for the project key missing. */
   public static final String PROJECT_KEY_MISSING = "x-project-key header is missing";
 
+  /** The error message for invalid data type. */
   public static final String INVALID_DATA_TYPE = "invalid dataType present";
 
+  /** The error message for invalid condition value. */
   public static final String INVALID_CONDITION_VALUE = "invalid condition value";
 
+  /** The error message for invalid enum value. */
   public static final String INVALID_ENUM_VALUE = "invalid enum value";
 
+  /** The error message for invalid operator. */
   public static final String INVALID_OPERATOR = "invalid operator value";
 
+  /** The error message for blank rule name. */
   public static final String BLANK_RULE_NAME = "rule name cannot be blank";
 
+  /** The error message for invalid operand. */
   public static final String INVALID_OPERAND = "invalid operand value";
 
+  /** The error message for invalid operand data type. */
   public static final String INVALID_OPERAND_DATA_TYPE = "invalid operand data type";
 
   /** The error message for the experiment key missing. */
