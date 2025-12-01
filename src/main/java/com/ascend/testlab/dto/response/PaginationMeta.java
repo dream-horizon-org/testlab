@@ -16,4 +16,4 @@ import lombok.Builder;
  */
 @Builder
 @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
-public record PaginationMeta(int currentPage, int pageSize, int totalCount, Boolean hasNext) {}
+public record PaginationMeta(int currentPage, int pageSize, int totalCount, boolean hasNext) {}

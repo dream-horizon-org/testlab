@@ -88,7 +88,11 @@ public class AdminDAOImpl implements AdminDAO {
                           .currentPage(request.getPage())
                           .pageSize(historyEntries.size())
                           .totalCount(totalCount)
-                          .hasNext(request.getPage() * request.getLimit() < totalCount)
+                          .hasNext(
+                              Long.compare(
+                                      (long) request.getPage() * request.getLimit(),
+                                      (long) totalCount)
+                                  < 0)
                           .build())
                   .build();
             });
