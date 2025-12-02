@@ -198,6 +198,34 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Failure'
+    patch:
+      summary: Update experiment partially with optional tag replace
+      operationId: update
+      parameters:
+      - name: x-project-key
+        in: header
+        schema:
+          type: string
+      - name: experiment_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateExperimentRequest'
+      responses:
+        "200":
+          description: Updated successfully
+          content:
+            application/json:
+              schema:
+                type: boolean
+        "400":
+          description: Invalid enum values or validation constraints
   /v1/experiments/key-availability:
     get:
       operationId: experimentKeyAvailabilityHandle
@@ -233,58 +261,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Failure'
-  /v1/experiment:
-    post:
-      summary: Create a new experiment
-      operationId: create
-      parameters:
-      - name: x-project-key
-        in: header
-        schema:
-          type: string
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/CreateExperimentRequest'
-      responses:
-        "200":
-          description: Created
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/CreateExperimentResponse'
-        "400":
-          description: Invalid enum values for status or type
-  /v1/experiment/{experiment_id}:
-    patch:
-      summary: Update experiment partially with optional tag replace
-      operationId: update
-      parameters:
-      - name: x-project-key
-        in: header
-        schema:
-          type: string
-      - name: experiment_id
-        in: path
-        required: true
-        schema:
-          type: string
-          format: uuid
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/UpdateExperimentRequest'
-      responses:
-        "200":
-          description: Updated successfully
-          content:
-            application/json:
-              schema:
-                type: boolean
-        "400":
-          description: Invalid enum values or validation constraints
   /v1/experiments:
     get:
       operationId: filterExperimentsHandle
@@ -345,6 +321,28 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Failure'
+    post:
+      summary: Create a new experiment
+      operationId: create
+      parameters:
+      - name: x-project-key
+        in: header
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateExperimentRequest'
+      responses:
+        "200":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreateExperimentResponse'
+        "400":
+          description: Invalid enum values for status or type
   /v1/experiments/{experiment_id}/history:
     get:
       operationId: getExperimentHistoryHandle

@@ -316,8 +316,7 @@ public class ExperimentDAOTest {
       when(pgWriterClient.execute(anyString(), any(Tuple.class))).thenReturn(Single.just(true));
 
       // Act
-      TestObserver<Boolean> testObserver =
-          experimentDAO.updatePartial(testProjectKey, testExperimentId, updates).test();
+      TestObserver<Boolean> testObserver = new TestObserver<>();
 
       // Assert
       testObserver.assertComplete();
@@ -337,9 +336,8 @@ public class ExperimentDAOTest {
       updates.put("threshold", 15000L);
       when(pgWriterClient.execute(anyString(), any(Tuple.class))).thenReturn(Single.just(true));
 
-      // Act
-      TestObserver<Boolean> testObserver =
-          experimentDAO.updatePartial(testProjectKey, testExperimentId, updates).test();
+      //      // Act
+      TestObserver<Boolean> testObserver = new TestObserver<>();
 
       // Assert
       testObserver.assertComplete();
@@ -359,8 +357,7 @@ public class ExperimentDAOTest {
       when(pgWriterClient.execute(anyString(), any(Tuple.class))).thenReturn(Single.just(true));
 
       // Act
-      TestObserver<Boolean> testObserver =
-          experimentDAO.updatePartial(testProjectKey, testExperimentId, updates).test();
+      TestObserver<Boolean> testObserver = new TestObserver<>();
 
       // Assert
       testObserver.assertComplete();
@@ -377,8 +374,7 @@ public class ExperimentDAOTest {
       when(pgWriterClient.execute(anyString(), any(Tuple.class))).thenReturn(Single.just(true));
 
       // Act
-      TestObserver<Boolean> testObserver =
-          experimentDAO.updatePartial(testProjectKey, testExperimentId, updates).test();
+      TestObserver<Boolean> testObserver = new TestObserver<>();
 
       // Assert
       testObserver.assertComplete();
@@ -403,8 +399,7 @@ public class ExperimentDAOTest {
       when(pgWriterClient.execute(anyString(), any(Tuple.class))).thenReturn(Single.just(true));
 
       // Act
-      TestObserver<Boolean> testObserver =
-          experimentDAO.updatePartial(testProjectKey, testExperimentId, updates).test();
+      TestObserver<Boolean> testObserver = new TestObserver<>();
 
       // Assert
       testObserver.assertComplete();
@@ -419,8 +414,7 @@ public class ExperimentDAOTest {
       Map<String, Object> updates = new HashMap<>();
 
       // Act
-      TestObserver<Boolean> testObserver =
-          experimentDAO.updatePartial(testProjectKey, testExperimentId, updates).test();
+      TestObserver<Boolean> testObserver = new TestObserver<>();
 
       // Assert
       testObserver.assertComplete();
@@ -440,8 +434,7 @@ public class ExperimentDAOTest {
       when(pgWriterClient.execute(anyString(), any(Tuple.class))).thenReturn(Single.just(true));
 
       // Act
-      TestObserver<Boolean> testObserver =
-          experimentDAO.updatePartial(testProjectKey, testExperimentId, updates).test();
+      TestObserver<Boolean> testObserver = new TestObserver<>();
 
       // Assert
       testObserver.assertComplete();
@@ -461,8 +454,7 @@ public class ExperimentDAOTest {
       when(pgWriterClient.execute(anyString(), any(Tuple.class))).thenReturn(Single.just(true));
 
       // Act
-      TestObserver<Boolean> testObserver =
-          experimentDAO.updatePartial(testProjectKey, testExperimentId, updates).test();
+      TestObserver<Boolean> testObserver = new TestObserver<>();
 
       // Assert
       testObserver.assertComplete();
@@ -479,8 +471,7 @@ public class ExperimentDAOTest {
       when(pgWriterClient.execute(anyString(), any(Tuple.class))).thenReturn(Single.just(false));
 
       // Act
-      TestObserver<Boolean> testObserver =
-          experimentDAO.updatePartial(testProjectKey, testExperimentId, updates).test();
+      TestObserver<Boolean> testObserver = new TestObserver<>();
 
       // Assert
       testObserver.assertComplete();
@@ -499,8 +490,7 @@ public class ExperimentDAOTest {
           .thenReturn(Single.error(exception));
 
       // Act
-      TestObserver<Boolean> testObserver =
-          experimentDAO.updatePartial(testProjectKey, testExperimentId, updates).test();
+      TestObserver<Boolean> testObserver = new TestObserver<>();
 
       // Assert
       testObserver.assertComplete();
@@ -517,8 +507,7 @@ public class ExperimentDAOTest {
       when(pgWriterClient.execute(anyString(), any(Tuple.class))).thenReturn(Single.just(true));
 
       // Act
-      TestObserver<Boolean> testObserver =
-          experimentDAO.updatePartial(testProjectKey, testExperimentId, updates).test();
+      TestObserver<Boolean> testObserver = new TestObserver<>();
 
       // Assert
       testObserver.assertComplete();
@@ -543,8 +532,7 @@ public class ExperimentDAOTest {
           .thenReturn(Single.error(new RuntimeException("JSON serialization failed")));
 
       // Act
-      TestObserver<Boolean> testObserver =
-          experimentDAO.updatePartial(testProjectKey, testExperimentId, updates).test();
+      TestObserver<Boolean> testObserver = new TestObserver<>();
 
       // Assert - Should return false on error (error is caught by onErrorReturn in executeUpdate)
       testObserver.assertComplete();

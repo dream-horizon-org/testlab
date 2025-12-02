@@ -36,7 +36,7 @@ import lombok.extern.slf4j.Slf4j;
  * @since 1.0
  */
 @Slf4j
-@Path("/v1/experiment")
+@Path("/v1/experiments")
 public class ExperimentResource {
 
   @Inject private ExperimentService experimentService;
