@@ -772,11 +772,6 @@ components:
           type: string
         guardrail_health_status:
           type: string
-          enum:
-          - WARNING
-          - PASSED
-          - NO_CHECKS_AVAILABLE
-          - FAILED
         cohorts:
           type: array
           items:

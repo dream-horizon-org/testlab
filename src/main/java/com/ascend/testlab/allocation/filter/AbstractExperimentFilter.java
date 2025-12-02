@@ -29,7 +29,7 @@ public abstract class AbstractExperimentFilter implements ExperimentFilter {
   @Override
   public List<Experiment> filter(List<Experiment> experiments) {
     List<Experiment> filtered = applyFilter(experiments);
-    log.debug(
+    log.info(
         "Filter {} reduced experiments from {} to {}",
         this.getClass().getSimpleName(),
         experiments.size(),
