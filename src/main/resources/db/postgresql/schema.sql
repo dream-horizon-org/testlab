@@ -5,6 +5,8 @@ CREATE DATABASE experiment;
 \c experiment;
 CREATE SCHEMA IF NOT EXISTS experiment;
 
+CREATE EXTENSION IF NOT EXISTS pg_trgm;
+
 CREATE TYPE experiment.experiment_status AS ENUM ('LIVE','PAUSED','DRAFT','CONCLUDED','TERMINATED');
 CREATE TYPE experiment.experiment_type AS ENUM ('A/A','A/B');
 CREATE TYPE experiment.experiment_health AS ENUM ('WARNING','PASSED','NO_CHECKS_AVAILABLE','FAILED');

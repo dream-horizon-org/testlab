@@ -3,7 +3,9 @@ package com.ascend.testlab.dao;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
+import com.ascend.testlab.client.aerospike.AerospikeClient;
 import com.ascend.testlab.client.postgresql.PgReaderClient;
+import com.ascend.testlab.config.AerospikeConfig;
 import com.ascend.testlab.constants.postgresql.Columns;
 import com.ascend.testlab.constants.postgresql.ReadQuery;
 import com.ascend.testlab.dao.impl.AdminDAOImpl;
@@ -44,6 +46,8 @@ import org.mockito.junit.jupiter.MockitoExtension;
 class AdminDAOTest {
 
   @Mock private PgReaderClient pgReaderClient;
+  @Mock private AerospikeClient aerospikeClient;
+  @Mock private AerospikeConfig aerospikeConfig;
 
   private AdminDAO adminDAO;
 
@@ -53,7 +57,7 @@ class AdminDAOTest {
 
   @BeforeEach
   void setUp() {
-    adminDAO = new AdminDAOImpl(pgReaderClient);
+    adminDAO = new AdminDAOImpl(pgReaderClient, aerospikeClient, aerospikeConfig);
   }
 
   @Nested
@@ -64,7 +68,7 @@ class AdminDAOTest {
     @DisplayName("Should create DAO with valid dependencies")
     void testConstructorWithValidDependencies() {
       // Act
-      AdminDAO dao = new AdminDAOImpl(pgReaderClient);
+      AdminDAO dao = new AdminDAOImpl(pgReaderClient, aerospikeClient, aerospikeConfig);
 
       // Assert
       assertNotNull(dao);

@@ -10,10 +10,11 @@ import lombok.Builder;
  * @param currentPage The current page number.
  * @param pageSize The number of items per page.
  * @param totalCount The total number of items.
+ * @param hasNextPage The next page present or not.
  * @author Nithya sree
  * @version 1.0
  * @since 1.0
  */
 @Builder
 @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
-public record PaginationMeta(int currentPage, int pageSize, int totalCount) {}
+public record PaginationMeta(int currentPage, int pageSize, int totalCount, boolean hasNextPage) {}

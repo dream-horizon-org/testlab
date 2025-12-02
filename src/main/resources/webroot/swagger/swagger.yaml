@@ -632,6 +632,11 @@ components:
           type: array
           items:
             type: string
+        variant_counts:
+          type: object
+          additionalProperties:
+            type: integer
+            format: int64
     FilterExperimentsResponse:
       type: object
       properties:
@@ -662,6 +667,8 @@ components:
         total_count:
           type: integer
           format: int32
+        has_next_page:
+          type: boolean
     RuleAttributes:
       required:
       - name

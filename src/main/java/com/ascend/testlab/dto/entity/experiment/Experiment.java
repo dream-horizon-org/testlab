@@ -54,4 +54,5 @@ public class Experiment {
   private Instant updatedAt;
   private List<String> tags;
   private List<String> owners;
+  private Map<String, Long> variantCounts;
 }

@@ -77,7 +77,7 @@ public class ExperimentMapper {
       List<String> owners =
           row.getColumnIndex(Columns.OWNERS) < 0 || row.getArrayOfStrings(Columns.OWNERS) == null
               ? null
-              : Arrays.stream(row.getArrayOfStrings(Columns.TAGS))
+              : Arrays.stream(row.getArrayOfStrings(Columns.OWNERS))
                   .filter(Objects::nonNull)
                   .toList();
 

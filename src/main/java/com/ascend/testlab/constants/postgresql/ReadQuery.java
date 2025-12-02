@@ -101,7 +101,7 @@ public final class ReadQuery {
    * parameter index and returns the parameterized query fragment.
    */
   public static final IntFunction<String> NAME_FILTER =
-      " AND e.name_tsvector @@ plainto_tsquery('simple', $%d)"::formatted;
+      " AND similarity(e.name, $%d) > 0.1"::formatted;
 
   /** GROUP BY clause for experiment queries. Groups results by project_key and experiment_id */
   public static final String GROUP_BY = " GROUP BY e.project_key, e.experiment_id";
@@ -129,16 +129,22 @@ public final class ReadQuery {
   public static final IntFunction<String> TYPE_FILTER = " AND e.type = ANY($%d)"::formatted;
 
   /**
-   * Filter clause for filtering experiments by tags. Accepts the parameter index and returns the
-   * parameterized query fragment using ANY array syntax.
+   * Filter clause for filtering experiments by tags. Uses EXISTS subquery to filter experiments
+   * first, then all tags are aggregated for those experiments. Accepts the parameter index and
+   * returns the parameterized query fragment using ANY array syntax.
    */
-  public static final IntFunction<String> TAGS_FILTER = " AND t.tag = ANY($%d)"::formatted;
+  public static final IntFunction<String> TAGS_FILTER =
+      " AND EXISTS (SELECT 1 FROM experiment.tags t_filter WHERE t_filter.project_key = e.project_key AND t_filter.experiment_id = e.experiment_id AND t_filter.tag = ANY($%d))"
+          ::formatted;
 
   /**
-   * Filter clause for filtering experiments by owners. Accepts the parameter index and returns the
-   * parameterized query fragment using ANY array syntax.
+   * Filter clause for filtering experiments by owners. Uses EXISTS subquery to filter experiments
+   * first, then all owners are aggregated for those experiments. Accepts the parameter index and
+   * returns the parameterized query fragment using ANY array syntax.
    */
-  public static final IntFunction<String> OWNER_FILTER = " AND o.owner = ANY($%d)"::formatted;
+  public static final IntFunction<String> OWNER_FILTER =
+      " AND EXISTS (SELECT 1 FROM experiment.owners o_filter WHERE o_filter.project_key = e.project_key AND o_filter.experiment_id = e.experiment_id AND o_filter.owner = ANY($%d))"
+          ::formatted;
 
   /**
    * Base query for filtering experiments by project_key. Returns experiment details including tags
@@ -151,6 +157,16 @@ public final class ReadQuery {
              array_agg(DISTINCT t.tag) as tags,
              array_agg(DISTINCT o.owner) as owners,
              COUNT(*) OVER() as total_count
+      FROM experiment.experiments e
+      LEFT JOIN experiment.tags t ON e.project_key = t.project_key AND e.experiment_id = t.experiment_id
+      LEFT JOIN experiment.owners o ON e.project_key = o.project_key AND e.experiment_id = o.experiment_id
+      WHERE e.project_key = $1
+      """;
+
+  /** Count query to count the total number of matching experiments. */
+  public static final String COUNT_FILTERED_EXPERIMENTS =
+      """
+      SELECT COUNT(DISTINCT e.experiment_id) as total_count
       FROM experiment.experiments e
       LEFT JOIN experiment.tags t ON e.project_key = t.project_key AND e.experiment_id = t.experiment_id
       LEFT JOIN experiment.owners o ON e.project_key = o.project_key AND e.experiment_id = o.experiment_id
