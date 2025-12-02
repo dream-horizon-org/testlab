@@ -69,7 +69,17 @@ public class ExperimentServiceImpl implements ExperimentService {
   public Single<Experiment> getExperiment(String projectKey, String experimentId) {
     return experimentDAO
         .getExperiment(projectKey, experimentId)
-        .switchIfEmpty(Single.error(ExceptionUtil.getException(ErrorEnum.EXPERIMENT_NOT_FOUND)))
+        .switchIfEmpty(Single.error(new RestException(ErrorEnum.EXPERIMENT_NOT_FOUND)))
+        .flatMap(
+            experiment ->
+                adminDAO
+                    .getVariantCount(projectKey, experiment)
+                    .map(
+                        variantCount -> {
+                          experiment.setVariantCounts(
+                              (variantCount.isEmpty()) ? null : variantCount);
+                          return experiment;
+                        }))
         .onErrorResumeNext(
             err -> {
               log.error(

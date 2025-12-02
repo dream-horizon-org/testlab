@@ -116,7 +116,7 @@ class GetExperimentIT {
 
   private void seedExperiment() {
     String experimentName = "Test Experiment";
-    String experimentKey = CommonUtil.getExperimentKey(experimentName);
+    String experimentKey = CommonUtil.normalizeExperimentKey(experimentName);
     String insert =
         """
            INSERT INTO experiment.experiments (

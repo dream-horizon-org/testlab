@@ -96,14 +96,14 @@ public final class CommonUtil {
   }
 
   /**
-   * Generates a standardized experiment key by replacing spaces and hyphens with underscores and
+   * Generates a normalized experiment key by replacing spaces and hyphens with underscores and
    * converting to lowercase.
    *
-   * @param experimentName the original experiment name
+   * @param experimentKey the original experiment key
    * @return the standardized experiment key
    */
-  public static String getExperimentKey(String experimentName) {
-    return experimentName.replaceAll("[\\s-]+", Constants.UNDER_SCORE).toLowerCase();
+  public static String normalizeExperimentKey(String experimentKey) {
+    return experimentKey.replaceAll("[\\s-]+", Constants.UNDER_SCORE).toLowerCase();
   }
 
   /**

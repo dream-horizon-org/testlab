@@ -58,6 +58,7 @@ public class Experiment {
   private List<String> tags;
   private List<String> owners;
   private Metrics metrics;
+  private Map<String, Long> variantCounts;
 
   /**
    * Creates an Experiment entity from a CreateExperimentRequest.

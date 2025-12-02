@@ -921,6 +921,11 @@ components:
             type: string
         metrics:
           $ref: '#/components/schemas/Metrics'
+        variant_counts:
+          type: object
+          additionalProperties:
+            type: integer
+            format: int64
     FilterExperimentsResponse:
       type: object
       properties:
@@ -942,6 +947,8 @@ components:
         total_count:
           type: integer
           format: int32
+        has_next:
+          type: boolean
     SuccessFilterExperimentsResponse:
       type: object
       properties:

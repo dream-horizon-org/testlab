@@ -712,6 +712,12 @@ public class ExperimentDAOTest {
           .when(pgReaderClient)
           .fetchAll(anyString(), any(Tuple.class), any(Function.class));
 
+      // Mock the count query that's called when rows are empty
+      // fetchOne applies the mapper function and returns Maybe<T>, so we return Maybe.just(0)
+      // since the mapper extracts total_count which should be 0
+      when(pgReaderClient.fetchOne(anyString(), any(Tuple.class), any(Function.class)))
+          .thenReturn(Maybe.just(0));
+
       // Act
       TestObserver<FilterExperimentsResponse> testObserver =
           experimentDAO.filterExperiments(PROJECT_KEY, request).test();
@@ -726,6 +732,7 @@ public class ExperimentDAOTest {
                   && response.getPagination().currentPage() == 1
                   && response.getPagination().pageSize() == 0);
       verify(pgReaderClient, times(1)).fetchAll(anyString(), any(Tuple.class), any(Function.class));
+      verify(pgReaderClient, times(1)).fetchOne(anyString(), any(Tuple.class), any(Function.class));
       testContext.completeNow();
     }
 

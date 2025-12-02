@@ -1,6 +1,6 @@
 package com.ascend.testlab.dto.response;
 
-import com.ascend.testlab.dto.entity.ExperimentHistoryEntry;
+import com.ascend.testlab.dto.entity.experiment.ExperimentHistoryEntry;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import java.util.List;

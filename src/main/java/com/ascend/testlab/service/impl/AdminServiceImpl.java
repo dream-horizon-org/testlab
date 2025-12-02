@@ -8,6 +8,7 @@ import com.ascend.testlab.dto.response.PaginationMeta;
 import com.ascend.testlab.dto.response.TagsResponse;
 import com.ascend.testlab.exception.ErrorEnum;
 import com.ascend.testlab.service.AdminService;
+import com.ascend.testlab.util.CommonUtil;
 import com.dream11.rest.exception.RestException;
 import com.google.inject.Inject;
 import io.reactivex.rxjava3.core.Single;
@@ -58,8 +59,9 @@ public class AdminServiceImpl implements AdminService {
   @Override
   public Single<ExperimentKeyAvailabilityResponse> isExperimentKeyAvailable(
       String projectKey, String experimentKey) {
+    String normalizedExperimentKey = CommonUtil.normalizeExperimentKey(experimentKey);
     return adminDAO
-        .isExperimentKeyAvailable(projectKey, experimentKey)
+        .isExperimentKeyAvailable(projectKey, normalizedExperimentKey)
         .map(ExperimentKeyAvailabilityResponse::new)
         .onErrorResumeNext(
             err -> {
@@ -99,6 +101,7 @@ public class AdminServiceImpl implements AdminService {
                                       .currentPage(request.getPage())
                                       .pageSize(0)
                                       .totalCount(historyCount)
+                                      .hasNext(false)
                                       .build())
                               .build();
                         });
@@ -107,7 +110,7 @@ public class AdminServiceImpl implements AdminService {
         .onErrorResumeNext(
             err -> {
               log.error(
-                  "Error getting experiment history for projectKey={} and experimentId={}: {}",
+                  "Error getting experiment history for projectKey={} and experiment_id={}: {}",
                   request.getProjectKey(),
                   request.getExperimentId(),
                   err.getMessage());

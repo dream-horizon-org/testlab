@@ -4,7 +4,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 import com.ascend.testlab.dao.AdminDAO;
-import com.ascend.testlab.dto.entity.ExperimentHistoryEntry;
+import com.ascend.testlab.dto.entity.experiment.ExperimentHistoryEntry;
 import com.ascend.testlab.dto.request.ExperimentHistoryRequest;
 import com.ascend.testlab.dto.response.ExperimentHistoryResponse;
 import com.ascend.testlab.dto.response.ExperimentKeyAvailabilityResponse;

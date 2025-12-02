@@ -299,8 +299,7 @@ class FilterExperimentsIT {
     response.statusCode(HttpStatus.SC_OK);
     response.body("data.experiments.size()", Matchers.equalTo(0));
     response.body("data.pagination.current_page", Matchers.equalTo(1000));
-    response.body("data.pagination.total_count", Matchers.equalTo(0));
-    // totalCount is implementation specific, and for `count(*) over ()` it returns 0 when no rows
+    response.body("data.pagination.total_count", Matchers.equalTo(2));
   }
 
   @Test
@@ -508,7 +507,7 @@ class FilterExperimentsIT {
   void testSqlInjection_NameFilter_SingleQuoteEscape() {
     Map<String, String> headers = Map.of(WebConstants.PROJECT_KEY_HEADER, PROJECT_KEY);
     // Attempt SQL injection with single quote escape
-    Map<String, String> queryParams = Map.of(WebConstants.NAME, "test' OR '1'='1");
+    Map<String, String> queryParams = Map.of(WebConstants.NAME, "abc' OR '1'='1");
 
     ValidatableResponse response =
         TestUtil.executeRequest(null, headers, queryParams, spec -> spec.get(this.route));
@@ -633,7 +632,7 @@ class FilterExperimentsIT {
   void testSqlInjection_NameFilter_EncodedInjection() {
     Map<String, String> headers = Map.of(WebConstants.PROJECT_KEY_HEADER, PROJECT_KEY);
     // Attempt injection with URL encoding
-    Map<String, String> queryParams = Map.of(WebConstants.NAME, "test%27%20OR%20%271%27%3D%271");
+    Map<String, String> queryParams = Map.of(WebConstants.NAME, "abcd%27%20OR%20%271%27%3D%271");
 
     ValidatableResponse response =
         TestUtil.executeRequest(null, headers, queryParams, spec -> spec.get(this.route));
@@ -786,7 +785,7 @@ class FilterExperimentsIT {
    */
   private static void seedExperiment(
       String projectKey, String experimentId, String name, String status, String type) {
-    String experimentKey = CommonUtil.getExperimentKey(name);
+    String experimentKey = CommonUtil.normalizeExperimentKey(name);
     String insert =
         """
         INSERT INTO experiment.experiments (
