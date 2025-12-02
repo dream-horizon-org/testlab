@@ -1,6 +1,8 @@
 package com.ascend.testlab.service.impl;
 
 import com.ascend.testlab.constants.Constants;
+import com.ascend.testlab.constants.enums.ExperimentStatus;
+import com.ascend.testlab.dao.AdminDAO;
 import com.ascend.testlab.dao.ExperimentDAO;
 import com.ascend.testlab.dto.entity.experiment.Experiment;
 import com.ascend.testlab.dto.request.FilterExperimentsRequest;
@@ -38,15 +40,18 @@ import lombok.extern.slf4j.Slf4j;
 public class ExperimentServiceImpl implements ExperimentService {
 
   private final ExperimentDAO experimentDAO;
+  private final AdminDAO adminDAO;
 
   /**
    * Constructor for ExperimentServiceImpl.
    *
    * @param experimentDAO the experiment DAO to use for data access
+   * @param adminDAO the admin DAO to use for experiment key checks
    */
   @Inject
-  public ExperimentServiceImpl(ExperimentDAO experimentDAO) {
+  public ExperimentServiceImpl(ExperimentDAO experimentDAO, AdminDAO adminDAO) {
     this.experimentDAO = experimentDAO;
+    this.adminDAO = adminDAO;
   }
 
   /**
@@ -169,7 +174,7 @@ public class ExperimentServiceImpl implements ExperimentService {
   /**
    * Updates experiment fields partially with validation.
    *
-   * <p>Flow: Get → Validate → Merge → Update in transaction
+   * <p>Flow: Get → Validate Key Uniqueness → Validate → Merge → Update in transaction
    *
    * <p>Validation rules enforced:
    *
@@ -177,9 +182,11 @@ public class ExperimentServiceImpl implements ExperimentService {
    *   <li>No changes in CONCLUDED/TERMINATED state
    *   <li>Cohort type (COHORT/STRATIFIED) cannot change
    *   <li>Stratified cohorts must exist in cohorts list
-   *   <li>Existing variants: only value can change
-   *   <li>New variants allowed with contiguous naming
+   *   <li>Existing variants: only value can change in LIVE/PAUSED
+   *   <li>Variable keys cannot be added in LIVE/PAUSED
+   *   <li>Conditions cannot be removed in LIVE/PAUSED
    *   <li>experiment_key, hypothesis, cohorts, startTime: DRAFT only
+   *   <li>experiment_key must be unique within project
    *   <li>startTime/endTime must be in future
    * </ul>
    *
@@ -198,11 +205,14 @@ public class ExperimentServiceImpl implements ExperimentService {
         .getExperiment(projectKey, experimentId.toString())
         .switchIfEmpty(Single.error(ExceptionUtil.getException(ErrorEnum.EXPERIMENT_NOT_FOUND)))
         .flatMap(
-            existing -> {
-              UpdateExperimentValidator.validate(existing, request);
-              Experiment updated = mergeUpdate(existing, request);
-              return experimentDAO.updateExperiment(projectKey, existing, updated);
-            })
+            existing ->
+                validateExperimentKeyUniqueness(projectKey, existing, request)
+                    .flatMap(
+                        isValid -> {
+                          UpdateExperimentValidator.validate(existing, request);
+                          Experiment updated = mergeUpdate(existing, request);
+                          return experimentDAO.updateExperiment(projectKey, existing, updated);
+                        }))
         .map(success -> new UpdateExperimentResponse(experimentId, success))
         .onErrorResumeNext(
             err -> {
@@ -214,6 +224,38 @@ public class ExperimentServiceImpl implements ExperimentService {
                   err);
               return Single.error(
                   DbExceptionUtil.handleDbError(err, ErrorEnum.EXPERIMENT_UPDATE_FAILED));
+            });
+  }
+
+  /**
+   * Validates that the experiment_key is unique within the project.
+   *
+   * <p>Only checks if the request contains an experiment_key that is different from the existing
+   * one.
+   *
+   * @param projectKey project identifier
+   * @param existing the existing experiment
+   * @param request the update request
+   * @return Single emitting true if valid, or error if key already exists
+   */
+  private Single<Boolean> validateExperimentKeyUniqueness(
+      String projectKey, Experiment existing, UpdateExperimentRequest request) {
+
+    String newKey = request.getExperimentKey();
+
+    // No experiment_key in request or same as existing - no validation needed
+    if (newKey == null || newKey.equals(existing.getExperimentKey())) {
+      return Single.just(true);
+    }
+
+    return adminDAO
+        .isExperimentKeyAvailable(projectKey, newKey)
+        .flatMap(
+            isAvailable -> {
+              if (!isAvailable) {
+                return Single.error(new RestException(ErrorEnum.EXPERIMENT_KEY_ALREADY_EXISTS));
+              }
+              return Single.just(true);
             });
   }
 
@@ -235,7 +277,7 @@ public class ExperimentServiceImpl implements ExperimentService {
         .experimentKey(getOrDefault(request.getExperimentKey(), existing.getExperimentKey()))
         .description(getOrDefault(request.getDescription(), existing.getDescription()))
         .hypothesis(getOrDefault(request.getHypothesis(), existing.getHypothesis()))
-        .status(getOrDefault(request.getStatus(), existing.getStatus()))
+        .status(getOrDefault(ExperimentStatus.fromValue(request.getStatus()), existing.getStatus()))
         .type(existing.getType())
         .guardrailHealthStatus(
             getOrDefault(request.getGuardrailHealthStatus(), existing.getGuardrailHealthStatus()))

@@ -36,14 +36,15 @@ public class StatusTransitionRule implements UpdateValidationRule {
   /** {@inheritDoc} */
   @Override
   public boolean appliesTo(Experiment existing, UpdateExperimentRequest request) {
-    return request.getStatus() != null && request.getStatus() != existing.getStatus();
+    return request.getStatus() != null
+        && ExperimentStatus.fromValue(request.getStatus()) != existing.getStatus();
   }
 
   /** {@inheritDoc} */
   @Override
   public void validate(Experiment existing, UpdateExperimentRequest request) {
     ExperimentStatus currentStatus = existing.getStatus();
-    ExperimentStatus newStatus = request.getStatus();
+    ExperimentStatus newStatus = ExperimentStatus.valueOf(request.getStatus());
 
     Set<ExperimentStatus> allowedNextStates = ALLOWED_TRANSITIONS.get(currentStatus);
 

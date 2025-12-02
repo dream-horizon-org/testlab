@@ -14,9 +14,6 @@ public final class WriteQuery {
   /**
    * Inserts a new experiment into the experiments table.
    *
-   * <p>Creates a full-text search vector (name_tsvector) from the experiment name by replacing
-   * separators (hyphens, underscores, dots) with spaces for improved searchability.
-   *
    * <p>Parameters:
    *
    * <ol>
@@ -54,9 +51,9 @@ public final class WriteQuery {
       )
       VALUES (
         $1, $2, $3::varchar, $4, $5, $6,\s
-        $7::experiment.experiment_status, $8::experiment.experiment_type,$9::experiment.experiment_health, $10::varchar[], $11::jsonb, $12::jsonb,
-        $13::experiment.experiment_strategy, $14::experiment.assignment_domain, $15::varchar[], $16::jsonb,
-        $17, $18, $19, $20, $21
+        $7::experiment.experiment_status, $8::experiment.experiment_type, $9::varchar[], $10::jsonb, $11::jsonb,
+        $12::experiment.experiment_strategy, $13::experiment.assignment_domain, $14::varchar[], $15::jsonb,
+        $16, $17, $18, $19, $20
       )
      \s""";
 

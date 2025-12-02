@@ -1,22 +1,27 @@
 package com.ascend.testlab.service.validator.rules;
 
+import com.ascend.testlab.constants.enums.ExperimentStatus;
 import com.ascend.testlab.dto.entity.experiment.Experiment;
 import com.ascend.testlab.dto.entity.experiment.RuleAttributes;
 import com.ascend.testlab.dto.request.UpdateExperimentRequest;
 import com.ascend.testlab.exception.ErrorEnum;
 import com.dream11.rest.exception.RestException;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 
 /**
  * Validates rule attributes constraints.
  *
  * <ul>
- *   <li>New rules can be added
- *   <li>For existing rules, new conditions can be added
- *   <li>For existing conditions, value and operator can change, but operandDataType cannot
+ *   <li>Rule attributes list cannot be empty (only in DRAFT mode)
+ *   <li>Rules cannot be removed in LIVE or PAUSED mode
+ *   <li>Conditions cannot be removed in LIVE or PAUSED mode
+ *   <li>For existing conditions: only value can change in LIVE/PAUSED, operandDataType cannot
+ *       change
  *   <li>Operand is the differentiator for conditions
  * </ul>
  *
@@ -29,13 +34,20 @@ public class RuleAttributesValidationRule implements UpdateValidationRule {
   /** {@inheritDoc} */
   @Override
   public boolean appliesTo(Experiment existing, UpdateExperimentRequest request) {
-    return request.getRuleAttributes() != null && !request.getRuleAttributes().isEmpty();
+    return request.getRuleAttributes() != null;
   }
 
   /** {@inheritDoc} */
   @Override
   public void validate(Experiment existing, UpdateExperimentRequest request) {
     List<RuleAttributes> requestRules = request.getRuleAttributes();
+    ExperimentStatus status = existing.getStatus();
+
+    // Check if rule_attributes is empty - only in DRAFT mode
+    if (requestRules.isEmpty() && status == ExperimentStatus.DRAFT) {
+      throw new RestException(ErrorEnum.RULE_ATTRIBUTES_CANNOT_BE_EMPTY);
+    }
+
     List<RuleAttributes> existingRules = existing.getRuleAttributes();
 
     if (existingRules == null || existingRules.isEmpty()) {
@@ -47,38 +59,89 @@ public class RuleAttributesValidationRule implements UpdateValidationRule {
       existingRulesMap.put(rule.getName(), rule);
     }
 
+    // Check for rule removal in LIVE/PAUSED
+    if (status != ExperimentStatus.DRAFT) {
+      validateNoRuleRemoval(existingRulesMap, requestRules);
+    }
+
+    // Validate conditions for each existing rule
     for (RuleAttributes requestRule : requestRules) {
       RuleAttributes existingRule = existingRulesMap.get(requestRule.getName());
 
       if (existingRule != null) {
-        validateExistingRuleConditions(existingRule, requestRule);
+        validateExistingRuleConditions(status, existingRule, requestRule);
       }
     }
   }
 
   /**
-   * Validates conditions for an existing rule: - New conditions can be added - For existing
-   * conditions (identified by operand): operandDataType cannot change - value and operator CAN be
-   * changed
+   * Validates that no existing rules are removed in LIVE/PAUSED mode.
+   *
+   * @param existingRulesMap map of existing rules by name
+   * @param requestRules list of rules in request
+   * @throws RestException if any rule is removed
+   */
+  private void validateNoRuleRemoval(
+      Map<String, RuleAttributes> existingRulesMap, List<RuleAttributes> requestRules) {
+
+    Set<String> requestRuleNames = new HashSet<>();
+    for (RuleAttributes rule : requestRules) {
+      requestRuleNames.add(rule.getName());
+    }
+
+    for (String existingRuleName : existingRulesMap.keySet()) {
+      if (!requestRuleNames.contains(existingRuleName)) {
+        throw new RestException(ErrorEnum.RULE_REMOVAL_NOT_ALLOWED);
+      }
+    }
+  }
+
+  /**
+   * Validates conditions for an existing rule:
+   *
+   * <ul>
+   *   <li>Conditions cannot be removed in LIVE or PAUSED mode
+   *   <li>For existing conditions (identified by operand): operandDataType cannot change
+   *   <li>In LIVE/PAUSED: only value can change (operator cannot change)
+   * </ul>
    */
   private void validateExistingRuleConditions(
-      RuleAttributes existingRule, RuleAttributes requestRule) {
+      ExperimentStatus status, RuleAttributes existingRule, RuleAttributes requestRule) {
 
     List<RuleAttributes.Condition> existingConditions = existingRule.getConditions();
     List<RuleAttributes.Condition> requestConditions = requestRule.getConditions();
 
-    if (requestConditions == null || requestConditions.isEmpty()) {
-      return;
+    if (existingConditions == null || existingConditions.isEmpty()) {
+      return; // No existing conditions to validate against
     }
 
-    if (existingConditions == null || existingConditions.isEmpty()) {
-      return; // All conditions are new, allowed
+    if (requestConditions == null || requestConditions.isEmpty()) {
+      // All conditions being removed - only allowed in DRAFT
+      if (status != ExperimentStatus.DRAFT) {
+        throw new RestException(ErrorEnum.CONDITION_REMOVAL_NOT_ALLOWED);
+      }
+      return;
     }
 
     // Build map of existing conditions by operand (operand is the identifier)
     Map<String, RuleAttributes.Condition> existingConditionsMap = new HashMap<>();
     for (RuleAttributes.Condition condition : existingConditions) {
       existingConditionsMap.put(condition.getOperand(), condition);
+    }
+
+    // Build set of request operands
+    Set<String> requestOperands = new HashSet<>();
+    for (RuleAttributes.Condition condition : requestConditions) {
+      requestOperands.add(condition.getOperand());
+    }
+
+    // Check for removed conditions - only allowed in DRAFT
+    if (status != ExperimentStatus.DRAFT) {
+      for (String existingOperand : existingConditionsMap.keySet()) {
+        if (!requestOperands.contains(existingOperand)) {
+          throw new RestException(ErrorEnum.CONDITION_REMOVAL_NOT_ALLOWED);
+        }
+      }
     }
 
     // Validate each condition
@@ -92,10 +155,14 @@ public class RuleAttributesValidationRule implements UpdateValidationRule {
             existingCondition.getOperandDataType(), requestCondition.getOperandDataType())) {
           throw new RestException(ErrorEnum.RULE_CONDITION_DATA_TYPE_CHANGED);
         }
-        // operator CAN be changed
-        // value CAN be changed
+
+        // In LIVE/PAUSED: operator cannot change, only value can change
+        if (status != ExperimentStatus.DRAFT) {
+          if (!Objects.equals(existingCondition.getOperator(), requestCondition.getOperator())) {
+            throw new RestException(ErrorEnum.CONDITION_OPERATOR_CHANGE_NOT_ALLOWED);
+          }
+        }
       }
-      // New condition (operand not in existing) is allowed
     }
   }
 }

@@ -19,43 +19,43 @@ public final class ErrorMessages {
   public static final String PROJECT_KEY_MISSING = "x-project-key header is missing";
 
   /** The error message for invalid data type. */
-  public static final String INVALID_DATA_TYPE = "invalid dataType present";
+  public static final String INVALID_DATA_TYPE = "Invalid dataType present";
 
   /** The error message for invalid condition value. */
-  public static final String INVALID_CONDITION_VALUE = "invalid condition value";
+  public static final String INVALID_CONDITION_VALUE = "Invalid condition value";
 
   /** The error message for invalid enum value. */
-  public static final String INVALID_ENUM_VALUE = "invalid enum value";
+  public static final String INVALID_ENUM_VALUE = "Invalid enum value";
 
   /** The error message for invalid operator. */
-  public static final String INVALID_OPERATOR = "invalid operator value";
+  public static final String INVALID_OPERATOR = "Invalid operator value";
 
   /** The error message for blank rule name. */
-  public static final String BLANK_RULE_NAME = "rule name cannot be blank";
+  public static final String BLANK_RULE_NAME = "Rule name cannot be blank";
 
   /** The error message for invalid operand. */
-  public static final String INVALID_OPERAND = "invalid operand value";
+  public static final String INVALID_OPERAND = "Invalid operand value";
 
   /** The error message for invalid operand data type. */
-  public static final String INVALID_OPERAND_DATA_TYPE = "invalid operand data type";
+  public static final String INVALID_OPERAND_DATA_TYPE = "Invalid operand data type";
 
   /** Error message when an experiment status value is invalid. */
-  public static final String INVALID_EXPERIMENT_STATUS = "invalid experiment status";
+  public static final String INVALID_EXPERIMENT_STATUS = "Invalid experiment status";
 
   /** Error message when an experiment type value is invalid. */
-  public static final String INVALID_EXPERIMENT_TYPE = "invalid experiment type";
+  public static final String INVALID_EXPERIMENT_TYPE = "Invalid experiment type";
 
   /** Error message when an experiment health status value is invalid. */
-  public static final String INVALID_EXPERIMENT_HEALTH = "invalid experiment health status";
+  public static final String INVALID_EXPERIMENT_HEALTH = "Invalid experiment health status";
 
   /** Error message when an experiment strategy value is invalid. */
-  public static final String INVALID_EXPERIMENT_STRATEGY = "invalid experiment strategy";
+  public static final String INVALID_EXPERIMENT_STRATEGY = "Invalid experiment strategy";
 
   /** Error message when an assignment domain value is invalid. */
-  public static final String INVALID_ASSIGNMENT_DOMAIN = "invalid assignment domain";
+  public static final String INVALID_ASSIGNMENT_DOMAIN = "Invalid assignment domain";
 
   /** Error message when the required experimentKey query parameter is missing. */
-  public static final String EXPERIMENT_KEY_MISSING = "experimentKey query parameter is missing";
+  public static final String EXPERIMENT_KEY_MISSING = "ExperimentKey query parameter is missing";
 
   /** Error message when the required experiment_id parameter is missing from the request. */
   public static final String EXPERIMENT_ID_MISSING = "experiment_id parameter is missing";

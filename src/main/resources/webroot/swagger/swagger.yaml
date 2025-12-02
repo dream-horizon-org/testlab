@@ -764,27 +764,12 @@ components:
           type: string
         status:
           type: string
-          enum:
-          - LIVE
-          - PAUSED
-          - DRAFT
-          - CONCLUDED
-          - TERMINATED
         type:
           type: string
-          enum:
-          - A/A
-          - A/B
         assignment_domain:
           type: string
-          enum:
-          - STRATIFIED
-          - COHORT
         distribution_strategy:
           type: string
-          enum:
-          - ROUND_ROBIN
-          - RANDOM
         guardrail_health_status:
           type: string
           enum:
@@ -793,12 +778,8 @@ components:
           - NO_CHECKS_AVAILABLE
           - FAILED
         cohorts:
-          maxItems: 20
-          minItems: 1
           type: array
           items:
-            maxLength: 20
-            minLength: 1
             type: string
         variant_weights:
           $ref: '#/components/schemas/VariantWeights'
@@ -807,18 +788,12 @@ components:
           additionalProperties:
             $ref: '#/components/schemas/Variant'
         rule_attributes:
-          maxItems: 50
-          minItems: 0
           type: array
           items:
             $ref: '#/components/schemas/RuleAttributes'
         overrides:
-          maxItems: 100
-          minItems: 0
           type: array
           items:
-            maxLength: 100
-            minLength: 0
             type: string
         winning_variant:
           $ref: '#/components/schemas/WinningVariant'

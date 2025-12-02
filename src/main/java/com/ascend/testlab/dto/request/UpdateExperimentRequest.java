@@ -4,8 +4,6 @@ import com.ascend.testlab.annotations.ValidEnumValue;
 import com.ascend.testlab.constants.Constants;
 import com.ascend.testlab.constants.enums.AssignmentDomain;
 import com.ascend.testlab.constants.enums.DistributionStrategy;
-import com.ascend.testlab.constants.enums.ExperimentStatus;
-import com.ascend.testlab.constants.enums.ExperimentType;
 import com.ascend.testlab.constants.enums.HealthStatus;
 import com.ascend.testlab.dto.entity.experiment.Metrics;
 import com.ascend.testlab.dto.entity.experiment.RuleAttributes;
@@ -53,29 +51,21 @@ public class UpdateExperimentRequest {
   @Size(max = 1000, message = "Hypothesis must not exceed 1000 characters")
   private String hypothesis;
 
-  @ValidEnumValue(
-      enumClass = ExperimentStatus.class,
-      method = Constants.NAME,
-      message = ErrorMessages.INVALID_EXPERIMENT_STATUS)
-  private ExperimentStatus status;
+  private String status;
 
-  @ValidEnumValue(
-      enumClass = ExperimentType.class,
-      method = Constants.GET_TYPE,
-      message = ErrorMessages.INVALID_EXPERIMENT_TYPE)
-  private ExperimentType type;
+  private String type;
 
   @ValidEnumValue(
       enumClass = AssignmentDomain.class,
       method = Constants.NAME,
       message = ErrorMessages.INVALID_ASSIGNMENT_DOMAIN)
-  private AssignmentDomain assignmentDomain;
+  private String assignmentDomain;
 
   @ValidEnumValue(
       enumClass = DistributionStrategy.class,
       method = Constants.NAME,
       message = ErrorMessages.INVALID_EXPERIMENT_STRATEGY)
-  private DistributionStrategy distributionStrategy;
+  private String distributionStrategy;
 
   @ValidEnumValue(
       enumClass = HealthStatus.class,
@@ -83,19 +73,15 @@ public class UpdateExperimentRequest {
       message = ErrorMessages.INVALID_EXPERIMENT_HEALTH)
   private HealthStatus guardrailHealthStatus;
 
-  @Size(min = 1, max = 20, message = "Number of cohorts must be between 1 and 20")
-  private List<@NotBlank(message = "Cohort name cannot be blank") String> cohorts;
+  private List<String> cohorts;
 
   @Valid private VariantWeights variantWeights;
 
   @Valid private Map<String, @Valid Variant> variants;
 
-  @Valid
-  @Size(max = 50, message = "Maximum 50 rule attributes allowed")
-  private List<RuleAttributes> ruleAttributes;
+  @Valid private List<RuleAttributes> ruleAttributes;
 
-  @Size(max = 100, message = "Maximum 100 overrides allowed")
-  private List<@NotBlank(message = "Override cannot be blank") String> overrides;
+  private List<String> overrides;
 
   @Valid private WinningVariant winningVariant;
 

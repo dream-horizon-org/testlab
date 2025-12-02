@@ -27,7 +27,7 @@ public class WinningVariantValidationRule implements UpdateValidationRule {
   /** {@inheritDoc} */
   @Override
   public void validate(Experiment existing, UpdateExperimentRequest request) {
-    ExperimentStatus newStatus = request.getStatus();
+    ExperimentStatus newStatus = ExperimentStatus.fromValue(request.getStatus());
     WinningVariant winningVariant = request.getWinningVariant();
 
     boolean isTransitioningToConcluded = newStatus == ExperimentStatus.CONCLUDED;

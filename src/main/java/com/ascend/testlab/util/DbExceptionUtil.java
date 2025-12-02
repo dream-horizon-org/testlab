@@ -3,7 +3,6 @@ package com.ascend.testlab.util;
 import com.ascend.testlab.exception.ErrorEnum;
 import com.dream11.rest.exception.RestException;
 import java.util.Map;
-import java.util.Optional;
 import lombok.experimental.UtilityClass;
 import org.apache.http.HttpStatus;
 
@@ -17,10 +16,10 @@ import org.apache.http.HttpStatus;
 @UtilityClass
 public class DbExceptionUtil {
 
+  /** PostgreSQL error code for unique constraint violations. */
   private static final String UNIQUE_VIOLATION_CODE = "23505";
-  private static final String TRANSACTION_ABORTED_CODE = "25P02";
 
-  /** Constraint patterns mapped to user-friendly messages. */
+  /** Constraint name to user-friendly message mapping. */
   private static final Map<String, String> CONSTRAINT_MESSAGES =
       Map.of(
           "experiment_key_unique_check",
@@ -28,6 +27,8 @@ public class DbExceptionUtil {
           "experiment_key_key",
               "An experiment with this experiment_key already exists in the project",
           "name_unique_check", "An experiment with this name already exists in the project");
+
+  private static final String DEFAULT_DUPLICATE_MESSAGE = "Duplicate entry detected";
 
   /**
    * Handles database errors and converts them to RestException.
@@ -37,56 +38,39 @@ public class DbExceptionUtil {
    * @return RestException
    */
   public static RestException handleDbError(Throwable err, ErrorEnum defaultError) {
-    if (isUniqueConstraintViolation(err)) {
-      return createDuplicateException(err);
+    String duplicateMessage = findUniqueViolationMessage(err);
+    if (duplicateMessage != null) {
+      return new RestException(
+          "DUPLICATE_EXPERIMENT", duplicateMessage, HttpStatus.SC_BAD_REQUEST, err);
     }
     return ErrorEnum.handleException(err, new RestException(defaultError, err));
   }
 
-  private static boolean isUniqueConstraintViolation(Throwable err) {
-    return findInChain(err, DbExceptionUtil::isUniqueViolation);
-  }
-
-  private static boolean isUniqueViolation(Throwable t) {
-    String message = t.getMessage();
-    if (message == null) return false;
-
-    return message.contains(UNIQUE_VIOLATION_CODE)
-        || message.contains(TRANSACTION_ABORTED_CODE)
-        || message.contains("duplicate key value violates unique constraint")
-        || CONSTRAINT_MESSAGES.keySet().stream().anyMatch(message::contains);
-  }
-
-  private static RestException createDuplicateException(Throwable err) {
-    String message = extractConstraintMessage(err).orElse("Duplicate entry detected");
-    return new RestException("DUPLICATE_EXPERIMENT", message, HttpStatus.SC_BAD_REQUEST, err);
-  }
-
-  private static Optional<String> extractConstraintMessage(Throwable err) {
-    Throwable current = err;
-    while (current != null) {
+  /**
+   * Walks the exception cause chain to find a unique constraint violation. Returns user-friendly
+   * message if found, null otherwise.
+   */
+  private static String findUniqueViolationMessage(Throwable err) {
+    for (Throwable current = err; current != null; current = current.getCause()) {
       String message = current.getMessage();
-      if (message != null) {
-        for (Map.Entry<String, String> entry : CONSTRAINT_MESSAGES.entrySet()) {
-          if (message.contains(entry.getKey())) {
-            return Optional.of(entry.getValue());
-          }
+      if (message == null) {
+        continue;
+      }
+
+      // Check for PostgreSQL unique violation code
+      if (!message.contains(UNIQUE_VIOLATION_CODE)
+          && !message.contains("duplicate key value violates unique constraint")) {
+        continue;
+      }
+
+      // Found a unique violation - extract friendly message from constraint name
+      for (Map.Entry<String, String> entry : CONSTRAINT_MESSAGES.entrySet()) {
+        if (message.contains(entry.getKey())) {
+          return entry.getValue();
         }
       }
-      current = current.getCause();
+      return DEFAULT_DUPLICATE_MESSAGE;
     }
-    return Optional.empty();
-  }
-
-  private static boolean findInChain(Throwable err, java.util.function.Predicate<Throwable> check) {
-    Throwable current = err;
-    while (current != null) {
-      if (check.test(current)) return true;
-      for (Throwable suppressed : current.getSuppressed()) {
-        if (findInChain(suppressed, check)) return true;
-      }
-      current = current.getCause();
-    }
-    return false;
+    return null;
   }
 }

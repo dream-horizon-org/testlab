@@ -16,6 +16,7 @@ import com.ascend.testlab.dto.request.FilterExperimentsRequest;
 import com.ascend.testlab.dto.response.FilterExperimentsResponse;
 import com.ascend.testlab.dto.response.PaginationMeta;
 import com.ascend.testlab.exception.ErrorEnum;
+import com.ascend.testlab.util.DbExceptionUtil;
 import com.dream11.rest.exception.RestException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.inject.Inject;
@@ -180,8 +181,6 @@ public class ExperimentDAOImpl implements ExperimentDAO {
             .addString(experiment.getHypothesis())
             .addString(experiment.getStatus().name())
             .addString(experiment.getType().getValue())
-            .addValue(experiment.getCohorts().toArray(new String[0]))
-            .addString(null)
             .addValue(
                 experiment.getCohorts() == null || experiment.getCohorts().isEmpty()
                     ? new String[0]
@@ -203,10 +202,11 @@ public class ExperimentDAOImpl implements ExperimentDAO {
 
     return pgWriterClient
         .execute(connection, WriteQuery.INSERT_EXPERIMENT, tuple)
-        .onErrorReturn(
+        .onErrorResumeNext(
             err -> {
               log.error("Error while inserting experiment", err);
-              return false;
+              return Single.error(
+                  DbExceptionUtil.handleDbError(err, ErrorEnum.EXPERIMENT_CREATION_FAILED));
             });
   }
 

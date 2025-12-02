@@ -1,5 +1,6 @@
 package com.ascend.testlab.service.validator.rules;
 
+import com.ascend.testlab.constants.enums.ExperimentStatus;
 import com.ascend.testlab.dto.entity.experiment.Experiment;
 import com.ascend.testlab.dto.entity.experiment.Variant;
 import com.ascend.testlab.dto.entity.variantweights.CohortVariantWeights;
@@ -7,7 +8,6 @@ import com.ascend.testlab.dto.entity.variantweights.StratifiedVariantWeights;
 import com.ascend.testlab.dto.entity.variantweights.VariantWeights;
 import com.ascend.testlab.dto.request.UpdateExperimentRequest;
 import com.ascend.testlab.exception.ErrorEnum;
-import com.ascend.testlab.util.ExperimentMergeUtil;
 import com.dream11.rest.exception.RestException;
 import java.util.List;
 import java.util.Map;
@@ -18,7 +18,7 @@ import java.util.Set;
  *
  * <ul>
  *   <li>Variant weights keys must match variant keys
- *   <li>Existing variants cannot be removed from weights
+ *   <li>Existing variants cannot be removed from weights (except in DRAFT)
  *   <li>For COHORT type, weights must sum to 100
  * </ul>
  *
@@ -37,17 +37,17 @@ public class VariantWeightsValidationRule implements UpdateValidationRule {
   /** {@inheritDoc} */
   @Override
   public void validate(Experiment existing, UpdateExperimentRequest request) {
+    ExperimentStatus status = existing.getStatus();
 
-    if (request.getVariantWeights() != null) {
+    // Validate no variant removal from weights (except in DRAFT)
+    if (request.getVariantWeights() != null && status != ExperimentStatus.DRAFT) {
       validateNoVariantRemovalFromWeights(
           existing.getVariantWeights(), request.getVariantWeights());
     }
 
-    Map<String, Variant> effectiveVariants =
-        ExperimentMergeUtil.mergeVariants(existing.getVariants(), request.getVariants());
-    VariantWeights effectiveWeights =
-        ExperimentMergeUtil.mergeVariantWeights(
-            existing.getVariantWeights(), request.getVariantWeights());
+    // Get effective variants and weights for key matching validation
+    Map<String, Variant> effectiveVariants = getEffectiveVariants(existing, request);
+    VariantWeights effectiveWeights = getEffectiveWeights(existing, request);
 
     if (effectiveVariants == null || effectiveWeights == null) {
       return;
@@ -60,6 +60,29 @@ public class VariantWeightsValidationRule implements UpdateValidationRule {
     } else if (effectiveWeights instanceof StratifiedVariantWeights stratifiedWeights) {
       validateStratifiedWeightsKeys(variantKeys, stratifiedWeights);
     }
+  }
+
+  /**
+   * Gets effective variants considering the request. If request has variants, use request variants.
+   * Otherwise use existing variants.
+   */
+  private Map<String, Variant> getEffectiveVariants(
+      Experiment existing, UpdateExperimentRequest request) {
+    if (request.getVariants() != null && !request.getVariants().isEmpty()) {
+      return request.getVariants();
+    }
+    return existing.getVariants();
+  }
+
+  /**
+   * Gets effective weights considering the request. If request has weights, use request weights.
+   * Otherwise use existing weights.
+   */
+  private VariantWeights getEffectiveWeights(Experiment existing, UpdateExperimentRequest request) {
+    if (request.getVariantWeights() != null) {
+      return request.getVariantWeights();
+    }
+    return existing.getVariantWeights();
   }
 
   /** Validates that no variants are removed from variant_weights. */

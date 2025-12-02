@@ -97,7 +97,7 @@ public class CreateExperimentRequest {
   private long threshold;
 
   @Min(value = 0, message = "Start time must be a valid epoch timestamp")
-  private Long startTime = System.currentTimeMillis();
+  private Long startTime;
 
   private Long endTime = null;
 

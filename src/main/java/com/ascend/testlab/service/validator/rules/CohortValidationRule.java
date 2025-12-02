@@ -37,9 +37,18 @@ public class CohortValidationRule implements UpdateValidationRule {
   /** {@inheritDoc} */
   @Override
   public void validate(Experiment existing, UpdateExperimentRequest request) {
+    ExperimentStatus status = existing.getStatus();
+    validateCohortsNotEmpty(status, request.getCohorts());
     validateCohortTypeUnchanged(existing, request);
-    validateCohortRemoval(existing.getStatus(), existing.getCohorts(), request.getCohorts());
+    validateCohortRemoval(status, existing.getCohorts(), request.getCohorts());
     validateStratifiedCohorts(existing, request);
+  }
+
+  /** Validates that cohorts list is not empty if provided - only in DRAFT mode. */
+  private void validateCohortsNotEmpty(ExperimentStatus status, List<String> cohorts) {
+    if (cohorts != null && cohorts.isEmpty() && status == ExperimentStatus.DRAFT) {
+      throw new RestException(ErrorEnum.COHORTS_CANNOT_BE_EMPTY);
+    }
   }
 
   /** Validates that the cohort type (COHORT vs STRATIFIED) cannot be changed. */

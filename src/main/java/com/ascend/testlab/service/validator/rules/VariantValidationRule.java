@@ -17,11 +17,12 @@ import java.util.Set;
  * Validates variant-related constraints.
  *
  * <ul>
- *   <li>Existing variants cannot be removed
+ *   <li>Variants cannot be removed except in DRAFT mode
  *   <li>Variant naming must be contiguous (control, variant1, variant2, ...)
  *   <li>Variable keys must be consistent across all variants
  *   <li>Existing variable dataType cannot be changed
  *   <li>Variable keys can only be removed in DRAFT mode
+ *   <li>Variable keys cannot be added in LIVE or PAUSED mode
  * </ul>
  *
  * @author Anudeep Reddy
@@ -43,16 +44,29 @@ public class VariantValidationRule implements UpdateValidationRule {
     Map<String, Variant> existingVariants = existing.getVariants();
     Map<String, Variant> requestVariants = request.getVariants();
 
-    validateNoVariantRemoval(existingVariants, requestVariants);
+    // Validate no variant removal except in DRAFT
+    validateNoVariantRemoval(status, existingVariants, requestVariants);
 
     validateContiguousVariantNaming(requestVariants.keySet());
 
     validateVariableKeys(status, existingVariants, requestVariants);
   }
 
-  /** Validates that no existing variants are removed. */
+  /**
+   * Validates that no existing variants are removed except in DRAFT mode.
+   *
+   * @param status current experiment status
+   * @param existingVariants existing variants map
+   * @param requestVariants request variants map
+   */
   private void validateNoVariantRemoval(
-      Map<String, Variant> existingVariants, Map<String, Variant> requestVariants) {
+      ExperimentStatus status,
+      Map<String, Variant> existingVariants,
+      Map<String, Variant> requestVariants) {
+
+    if (status == ExperimentStatus.DRAFT) {
+      return; // Removal allowed in DRAFT
+    }
 
     if (existingVariants == null || existingVariants.isEmpty()) {
       return;
@@ -84,9 +98,14 @@ public class VariantValidationRule implements UpdateValidationRule {
   }
 
   /**
-   * Validates variable keys across all variants: - All variants must have the SAME variable keys -
-   * New key added → must be in ALL variants - Key removed → only allowed in DRAFT, must be removed
-   * from ALL variants - dataType cannot change for existing keys
+   * Validates variable keys across all variants:
+   *
+   * <ul>
+   *   <li>All variants must have the SAME variable keys
+   *   <li>New key added → only allowed in DRAFT mode
+   *   <li>Key removed → only allowed in DRAFT mode
+   *   <li>dataType cannot change for existing keys
+   * </ul>
    */
   private void validateVariableKeys(
       ExperimentStatus status,
@@ -132,16 +151,23 @@ public class VariantValidationRule implements UpdateValidationRule {
       }
     }
 
+    // Check for removed keys - only allowed in DRAFT
     Set<String> removedKeys = new HashSet<>(existingKeys);
     removedKeys.removeAll(allRequestKeys);
 
-    if (!removedKeys.isEmpty()) {
-      if (status != ExperimentStatus.DRAFT) {
-
-        throw new RestException(ErrorEnum.VARIABLE_KEY_REMOVAL_NOT_ALLOWED);
-      }
+    if (!removedKeys.isEmpty() && status != ExperimentStatus.DRAFT) {
+      throw new RestException(ErrorEnum.VARIABLE_KEY_REMOVAL_NOT_ALLOWED);
     }
 
+    // Check for added keys - only allowed in DRAFT
+    Set<String> addedKeys = new HashSet<>(allRequestKeys);
+    addedKeys.removeAll(existingKeys);
+
+    if (!addedKeys.isEmpty() && status != ExperimentStatus.DRAFT) {
+      throw new RestException(ErrorEnum.VARIABLE_KEY_ADDITION_NOT_ALLOWED);
+    }
+
+    // Ensure all variants have consistent keys
     for (Map.Entry<String, Variant> entry : requestVariants.entrySet()) {
       Set<String> variantKeys = new HashSet<>();
       if (entry.getValue().getVariables() != null) {

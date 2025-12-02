@@ -316,6 +316,48 @@ public enum ErrorEnum implements RestError {
   WINNING_VARIANT_ONLY_ON_CONCLUDE(
       "WINNING_VARIANT_ONLY_ON_CONCLUDE",
       "winning_variant can only be set when concluding the experiment",
+      HttpStatus.SC_BAD_REQUEST),
+
+  /** The error code when cohorts list is empty in update request. */
+  COHORTS_CANNOT_BE_EMPTY(
+      "COHORTS_CANNOT_BE_EMPTY",
+      "Cohorts list cannot be empty. Provide at least one cohort",
+      HttpStatus.SC_BAD_REQUEST),
+
+  /** The error code when rule_attributes list is empty in update request. */
+  RULE_ATTRIBUTES_CANNOT_BE_EMPTY(
+      "RULE_ATTRIBUTES_CANNOT_BE_EMPTY",
+      "Rule attributes list cannot be empty. Provide at least one rule",
+      HttpStatus.SC_BAD_REQUEST),
+
+  /** The error code when trying to remove a condition in LIVE/PAUSED mode. */
+  CONDITION_REMOVAL_NOT_ALLOWED(
+      "CONDITION_REMOVAL_NOT_ALLOWED",
+      "Conditions cannot be removed in LIVE or PAUSED mode. Only values can be edited",
+      HttpStatus.SC_BAD_REQUEST),
+
+  /** The error code when trying to remove a rule in LIVE/PAUSED mode. */
+  RULE_REMOVAL_NOT_ALLOWED(
+      "RULE_REMOVAL_NOT_ALLOWED",
+      "Rules cannot be removed in LIVE or PAUSED mode",
+      HttpStatus.SC_BAD_REQUEST),
+
+  /** The error code when trying to change condition operator in LIVE/PAUSED mode. */
+  CONDITION_OPERATOR_CHANGE_NOT_ALLOWED(
+      "CONDITION_OPERATOR_CHANGE_NOT_ALLOWED",
+      "Condition operator cannot be changed in LIVE or PAUSED mode. Only values can be edited",
+      HttpStatus.SC_BAD_REQUEST),
+
+  /** The error code when trying to add a variable key in LIVE/PAUSED mode. */
+  VARIABLE_KEY_ADDITION_NOT_ALLOWED(
+      "VARIABLE_KEY_ADDITION_NOT_ALLOWED",
+      "Variable keys cannot be added in LIVE or PAUSED mode. Only values can be edited",
+      HttpStatus.SC_BAD_REQUEST),
+
+  /** The error code when experiment key already exists for another experiment. */
+  EXPERIMENT_KEY_ALREADY_EXISTS(
+      "EXPERIMENT_KEY_ALREADY_EXISTS",
+      "An experiment with this experiment_key already exists in the project",
       HttpStatus.SC_BAD_REQUEST);
 
   /** The error code. */

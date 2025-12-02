@@ -5,6 +5,8 @@ CREATE DATABASE experiment;
 \c experiment;
 CREATE SCHEMA IF NOT EXISTS experiment;
 
+CREATE EXTENSION IF NOT EXISTS pg_trgm;
+
 CREATE TYPE experiment.experiment_status AS ENUM ('LIVE','PAUSED','DRAFT','CONCLUDED','TERMINATED');
 CREATE TYPE experiment.experiment_type AS ENUM ('A/A','A/B');
 CREATE TYPE experiment.experiment_health AS ENUM ('WARNING','PASSED','NO_CHECKS_AVAILABLE','FAILED');
@@ -40,7 +42,7 @@ CREATE TABLE IF NOT EXISTS experiment.experiments (
     CONSTRAINT experiment_key_unique_check UNIQUE (project_key, experiment_key)
 ) PARTITION BY LIST (project_key);
 
-CREATE INDEX idx_name_tsvector ON experiment.experiments USING GIN (name_tsvector);
+CREATE INDEX idx_name ON experiment.experiments USING GIN (name gin_trgm_ops);
 
 
 CREATE TABLE IF NOT EXISTS experiment.owners (

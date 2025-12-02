@@ -98,11 +98,6 @@ public class ExperimentUpdateQueryBuilder {
 
     builder.setClauses.add("updated_at = CURRENT_TIMESTAMP");
 
-    if (!Objects.equals(previous.getName(), updated.getName())) {
-      builder.setClauses.add(
-          "name_tsvector = to_tsvector('simple', LOWER(REGEXP_REPLACE($1::varchar, '[-_.]', ' ', 'g')))");
-    }
-
     builder.tuple.addString(projectKey);
     builder.tuple.addString(updated.getExperimentId().toString());
 
