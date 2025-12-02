@@ -36,7 +36,7 @@ import lombok.extern.slf4j.Slf4j;
  * @since 1.0
  */
 @Slf4j
-@Path("/v1/experiments")
+@Path("/v1")
 public class ExperimentResource {
 
   @Inject private ExperimentService experimentService;
@@ -55,6 +55,7 @@ public class ExperimentResource {
    * @return CompletionStage with CreateExperimentResponse containing id, status, and message
    */
   @POST
+  @Path("/experiments")
   @Consumes(MediaType.APPLICATION_JSON)
   @Produces(MediaType.APPLICATION_JSON)
   @Operation(
@@ -93,7 +94,7 @@ public class ExperimentResource {
    * @return CompletionStage with Boolean indicating success or failure
    */
   @PATCH
-  @Path("/{experiment_id}")
+  @Path("/experiments/{experiment_id}")
   @Consumes(MediaType.APPLICATION_JSON)
   @Produces(MediaType.APPLICATION_JSON)
   @Operation(
