@@ -23,6 +23,7 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.rxjava3.sqlclient.Row;
 import io.vertx.rxjava3.sqlclient.Tuple;
 import java.util.List;
+import java.util.Objects;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -105,7 +106,8 @@ public class ExperimentDAOImpl implements ExperimentDAO {
             .pageSize(experiments.size())
             .currentPage(req.getPage())
             .totalCount(totalCount)
-            .hasNext(Long.compare((long) req.getPage() * req.getLimit(), (long) totalCount) < 0)
+            .hasNext(
+                Objects.equals(Integer.compare(req.getPage() * req.getLimit(), totalCount), -1))
             .build();
 
     response.setPagination(paginationMeta);

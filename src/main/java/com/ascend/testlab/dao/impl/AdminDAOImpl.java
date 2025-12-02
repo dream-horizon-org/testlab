@@ -14,6 +14,7 @@ import io.reactivex.rxjava3.core.Single;
 import io.vertx.rxjava3.sqlclient.Row;
 import io.vertx.rxjava3.sqlclient.Tuple;
 import java.util.List;
+import java.util.Objects;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -89,10 +90,10 @@ public class AdminDAOImpl implements AdminDAO {
                           .pageSize(historyEntries.size())
                           .totalCount(totalCount)
                           .hasNext(
-                              Long.compare(
-                                      (long) request.getPage() * request.getLimit(),
-                                      (long) totalCount)
-                                  < 0)
+                              Objects.equals(
+                                  Integer.compare(
+                                      request.getPage() * request.getLimit(), totalCount),
+                                  -1))
                           .build())
                   .build();
             });
