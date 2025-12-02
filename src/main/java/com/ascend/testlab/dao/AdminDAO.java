@@ -1,9 +1,11 @@
 package com.ascend.testlab.dao;
 
+import com.ascend.testlab.dto.entity.experiment.Experiment;
 import com.ascend.testlab.dto.request.ExperimentHistoryRequest;
 import com.ascend.testlab.dto.response.ExperimentHistoryResponse;
 import io.reactivex.rxjava3.core.Single;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Data Access Object interface for admin operations.
@@ -49,4 +51,15 @@ public interface AdminDAO {
    * @return a Single that emits the count of history entries
    */
   Single<Integer> getExperimentHistoryCount(String projectKey, String experimentId);
+
+  /**
+   * Retrieves the variant count for a specific experiment from Aerospike.
+   *
+   * @param projectKey the project key associated with the experiment; must not be null
+   * @param experiment the experiment data containing variant information; must not be null
+   * @return a Single that emits a Map where keys are variant names (String) and values are their
+   *     allocation counts (Long); returns an empty Map if no variants exist, if variant count data
+   *     is not found, or if an error occurs during retrieval
+   */
+  Single<Map<String, Long>> getVariantCount(String projectKey, Experiment experiment);
 }

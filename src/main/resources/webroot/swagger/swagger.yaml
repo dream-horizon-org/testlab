@@ -632,6 +632,11 @@ components:
           type: array
           items:
             type: string
+        variant_counts:
+          type: object
+          additionalProperties:
+            type: integer
+            format: int64
     FilterExperimentsResponse:
       type: object
       properties:
