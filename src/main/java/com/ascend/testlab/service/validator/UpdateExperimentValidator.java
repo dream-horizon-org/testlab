@@ -1,8 +1,12 @@
 package com.ascend.testlab.service.validator;
 
+import com.ascend.testlab.dao.AdminDAO;
 import com.ascend.testlab.dto.entity.experiment.Experiment;
 import com.ascend.testlab.dto.request.UpdateExperimentRequest;
+import com.ascend.testlab.exception.ErrorEnum;
 import com.ascend.testlab.service.validator.rules.*;
+import com.dream11.rest.exception.RestException;
+import io.reactivex.rxjava3.core.Single;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 
@@ -47,21 +51,23 @@ public final class UpdateExperimentValidator {
           new RuleAttributesValidationRule(),
           new WinningVariantValidationRule());
 
-  private UpdateExperimentValidator() {
-    // Utility class
-  }
-
   /**
    * Validates the update request against the existing experiment.
    *
-   * <p>Applies all validation rules in sequence. Each rule may throw a {@link
-   * com.dream11.rest.exception.RestException} if validation fails.
+   * <p>Applies all validation rules in sequence including async validations (experiment key
+   * uniqueness). Each rule may throw a {@link com.dream11.rest.exception.RestException} if
+   * validation fails.
    *
+   * @param projectKey the project key for DB validations
    * @param existing the current experiment state
    * @param request the update request
+   * @param adminDAO the admin DAO for async validations
+   * @return Single emitting true if all validations pass
    * @throws com.dream11.rest.exception.RestException if any validation fails
    */
-  public static void validate(Experiment existing, UpdateExperimentRequest request) {
+  public static Single<Boolean> validate(
+      String projectKey, Experiment existing, UpdateExperimentRequest request, AdminDAO adminDAO) {
+
     log.debug("Validating update request for experiment: {}", existing.getExperimentId());
 
     for (UpdateValidationRule rule : VALIDATION_RULES) {
@@ -71,7 +77,41 @@ public final class UpdateExperimentValidator {
       }
     }
 
-    log.debug("Update validation passed for experiment: {}", existing.getExperimentId());
+    return validateExperimentKeyUniqueness(projectKey, existing, request, adminDAO)
+        .doOnSuccess(
+            success ->
+                log.debug(
+                    "Update validation passed for experiment: {}", existing.getExperimentId()));
+  }
+
+  /**
+   * Validates that the experiment_key is unique within the project.
+   *
+   * <p>Only checks if the request contains an experiment_key that is different from the existing
+   * one.
+   */
+  private static Single<Boolean> validateExperimentKeyUniqueness(
+      String projectKey, Experiment existing, UpdateExperimentRequest request, AdminDAO adminDAO) {
+
+    String newKey = request.getExperimentKey();
+
+    if (newKey == null || newKey.equals(existing.getExperimentKey())) {
+      return Single.just(true);
+    }
+
+    log.debug(
+        "Validating experiment key uniqueness for projectKey: {}, newKey: {}", projectKey, newKey);
+
+    return adminDAO
+        .isExperimentKeyAvailable(projectKey, newKey)
+        .flatMap(
+            isAvailable -> {
+              if (!isAvailable) {
+                log.warn("Experiment key '{}' already exists in project '{}'", newKey, projectKey);
+                return Single.error(new RestException(ErrorEnum.EXPERIMENT_KEY_ALREADY_EXISTS));
+              }
+              return Single.just(true);
+            });
   }
 
   /**

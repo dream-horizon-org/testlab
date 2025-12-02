@@ -348,6 +348,12 @@ public enum ErrorEnum implements RestError {
       "Condition operator cannot be changed in LIVE or PAUSED mode. Only values can be edited",
       HttpStatus.SC_BAD_REQUEST),
 
+  /** The error code when trying to add a condition in LIVE/PAUSED mode. */
+  CONDITION_ADDITION_NOT_ALLOWED(
+      "CONDITION_ADDITION_NOT_ALLOWED",
+      "Conditions cannot be added in LIVE or PAUSED mode",
+      HttpStatus.SC_BAD_REQUEST),
+
   /** The error code when trying to add a variable key in LIVE/PAUSED mode. */
   VARIABLE_KEY_ADDITION_NOT_ALLOWED(
       "VARIABLE_KEY_ADDITION_NOT_ALLOWED",

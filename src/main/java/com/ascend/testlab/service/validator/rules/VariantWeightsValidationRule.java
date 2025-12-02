@@ -39,13 +39,11 @@ public class VariantWeightsValidationRule implements UpdateValidationRule {
   public void validate(Experiment existing, UpdateExperimentRequest request) {
     ExperimentStatus status = existing.getStatus();
 
-    // Validate no variant removal from weights (except in DRAFT)
     if (request.getVariantWeights() != null && status != ExperimentStatus.DRAFT) {
       validateNoVariantRemovalFromWeights(
           existing.getVariantWeights(), request.getVariantWeights());
     }
 
-    // Get effective variants and weights for key matching validation
     Map<String, Variant> effectiveVariants = getEffectiveVariants(existing, request);
     VariantWeights effectiveWeights = getEffectiveWeights(existing, request);
 
@@ -125,14 +123,12 @@ public class VariantWeightsValidationRule implements UpdateValidationRule {
 
     Set<String> weightKeys = weights.keySet();
 
-    // Validate keys match
     if (!variantKeys.equals(weightKeys)) {
       throw new RestException(ErrorEnum.VARIANT_WEIGHT_KEYS_MISMATCH);
     }
 
-    // Validate sum equals 100
     double sum = weights.values().stream().mapToDouble(Double::doubleValue).sum();
-    if (Math.abs(sum - 100.0) > 0.01) { // Allow small floating point tolerance
+    if (Math.abs(sum - 100.0) > 0.01) {
       throw new RestException(ErrorEnum.VARIANT_WEIGHTS_SUM_NOT_100);
     }
   }

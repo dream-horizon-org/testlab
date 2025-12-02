@@ -44,7 +44,6 @@ public class VariantValidationRule implements UpdateValidationRule {
     Map<String, Variant> existingVariants = existing.getVariants();
     Map<String, Variant> requestVariants = request.getVariants();
 
-    // Validate no variant removal except in DRAFT
     validateNoVariantRemoval(status, existingVariants, requestVariants);
 
     validateContiguousVariantNaming(requestVariants.keySet());
@@ -65,7 +64,7 @@ public class VariantValidationRule implements UpdateValidationRule {
       Map<String, Variant> requestVariants) {
 
     if (status == ExperimentStatus.DRAFT) {
-      return; // Removal allowed in DRAFT
+      return;
     }
 
     if (existingVariants == null || existingVariants.isEmpty()) {
@@ -151,7 +150,6 @@ public class VariantValidationRule implements UpdateValidationRule {
       }
     }
 
-    // Check for removed keys - only allowed in DRAFT
     Set<String> removedKeys = new HashSet<>(existingKeys);
     removedKeys.removeAll(allRequestKeys);
 
@@ -159,7 +157,6 @@ public class VariantValidationRule implements UpdateValidationRule {
       throw new RestException(ErrorEnum.VARIABLE_KEY_REMOVAL_NOT_ALLOWED);
     }
 
-    // Check for added keys - only allowed in DRAFT
     Set<String> addedKeys = new HashSet<>(allRequestKeys);
     addedKeys.removeAll(existingKeys);
 
@@ -167,7 +164,6 @@ public class VariantValidationRule implements UpdateValidationRule {
       throw new RestException(ErrorEnum.VARIABLE_KEY_ADDITION_NOT_ALLOWED);
     }
 
-    // Ensure all variants have consistent keys
     for (Map.Entry<String, Variant> entry : requestVariants.entrySet()) {
       Set<String> variantKeys = new HashSet<>();
       if (entry.getValue().getVariables() != null) {

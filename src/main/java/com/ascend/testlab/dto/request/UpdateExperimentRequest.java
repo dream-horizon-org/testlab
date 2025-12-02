@@ -71,7 +71,7 @@ public class UpdateExperimentRequest {
       enumClass = HealthStatus.class,
       method = Constants.NAME,
       message = ErrorMessages.INVALID_EXPERIMENT_HEALTH)
-  private HealthStatus guardrailHealthStatus;
+  private String guardrailHealthStatus;
 
   private List<String> cohorts;
 

@@ -101,7 +101,6 @@ public class ExperimentDAOImpl implements ExperimentDAO {
       List<Row> rows, FilterExperimentsRequest req, Integer totalCount) {
     FilterExperimentsResponse response = new FilterExperimentsResponse();
 
-    // Map all rows to experiments
     List<Experiment> experiments =
         (rows.isEmpty())
             ? List.of()
@@ -157,25 +156,7 @@ public class ExperimentDAOImpl implements ExperimentDAO {
     // make this parallel
     return pgWriterClient
         .executeWithTransaction(
-            (sqlConnection) ->
-                pgWriterClient
-                    .execute(sqlConnection, WriteQuery.DELETE_EXPERIMENT_BY_ID, tuple)
-                    .flatMap(
-                        delExp ->
-                            pgWriterClient.execute(
-                                sqlConnection, WriteQuery.DELETE_TAG_FOR_EXPERIMENT, tuple))
-                    .flatMap(
-                        delTag ->
-                            pgWriterClient.execute(
-                                sqlConnection, WriteQuery.DELETE_OWNER_FOR_EXPERIMENT, tuple))
-                    .flatMap(
-                        delOwner ->
-                            pgWriterClient.execute(
-                                sqlConnection,
-                                WriteQuery.INSERT_EXPERIMENT_UPDATE_LOG,
-                                tuple.addJsonObject(previous_data_json).addJsonObject(null)))
-                    .map(result -> true)
-                    .toMaybe(),
+            (sqlConnection) -> deleteExperiment(sqlConnection, projectKey, experiment).toMaybe(),
             false)
         .onErrorResumeNext(
             err -> {
@@ -186,6 +167,39 @@ public class ExperimentDAOImpl implements ExperimentDAO {
                   err.getMessage());
               return Single.error(new RestException(ErrorEnum.REST_DELETE_EXPERIMENT_FAILED, err));
             });
+  }
+
+  private Single<Boolean> deleteExperiment(
+      SqlConnection sqlConnection, String projectKey, Experiment experiment) {
+    return pgWriterClient
+        .execute(
+            sqlConnection,
+            WriteQuery.DELETE_EXPERIMENT_BY_ID,
+            Tuple.tuple().addString(projectKey).addString(experiment.getExperimentId().toString()))
+        .flatMap(
+            res ->
+                Single.zip(
+                    deleteTags(sqlConnection, projectKey, experiment.getExperimentId().toString()),
+                    deleteOwner(sqlConnection, projectKey, experiment.getExperimentId().toString()),
+                    insertUpdateLog(sqlConnection, projectKey, experiment, null),
+                    (tagsDelete, ownersDelete, logStatus) ->
+                        tagsDelete && ownersDelete && logStatus));
+  }
+
+  private Single<Boolean> deleteTags(
+      SqlConnection sqlConnection, String projectKey, String experimentId) {
+    return pgWriterClient.execute(
+        sqlConnection,
+        WriteQuery.DELETE_TAG_FOR_EXPERIMENT,
+        Tuple.tuple().addString(projectKey).addString(experimentId));
+  }
+
+  private Single<Boolean> deleteOwner(
+      SqlConnection sqlConnection, String projectKey, String experimentId) {
+    return pgWriterClient.execute(
+        sqlConnection,
+        WriteQuery.DELETE_OWNER_FOR_EXPERIMENT,
+        Tuple.tuple().addString(projectKey).addString(experimentId));
   }
 
   /**
@@ -414,18 +428,20 @@ public class ExperimentDAOImpl implements ExperimentDAO {
       String projectKey,
       Experiment previousData,
       Experiment currentData) {
-    log.debug(
-        "DAO: Inserting update log for experimentId: {}, projectKey: {}",
-        currentData.getExperimentId(),
-        projectKey);
-
+    String experimentId =
+        Objects.isNull(currentData) || Objects.isNull(currentData.getExperimentId())
+            ? previousData.getExperimentId().toString()
+            : currentData.getExperimentId().toString();
     Tuple tuple =
         Tuple.tuple()
             .addString(projectKey)
-            .addString(currentData.getExperimentId().toString())
+            .addString(experimentId)
             .addJsonObject(JsonObject.mapFrom(previousData))
             .addJsonObject(JsonObject.mapFrom(currentData))
-            .addString(currentData.getUpdatedBy());
+            .addString(
+                Objects.isNull(currentData) || Objects.isNull(currentData.getUpdatedBy())
+                    ? null
+                    : currentData.getUpdatedBy());
 
     return pgWriterClient
         .execute(connection, WriteQuery.INSERT_EXPERIMENT_UPDATE_LOG, tuple)
@@ -433,13 +449,13 @@ public class ExperimentDAOImpl implements ExperimentDAO {
             success ->
                 log.info(
                     "DAO: Successfully inserted update log for experimentId: {}, projectKey: {}",
-                    currentData.getExperimentId(),
+                    experimentId,
                     projectKey))
         .onErrorReturn(
             error -> {
               log.error(
                   "DAO: Returning false for update log insert, experimentId: {}, error: {}",
-                  currentData.getExperimentId(),
+                  experimentId,
                   error.getMessage());
               return false;
             });

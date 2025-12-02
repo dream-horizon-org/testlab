@@ -57,13 +57,11 @@ public class DbExceptionUtil {
         continue;
       }
 
-      // Check for PostgreSQL unique violation code
       if (!message.contains(UNIQUE_VIOLATION_CODE)
           && !message.contains("duplicate key value violates unique constraint")) {
         continue;
       }
 
-      // Found a unique violation - extract friendly message from constraint name
       for (Map.Entry<String, String> entry : CONSTRAINT_MESSAGES.entrySet()) {
         if (message.contains(entry.getKey())) {
           return entry.getValue();

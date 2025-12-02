@@ -144,7 +144,7 @@ public class FilterExperimentsRequest {
   @AssertTrue(message = ErrorMessages.INVALID_EXPERIMENT_STATUS)
   public boolean isValidStatus() {
     if (status == null || status.trim().isEmpty()) {
-      return true; // Status is optional
+      return true;
     }
     try {
       List<String> statusValues = CommonUtil.separateCommaSeparatedString(status);
@@ -172,7 +172,7 @@ public class FilterExperimentsRequest {
   @AssertTrue(message = ErrorMessages.INVALID_EXPERIMENT_TYPE)
   public boolean isValidType() {
     if (type == null || type.trim().isEmpty()) {
-      return true; // Type is optional
+      return true;
     }
     try {
       List<String> typeValues = CommonUtil.separateCommaSeparatedString(type);

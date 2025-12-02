@@ -49,7 +49,7 @@ public final class ErrorMessages {
   public static final String INVALID_EXPERIMENT_HEALTH = "Invalid experiment health status";
 
   /** Error message when an experiment strategy value is invalid. */
-  public static final String INVALID_EXPERIMENT_STRATEGY = "Invalid experiment strategy";
+  public static final String INVALID_EXPERIMENT_STRATEGY = "Invalid distribution strategy";
 
   /** Error message when an assignment domain value is invalid. */
   public static final String INVALID_ASSIGNMENT_DOMAIN = "Invalid assignment domain";

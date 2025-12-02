@@ -345,6 +345,7 @@ public class AllocationServiceImpl implements AllocationService {
     ExperimentFilter experimentFilter =
         ExperimentFilterChainBuilder.buildFromRequest(request, userAllocations, cohorts);
 
+    log.info("Applying filters to {} experiments", experiments);
     List<Experiment> filtered = experimentFilter.filter(experiments);
 
     log.debug("After all filters: {} experiments remain", filtered.size());

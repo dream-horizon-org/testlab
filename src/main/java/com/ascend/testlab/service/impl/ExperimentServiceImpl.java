@@ -2,6 +2,7 @@ package com.ascend.testlab.service.impl;
 
 import com.ascend.testlab.constants.Constants;
 import com.ascend.testlab.constants.enums.ExperimentStatus;
+import com.ascend.testlab.constants.enums.HealthStatus;
 import com.ascend.testlab.dao.AdminDAO;
 import com.ascend.testlab.dao.ExperimentDAO;
 import com.ascend.testlab.dto.entity.experiment.Experiment;
@@ -184,7 +185,7 @@ public class ExperimentServiceImpl implements ExperimentService {
   /**
    * Updates experiment fields partially with validation.
    *
-   * <p>Flow: Get → Validate Key Uniqueness → Validate → Merge → Update in transaction
+   * <p>Flow: Get → Validate → Merge → Update in transaction
    *
    * <p>Validation rules enforced:
    *
@@ -216,10 +217,9 @@ public class ExperimentServiceImpl implements ExperimentService {
         .switchIfEmpty(Single.error(ExceptionUtil.getException(ErrorEnum.EXPERIMENT_NOT_FOUND)))
         .flatMap(
             existing ->
-                validateExperimentKeyUniqueness(projectKey, existing, request)
+                UpdateExperimentValidator.validate(projectKey, existing, request, adminDAO)
                     .flatMap(
                         isValid -> {
-                          UpdateExperimentValidator.validate(existing, request);
                           Experiment updated = mergeUpdate(existing, request);
                           return experimentDAO.updateExperiment(projectKey, existing, updated);
                         }))
@@ -234,38 +234,6 @@ public class ExperimentServiceImpl implements ExperimentService {
                   err);
               return Single.error(
                   DbExceptionUtil.handleDbError(err, ErrorEnum.EXPERIMENT_UPDATE_FAILED));
-            });
-  }
-
-  /**
-   * Validates that the experiment_key is unique within the project.
-   *
-   * <p>Only checks if the request contains an experiment_key that is different from the existing
-   * one.
-   *
-   * @param projectKey project identifier
-   * @param existing the existing experiment
-   * @param request the update request
-   * @return Single emitting true if valid, or error if key already exists
-   */
-  private Single<Boolean> validateExperimentKeyUniqueness(
-      String projectKey, Experiment existing, UpdateExperimentRequest request) {
-
-    String newKey = request.getExperimentKey();
-
-    // No experiment_key in request or same as existing - no validation needed
-    if (newKey == null || newKey.equals(existing.getExperimentKey())) {
-      return Single.just(true);
-    }
-
-    return adminDAO
-        .isExperimentKeyAvailable(projectKey, newKey)
-        .flatMap(
-            isAvailable -> {
-              if (!isAvailable) {
-                return Single.error(new RestException(ErrorEnum.EXPERIMENT_KEY_ALREADY_EXISTS));
-              }
-              return Single.just(true);
             });
   }
 
@@ -290,7 +258,9 @@ public class ExperimentServiceImpl implements ExperimentService {
         .status(getOrDefault(ExperimentStatus.fromValue(request.getStatus()), existing.getStatus()))
         .type(existing.getType())
         .guardrailHealthStatus(
-            getOrDefault(request.getGuardrailHealthStatus(), existing.getGuardrailHealthStatus()))
+            getOrDefault(
+                HealthStatus.valueOf(request.getGuardrailHealthStatus()),
+                existing.getGuardrailHealthStatus()))
         .cohorts(getOrDefault(request.getCohorts(), existing.getCohorts()))
         .variantWeights(
             ExperimentMergeUtil.mergeVariantWeights(

@@ -77,12 +77,12 @@ public class AttributesFilter extends AbstractExperimentFilter {
                   exp.getRuleAttributes().stream().anyMatch(this::evaluateRuleAttribute);
 
               if (!anyConditionMatches) {
-                log.trace(
+                log.info(
                     "Experiment {} filtered out - none of the {} rule attribute conditions matched",
                     exp.getExperimentId(),
                     exp.getRuleAttributes().size());
               } else {
-                log.debug(
+                log.info(
                     "Experiment {} passed filter - at least one rule attribute condition matched",
                     exp.getExperimentId());
               }

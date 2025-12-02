@@ -200,9 +200,9 @@ public final class ReadQuery {
    */
   public static final String FILTER_EXPERIMENT =
       """
-      SELECT e.project_key, e.experiment_id, e.name, e.description, e.hypothesis, e.status, e.type,
-             e.guardrail_health_status, e.cohorts, e.variant_weights, e.assignment_strategy, e.overrides,
-             e.rule_attributes, e.winning_variant, e.exposure, e.threshold, e.start_time, e.end_time,
+      SELECT e.project_key, e.experiment_key,e.experiment_id, e.name, e.description, e.hypothesis, e.status, e.type,
+             e.guardrail_health_status, e.cohorts, e.variant_weights, e.distribution_strategy, e.overrides,
+             e.assignment_domain,e.variants,e.rule_attributes, e.winning_variant, e.exposure, e.threshold, e.start_time, e.end_time,
              e.created_by, e.created_at, e.updated_at,
              string_agg(DISTINCT t.tag, ',') as tags,
              string_agg(DISTINCT o.owner, ',') as owners,

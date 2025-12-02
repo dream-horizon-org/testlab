@@ -158,7 +158,7 @@ public class AllocationDAOImpl implements AllocationDAO {
                           if (!assignmentUpdated) {
                             log.error(
                                 "Failed to update user assignment, rolling back variant counts in parallel");
-                            // rollback variant counts
+
                             return decrementAndIncrementVariantCounts(
                                     projectKey, experimentId, newVariantName, oldVariant)
                                 .flatMap(
@@ -308,7 +308,6 @@ public class AllocationDAOImpl implements AllocationDAO {
         return Single.just(false);
       }
 
-      // Append entry to the entries list
       return aerospikeClient
           .operate(
               policy,
