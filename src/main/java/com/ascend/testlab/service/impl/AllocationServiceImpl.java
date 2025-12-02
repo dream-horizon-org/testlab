@@ -4,12 +4,16 @@ import com.ascend.testlab.allocation.builder.AssignmentBuilder;
 import com.ascend.testlab.allocation.builder.ExperimentFilterChainBuilder;
 import com.ascend.testlab.allocation.filter.ExperimentFilter;
 import com.ascend.testlab.allocation.selector.VariantSelector;
+import com.ascend.testlab.allocation.strategy.concludedexperiment.ConcludedStrategy;
+import com.ascend.testlab.allocation.strategy.concludedexperiment.ConcludedStrategyFactory;
 import com.ascend.testlab.constants.Constants;
 import com.ascend.testlab.constants.enums.AllocationStatus;
+import com.ascend.testlab.constants.enums.ExperimentStatus;
 import com.ascend.testlab.dao.AllocationDAO;
 import com.ascend.testlab.dto.entity.allocation.UserExperimentMap;
 import com.ascend.testlab.dto.entity.experiment.Experiment;
 import com.ascend.testlab.dto.entity.experiment.Variant;
+import com.ascend.testlab.dto.entity.experiment.WinningVariant;
 import com.ascend.testlab.dto.request.AllocationRequest;
 import com.ascend.testlab.dto.request.ReallocateRequest;
 import com.ascend.testlab.dto.response.AllocationsResponse;
@@ -78,37 +82,58 @@ public class AllocationServiceImpl implements AllocationService {
             fetchCohortsForUser(effectiveId, projectKey),
             fetchExperimentsAndAllocation(projectKey, userId, guestId, allocationRequest),
             (cohorts, data) -> {
-              List<Experiment> activeExperiments =
+              List<Experiment> allExperiments =
                   objectMapper.convertValue(data.get("experiments"), new TypeReference<>() {});
               List<UserExperimentMap> userAllocations =
                   objectMapper.convertValue(data.get("userAllocations"), new TypeReference<>() {});
               List<UserExperimentMap> guestAllocations =
                   objectMapper.convertValue(data.get("guestAllocations"), new TypeReference<>() {});
 
+              List<Experiment> liveExperiments =
+                  allExperiments.stream()
+                      .filter(e -> e.getStatus() == ExperimentStatus.LIVE)
+                      .toList();
+              List<Experiment> concludedExperiments =
+                  allExperiments.stream()
+                      .filter(e -> e.getStatus() == ExperimentStatus.CONCLUDED)
+                      .toList();
+
               // Use user allocations if logged in, otherwise use guest allocations
               List<UserExperimentMap> currentAllocations =
                   shouldApplyGuestCarryover(userId) ? userAllocations : guestAllocations;
 
               List<UserExperimentMap> activeAllocations =
-                  filterActiveAllocations(currentAllocations, activeExperiments);
+                  filterActiveAllocations(currentAllocations, liveExperiments);
+
+              List<UserExperimentMap> concludedAllocations =
+                  applyConcludedExperiments(concludedExperiments, currentAllocations);
 
               List<Experiment> filteredExperiments =
-                  applyFilters(activeExperiments, activeAllocations, allocationRequest, cohorts);
+                  applyFilters(liveExperiments, activeAllocations, allocationRequest, cohorts);
 
               if (filteredExperiments.isEmpty()) {
                 log.debug("No experiments passed filters for identifier {}", effectiveId);
-                return buildResponse(activeAllocations);
+                List<UserExperimentMap> allAllocations = new ArrayList<>(activeAllocations);
+                allAllocations.addAll(concludedAllocations);
+                return buildResponse(allAllocations);
               }
 
               return assignWithLock(
-                  userId,
-                  guestId,
-                  projectKey,
-                  cohorts,
-                  activeExperiments,
-                  filteredExperiments,
-                  activeAllocations,
-                  guestAllocations);
+                      userId,
+                      guestId,
+                      projectKey,
+                      cohorts,
+                      liveExperiments,
+                      filteredExperiments,
+                      activeAllocations,
+                      guestAllocations)
+                  .map(
+                      response -> {
+                        List<UserExperimentMap> allAllocations =
+                            new ArrayList<>(response.experimentMap());
+                        allAllocations.addAll(concludedAllocations);
+                        return new AllocationsResponse(allAllocations);
+                      });
             })
         .flatMap(res -> res)
         .doOnSuccess(
@@ -214,58 +239,68 @@ public class AllocationServiceImpl implements AllocationService {
             });
   }
 
-  // For concluded, uncomment and test
+  /**
+   * Applies concluded experiments using the default strategy. For each concluded experiment, builds
+   * an allocation using the winning variant.
+   *
+   * @param concludedExperiments list of concluded experiments with winning variants
+   * @param existingAllocations user's existing allocations
+   * @return list of allocations for concluded experiments
+   */
+  private List<UserExperimentMap> applyConcludedExperiments(
+      List<Experiment> concludedExperiments, List<UserExperimentMap> existingAllocations) {
 
-  //    @Override
-  //    public Single<List<UserExperimentMap>> applyConcludedExperiments(
-  //            String userId, UUID projectKey, ConcludedStrategy strategy) {
-  //
-  //        log.debug(
-  //                "Applying concluded experiments for user {} with strategy {}",
-  //                userId,
-  //                strategy.getStrategyName());
-  //
-  //        return Single.zip(
-  //                        fetchConcludedExperiments(projectKey),
-  //                        getUserAssignments(userId, projectKey),
-  //                        (concludedExperiments, existingAssignments) -> {
-  //                            List<UserExperimentMap> assignmentsToApply = new ArrayList<>();
-  //
-  //                            for (Experiment concludedExperiment : concludedExperiments) {
-  //                                if (strategy.shouldOverride(concludedExperiment,
-  // existingAssignments)) {
-  ////                  UserExperimentMap concludedAssignment =
-  ////                      createConcludedAssignment(concludedExperiment, existingAssignments);
-  ////                  assignmentsToApply.add(concludedAssignment);
-  //                                }
-  //                            }
-  //
-  //                            log.debug(
-  //                                    "Applying {} concluded experiment assignments for user {}",
-  //                                    assignmentsToApply.size(),
-  //                                    userId);
-  //                            return assignmentsToApply;
-  //                        })
-  //                .flatMap(
-  //                        assignmentsToApply -> {
-  //                            if (assignmentsToApply.isEmpty()) {
-  //                                log.debug("No concluded experiments to apply for user {}",
-  // userId);
-  //                                return Single.just(new ArrayList<UserExperimentMap>());
-  //                            }
-  //                            return insertUserAssignments(userId, projectKey, assignmentsToApply)
-  //                                    .map(
-  //                                            success ->
-  //                                                    success ? assignmentsToApply : new
-  // ArrayList<UserExperimentMap>());
-  //                        })
-  //                .onErrorReturn(
-  //                        error -> {
-  //                            log.error("Error applying concluded experiments for user {}",
-  // userId, error);
-  //                            return new ArrayList<>();
-  //                        });
-  //    }
+    if (concludedExperiments == null || concludedExperiments.isEmpty()) {
+      return Collections.emptyList();
+    }
+
+    ConcludedStrategy strategy = ConcludedStrategyFactory.getDefaultStrategy();
+    List<UserExperimentMap> concludedAllocations = new ArrayList<>();
+
+    for (Experiment experiment : concludedExperiments) {
+      if (!strategy.shouldOverride(experiment, existingAllocations)) {
+        log.debug(
+            "Strategy {} skipping concluded experiment {}",
+            strategy.getStrategyName(),
+            experiment.getExperimentId());
+        continue;
+      }
+
+      WinningVariant winningVariant = experiment.getWinningVariant();
+      if (Objects.isNull(winningVariant) || Objects.isNull(winningVariant.getVariantName())) {
+        log.warn(
+            "Concluded experiment {} has no winning variant defined", experiment.getExperimentId());
+        continue;
+      }
+
+      String variantName = winningVariant.getVariantName();
+      if (Objects.isNull(experiment.getVariants())
+          || !experiment.getVariants().containsKey(variantName)) {
+        log.warn(
+            "Winning variant {} not found in experiment {}",
+            variantName,
+            experiment.getExperimentId());
+        continue;
+      }
+
+      try {
+        UserExperimentMap allocation = AssignmentBuilder.buildAssignment(experiment, variantName);
+        concludedAllocations.add(allocation);
+        log.debug(
+            "Built concluded allocation for experiment {} with winning variant {}",
+            experiment.getExperimentId(),
+            variantName);
+      } catch (IllegalArgumentException e) {
+        log.error(
+            "Failed to build concluded allocation for experiment {}: {}",
+            experiment.getExperimentId(),
+            e.getMessage());
+      }
+    }
+
+    log.info("Applied {} concluded experiment allocations", concludedAllocations.size());
+    return concludedAllocations;
+  }
 
   private Single<Map<String, List<?>>> fetchExperimentsAndAllocation(
       String projectKey, String userId, String guestId, AllocationRequest allocationRequest) {
