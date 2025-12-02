@@ -7,6 +7,7 @@ import com.ascend.testlab.constants.enums.AssignmentDomain;
 import com.ascend.testlab.constants.enums.DistributionStrategy;
 import com.ascend.testlab.constants.enums.ExperimentStatus;
 import com.ascend.testlab.dto.entity.experiment.Metrics;
+import com.ascend.testlab.dto.entity.experiment.Overrides;
 import com.ascend.testlab.dto.entity.experiment.RuleAttributes;
 import com.ascend.testlab.dto.entity.experiment.Variant;
 import com.ascend.testlab.dto.entity.variantweights.VariantWeights;
@@ -85,7 +86,7 @@ public class CreateExperimentRequest {
 
   @Valid private List<RuleAttributes> ruleAttributes;
 
-  private List<String> overrides;
+  private Overrides overrides;
 
   private List<@NotBlank(message = "Tag cannot be blank") String> tags;
 

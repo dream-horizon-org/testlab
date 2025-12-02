@@ -4,17 +4,20 @@ import com.ascend.testlab.constants.Constants;
 import com.ascend.testlab.constants.enums.ExperimentStatus;
 import com.ascend.testlab.constants.enums.HealthStatus;
 import com.ascend.testlab.dto.entity.experiment.Experiment;
+import com.ascend.testlab.dto.entity.experiment.Overrides;
 import com.ascend.testlab.dto.entity.experiment.RuleAttributes;
 import com.ascend.testlab.dto.entity.experiment.Variant;
 import com.ascend.testlab.dto.entity.variantweights.CohortVariantWeights;
 import com.ascend.testlab.dto.entity.variantweights.StratifiedVariantWeights;
 import com.ascend.testlab.dto.entity.variantweights.VariantWeights;
 import com.ascend.testlab.dto.request.UpdateExperimentRequest;
-import java.util.ArrayList;
+import com.ascend.testlab.exception.ErrorEnum;
+import com.dream11.rest.exception.RestException;
 import java.util.HashMap;
-import java.util.LinkedHashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import lombok.experimental.UtilityClass;
 
 /**
@@ -38,7 +41,6 @@ public class ExperimentMergeUtil {
    */
   public static Experiment merge(Experiment existing, UpdateExperimentRequest request) {
     return Experiment.builder()
-        // Immutable fields - always from existing
         .experimentId(existing.getExperimentId())
         .projectKey(existing.getProjectKey())
         .type(existing.getType())
@@ -46,7 +48,6 @@ public class ExperimentMergeUtil {
         .assignmentDomain(existing.getAssignmentDomain())
         .createdBy(existing.getCreatedBy())
         .createdAt(existing.getCreatedAt())
-        // Simple fields - use request if present, else existing
         .name(orDefault(request.getName(), existing.getName()))
         .experimentKey(orDefault(request.getExperimentKey(), existing.getExperimentKey()))
         .description(orDefault(request.getDescription(), existing.getDescription()))
@@ -61,18 +62,17 @@ public class ExperimentMergeUtil {
         .endTime(orDefault(request.getEndTime(), existing.getEndTime()))
         .updatedBy(orDefault(request.getUpdatedBy(), Constants.SYSTEM))
         .winningVariant(orDefault(request.getWinningVariant(), existing.getWinningVariant()))
-        .overrides(orDefault(request.getOverrides(), existing.getOverrides()))
-        // Replace fields - use request if present (not merged)
+        .overrides(mergeOverrides(existing.getOverrides(), request.getOverrides()))
         .cohorts(orDefault(request.getCohorts(), existing.getCohorts()))
         .tags(orDefault(request.getTags(), existing.getTags()))
-        .owners(orDefault(request.getOwner(), existing.getOwners()))
+        .owners(orDefault(request.getOwners(), existing.getOwners()))
         .metrics(orDefault(request.getMetrics(), existing.getMetrics()))
-        // Merge fields - combine existing with request
         .variants(mergeVariants(existing.getVariants(), request.getVariants()))
         .variantWeights(
             mergeVariantWeights(existing.getVariantWeights(), request.getVariantWeights()))
         .ruleAttributes(
-            mergeRuleAttributes(existing.getRuleAttributes(), request.getRuleAttributes()))
+            mergeRuleAttributes(
+                existing.getStatus(), existing.getRuleAttributes(), request.getRuleAttributes()))
         .build();
   }
 
@@ -91,21 +91,55 @@ public class ExperimentMergeUtil {
   /**
    * Merges new rule attributes with existing rules.
    *
-   * <p>If a rule with the same name exists, it is replaced. New rules are added. Existing rules not
-   * in request are preserved.
+   * <p>In DRAFT mode: Override - use request rules directly (replace entire list). In LIVE/PAUSED
+   * mode: No add/delete allowed - if same rules, use new values; otherwise throw error.
+   *
+   * @param status the current experiment status
+   * @param existing existing rule attributes
+   * @param newRules new rule attributes from request
+   * @return merged or replaced rule attributes
    */
   public static List<RuleAttributes> mergeRuleAttributes(
-      List<RuleAttributes> existing, List<RuleAttributes> newRules) {
+      ExperimentStatus status, List<RuleAttributes> existing, List<RuleAttributes> newRules) {
     if (newRules == null) return existing;
     if (existing == null) return newRules;
 
-    Map<String, RuleAttributes> ruleMap = new LinkedHashMap<>();
-    existing.forEach(r -> ruleMap.put(r.getName(), r));
-    newRules.forEach(r -> ruleMap.put(r.getName(), r));
-    return new ArrayList<>(ruleMap.values());
+    if (status == ExperimentStatus.DRAFT) {
+      return newRules;
+    }
+
+    Set<String> existingNames = new HashSet<>();
+    for (RuleAttributes rule : existing) {
+      existingNames.add(rule.getName());
+    }
+
+    Set<String> newNames = new HashSet<>();
+    for (RuleAttributes rule : newRules) {
+      newNames.add(rule.getName());
+    }
+
+    for (String existingName : existingNames) {
+      if (!newNames.contains(existingName)) {
+        throw new RestException(ErrorEnum.RULE_REMOVAL_NOT_ALLOWED);
+      }
+    }
+
+    for (String newName : newNames) {
+      if (!existingNames.contains(newName)) {
+        throw new RestException(ErrorEnum.RULE_ADDITION_NOT_ALLOWED);
+      }
+    }
+
+    return newRules;
   }
 
-  /** Merges new variants with existing variants. */
+  /**
+   * Merges new variants with existing variants.
+   *
+   * @param existing the existing variants map
+   * @param newVariants the new variants to merge
+   * @return merged variants map, or existing if newVariants is null
+   */
   public static Map<String, Variant> mergeVariants(
       Map<String, Variant> existing, Map<String, Variant> newVariants) {
     if (newVariants == null) return existing;
@@ -116,7 +150,13 @@ public class ExperimentMergeUtil {
     return merged;
   }
 
-  /** Merges new variant weights with existing weights. */
+  /**
+   * Merges new variant weights with existing weights.
+   *
+   * @param existing the existing variant weights
+   * @param newWeights the new weights to merge
+   * @return merged variant weights, or existing if newWeights is null
+   */
   public static VariantWeights mergeVariantWeights(
       VariantWeights existing, VariantWeights newWeights) {
     if (newWeights == null) return existing;
@@ -146,5 +186,21 @@ public class ExperimentMergeUtil {
     if (existing.getWeights() != null) merged.putAll(existing.getWeights());
     if (newWeights.getWeights() != null) merged.putAll(newWeights.getWeights());
     return StratifiedVariantWeights.builder().weights(merged).build();
+  }
+
+  /**
+   * Merges override updates with existing overrides.
+   *
+   * @param existing existing overrides map
+   * @param requestOverrides new overrides from request
+   * @return merged overrides map
+   */
+  private static Map<String, List<String>> mergeOverrides(
+      Map<String, List<String>> existing, Overrides requestOverrides) {
+    if (requestOverrides == null) {
+      return existing;
+    }
+    // When overrides are provided in request, replace entirely with new values
+    return requestOverrides.getOverrideIds();
   }
 }

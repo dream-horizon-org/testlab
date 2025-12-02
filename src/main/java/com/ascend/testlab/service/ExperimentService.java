@@ -1,6 +1,7 @@
 package com.ascend.testlab.service;
 
 import com.ascend.testlab.dto.entity.experiment.Experiment;
+import com.ascend.testlab.dto.request.CreateExperimentRequest;
 import com.ascend.testlab.dto.request.FilterExperimentsRequest;
 import com.ascend.testlab.dto.request.UpdateExperimentRequest;
 import com.ascend.testlab.dto.response.CreateExperimentResponse;
@@ -65,13 +66,15 @@ public interface ExperimentService {
   Single<DeleteExperimentResponse> deleteExperiment(String projectKey, String experimentId);
 
   /**
-   * Creates a new experiment with validation and error handling.
+   * Creates a new experiment with validation and error handling. If the experiment is created in
+   * LIVE status and has overrides, assigns those users to the specified variant.
    *
    * @param projectKey project identifier from header
    * @param request experiment creation request with all experiment details
    * @return Single emitting CreateExperimentResponse with id, status, and message
    */
-  Single<CreateExperimentResponse> createExperiment(String projectKey, Experiment request);
+  Single<CreateExperimentResponse> createExperiment(
+      String projectKey, CreateExperimentRequest request);
 
   /**
    * Updates experiment fields partially with validation.

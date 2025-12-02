@@ -792,17 +792,17 @@ class FilterExperimentsIT {
             project_key, experiment_id, name, experiment_key, description, hypothesis, status, type,
             guardrail_health_status, cohorts, variant_weights, distribution_strategy,
             assignment_domain, overrides, rule_attributes, winning_variant, exposure, threshold,
-            start_time, end_time, created_by, created_at, updated_at, name_tsvector
+            start_time, end_time, created_by, created_at, updated_at
         ) VALUES (
             '%s', '%s', '%s', '%s', 'Test Description', 'Test Hypothesis', '%s', '%s',
-            'PASSED', ARRAY['all_users'], '{"control": 50, "variant_a": 50}'::jsonb, 'RANDOM',
+            'PASSED', ARRAY['all_users'], '{"weights": {"control": 0.5, "variant_a": 0.5}}'::jsonb, 'RANDOM',
             'COHORT', NULL, NULL::jsonb, NULL::jsonb, 100, 1000,
             EXTRACT(EPOCH FROM NOW() - INTERVAL '7 days')::bigint * 1000,
             EXTRACT(EPOCH FROM NOW() + INTERVAL '23 days')::bigint * 1000,
-            'test@example.com', NOW(), NOW(), to_tsvector('simple', '%s')
+            'test@example.com', NOW(), NOW()
         ) ON CONFLICT (project_key, experiment_id) DO NOTHING;
         """
-            .formatted(projectKey, experimentId, name, experimentKey, status, type, name);
+            .formatted(projectKey, experimentId, name, experimentKey, status, type);
     try {
       TestUtil.executeSQLStatement(TestUtil.getDatabaseConnection(), insert);
     } catch (Exception e) {

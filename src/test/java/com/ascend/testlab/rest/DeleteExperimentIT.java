@@ -113,27 +113,32 @@ class DeleteExperimentIT {
   }
 
   private void seedExperiment() {
+    String variantsJson =
+        "'{\"control\": {\"display_name\": \"Control\", \"variant_name\": \"control\", \"variables\": []}, "
+            + "\"variant1\": {\"display_name\": \"Treatment\", \"variant_name\": \"treatment\", \"variables\": []}}'";
+
+    String variantWeightsJson = "'{\"weights\":{\"control\": 50, \"variant1\": 50}}'";
+
     String insert =
-        """
-           INSERT INTO experiment.experiments (
-              project_key, experiment_id, name, experiment_key, description, hypothesis, status, type,
-              guardrail_health_status, cohorts, variant_weights, distribution_strategy,
-              assignment_domain, overrides, rule_attributes, winning_variant, exposure, threshold,
-              start_time, end_time, created_by, created_at, updated_at, name_tsvector
-           ) VALUES (
-              '%s', '%s', 'Test Experiment', 'test-experiment', 'Test Description', 'Test Hypothesis', 'LIVE', 'A/B',
-              'PASSED', ARRAY['all_users'], '{"control": 50, "variant_a": 50}'::jsonb, 'RANDOM',
-              'COHORT', NULL, NULL::jsonb, NULL::jsonb, 100, 1000,
-              EXTRACT(EPOCH FROM NOW() - INTERVAL '7 days')::bigint * 1000,
-              EXTRACT(EPOCH FROM NOW() + INTERVAL '23 days')::bigint * 1000,
-              'test@example.com', NOW(), NOW(), to_tsvector('simple', 'Test Experiment')
-           ) ON CONFLICT (project_key, experiment_id) DO NOTHING;
-           """
-            .formatted(PROJECT_KEY, EXPERIMENT_ID);
+        String.format(
+            "INSERT INTO experiment.experiments "
+                + "(project_key, experiment_id, name, description, status, type, distribution_strategy, "
+                + "assignment_domain, variants, variant_weights, cohorts, overrides, exposure, threshold, "
+                + "start_time, end_time, experiment_key, created_by) "
+                + "VALUES ('%s', '%s', 'test-exp', 'Test experiment description', 'LIVE', 'A/B', 'RANDOM', "
+                + "'COHORT', %s::jsonb, %s::jsonb, '{}'::varchar[], NULL, 100, 1000, "
+                + "EXTRACT(EPOCH FROM NOW()) * 1000, EXTRACT(EPOCH FROM NOW() + INTERVAL '30 days') * 1000, "
+                + "'test-key', 'test-user');",
+            PROJECT_KEY, EXPERIMENT_ID, variantsJson, variantWeightsJson);
+
     try {
       TestUtil.executeSQLStatement(TestUtil.getDatabaseConnection(), insert);
     } catch (Exception e) {
-      throw new RuntimeException("Failed seeding experiment for tests", e);
+      log.error("Failed to execute SQL: {}", insert, e);
+      throw new RuntimeException(
+          String.format(
+              "Failed seeding experiment %s for tests: %s", EXPERIMENT_ID, e.getMessage()),
+          e);
     }
   }
 

@@ -28,7 +28,7 @@ CREATE TABLE IF NOT EXISTS experiment.experiments (
     variants            JSONB,
     distribution_strategy experiment.experiment_strategy NOT NULL,
     assignment_domain   experiment.assignment_domain NOT NULL,
-    overrides           VARCHAR(255) ARRAY,
+    overrides           JSONB,
     rule_attributes     JSONB,
     winning_variant     JSONB,
     exposure            INTEGER,

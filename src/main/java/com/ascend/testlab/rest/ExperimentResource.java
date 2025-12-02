@@ -1,7 +1,6 @@
 package com.ascend.testlab.rest;
 
 import com.ascend.testlab.dto.ResponseEntity;
-import com.ascend.testlab.dto.entity.experiment.Experiment;
 import com.ascend.testlab.dto.request.CreateExperimentRequest;
 import com.ascend.testlab.dto.request.UpdateExperimentRequest;
 import com.ascend.testlab.dto.response.CreateExperimentResponse;
@@ -73,9 +72,8 @@ public class ExperimentResource {
   public CompletionStage<ResponseEntity.Success<CreateExperimentResponse>> create(
       @HeaderParam("x-project-key") String projectKey, @Valid CreateExperimentRequest request) {
 
-    Experiment experiment = Experiment.fromRequest(request);
     return experimentService
-        .createExperiment(projectKey, experiment)
+        .createExperiment(projectKey, request)
         .map(ResponseEntity.Success::new)
         .toCompletionStage();
   }

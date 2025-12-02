@@ -330,6 +330,12 @@ public enum ErrorEnum implements RestError {
       "Rule attributes list cannot be empty. Provide at least one rule",
       HttpStatus.SC_BAD_REQUEST),
 
+  /** The error code when experiment has no targeting criteria (neither cohorts nor rules). */
+  INVALID_TARGET_CRITERIA(
+      "INVALID_TARGET_CRITERIA",
+      "Experiment must have at least one targeting criteria (cohorts or rules).",
+      HttpStatus.SC_BAD_REQUEST),
+
   /** The error code when trying to remove a condition in LIVE/PAUSED mode. */
   CONDITION_REMOVAL_NOT_ALLOWED(
       "CONDITION_REMOVAL_NOT_ALLOWED",
@@ -340,6 +346,12 @@ public enum ErrorEnum implements RestError {
   RULE_REMOVAL_NOT_ALLOWED(
       "RULE_REMOVAL_NOT_ALLOWED",
       "Rules cannot be removed in LIVE or PAUSED mode",
+      HttpStatus.SC_BAD_REQUEST),
+
+  /** The error code when trying to add a rule in LIVE/PAUSED mode. */
+  RULE_ADDITION_NOT_ALLOWED(
+      "RULE_ADDITION_NOT_ALLOWED",
+      "Rules cannot be added in LIVE or PAUSED mode",
       HttpStatus.SC_BAD_REQUEST),
 
   /** The error code when trying to change condition operator in LIVE/PAUSED mode. */

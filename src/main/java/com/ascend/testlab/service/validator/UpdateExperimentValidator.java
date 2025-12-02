@@ -96,7 +96,11 @@ public final class UpdateExperimentValidator {
             });
   }
 
-  /** Returns validation rules for testing. */
+  /**
+   * Returns validation rules for testing.
+   *
+   * @return list of update validation rules
+   */
   public static List<UpdateValidationRule> getRules() {
     return RULES;
   }

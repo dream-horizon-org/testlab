@@ -136,7 +136,7 @@ public class ExperimentDAOImpl implements ExperimentDAO {
     int currentPage = req.getPage();
     int pageSize = rowCount;
     int offset = (currentPage - 1) * req.getLimit();
-    boolean hasNextPage = pageSize == req.getLimit() && (offset + pageSize) <= totalCount;
+    boolean hasNextPage = pageSize == req.getLimit() && (offset + pageSize) < totalCount;
 
     return PaginationMeta.builder()
         .pageSize(pageSize)
@@ -149,11 +149,6 @@ public class ExperimentDAOImpl implements ExperimentDAO {
   /** {@inheritDoc} */
   @Override
   public Single<Boolean> deleteExperiment(String projectKey, Experiment experiment) {
-    Tuple tuple = Tuple.of(projectKey, experiment.getExperimentId().toString());
-
-    JsonObject previous_data_json = JsonObject.mapFrom(experiment);
-
-    // make this parallel
     return pgWriterClient
         .executeWithTransaction(
             (sqlConnection) -> deleteExperiment(sqlConnection, projectKey, experiment).toMaybe(),
@@ -181,25 +176,41 @@ public class ExperimentDAOImpl implements ExperimentDAO {
                 Single.zip(
                     deleteTags(sqlConnection, projectKey, experiment.getExperimentId().toString()),
                     deleteOwner(sqlConnection, projectKey, experiment.getExperimentId().toString()),
+                    deleteAnalysis(
+                        sqlConnection, projectKey, experiment.getExperimentId().toString()),
                     insertUpdateLog(sqlConnection, projectKey, experiment, null),
-                    (tagsDelete, ownersDelete, logStatus) ->
-                        tagsDelete && ownersDelete && logStatus));
+                    (tagsDelete, ownersDelete, analysisStatus, logStatus) ->
+                        tagsDelete && ownersDelete && analysisStatus && logStatus));
+  }
+
+  private Single<Boolean> deleteAnalysis(
+      SqlConnection connection, String projectKey, String experimentId) {
+    return pgWriterClient
+        .execute(
+            connection,
+            WriteQuery.DELETE_EXPERIMENT_ANALYSIS,
+            Tuple.tuple().addString(projectKey).addString(experimentId))
+        .map(res -> true);
   }
 
   private Single<Boolean> deleteTags(
       SqlConnection sqlConnection, String projectKey, String experimentId) {
-    return pgWriterClient.execute(
-        sqlConnection,
-        WriteQuery.DELETE_TAG_FOR_EXPERIMENT,
-        Tuple.tuple().addString(projectKey).addString(experimentId));
+    return pgWriterClient
+        .execute(
+            sqlConnection,
+            WriteQuery.DELETE_TAG_FOR_EXPERIMENT,
+            Tuple.tuple().addString(projectKey).addString(experimentId))
+        .map(res -> true);
   }
 
   private Single<Boolean> deleteOwner(
       SqlConnection sqlConnection, String projectKey, String experimentId) {
-    return pgWriterClient.execute(
-        sqlConnection,
-        WriteQuery.DELETE_OWNER_FOR_EXPERIMENT,
-        Tuple.tuple().addString(projectKey).addString(experimentId));
+    return pgWriterClient
+        .execute(
+            sqlConnection,
+            WriteQuery.DELETE_OWNER_FOR_EXPERIMENT,
+            Tuple.tuple().addString(projectKey).addString(experimentId))
+        .map(res -> true);
   }
 
   /**
@@ -236,10 +247,10 @@ public class ExperimentDAOImpl implements ExperimentDAO {
             .addJsonObject(JsonObject.mapFrom(experiment.getVariants()))
             .addString(experiment.getDistributionStrategy().name())
             .addString(experiment.getAssignmentDomain().name())
-            .addValue(
+            .addJsonObject(
                 experiment.getOverrides() == null || experiment.getOverrides().isEmpty()
-                    ? new String[0]
-                    : experiment.getOverrides().toArray(new String[0]))
+                    ? null
+                    : JsonObject.mapFrom(experiment.getOverrides()))
             .addJsonArray(new JsonArray(experiment.getRuleAttributes()))
             .addValue(experiment.getExposure())
             .addValue(experiment.getThreshold())

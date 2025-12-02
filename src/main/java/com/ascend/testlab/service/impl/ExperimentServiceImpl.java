@@ -1,8 +1,10 @@
 package com.ascend.testlab.service.impl;
 
 import com.ascend.testlab.dao.AdminDAO;
+import com.ascend.testlab.dao.AllocationDAO;
 import com.ascend.testlab.dao.ExperimentDAO;
 import com.ascend.testlab.dto.entity.experiment.Experiment;
+import com.ascend.testlab.dto.request.CreateExperimentRequest;
 import com.ascend.testlab.dto.request.FilterExperimentsRequest;
 import com.ascend.testlab.dto.request.UpdateExperimentRequest;
 import com.ascend.testlab.dto.response.CreateExperimentResponse;
@@ -35,11 +37,21 @@ public class ExperimentServiceImpl implements ExperimentService {
 
   private final ExperimentDAO experimentDAO;
   private final AdminDAO adminDAO;
+  private final AllocationDAO allocationDAO;
 
+  /**
+   * Constructs ExperimentServiceImpl with required dependencies.
+   *
+   * @param experimentDAO the experiment data access object
+   * @param adminDAO the admin data access object
+   * @param allocationDAO the allocation data access object
+   */
   @Inject
-  public ExperimentServiceImpl(ExperimentDAO experimentDAO, AdminDAO adminDAO) {
+  public ExperimentServiceImpl(
+      ExperimentDAO experimentDAO, AdminDAO adminDAO, AllocationDAO allocationDAO) {
     this.experimentDAO = experimentDAO;
     this.adminDAO = adminDAO;
+    this.allocationDAO = allocationDAO;
   }
 
   @Override
@@ -70,14 +82,16 @@ public class ExperimentServiceImpl implements ExperimentService {
   }
 
   @Override
-  public Single<CreateExperimentResponse> createExperiment(String projectKey, Experiment request) {
+  public Single<CreateExperimentResponse> createExperiment(
+      String projectKey, CreateExperimentRequest request) {
     log.info("Creating experiment: projectKey={}, name={}", projectKey, request.getName());
 
-    initializeExperiment(request);
+    Experiment experiment = Experiment.fromRequest(request);
+    initializeExperiment(experiment);
 
     return experimentDAO
-        .createExperiment(projectKey, request)
-        .map(status -> new CreateExperimentResponse(request.getExperimentId(), status))
+        .createExperiment(projectKey, experiment)
+        .map(status -> new CreateExperimentResponse(experiment.getExperimentId(), status))
         .onErrorResumeNext(
             err -> {
               log.error("Failed to create experiment: {}", err.getMessage(), err);

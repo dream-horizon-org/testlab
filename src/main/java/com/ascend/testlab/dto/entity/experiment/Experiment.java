@@ -45,7 +45,7 @@ public class Experiment {
   private List<RuleAttributes> ruleAttributes;
   private DistributionStrategy distributionStrategy;
   private AssignmentDomain assignmentDomain;
-  private List<String> overrides;
+  private Map<String, List<String>> overrides;
   private WinningVariant winningVariant;
   private Integer exposure;
   private Long threshold;
@@ -67,6 +67,9 @@ public class Experiment {
    * @return the experiment entity
    */
   public static Experiment fromRequest(CreateExperimentRequest request) {
+    Map<String, List<String>> overridesMap =
+        request.getOverrides() != null ? request.getOverrides().getOverrideIds() : null;
+
     return Experiment.builder()
         .name(request.getName())
         .description(request.getDescription())
@@ -77,7 +80,7 @@ public class Experiment {
         .cohorts(request.getCohorts())
         .variantWeights(request.getVariantWeights())
         .variants(request.getVariants())
-        .overrides(request.getOverrides())
+        .overrides(overridesMap)
         .distributionStrategy(DistributionStrategy.valueOf(request.getDistributionStrategy()))
         .assignmentDomain(AssignmentDomain.valueOf(request.getAssignmentDomain()))
         .threshold(request.getThreshold())

@@ -17,6 +17,7 @@ import java.util.Set;
  * Validates cohort-related constraints.
  *
  * <ul>
+ *   <li>Cohorts and rule_attributes cannot be empty (DRAFT only)
  *   <li>Cohort type (COHORT/STRATIFIED) cannot be changed
  *   <li>In STRATIFIED experiments, cohorts in variant weights must exist in cohorts list
  *   <li>Cohorts can only be removed in DRAFT mode
@@ -31,22 +32,34 @@ public class CohortValidationRule implements UpdateValidationRule {
   /** {@inheritDoc} */
   @Override
   public boolean appliesTo(Experiment existing, UpdateExperimentRequest request) {
-    return request.getCohorts() != null || request.getVariantWeights() != null;
+    return request.getCohorts() != null
+        || request.getVariantWeights() != null
+        || request.getRuleAttributes() != null;
   }
 
   /** {@inheritDoc} */
   @Override
   public void validate(Experiment existing, UpdateExperimentRequest request) {
     ExperimentStatus status = existing.getStatus();
-    validateCohortsNotEmpty(status, request.getCohorts());
+    validateCohortsAndRulesNotEmpty(status, request);
     validateCohortTypeUnchanged(existing, request);
     validateCohortRemoval(status, existing.getCohorts(), request.getCohorts());
     validateStratifiedCohorts(existing, request);
   }
 
-  /** Validates that cohorts list is not empty if provided - only in DRAFT mode. */
-  private void validateCohortsNotEmpty(ExperimentStatus status, List<String> cohorts) {
-    if (cohorts != null && cohorts.isEmpty() && status == ExperimentStatus.DRAFT) {
+  /** Validates that cohorts and rule_attributes are not empty - only in DRAFT mode. */
+  private void validateCohortsAndRulesNotEmpty(
+      ExperimentStatus status, UpdateExperimentRequest request) {
+    if (status != ExperimentStatus.DRAFT) {
+      return;
+    }
+
+    List<String> cohorts = request.getCohorts();
+    List<?> rules = request.getRuleAttributes();
+    boolean isCohortsEmpty = (request.getCohorts() == null || request.getCohorts().isEmpty());
+    boolean isRulesEmpty =
+        (request.getRuleAttributes() == null || request.getRuleAttributes().isEmpty());
+    if (isCohortsEmpty && isRulesEmpty) {
       throw new RestException(ErrorEnum.COHORTS_CANNOT_BE_EMPTY);
     }
   }

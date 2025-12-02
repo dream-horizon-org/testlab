@@ -101,6 +101,7 @@ public class VariantValidationRule implements UpdateValidationRule {
    *
    * <ul>
    *   <li>All variants must have the SAME variable keys
+   *   <li>Same key must have same dataType across all variants
    *   <li>New key added → only allowed in DRAFT mode
    *   <li>Key removed → only allowed in DRAFT mode
    *   <li>dataType cannot change for existing keys
@@ -111,57 +112,48 @@ public class VariantValidationRule implements UpdateValidationRule {
       Map<String, Variant> existingVariants,
       Map<String, Variant> requestVariants) {
 
-    Set<String> existingKeys = new HashSet<>();
-    Map<String, String> existingKeyDataTypes = new HashMap<>();
-    if (existingVariants != null) {
-      for (Variant variant : existingVariants.values()) {
-        if (variant.getVariables() != null) {
-          for (Variables var : variant.getVariables()) {
-            existingKeys.add(var.getKey());
-            existingKeyDataTypes.put(var.getKey(), var.getDataType());
-          }
-        }
-      }
-    }
+    Map<String, String> existingKeyDataTypes = collectKeyDataTypes(existingVariants);
 
-    Set<String> allRequestKeys = new HashSet<>();
     Map<String, String> requestKeyDataTypes = new HashMap<>();
-
     for (Variant variant : requestVariants.values()) {
-      if (variant.getVariables() != null) {
-        for (Variables var : variant.getVariables()) {
-          String key = var.getKey();
-          String dataType = var.getDataType();
-          allRequestKeys.add(key);
+      if (variant.getVariables() == null) continue;
 
-          if (requestKeyDataTypes.containsKey(key)) {
-            if (!Objects.equals(requestKeyDataTypes.get(key), dataType)) {
-              throw new RestException(ErrorEnum.VARIABLE_DATA_TYPE_INCONSISTENT_ACROSS_VARIANTS);
-            }
-          } else {
-            requestKeyDataTypes.put(key, dataType);
-          }
+      for (Variables var : variant.getVariables()) {
+        String key = var.getKey();
+        String dataType = var.getDataType();
 
-          if (existingKeyDataTypes.containsKey(key)
-              && !Objects.equals(existingKeyDataTypes.get(key), dataType)) {
-            throw new RestException(ErrorEnum.VARIABLE_DATA_TYPE_CHANGED);
+        if (requestKeyDataTypes.containsKey(key)) {
+          if (!Objects.equals(requestKeyDataTypes.get(key), dataType)) {
+            throw new RestException(ErrorEnum.VARIABLE_DATA_TYPE_INCONSISTENT_ACROSS_VARIANTS);
           }
+        } else {
+          requestKeyDataTypes.put(key, dataType);
+        }
+
+        if (existingKeyDataTypes.containsKey(key)
+            && !Objects.equals(existingKeyDataTypes.get(key), dataType)) {
+          throw new RestException(ErrorEnum.VARIABLE_DATA_TYPE_CHANGED);
         }
       }
     }
 
-    Set<String> removedKeys = new HashSet<>(existingKeys);
-    removedKeys.removeAll(allRequestKeys);
+    Set<String> existingKeys = existingKeyDataTypes.keySet();
+    Set<String> requestKeys = requestKeyDataTypes.keySet();
 
-    if (!removedKeys.isEmpty() && status != ExperimentStatus.DRAFT) {
-      throw new RestException(ErrorEnum.VARIABLE_KEY_REMOVAL_NOT_ALLOWED);
+    if (status != ExperimentStatus.DRAFT) {
+      for (String existingKey : existingKeys) {
+        if (!requestKeys.contains(existingKey)) {
+          throw new RestException(ErrorEnum.VARIABLE_KEY_REMOVAL_NOT_ALLOWED);
+        }
+      }
     }
 
-    Set<String> addedKeys = new HashSet<>(allRequestKeys);
-    addedKeys.removeAll(existingKeys);
-
-    if (!addedKeys.isEmpty() && status != ExperimentStatus.DRAFT) {
-      throw new RestException(ErrorEnum.VARIABLE_KEY_ADDITION_NOT_ALLOWED);
+    if (status != ExperimentStatus.DRAFT) {
+      for (String requestKey : requestKeys) {
+        if (!existingKeys.contains(requestKey)) {
+          throw new RestException(ErrorEnum.VARIABLE_KEY_ADDITION_NOT_ALLOWED);
+        }
+      }
     }
 
     for (Map.Entry<String, Variant> entry : requestVariants.entrySet()) {
@@ -172,9 +164,23 @@ public class VariantValidationRule implements UpdateValidationRule {
         }
       }
 
-      if (!variantKeys.equals(allRequestKeys)) {
+      if (!variantKeys.equals(requestKeys)) {
         throw new RestException(ErrorEnum.VARIABLE_KEYS_INCONSISTENT_ACROSS_VARIANTS);
       }
     }
+  }
+
+  private Map<String, String> collectKeyDataTypes(Map<String, Variant> variants) {
+    Map<String, String> keyDataTypes = new HashMap<>();
+    if (variants == null) return keyDataTypes;
+
+    for (Variant variant : variants.values()) {
+      if (variant.getVariables() == null) continue;
+
+      for (Variables var : variant.getVariables()) {
+        keyDataTypes.put(var.getKey(), var.getDataType());
+      }
+    }
+    return keyDataTypes;
   }
 }

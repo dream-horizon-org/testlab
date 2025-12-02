@@ -52,7 +52,7 @@ public final class WriteQuery {
       VALUES (
         $1, $2, $3::varchar, $4, $5, $6,\s
         $7::experiment.experiment_status, $8::experiment.experiment_type, $9::varchar[], $10::jsonb, $11::jsonb,
-        $12::experiment.experiment_strategy, $13::experiment.assignment_domain, $14::varchar[], $15::jsonb,
+        $12::experiment.experiment_strategy, $13::experiment.assignment_domain, $14::jsonb, $15::jsonb,
         $16, $17, $18, $19, $20
       )
      \s""";
@@ -150,6 +150,24 @@ public final class WriteQuery {
       DELETE FROM experiment.tags
       WHERE project_key = $1 AND experiment_id = $2
       """;
+
+  /**
+   * Deletes all tags associated with an experiment.
+   *
+   * <p>Used during experiment deletion or when clearing all tags.
+   *
+   * <p>Parameters:
+   *
+   * <ol>
+   *   <li>$1: project_key (VARCHAR)
+   *   <li>$2: experiment_id (UUID)
+   * </ol>
+   */
+  public static final String DELETE_EXPERIMENT_ANALYSIS =
+      """
+            DELETE FROM experiment.experiment_analysis
+            WHERE project_key = $1 AND experiment_id = $2
+            """;
 
   /**
    * Inserts an experiment update log entry.

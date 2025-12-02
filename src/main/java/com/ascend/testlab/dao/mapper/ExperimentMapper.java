@@ -68,10 +68,8 @@ public class ExperimentMapper {
           row.getArrayOfStrings(Columns.COHORTS) != null
               ? List.of(row.getArrayOfStrings(Columns.COHORTS))
               : null;
-      List<String> overrides =
-          row.getArrayOfStrings(Columns.OVERRIDES) != null
-              ? List.of(row.getArrayOfStrings(Columns.OVERRIDES))
-              : null;
+      Map<String, List<String>> overrides =
+          deserializeOverrides(row.getJsonObject(Columns.OVERRIDES), mapper, experimentId);
       List<String> tags =
           row.getColumnIndex(Columns.TAGS) < 0 || row.getString(Columns.TAGS) == null
               ? null
@@ -256,6 +254,45 @@ public class ExperimentMapper {
       return ruleAttributes;
     } catch (Exception e) {
       log.error("Error deserializing rule attributes for experiment {}", experimentId, e);
+      throw e;
+    }
+  }
+
+  /**
+   * Deserializes overrides JSON into a map of variant names to user ID lists.
+   *
+   * @param overridesJson the JSON object containing overrides
+   * @param objectMapper the ObjectMapper for JSON deserialization
+   * @param experimentId experiment ID for logging
+   * @return map of variant names to user IDs, or null if null
+   * @throws Exception if deserialization fails
+   */
+  private static Map<String, List<String>> deserializeOverrides(
+      JsonObject overridesJson, ObjectMapper objectMapper, UUID experimentId) throws Exception {
+
+    if (Objects.isNull(overridesJson)) {
+      log.debug("Null overrides JSON for experiment {}", experimentId);
+      return null;
+    }
+
+    try {
+      String jsonString = overridesJson.toString();
+      Map<String, List<String>> overrides =
+          objectMapper.readValue(
+              jsonString,
+              objectMapper
+                  .getTypeFactory()
+                  .constructMapType(
+                      Map.class,
+                      objectMapper.getTypeFactory().constructType(String.class),
+                      objectMapper
+                          .getTypeFactory()
+                          .constructCollectionType(List.class, String.class)));
+
+      log.debug("Deserialized Overrides for experiment {}: {}", experimentId, overrides);
+      return overrides;
+    } catch (Exception e) {
+      log.error("Error deserializing overrides for experiment {}", experimentId, e);
       throw e;
     }
   }

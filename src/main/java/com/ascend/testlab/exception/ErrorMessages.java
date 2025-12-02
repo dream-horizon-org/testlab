@@ -79,4 +79,8 @@ public final class ErrorMessages {
 
   /** Error message when a user ID is missing or empty in the allocation request. */
   public static final String USER_ID_MISSING = "User ID is required";
+
+  /** Error message when experiment has no targeting criteria (neither cohorts nor rules). */
+  public static final String INVALID_TARGET_CRITERIA =
+      "Experiment must have at least one targeting criteria (cohorts or rules).";
 }

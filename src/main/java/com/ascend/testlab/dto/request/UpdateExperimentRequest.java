@@ -6,6 +6,7 @@ import com.ascend.testlab.constants.enums.AssignmentDomain;
 import com.ascend.testlab.constants.enums.DistributionStrategy;
 import com.ascend.testlab.constants.enums.HealthStatus;
 import com.ascend.testlab.dto.entity.experiment.Metrics;
+import com.ascend.testlab.dto.entity.experiment.Overrides;
 import com.ascend.testlab.dto.entity.experiment.RuleAttributes;
 import com.ascend.testlab.dto.entity.experiment.Variant;
 import com.ascend.testlab.dto.entity.experiment.WinningVariant;
@@ -43,7 +44,7 @@ public class UpdateExperimentRequest {
 
   private List<String> tags;
 
-  private List<String> owner;
+  private List<String> owners;
 
   @Size(max = 255, message = "Description must not exceed 255 characters")
   private String description;
@@ -81,11 +82,11 @@ public class UpdateExperimentRequest {
 
   @Valid private List<RuleAttributes> ruleAttributes;
 
-  private List<String> overrides;
+  private Overrides overrides;
 
   @Valid private WinningVariant winningVariant;
 
-  @Min(value = 0, message = "Exposure must be at least 0")
+  @Min(value = 1, message = "Exposure must be at least 1    ")
   @Max(value = 100, message = "Exposure must not exceed 100")
   private Integer exposure;
 

@@ -17,7 +17,6 @@ import java.util.Set;
  * Validates rule attributes constraints.
  *
  * <ul>
- *   <li>Rule attributes list cannot be empty (only in DRAFT mode)
  *   <li>Rules cannot be removed in LIVE or PAUSED mode
  *   <li>Conditions cannot be added or removed in LIVE or PAUSED mode
  *   <li>For existing conditions: only value can change in LIVE/PAUSED, operandDataType and operator
@@ -42,11 +41,6 @@ public class RuleAttributesValidationRule implements UpdateValidationRule {
   public void validate(Experiment existing, UpdateExperimentRequest request) {
     List<RuleAttributes> requestRules = request.getRuleAttributes();
     ExperimentStatus status = existing.getStatus();
-
-    if (requestRules.isEmpty() && status == ExperimentStatus.DRAFT) {
-      throw new RestException(ErrorEnum.RULE_ATTRIBUTES_CANNOT_BE_EMPTY);
-    }
-
     List<RuleAttributes> existingRules = existing.getRuleAttributes();
 
     if (existingRules == null || existingRules.isEmpty()) {

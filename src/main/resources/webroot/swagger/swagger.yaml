@@ -658,9 +658,7 @@ components:
           items:
             $ref: '#/components/schemas/RuleAttributes'
         overrides:
-          type: array
-          items:
-            type: string
+          $ref: '#/components/schemas/Overrides'
         tags:
           type: array
           items:
@@ -702,6 +700,15 @@ components:
           type: array
           items:
             type: string
+    Overrides:
+      type: object
+      properties:
+        override_ids:
+          type: object
+          additionalProperties:
+            type: array
+            items:
+              type: string
     RuleAttributes:
       required:
       - name
@@ -748,7 +755,7 @@ components:
           type: array
           items:
             type: string
-        owner:
+        owners:
           type: array
           items:
             type: string
@@ -785,14 +792,12 @@ components:
           items:
             $ref: '#/components/schemas/RuleAttributes'
         overrides:
-          type: array
-          items:
-            type: string
+          $ref: '#/components/schemas/Overrides'
         winning_variant:
           $ref: '#/components/schemas/WinningVariant'
         exposure:
           maximum: 100
-          minimum: 0
+          minimum: 1
           type: integer
           format: int32
         threshold:
@@ -877,9 +882,11 @@ components:
           - STRATIFIED
           - COHORT
         overrides:
-          type: array
-          items:
-            type: string
+          type: object
+          additionalProperties:
+            type: array
+            items:
+              type: string
         winning_variant:
           $ref: '#/components/schemas/WinningVariant'
         exposure:

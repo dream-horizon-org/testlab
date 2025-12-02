@@ -80,7 +80,10 @@ public class ExperimentUpdateQueryBuilder {
         previous.getRuleAttributes() != null ? new JsonArray(previous.getRuleAttributes()) : null,
         updated.getRuleAttributes() != null ? new JsonArray(updated.getRuleAttributes()) : null);
 
-    builder.addArrayIfChanged("overrides", previous.getOverrides(), updated.getOverrides());
+    builder.addJsonIfChanged(
+        "overrides",
+        previous.getOverrides() != null ? JsonObject.mapFrom(previous.getOverrides()) : null,
+        updated.getOverrides() != null ? JsonObject.mapFrom(updated.getOverrides()) : null);
 
     builder.addJsonIfChanged(
         "winning_variant",

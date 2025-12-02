@@ -7,9 +7,15 @@ import com.ascend.testlab.dto.entity.variantweights.CohortVariantWeights;
 import com.ascend.testlab.dto.entity.variantweights.StratifiedVariantWeights;
 import com.ascend.testlab.dto.entity.variantweights.VariantWeights;
 import com.ascend.testlab.dto.request.CreateExperimentRequest;
+import com.ascend.testlab.exception.ErrorMessages;
 import jakarta.validation.ConstraintValidator;
 import jakarta.validation.ConstraintValidatorContext;
-import java.util.*;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
 
 /**
  * Validator for create experiment requests.
@@ -52,6 +58,10 @@ public class CreateExperimentValidator
       isValid = false;
     }
 
+    if (!validateOverrides(request, context)) {
+      isValid = false;
+    }
+
     return isValid;
   }
 
@@ -76,10 +86,7 @@ public class CreateExperimentValidator
         (request.getRuleAttributes() == null || request.getRuleAttributes().isEmpty());
 
     if (isCohortsEmpty && isRulesEmpty) {
-      addError(
-          context,
-          "Experiment must have at least one targeting criteria (cohorts or rules).",
-          "cohorts");
+      addError(context, ErrorMessages.INVALID_TARGET_CRITERIA, "cohorts");
       return false;
     }
     return true;
@@ -195,6 +202,50 @@ public class CreateExperimentValidator
     }
     addError(context, "Experiment status must be LIVE or DRAFT", "experimentStatus");
     return false;
+  }
+
+  /**
+   * Validates that if overrides are provided, all variant names exist in the variants map.
+   *
+   * @param request the create experiment request
+   * @param context the constraint validator context
+   * @return true if valid, false otherwise
+   */
+  private boolean validateOverrides(
+      CreateExperimentRequest request, ConstraintValidatorContext context) {
+    if (request.getOverrides() == null || request.getOverrides().getOverrideIds() == null) {
+      return true;
+    }
+
+    Map<String, List<String>> overrideIds = request.getOverrides().getOverrideIds();
+    if (overrideIds.isEmpty()) {
+      return true;
+    }
+
+    Map<String, ?> variants = request.getVariants();
+    if (variants == null || variants.isEmpty()) {
+      addError(context, "Overrides specified but no variants defined", "overrides");
+      return false;
+    }
+
+    Set<String> invalidVariants = new HashSet<>();
+    for (String variantName : overrideIds.keySet()) {
+      if (!variants.containsKey(variantName)) {
+        invalidVariants.add(variantName);
+      }
+    }
+
+    if (!invalidVariants.isEmpty()) {
+      addError(
+          context,
+          String.format(
+              "Override variant names %s do not exist in variants. Available variants: %s",
+              invalidVariants, variants.keySet()),
+          "overrides");
+      return false;
+    }
+
+    return true;
   }
 
   private void addError(ConstraintValidatorContext context, String message, String fieldName) {
