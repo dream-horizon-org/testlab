@@ -1,4 +1,4 @@
-package com.ascend.testlab.dto.entity;
+package com.ascend.testlab.dto.entity.experiment;
 
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;

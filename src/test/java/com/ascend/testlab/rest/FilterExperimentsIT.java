@@ -785,7 +785,7 @@ class FilterExperimentsIT {
    */
   private static void seedExperiment(
       String projectKey, String experimentId, String name, String status, String type) {
-    String experimentKey = CommonUtil.getExperimentKey(name);
+    String experimentKey = CommonUtil.normalizeExperimentKey(name);
     String insert =
         """
         INSERT INTO experiment.experiments (

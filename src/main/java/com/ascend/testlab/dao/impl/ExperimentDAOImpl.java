@@ -137,7 +137,7 @@ public class ExperimentDAOImpl implements ExperimentDAO {
         .pageSize(pageSize)
         .currentPage(req.getPage())
         .totalCount(totalCount)
-        .hasNextPage(hasNextPage)
+        .hasNext(hasNextPage)
         .build();
   }
 

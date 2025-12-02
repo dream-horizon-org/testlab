@@ -36,7 +36,7 @@ public final class ErrorMessages {
   public static final String INVALID_OPERAND_DATA_TYPE = "invalid operand data type";
 
   /** The error message for the experiment key missing. */
-  public static final String EXPERIMENT_KEY_MISSING = "experimentKey query parameter is missing";
+  public static final String EXPERIMENT_KEY_MISSING = "experiment_key query parameter is missing";
 
   /** The error message for the experiment id missing. */
   public static final String EXPERIMENT_ID_MISSING = "experiment_id parameter is missing";

@@ -8,8 +8,8 @@ import com.ascend.testlab.config.AerospikeConfig;
 import com.ascend.testlab.constants.postgresql.Columns;
 import com.ascend.testlab.constants.postgresql.ReadQuery;
 import com.ascend.testlab.dao.AdminDAO;
-import com.ascend.testlab.dto.entity.ExperimentHistoryEntry;
 import com.ascend.testlab.dto.entity.experiment.Experiment;
+import com.ascend.testlab.dto.entity.experiment.ExperimentHistoryEntry;
 import com.ascend.testlab.dto.request.ExperimentHistoryRequest;
 import com.ascend.testlab.dto.response.ExperimentHistoryResponse;
 import com.ascend.testlab.dto.response.PaginationMeta;
@@ -19,6 +19,8 @@ import io.reactivex.rxjava3.core.Single;
 import io.vertx.rxjava3.sqlclient.Row;
 import io.vertx.rxjava3.sqlclient.Tuple;
 import java.util.*;
+import java.util.List;
+import java.util.Objects;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -106,6 +108,11 @@ public class AdminDAOImpl implements AdminDAO {
                           .currentPage(request.getPage())
                           .pageSize(historyEntries.size())
                           .totalCount(totalCount)
+                          .hasNext(
+                              Objects.equals(
+                                  Integer.compare(
+                                      request.getPage() * request.getLimit(), totalCount),
+                                  -1))
                           .build())
                   .build();
             });

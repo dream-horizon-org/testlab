@@ -351,7 +351,7 @@ class AdminDAOTest {
       assertNotEquals(
           limit,
           actualResult.pagination().pageSize(),
-          "pageSize should be actual rows returned, not the requested limit");
+          "page_size should be actual rows returned, not the requested limit");
       verify(pgReaderClient, times(1))
           .fetchAll(eq(ReadQuery.FETCH_EXPERIMENT_HISTORY), any(Tuple.class), any(Function.class));
     }

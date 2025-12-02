@@ -475,7 +475,7 @@ public class ExperimentServiceTest {
       FilterExperimentsRequest request =
           FilterExperimentsRequest.builder().limit(10).page(2).build();
       List<Experiment> mockExperiments = List.of(createMockExperiment());
-      PaginationMeta paginationMeta = new PaginationMeta(2, mockExperiments.size(), 25, false);
+      PaginationMeta paginationMeta = new PaginationMeta(2, mockExperiments.size(), 25, true);
       FilterExperimentsResponse expectedResponse =
           new FilterExperimentsResponse(mockExperiments, paginationMeta);
       when(experimentDAO.filterExperiments(PROJECT_KEY, request))

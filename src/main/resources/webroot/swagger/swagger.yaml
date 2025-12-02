@@ -667,7 +667,7 @@ components:
         total_count:
           type: integer
           format: int32
-        has_next_page:
+        has_next:
           type: boolean
     RuleAttributes:
       required:
