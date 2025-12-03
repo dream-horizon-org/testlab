@@ -126,8 +126,14 @@ cd testlab
 
 2. **Start infrastructure services**:
 ```bash
+# With default project key
 docker-compose up -d
+
+# Or with a custom project key
+PROJECT_KEY=your-project-key-here docker-compose up -d
 ```
+
+> **Note**: The `PROJECT_KEY` environment variable is used to create PostgreSQL partitions and seed data for your project. If not specified, it defaults to `550e8400-e29b-41d4-a716-446655440001`.
 
 3. **Build and run TestLab**:
 ```bash
@@ -144,6 +150,7 @@ PG_USER=postgres PG_PASSWORD=postgres java -Dapp.environment=local -Dlogback.con
 |----------|-------------|---------|
 | `PG_USER` | PostgreSQL username | - |
 | `PG_PASSWORD` | PostgreSQL password | - |
+| `PROJECT_KEY` | Project identifier for multi-tenant partitioning | `550e8400-e29b-41d4-a716-446655440001` |
 | `app.environment` | Environment type (local, test, prod) | - |
 
 ### Configuration Files
@@ -155,6 +162,27 @@ Configuration files are located in `src/main/resources/config/`:
 * `aerospike/default.conf` - Aerospike cache settings
 * `http-server/default.conf` - HTTP server settings
 * `circuit-breaker/default.conf` - Resilience settings
+
+### Multi-Tenant Setup (Project Key)
+
+TestLab uses PostgreSQL partitioning for multi-tenant isolation. Each project has its own partition:
+
+```bash
+# Start with a specific project
+PROJECT_KEY=my-project-uuid docker-compose up -d
+
+# Or set it in a .env file
+echo "PROJECT_KEY=my-project-uuid" > .env
+docker-compose up -d
+```
+
+When making API calls, include the project key in the header:
+```bash
+curl -X GET http://localhost:8080/v1/experiments \
+  -H "x-project-key: my-project-uuid"
+```
+
+> **Note**: If you try to access a project that doesn't have a partition, you'll receive a `PARTITION_NOT_FOUND` error. Ensure partitions are created before making API calls.
 
 ## 📚 API Reference
 
@@ -170,8 +198,17 @@ The complete API specification is available at:
 ### Running with Docker
 
 ```bash
+# Default project key
 docker-compose up -d
+
+# Custom project key (creates partitions for your project)
+PROJECT_KEY=my-custom-project-id docker-compose up -d
 ```
+
+The `PROJECT_KEY` variable:
+- Creates PostgreSQL partitions for the specified project
+- Seeds initial experiment data associated with that project
+- Enables multi-tenant isolation per project
 
 ### Running the JAR
 
