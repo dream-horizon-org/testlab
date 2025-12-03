@@ -37,7 +37,6 @@ public class StratifiedVariantSelectionStrategy implements VariantSelectionStrat
         (StratifiedVariantWeights) experiment.getVariantWeights();
     String selectedVariantName = manualWeights.getVariantForCohorts(userCohorts);
 
-    // Validate that the selected variant exists in the experiment's variant map
     if (selectedVariantName == null) {
       log.debug(
           "No variant mapping found for user {} with cohorts {} in experiment {}",

@@ -28,7 +28,7 @@ CREATE TABLE IF NOT EXISTS experiment.experiments (
     variants            JSONB,
     distribution_strategy experiment.experiment_strategy NOT NULL,
     assignment_domain   experiment.assignment_domain NOT NULL,
-    overrides           VARCHAR(255) ARRAY,
+    overrides           JSONB,
     rule_attributes     JSONB,
     winning_variant     JSONB,
     exposure            INTEGER,
@@ -38,12 +38,11 @@ CREATE TABLE IF NOT EXISTS experiment.experiments (
     created_by          VARCHAR(255),
     created_at  TIMESTAMPTZ   NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at  TIMESTAMPTZ   NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    name_tsvector       TSVECTOR,
     PRIMARY KEY ( project_key, experiment_id),
     CONSTRAINT experiment_key_unique_check UNIQUE (project_key, experiment_key)
 ) PARTITION BY LIST (project_key);
 
-CREATE INDEX idx_name_tsvector ON experiment.experiments USING GIN (name_tsvector);
+CREATE INDEX idx_name ON experiment.experiments USING GIN (name gin_trgm_ops);
 
 
 CREATE TABLE IF NOT EXISTS experiment.owners (
@@ -82,8 +81,8 @@ CREATE TABLE IF NOT EXISTS experiment.experiment_analysis (
     project_key       VARCHAR(255) NOT NULL,
     experiment_id     VARCHAR(36) NOT NULL,
     config            VARCHAR(255),
-    primary_metrics   VARCHAR(255),
-    secondary_metrics VARCHAR(255),
+    primary_metrics   VARCHAR(255) ARRAY,
+    secondary_metrics VARCHAR(255) ARRAY,
     metric_tokens     VARCHAR(255),
     created_at        TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at        TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,

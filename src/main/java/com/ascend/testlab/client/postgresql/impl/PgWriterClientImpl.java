@@ -105,9 +105,9 @@ public class PgWriterClientImpl extends AbstractPostgreSQLClient implements PgWr
 
   /** {@inheritDoc} */
   @Override
-  public <T> Maybe<T> executeWithTransaction(
-      Function<SqlConnection, Maybe<T>> transactionalFunction) {
-    return super.rxWithTransaction(transactionalFunction);
+  public <T> Single<T> executeWithTransaction(
+      Function<SqlConnection, Maybe<T>> transactionalFunction, T defaultValue) {
+    return super.rxWithTransaction(transactionalFunction, defaultValue);
   }
 
   /** {@inheritDoc} */

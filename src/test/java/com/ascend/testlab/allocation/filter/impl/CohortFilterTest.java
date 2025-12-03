@@ -219,7 +219,7 @@ class CohortFilterTest {
     return Experiment.builder()
         .experimentId(UUID.randomUUID())
         .name(name)
-        .key(name)
+        .experimentKey(name)
         .projectKey("test-project")
         .status(ExperimentStatus.LIVE)
         .exposure(100)

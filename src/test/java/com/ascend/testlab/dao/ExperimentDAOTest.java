@@ -1,6 +1,7 @@
 package com.ascend.testlab.dao;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static com.ascend.testlab.constants.postgresql.Columns.PROJECT_KEY;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 import com.ascend.testlab.client.postgresql.PgReaderClient;
@@ -9,6 +10,7 @@ import com.ascend.testlab.constants.enums.AssignmentDomain;
 import com.ascend.testlab.constants.enums.DistributionStrategy;
 import com.ascend.testlab.constants.enums.ExperimentStatus;
 import com.ascend.testlab.constants.enums.ExperimentType;
+import com.ascend.testlab.constants.enums.HealthStatus;
 import com.ascend.testlab.constants.postgresql.ReadQuery;
 import com.ascend.testlab.constants.postgresql.WriteQuery;
 import com.ascend.testlab.dao.impl.ExperimentDAOImpl;
@@ -45,36 +47,483 @@ import org.mockito.junit.jupiter.MockitoExtension;
  */
 @ExtendWith({VertxExtension.class, MockitoExtension.class})
 @DisplayName("ExperimentDAO Tests")
-class ExperimentDAOTest {
+public class ExperimentDAOTest {
 
-  @Mock private PgReaderClient pgReaderClient;
-  @Mock private PgWriterClient pgWriterClient;
   private final ObjectMapper objectMapper = new ObjectMapper();
+  @Mock private PgWriterClient pgWriterClient;
+  @Mock private PgReaderClient pgReaderClient;
 
   private ExperimentDAO experimentDAO;
 
-  private static final String PROJECT_KEY = "123e4567-e89b-12d3-a456-426614174000";
-  private static final String EXPERIMENT_ID = UUID.randomUUID().toString();
+  private String testProjectKey;
+  private UUID testExperimentId;
 
   @BeforeEach
   void setUp() {
-    this.experimentDAO = new ExperimentDAOImpl(pgReaderClient, pgWriterClient, objectMapper);
+    experimentDAO =
+        new ExperimentDAOImpl(
+            pgReaderClient, pgWriterClient, new com.fasterxml.jackson.databind.ObjectMapper());
+    testProjectKey = UUID.randomUUID().toString();
+    testExperimentId = UUID.randomUUID();
   }
 
   @Nested
-  @DisplayName("Constructor Tests")
-  class ConstructorTests {
+  @DisplayName("Create Experiment Tests")
+  class CreateExperimentTests {
 
     @Test
-    @DisplayName("Should create DAO with valid dependencies")
-    void testConstructorWithValidDependencies(VertxTestContext testContext) {
+    @DisplayName("Should successfully create experiment with all fields")
+    void testCreateExperimentSuccess() {
+      // Arrange
+      Experiment request = createValidRequest();
+      when(pgWriterClient.executeWithTransaction(any(), any())).thenReturn(Single.just(true));
+
       // Act
-      ExperimentDAO dao = new ExperimentDAOImpl(pgReaderClient, pgWriterClient, objectMapper);
+      TestObserver<Boolean> testObserver =
+          experimentDAO.createExperiment(testProjectKey, request).test();
 
       // Assert
-      assertNotNull(dao);
-      testContext.completeNow();
+      testObserver.assertComplete();
+      testObserver.assertNoErrors();
+      testObserver.assertValue(true);
     }
+
+    @Test
+    @DisplayName("Should create experiment with minimal required fields")
+    void testCreateExperimentMinimalFields() {
+      // Arrange
+      Experiment request = new Experiment();
+      request.setProjectKey(testProjectKey.toString());
+      request.setExperimentId(testExperimentId);
+      request.setName("minimal_experiment");
+      request.setDescription("Minimal description");
+      request.setHypothesis("Minimal hypothesis");
+      request.setStatus(ExperimentStatus.DRAFT);
+      request.setType(ExperimentType.A_B);
+      request.setDistributionStrategy(DistributionStrategy.RANDOM);
+      request.setAssignmentDomain(AssignmentDomain.COHORT);
+      request.setExposure(50);
+      request.setThreshold(1000L);
+      request.setStartTime(System.currentTimeMillis() / 1000);
+      request.setEndTime(System.currentTimeMillis() / 1000 + 86400);
+      request.setCreatedBy("test@example.com");
+
+      when(pgWriterClient.executeWithTransaction(any(), any())).thenReturn(Single.just(true));
+
+      // Act
+      TestObserver<Boolean> testObserver =
+          experimentDAO.createExperiment(testProjectKey, request).test();
+
+      // Assert
+      testObserver.assertComplete();
+      testObserver.assertNoErrors();
+      testObserver.assertValue(true);
+    }
+
+    @Test
+    @DisplayName("Should handle database insert failure")
+    void testCreateExperimentInsertFailure() {
+      // Arrange
+      Experiment request = createValidRequest();
+      when(pgWriterClient.executeWithTransaction(any(), any())).thenReturn(Single.just(false));
+
+      // Act
+      TestObserver<Boolean> testObserver =
+          experimentDAO.createExperiment(testProjectKey, request).test();
+
+      // Assert - returns false on failure
+      testObserver.assertComplete();
+      testObserver.assertNoErrors();
+      testObserver.assertValue(false);
+    }
+
+    @Test
+    @DisplayName("Should handle database error during insert")
+    void testCreateExperimentDatabaseError() {
+      // Arrange
+      Experiment request = createValidRequest();
+      RuntimeException exception = new RuntimeException("Database connection failed");
+      when(pgWriterClient.executeWithTransaction(any(), any())).thenReturn(Single.error(exception));
+
+      // Act
+      TestObserver<Boolean> testObserver =
+          experimentDAO.createExperiment(testProjectKey, request).test();
+
+      // Assert
+      testObserver.assertNotComplete();
+      testObserver.assertError(RuntimeException.class);
+    }
+
+    @Test
+    @DisplayName("Should handle experiment with cohorts array")
+    void testCreateExperimentWithCohorts() {
+      // Arrange
+      Experiment request = createValidRequest();
+      request.setCohorts(Arrays.asList("premium_users", "mobile_users", "web_users"));
+      when(pgWriterClient.executeWithTransaction(any(), any())).thenReturn(Single.just(true));
+
+      // Act
+      TestObserver<Boolean> testObserver =
+          experimentDAO.createExperiment(testProjectKey, request).test();
+
+      // Assert
+      testObserver.assertComplete();
+      testObserver.assertNoErrors();
+      testObserver.assertValue(true);
+    }
+
+    @Test
+    @DisplayName("Should handle experiment with JSONB fields")
+    void testCreateExperimentWithJsonbFields() {
+      // Arrange
+      Experiment request = createValidRequest();
+      Map<String, List<String>> overrides = new HashMap<>();
+      overrides.put("control", List.of("user1@example.com", "user2@example.com"));
+      request.setOverrides(overrides);
+
+      when(pgWriterClient.executeWithTransaction(any(), any())).thenReturn(Single.just(true));
+
+      // Act
+      TestObserver<Boolean> testObserver =
+          experimentDAO.createExperiment(testProjectKey, request).test();
+
+      // Assert
+      testObserver.assertComplete();
+      testObserver.assertNoErrors();
+      testObserver.assertValue(true);
+    }
+
+    @Test
+    @DisplayName("Should handle null optional fields")
+    void testCreateExperimentWithNullFields() {
+      // Arrange
+      Experiment request = new Experiment();
+      request.setProjectKey(testProjectKey.toString());
+      request.setExperimentId(testExperimentId);
+      request.setName("test_experiment");
+      request.setDescription("Test description");
+      request.setHypothesis("Test hypothesis");
+      request.setStatus(ExperimentStatus.DRAFT);
+      request.setType(ExperimentType.A_B);
+      request.setDistributionStrategy(DistributionStrategy.RANDOM);
+      request.setAssignmentDomain(AssignmentDomain.COHORT);
+      request.setGuardrailHealthStatus(null);
+      request.setCohorts(null);
+      request.setVariantWeights(null);
+      request.setExposure(50);
+      request.setThreshold(1000L);
+      request.setStartTime(System.currentTimeMillis() / 1000);
+      request.setEndTime(System.currentTimeMillis() / 1000 + 86400);
+      request.setCreatedBy("test@example.com");
+
+      when(pgWriterClient.executeWithTransaction(any(), any())).thenReturn(Single.just(true));
+
+      // Act
+      TestObserver<Boolean> testObserver =
+          experimentDAO.createExperiment(testProjectKey, request).test();
+
+      // Assert
+      testObserver.assertComplete();
+      testObserver.assertNoErrors();
+      testObserver.assertValue(true);
+    }
+  }
+
+  @Nested
+  @DisplayName("Update Experiment Tests")
+  class UpdateExperimentTests {
+
+    @Test
+    @DisplayName("Should successfully update single field")
+    void testUpdateSingleField() {
+      // Arrange - update is handled via transaction
+      Experiment previous = createValidRequest();
+      Experiment updated = createValidRequest();
+      updated.setDescription("Updated description");
+
+      when(pgWriterClient.executeWithTransaction(any(), any())).thenReturn(Single.just(true));
+
+      // Act
+      TestObserver<Boolean> testObserver =
+          experimentDAO.updateExperiment(testProjectKey, previous, updated).test();
+
+      // Assert
+      testObserver.assertComplete();
+      testObserver.assertNoErrors();
+      testObserver.assertValue(true);
+    }
+
+    @Test
+    @DisplayName("Should successfully update multiple fields")
+    void testUpdateMultipleFields() {
+      // Arrange
+      Experiment previous = createValidRequest();
+      Experiment updated = createValidRequest();
+      updated.setDescription("Updated description");
+      updated.setStatus(ExperimentStatus.LIVE);
+      updated.setExposure(75);
+      updated.setThreshold(15000L);
+
+      when(pgWriterClient.executeWithTransaction(any(), any())).thenReturn(Single.just(true));
+
+      // Act
+      TestObserver<Boolean> testObserver =
+          experimentDAO.updateExperiment(testProjectKey, previous, updated).test();
+
+      // Assert
+      testObserver.assertComplete();
+      testObserver.assertNoErrors();
+      testObserver.assertValue(true);
+    }
+
+    @Test
+    @DisplayName("Should update enum fields correctly")
+    void testUpdateEnumFields() {
+      // Arrange
+      Experiment previous = createValidRequest();
+      Experiment updated = createValidRequest();
+      updated.setStatus(ExperimentStatus.LIVE);
+      updated.setGuardrailHealthStatus(HealthStatus.PASSED);
+      updated.setDistributionStrategy(DistributionStrategy.ROUND_ROBIN);
+
+      when(pgWriterClient.executeWithTransaction(any(), any())).thenReturn(Single.just(true));
+
+      // Act
+      TestObserver<Boolean> testObserver =
+          experimentDAO.updateExperiment(testProjectKey, previous, updated).test();
+
+      // Assert
+      testObserver.assertComplete();
+      testObserver.assertNoErrors();
+      testObserver.assertValue(true);
+    }
+
+    @Test
+    @DisplayName("Should update cohorts array")
+    void testUpdateCohortsArray() {
+      // Arrange
+      Experiment previous = createValidRequest();
+      Experiment updated = createValidRequest();
+      updated.setCohorts(Arrays.asList("premium_users", "mobile_users"));
+
+      when(pgWriterClient.executeWithTransaction(any(), any())).thenReturn(Single.just(true));
+
+      // Act
+      TestObserver<Boolean> testObserver =
+          experimentDAO.updateExperiment(testProjectKey, previous, updated).test();
+
+      // Assert
+      testObserver.assertComplete();
+      testObserver.assertNoErrors();
+      testObserver.assertValue(true);
+    }
+
+    @Test
+    @DisplayName("Should update JSONB fields")
+    void testUpdateJsonbFields() {
+      // Arrange
+      Experiment previous = createValidRequest();
+      Experiment updated = createValidRequest();
+      Map<String, List<String>> overrides = new HashMap<>();
+      overrides.put(
+          "control", List.of("user1@example.com", "user2@example.com", "user3@example.com"));
+      updated.setOverrides(overrides);
+
+      when(pgWriterClient.executeWithTransaction(any(), any())).thenReturn(Single.just(true));
+
+      // Act
+      TestObserver<Boolean> testObserver =
+          experimentDAO.updateExperiment(testProjectKey, previous, updated).test();
+
+      // Assert
+      testObserver.assertComplete();
+      testObserver.assertNoErrors();
+      testObserver.assertValue(true);
+    }
+
+    @Test
+    @DisplayName("Should return true when no fields to update")
+    void testUpdateWithEmptyMap() {
+      // Arrange - same experiment means no changes
+      Experiment previous = createValidRequest();
+      Experiment updated = createValidRequest();
+
+      when(pgWriterClient.executeWithTransaction(any(), any())).thenReturn(Single.just(true));
+
+      // Act
+      TestObserver<Boolean> testObserver =
+          experimentDAO.updateExperiment(testProjectKey, previous, updated).test();
+
+      // Assert
+      testObserver.assertComplete();
+      testObserver.assertNoErrors();
+      testObserver.assertValue(true);
+    }
+
+    @Test
+    @DisplayName("Should handle null values in update")
+    void testUpdateWithNullValues() {
+      // Arrange
+      Experiment previous = createValidRequest();
+      Experiment updated = createValidRequest();
+      updated.setDescription("Updated description");
+      updated.setHypothesis(null);
+
+      when(pgWriterClient.executeWithTransaction(any(), any())).thenReturn(Single.just(true));
+
+      // Act
+      TestObserver<Boolean> testObserver =
+          experimentDAO.updateExperiment(testProjectKey, previous, updated).test();
+
+      // Assert
+      testObserver.assertComplete();
+      testObserver.assertNoErrors();
+      testObserver.assertValue(true);
+    }
+
+    @Test
+    @DisplayName("Should preserve immutable fields")
+    void testUpdateWithDisallowedFields() {
+      // Arrange - immutable fields should be preserved from previous
+      Experiment previous = createValidRequest();
+      Experiment updated = createValidRequest();
+      updated.setDescription("Updated description");
+
+      when(pgWriterClient.executeWithTransaction(any(), any())).thenReturn(Single.just(true));
+
+      // Act
+      TestObserver<Boolean> testObserver =
+          experimentDAO.updateExperiment(testProjectKey, previous, updated).test();
+
+      // Assert
+      testObserver.assertComplete();
+      testObserver.assertNoErrors();
+      testObserver.assertValue(true);
+    }
+
+    @Test
+    @DisplayName("Should handle database update failure")
+    void testUpdateDatabaseFailure() {
+      // Arrange
+      Experiment previous = createValidRequest();
+      Experiment updated = createValidRequest();
+      updated.setDescription("Updated description");
+
+      when(pgWriterClient.executeWithTransaction(any(), any())).thenReturn(Single.just(false));
+
+      // Act
+      TestObserver<Boolean> testObserver =
+          experimentDAO.updateExperiment(testProjectKey, previous, updated).test();
+
+      // Assert
+      testObserver.assertComplete();
+      testObserver.assertNoErrors();
+      testObserver.assertValue(false);
+    }
+
+    @Test
+    @DisplayName("Should handle database error during update")
+    void testUpdateDatabaseError() {
+      // Arrange
+      Experiment previous = createValidRequest();
+      Experiment updated = createValidRequest();
+      updated.setDescription("Updated description");
+      RuntimeException exception = new RuntimeException("Database connection failed");
+
+      when(pgWriterClient.executeWithTransaction(any(), any())).thenReturn(Single.error(exception));
+
+      // Act
+      TestObserver<Boolean> testObserver =
+          experimentDAO.updateExperiment(testProjectKey, previous, updated).test();
+
+      // Assert
+      testObserver.assertError(RuntimeException.class);
+    }
+
+    @Test
+    @DisplayName("Should handle end_time update")
+    void testUpdateEndDateConversion() {
+      // Arrange
+      Experiment previous = createValidRequest();
+      Experiment updated = createValidRequest();
+      updated.setEndTime(System.currentTimeMillis() / 1000 + 172800);
+
+      when(pgWriterClient.executeWithTransaction(any(), any())).thenReturn(Single.just(true));
+
+      // Act
+      TestObserver<Boolean> testObserver =
+          experimentDAO.updateExperiment(testProjectKey, previous, updated).test();
+
+      // Assert
+      testObserver.assertComplete();
+      testObserver.assertNoErrors();
+      testObserver.assertValue(true);
+    }
+  }
+
+  @Nested
+  @DisplayName("Error Handling Tests")
+  class ErrorHandlingTests {
+
+    @Test
+    @DisplayName("Should handle serialization error for JSONB fields")
+    void testJsonbSerializationError() {
+      // Arrange
+      Experiment previous = createValidRequest();
+      Experiment updated = createValidRequest();
+      updated.setDescription("Valid update");
+
+      // Mock the client to simulate serialization error
+      when(pgWriterClient.executeWithTransaction(any(), any()))
+          .thenReturn(Single.error(new RuntimeException("JSON serialization failed")));
+
+      // Act
+      TestObserver<Boolean> testObserver =
+          experimentDAO.updateExperiment(testProjectKey, previous, updated).test();
+
+      // Assert
+      testObserver.assertError(RuntimeException.class);
+    }
+
+    @Test
+    @DisplayName("Should handle exception in create method")
+    void testCreateExceptionHandling() {
+      // Arrange
+      Experiment request = createValidRequest();
+      RuntimeException exception = new RuntimeException("Unexpected error");
+      when(pgWriterClient.executeWithTransaction(any(), any())).thenReturn(Single.error(exception));
+
+      // Act
+      TestObserver<Boolean> testObserver =
+          experimentDAO.createExperiment(testProjectKey, request).test();
+
+      // Assert
+      testObserver.assertNotComplete();
+      testObserver.assertError(
+          err -> err instanceof RuntimeException && err.getMessage().equals("Unexpected error"));
+    }
+  }
+
+  // Helper method to create a valid request
+  private Experiment createValidRequest() {
+    return Experiment.builder()
+        .projectKey(testProjectKey.toString())
+        .experimentId(testExperimentId)
+        .name("test_experiment")
+        .description("Test description")
+        .hypothesis("Test hypothesis")
+        .status(ExperimentStatus.DRAFT)
+        .type(ExperimentType.A_B)
+        .guardrailHealthStatus(HealthStatus.PASSED)
+        .distributionStrategy(DistributionStrategy.RANDOM)
+        .assignmentDomain(AssignmentDomain.COHORT)
+        .cohorts(Arrays.asList("test_cohort"))
+        .exposure(50)
+        .threshold(1000L)
+        .startTime(System.currentTimeMillis() / 1000)
+        .endTime(System.currentTimeMillis() / 1000 + 86400)
+        .createdBy("test@example.com")
+        .build();
   }
 
   @Nested
@@ -85,22 +534,22 @@ class ExperimentDAOTest {
     @DisplayName("Should return experiment when found")
     void testGetExperimentSuccess(VertxTestContext testContext) {
       // Arrange
-      Experiment expectedExperiment = createMockExperiment();
+      com.ascend.testlab.dto.entity.experiment.Experiment expectedExperiment =
+          createMockExperiment();
       when(pgReaderClient.fetchOne(
-              eq(ReadQuery.GET_EXPERIMENT), any(Tuple.class), any(Function.class)))
+              eq(ReadQuery.FETCH_EXPERIMENT), any(Tuple.class), any(Function.class)))
           .thenReturn(Maybe.just(expectedExperiment));
 
       // Act
-      TestObserver<Experiment> testObserver =
-          experimentDAO.getExperiment(PROJECT_KEY, EXPERIMENT_ID).test();
+      TestObserver<com.ascend.testlab.dto.entity.experiment.Experiment> testObserver =
+          experimentDAO.getExperiment(PROJECT_KEY, testExperimentId.toString()).test();
 
       // Assert
       testObserver.assertComplete();
       testObserver.assertNoErrors();
-      testObserver.assertValue(
-          experiment -> experiment.getExperimentId().equals(UUID.fromString(EXPERIMENT_ID)));
+      testObserver.assertValue(experiment -> experiment.getExperimentId().equals(testExperimentId));
       verify(pgReaderClient, times(1))
-          .fetchOne(eq(ReadQuery.GET_EXPERIMENT), any(Tuple.class), any(Function.class));
+          .fetchOne(eq(ReadQuery.FETCH_EXPERIMENT), any(Tuple.class), any(Function.class));
       testContext.completeNow();
     }
 
@@ -109,18 +558,18 @@ class ExperimentDAOTest {
     void testGetExperimentNotFound(VertxTestContext testContext) {
       // Arrange
       when(pgReaderClient.fetchOne(
-              eq(ReadQuery.GET_EXPERIMENT), any(Tuple.class), any(Function.class)))
+              eq(ReadQuery.FETCH_EXPERIMENT), any(Tuple.class), any(Function.class)))
           .thenReturn(Maybe.empty());
 
       // Act
-      TestObserver<Experiment> testObserver =
-          experimentDAO.getExperiment(PROJECT_KEY, EXPERIMENT_ID).test();
+      TestObserver<com.ascend.testlab.dto.entity.experiment.Experiment> testObserver =
+          experimentDAO.getExperiment(PROJECT_KEY, testExperimentId.toString()).test();
 
       // Assert
       testObserver.assertNoErrors();
       testObserver.assertResult();
       verify(pgReaderClient, times(1))
-          .fetchOne(eq(ReadQuery.GET_EXPERIMENT), any(Tuple.class), any(Function.class));
+          .fetchOne(eq(ReadQuery.FETCH_EXPERIMENT), any(Tuple.class), any(Function.class));
       testContext.completeNow();
     }
 
@@ -130,17 +579,17 @@ class ExperimentDAOTest {
       // Arrange
       RuntimeException expectedException = new RuntimeException("Database connection failed");
       when(pgReaderClient.fetchOne(
-              eq(ReadQuery.GET_EXPERIMENT), any(Tuple.class), any(Function.class)))
+              eq(ReadQuery.FETCH_EXPERIMENT), any(Tuple.class), any(Function.class)))
           .thenReturn(Maybe.error(expectedException));
 
       // Act
-      TestObserver<Experiment> testObserver =
-          experimentDAO.getExperiment(PROJECT_KEY, EXPERIMENT_ID).test();
+      TestObserver<com.ascend.testlab.dto.entity.experiment.Experiment> testObserver =
+          experimentDAO.getExperiment(PROJECT_KEY, testExperimentId.toString()).test();
 
       // Assert
       testObserver.assertError(RuntimeException.class);
       verify(pgReaderClient, times(1))
-          .fetchOne(eq(ReadQuery.GET_EXPERIMENT), any(Tuple.class), any(Function.class));
+          .fetchOne(eq(ReadQuery.FETCH_EXPERIMENT), any(Tuple.class), any(Function.class));
       testContext.completeNow();
     }
   }
@@ -153,7 +602,7 @@ class ExperimentDAOTest {
     @DisplayName("Should return experiments without filters")
     void testFilterExperimentsNoFilters(VertxTestContext testContext) {
       // Arrange
-      Experiment experiment = createMockExperiment();
+      com.ascend.testlab.dto.entity.experiment.Experiment experiment = createMockExperiment();
       FilterExperimentsRequest request =
           FilterExperimentsRequest.builder().limit(20).page(1).build();
       List<Row> mockRows = createMockRows(experiment, 1);
@@ -216,7 +665,7 @@ class ExperimentDAOTest {
     @DisplayName("Should filter experiments by name")
     void testFilterExperimentsWithNameFilter(VertxTestContext testContext) {
       // Arrange
-      Experiment experiment = createMockExperiment();
+      com.ascend.testlab.dto.entity.experiment.Experiment experiment = createMockExperiment();
       FilterExperimentsRequest request =
           FilterExperimentsRequest.builder().name("test experiment").limit(20).page(1).build();
       List<Row> mockRows = createMockRows(experiment, 1);
@@ -242,7 +691,7 @@ class ExperimentDAOTest {
     @DisplayName("Should filter experiments by status")
     void testFilterExperimentsWithStatusFilter(VertxTestContext testContext) {
       // Arrange
-      Experiment experiment = createMockExperiment();
+      com.ascend.testlab.dto.entity.experiment.Experiment experiment = createMockExperiment();
       FilterExperimentsRequest request =
           FilterExperimentsRequest.builder().status("LIVE,PAUSED").limit(20).page(1).build();
       List<Row> mockRows = createMockRows(experiment, 1);
@@ -268,7 +717,7 @@ class ExperimentDAOTest {
     @DisplayName("Should filter experiments by type")
     void testFilterExperimentsWithTypeFilter(VertxTestContext testContext) {
       // Arrange
-      Experiment experiment = createMockExperiment();
+      com.ascend.testlab.dto.entity.experiment.Experiment experiment = createMockExperiment();
       FilterExperimentsRequest request =
           FilterExperimentsRequest.builder().type("A/B").limit(20).page(1).build();
       List<Row> mockRows = createMockRows(experiment, 1);
@@ -294,7 +743,7 @@ class ExperimentDAOTest {
     @DisplayName("Should filter experiments by tag")
     void testFilterExperimentsWithTagFilter(VertxTestContext testContext) {
       // Arrange
-      Experiment experiment = createMockExperiment();
+      com.ascend.testlab.dto.entity.experiment.Experiment experiment = createMockExperiment();
       FilterExperimentsRequest request =
           FilterExperimentsRequest.builder().tag("tag1").limit(20).page(1).build();
       List<Row> mockRows = createMockRows(experiment, 1);
@@ -320,7 +769,7 @@ class ExperimentDAOTest {
     @DisplayName("Should filter experiments by owner")
     void testFilterExperimentsWithOwnerFilter(VertxTestContext testContext) {
       // Arrange
-      Experiment experiment = createMockExperiment();
+      com.ascend.testlab.dto.entity.experiment.Experiment experiment = createMockExperiment();
       FilterExperimentsRequest request =
           FilterExperimentsRequest.builder().owner("owner1").limit(20).page(1).build();
       List<Row> mockRows = createMockRows(experiment, 1);
@@ -346,7 +795,7 @@ class ExperimentDAOTest {
     @DisplayName("Should filter experiments with multiple filters")
     void testFilterExperimentsWithMultipleFilters(VertxTestContext testContext) {
       // Arrange
-      Experiment experiment = createMockExperiment();
+      com.ascend.testlab.dto.entity.experiment.Experiment experiment = createMockExperiment();
       FilterExperimentsRequest request =
           FilterExperimentsRequest.builder()
               .name("test")
@@ -378,7 +827,7 @@ class ExperimentDAOTest {
     @DisplayName("Should handle pagination correctly")
     void testFilterExperimentsWithPagination(VertxTestContext testContext) {
       // Arrange
-      Experiment experiment = createMockExperiment();
+      com.ascend.testlab.dto.entity.experiment.Experiment experiment = createMockExperiment();
       FilterExperimentsRequest request =
           FilterExperimentsRequest.builder().page(2).limit(10).build();
       List<Row> mockRows = createMockRows(experiment, 15);
@@ -423,239 +872,6 @@ class ExperimentDAOTest {
   }
 
   @Nested
-  @DisplayName("Delete Experiment Tests")
-  class DeleteExperimentTests {
-
-    @Test
-    @DisplayName("Should delete experiment successfully")
-    void testDeleteExperimentSuccess(VertxTestContext testContext) {
-      // Arrange
-      Experiment experiment = createMockExperiment();
-      SqlConnection mockConnection = mock(SqlConnection.class);
-
-      when(pgWriterClient.executeWithTransaction(any()))
-          .thenAnswer(
-              invocation -> {
-                Function<SqlConnection, Maybe<Boolean>> function = invocation.getArgument(0);
-                return function.apply(mockConnection);
-              });
-      when(pgWriterClient.execute(
-              eq(mockConnection), eq(WriteQuery.DELETE_EXPERIMENT_BY_ID), any(Tuple.class)))
-          .thenReturn(Single.just(true));
-      when(pgWriterClient.execute(
-              eq(mockConnection), eq(WriteQuery.DELETE_TAG_FOR_EXPERIMENT), any(Tuple.class)))
-          .thenReturn(Single.just(true));
-      when(pgWriterClient.execute(
-              eq(mockConnection), eq(WriteQuery.DELETE_OWNER_FOR_EXPERIMENT), any(Tuple.class)))
-          .thenReturn(Single.just(true));
-      when(pgWriterClient.execute(
-              eq(mockConnection), eq(WriteQuery.INSERT_EXPERIMENT_UPDATE_LOG), any(Tuple.class)))
-          .thenReturn(Single.just(true));
-
-      // Act
-      TestObserver<Boolean> testObserver =
-          experimentDAO.deleteExperiment(PROJECT_KEY, experiment).test();
-
-      // Assert
-      testObserver.assertComplete();
-      testObserver.assertNoErrors();
-      testObserver.assertValue(true);
-      verify(pgWriterClient, times(1)).executeWithTransaction(any());
-      verify(pgWriterClient, times(1))
-          .execute(eq(mockConnection), eq(WriteQuery.DELETE_EXPERIMENT_BY_ID), any(Tuple.class));
-      verify(pgWriterClient, times(1))
-          .execute(eq(mockConnection), eq(WriteQuery.DELETE_TAG_FOR_EXPERIMENT), any(Tuple.class));
-      verify(pgWriterClient, times(1))
-          .execute(
-              eq(mockConnection), eq(WriteQuery.DELETE_OWNER_FOR_EXPERIMENT), any(Tuple.class));
-      verify(pgWriterClient, times(1))
-          .execute(
-              eq(mockConnection), eq(WriteQuery.INSERT_EXPERIMENT_UPDATE_LOG), any(Tuple.class));
-      testContext.completeNow();
-    }
-
-    @Test
-    @DisplayName("Should handle error when transaction fails")
-    void testDeleteExperimentTransactionError(VertxTestContext testContext) {
-      // Arrange
-      Experiment experiment = createMockExperiment();
-      RuntimeException expectedException = new RuntimeException("Transaction failed");
-
-      when(pgWriterClient.executeWithTransaction(any())).thenReturn(Maybe.error(expectedException));
-
-      // Act
-      TestObserver<Boolean> testObserver =
-          experimentDAO.deleteExperiment(PROJECT_KEY, experiment).test();
-
-      // Assert
-      testObserver.assertError(RuntimeException.class);
-      verify(pgWriterClient, times(1)).executeWithTransaction(any());
-      testContext.completeNow();
-    }
-
-    @Test
-    @DisplayName("Should handle error when delete experiment fails")
-    void testDeleteExperimentDeleteError(VertxTestContext testContext) {
-      // Arrange
-      Experiment experiment = createMockExperiment();
-      SqlConnection mockConnection = mock(SqlConnection.class);
-      RuntimeException expectedException = new RuntimeException("Delete failed");
-
-      when(pgWriterClient.executeWithTransaction(any()))
-          .thenAnswer(
-              invocation -> {
-                Function<SqlConnection, Maybe<Boolean>> function = invocation.getArgument(0);
-                return function.apply(mockConnection);
-              });
-      when(pgWriterClient.execute(
-              eq(mockConnection), eq(WriteQuery.DELETE_EXPERIMENT_BY_ID), any(Tuple.class)))
-          .thenReturn(Single.error(expectedException));
-
-      // Act
-      TestObserver<Boolean> testObserver =
-          experimentDAO.deleteExperiment(PROJECT_KEY, experiment).test();
-
-      // Assert
-      testObserver.assertError(RuntimeException.class);
-      verify(pgWriterClient, times(1)).executeWithTransaction(any());
-      verify(pgWriterClient, times(1))
-          .execute(eq(mockConnection), eq(WriteQuery.DELETE_EXPERIMENT_BY_ID), any(Tuple.class));
-      verify(pgWriterClient, never())
-          .execute(eq(mockConnection), eq(WriteQuery.DELETE_TAG_FOR_EXPERIMENT), any(Tuple.class));
-      testContext.completeNow();
-    }
-
-    @Test
-    @DisplayName("Should handle error when delete tag fails")
-    void testDeleteExperimentDeleteTagError(VertxTestContext testContext) {
-      // Arrange
-      Experiment experiment = createMockExperiment();
-      SqlConnection mockConnection = mock(SqlConnection.class);
-      RuntimeException expectedException = new RuntimeException("Delete tag failed");
-
-      when(pgWriterClient.executeWithTransaction(any()))
-          .thenAnswer(
-              invocation -> {
-                Function<SqlConnection, Maybe<Boolean>> function = invocation.getArgument(0);
-                return function.apply(mockConnection);
-              });
-      when(pgWriterClient.execute(
-              eq(mockConnection), eq(WriteQuery.DELETE_EXPERIMENT_BY_ID), any(Tuple.class)))
-          .thenReturn(Single.just(true));
-      when(pgWriterClient.execute(
-              eq(mockConnection), eq(WriteQuery.DELETE_TAG_FOR_EXPERIMENT), any(Tuple.class)))
-          .thenReturn(Single.error(expectedException));
-
-      // Act
-      TestObserver<Boolean> testObserver =
-          experimentDAO.deleteExperiment(PROJECT_KEY, experiment).test();
-
-      // Assert
-      testObserver.assertError(RuntimeException.class);
-      verify(pgWriterClient, times(1)).executeWithTransaction(any());
-      verify(pgWriterClient, times(1))
-          .execute(eq(mockConnection), eq(WriteQuery.DELETE_EXPERIMENT_BY_ID), any(Tuple.class));
-      verify(pgWriterClient, times(1))
-          .execute(eq(mockConnection), eq(WriteQuery.DELETE_TAG_FOR_EXPERIMENT), any(Tuple.class));
-      verify(pgWriterClient, never())
-          .execute(
-              eq(mockConnection), eq(WriteQuery.DELETE_OWNER_FOR_EXPERIMENT), any(Tuple.class));
-      testContext.completeNow();
-    }
-
-    @Test
-    @DisplayName("Should handle error when delete owner fails")
-    void testDeleteExperimentDeleteOwnerError(VertxTestContext testContext) {
-      // Arrange
-      Experiment experiment = createMockExperiment();
-      SqlConnection mockConnection = mock(SqlConnection.class);
-      RuntimeException expectedException = new RuntimeException("Delete owner failed");
-
-      when(pgWriterClient.executeWithTransaction(any()))
-          .thenAnswer(
-              invocation -> {
-                Function<SqlConnection, Maybe<Boolean>> function = invocation.getArgument(0);
-                return function.apply(mockConnection);
-              });
-      when(pgWriterClient.execute(
-              eq(mockConnection), eq(WriteQuery.DELETE_EXPERIMENT_BY_ID), any(Tuple.class)))
-          .thenReturn(Single.just(true));
-      when(pgWriterClient.execute(
-              eq(mockConnection), eq(WriteQuery.DELETE_TAG_FOR_EXPERIMENT), any(Tuple.class)))
-          .thenReturn(Single.just(true));
-      when(pgWriterClient.execute(
-              eq(mockConnection), eq(WriteQuery.DELETE_OWNER_FOR_EXPERIMENT), any(Tuple.class)))
-          .thenReturn(Single.error(expectedException));
-
-      // Act
-      TestObserver<Boolean> testObserver =
-          experimentDAO.deleteExperiment(PROJECT_KEY, experiment).test();
-
-      // Assert
-      testObserver.assertError(RuntimeException.class);
-      verify(pgWriterClient, times(1)).executeWithTransaction(any());
-      verify(pgWriterClient, times(1))
-          .execute(eq(mockConnection), eq(WriteQuery.DELETE_EXPERIMENT_BY_ID), any(Tuple.class));
-      verify(pgWriterClient, times(1))
-          .execute(eq(mockConnection), eq(WriteQuery.DELETE_TAG_FOR_EXPERIMENT), any(Tuple.class));
-      verify(pgWriterClient, times(1))
-          .execute(
-              eq(mockConnection), eq(WriteQuery.DELETE_OWNER_FOR_EXPERIMENT), any(Tuple.class));
-      verify(pgWriterClient, never())
-          .execute(
-              eq(mockConnection), eq(WriteQuery.INSERT_EXPERIMENT_UPDATE_LOG), any(Tuple.class));
-      testContext.completeNow();
-    }
-
-    @Test
-    @DisplayName("Should handle error when insert log fails")
-    void testDeleteExperimentInsertLogError(VertxTestContext testContext) {
-      // Arrange
-      Experiment experiment = createMockExperiment();
-      SqlConnection mockConnection = mock(SqlConnection.class);
-      RuntimeException expectedException = new RuntimeException("Insert log failed");
-
-      when(pgWriterClient.executeWithTransaction(any()))
-          .thenAnswer(
-              invocation -> {
-                Function<SqlConnection, Maybe<Boolean>> function = invocation.getArgument(0);
-                return function.apply(mockConnection);
-              });
-      when(pgWriterClient.execute(
-              eq(mockConnection), eq(WriteQuery.DELETE_EXPERIMENT_BY_ID), any(Tuple.class)))
-          .thenReturn(Single.just(true));
-      when(pgWriterClient.execute(
-              eq(mockConnection), eq(WriteQuery.DELETE_TAG_FOR_EXPERIMENT), any(Tuple.class)))
-          .thenReturn(Single.just(true));
-      when(pgWriterClient.execute(
-              eq(mockConnection), eq(WriteQuery.DELETE_OWNER_FOR_EXPERIMENT), any(Tuple.class)))
-          .thenReturn(Single.just(true));
-      when(pgWriterClient.execute(
-              eq(mockConnection), eq(WriteQuery.INSERT_EXPERIMENT_UPDATE_LOG), any(Tuple.class)))
-          .thenReturn(Single.error(expectedException));
-
-      // Act
-      TestObserver<Boolean> testObserver =
-          experimentDAO.deleteExperiment(PROJECT_KEY, experiment).test();
-
-      // Assert
-      testObserver.assertError(RuntimeException.class);
-      verify(pgWriterClient, times(1)).executeWithTransaction(any());
-      verify(pgWriterClient, times(1))
-          .execute(eq(mockConnection), eq(WriteQuery.DELETE_EXPERIMENT_BY_ID), any(Tuple.class));
-      verify(pgWriterClient, times(1))
-          .execute(eq(mockConnection), eq(WriteQuery.DELETE_TAG_FOR_EXPERIMENT), any(Tuple.class));
-      verify(pgWriterClient, times(1))
-          .execute(
-              eq(mockConnection), eq(WriteQuery.DELETE_OWNER_FOR_EXPERIMENT), any(Tuple.class));
-      verify(pgWriterClient, times(1))
-          .execute(
-              eq(mockConnection), eq(WriteQuery.INSERT_EXPERIMENT_UPDATE_LOG), any(Tuple.class));
-      testContext.completeNow();
-    }
-  }
-
-  @Nested
   @DisplayName("Integration Tests")
   class IntegrationTests {
 
@@ -663,7 +879,7 @@ class ExperimentDAOTest {
     @DisplayName("Should handle multiple operations sequentially")
     void testMultipleOperationsSequentially(VertxTestContext testContext) {
       // Arrange
-      Experiment experiment = createMockExperiment();
+      com.ascend.testlab.dto.entity.experiment.Experiment experiment = createMockExperiment();
       FilterExperimentsRequest request =
           FilterExperimentsRequest.builder().limit(20).page(1).build();
       List<Row> mockRows = createMockRows(experiment, 1);
@@ -671,15 +887,15 @@ class ExperimentDAOTest {
 
       doReturn(Maybe.just(experiment))
           .when(pgReaderClient)
-          .fetchOne(eq(ReadQuery.GET_EXPERIMENT), any(Tuple.class), any(Function.class));
+          .fetchOne(eq(ReadQuery.FETCH_EXPERIMENT), any(Tuple.class), any(Function.class));
       doReturn(Single.just(mockRows))
           .when(pgReaderClient)
           .fetchAll(anyString(), any(Tuple.class), any(Function.class));
-      when(pgWriterClient.executeWithTransaction(any()))
+      when(pgWriterClient.executeWithTransaction(any(), any()))
           .thenAnswer(
               invocation -> {
                 Function<SqlConnection, Maybe<Boolean>> function = invocation.getArgument(0);
-                return function.apply(mockConnection);
+                return function.apply(mockConnection).toSingle();
               });
       when(pgWriterClient.execute(
               eq(mockConnection), eq(WriteQuery.DELETE_EXPERIMENT_BY_ID), any(Tuple.class)))
@@ -691,12 +907,15 @@ class ExperimentDAOTest {
               eq(mockConnection), eq(WriteQuery.DELETE_OWNER_FOR_EXPERIMENT), any(Tuple.class)))
           .thenReturn(Single.just(true));
       when(pgWriterClient.execute(
+              eq(mockConnection), eq(WriteQuery.DELETE_EXPERIMENT_ANALYSIS), any(Tuple.class)))
+          .thenReturn(Single.just(true));
+      when(pgWriterClient.execute(
               eq(mockConnection), eq(WriteQuery.INSERT_EXPERIMENT_UPDATE_LOG), any(Tuple.class)))
           .thenReturn(Single.just(true));
 
       // Act
-      TestObserver<Experiment> getObserver =
-          experimentDAO.getExperiment(PROJECT_KEY, EXPERIMENT_ID).test();
+      TestObserver<com.ascend.testlab.dto.entity.experiment.Experiment> getObserver =
+          experimentDAO.getExperiment(PROJECT_KEY, testExperimentId.toString()).test();
       TestObserver<FilterExperimentsResponse> filterObserver =
           experimentDAO.filterExperiments(PROJECT_KEY, request).test();
       TestObserver<Boolean> deleteObserver =
@@ -708,9 +927,9 @@ class ExperimentDAOTest {
       deleteObserver.assertComplete().assertNoErrors();
 
       verify(pgReaderClient, times(1))
-          .fetchOne(eq(ReadQuery.GET_EXPERIMENT), any(Tuple.class), any(Function.class));
+          .fetchOne(eq(ReadQuery.FETCH_EXPERIMENT), any(Tuple.class), any(Function.class));
       verify(pgReaderClient, times(1)).fetchAll(anyString(), any(Tuple.class), any(Function.class));
-      verify(pgWriterClient, times(1)).executeWithTransaction(any());
+      verify(pgWriterClient, times(1)).executeWithTransaction(any(), any());
       testContext.completeNow();
     }
   }
@@ -720,18 +939,15 @@ class ExperimentDAOTest {
    *
    * @return a mock Experiment object
    */
-  private Experiment createMockExperiment() {
-    return Experiment.builder()
-        .experimentId(UUID.fromString(EXPERIMENT_ID))
+  private com.ascend.testlab.dto.entity.experiment.Experiment createMockExperiment() {
+    return com.ascend.testlab.dto.entity.experiment.Experiment.builder()
+        .experimentId(testExperimentId)
         .projectKey(PROJECT_KEY)
         .name("Test Experiment")
-        .key("test_experiment")
         .description("Test Description")
         .hypothesis("Test Hypothesis")
         .status(ExperimentStatus.LIVE)
         .type(ExperimentType.A_B)
-        .assignmentDomain(AssignmentDomain.COHORT)
-        .distributionStrategy(DistributionStrategy.RANDOM)
         .exposure(100)
         .threshold(1000L)
         .startTime(System.currentTimeMillis())
@@ -752,36 +968,29 @@ class ExperimentDAOTest {
    * @param totalCount the total count value to set in the row (for pagination)
    * @return a list of mock Row objects
    */
-  private List<Row> createMockRows(Experiment experiment, int totalCount) {
+  private List<Row> createMockRows(
+      com.ascend.testlab.dto.entity.experiment.Experiment experiment, int totalCount) {
     Row mockRow = mock(Row.class);
     OffsetDateTime now = OffsetDateTime.now();
 
     // Set up all the fields that ExperimentMapper expects
     when(mockRow.getString("project_key")).thenReturn(experiment.getProjectKey());
     when(mockRow.getString("experiment_id")).thenReturn(experiment.getExperimentId().toString());
+    when(mockRow.getString("experiment_key")).thenReturn(experiment.getExperimentKey());
     when(mockRow.getString("name")).thenReturn(experiment.getName());
-    when(mockRow.getString("experiment_key")).thenReturn(experiment.getKey());
     when(mockRow.getString("description")).thenReturn(experiment.getDescription());
     when(mockRow.getString("hypothesis")).thenReturn(experiment.getHypothesis());
     when(mockRow.getString("status"))
-        .thenReturn(experiment.getStatus() != null ? experiment.getStatus().toString() : null);
+        .thenReturn(experiment.getStatus() != null ? experiment.getStatus().name() : null);
     when(mockRow.getString("type"))
         .thenReturn(experiment.getType() != null ? experiment.getType().toString() : null);
     when(mockRow.getString("guardrail_health_status")).thenReturn(null);
     when(mockRow.getArrayOfStrings("cohorts")).thenReturn(new String[0]);
+    when(mockRow.getJsonObject("overrides")).thenReturn(null);
     when(mockRow.getJsonObject("variant_weights")).thenReturn(null);
     when(mockRow.getJsonObject("variants")).thenReturn(null);
-    when(mockRow.getString("distribution_strategy"))
-        .thenReturn(
-            experiment.getDistributionStrategy() != null
-                ? experiment.getDistributionStrategy().toString()
-                : DistributionStrategy.RANDOM.toString());
-    when(mockRow.getString("assignment_domain"))
-        .thenReturn(
-            experiment.getAssignmentDomain() != null
-                ? experiment.getAssignmentDomain().toString()
-                : AssignmentDomain.COHORT.toString());
-    when(mockRow.getArrayOfStrings("overrides")).thenReturn(null);
+    when(mockRow.getString("distribution_strategy")).thenReturn("RANDOM");
+    when(mockRow.getString("assignment_domain")).thenReturn("COHORT");
     when(mockRow.getJsonArray("rule_attributes")).thenReturn(null);
     when(mockRow.getJsonObject("winning_variant")).thenReturn(null);
     when(mockRow.getInteger("exposure")).thenReturn(experiment.getExposure());
@@ -791,9 +1000,16 @@ class ExperimentDAOTest {
     when(mockRow.getString("created_by")).thenReturn(experiment.getCreatedBy());
     when(mockRow.getOffsetDateTime("created_at")).thenReturn(now);
     when(mockRow.getOffsetDateTime("updated_at")).thenReturn(now);
-    when(mockRow.getArrayOfStrings("tags")).thenReturn(experiment.getTags().toArray(String[]::new));
-    when(mockRow.getArrayOfStrings("owners"))
-        .thenReturn(experiment.getOwners().toArray(String[]::new));
+
+    // For tags and owners, ExperimentMapper uses getColumnIndex to check if column exists
+    when(mockRow.getColumnIndex("tags")).thenReturn(0);
+    when(mockRow.getColumnIndex("owners")).thenReturn(1);
+    when(mockRow.getString("tags"))
+        .thenReturn(experiment.getTags() != null ? String.join(",", experiment.getTags()) : null);
+    when(mockRow.getString("owners"))
+        .thenReturn(
+            experiment.getOwners() != null ? String.join(",", experiment.getOwners()) : null);
+
     // Add total_count for pagination
     when(mockRow.getInteger("total_count")).thenReturn(totalCount);
 

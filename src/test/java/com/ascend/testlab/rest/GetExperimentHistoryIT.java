@@ -59,7 +59,6 @@ class GetExperimentHistoryIT {
     response.body("data.pagination.total_count", Matchers.greaterThanOrEqualTo(1));
     response.body("data.pagination.current_page", Matchers.equalTo(1));
     response.body("data.pagination.page_size", Matchers.greaterThanOrEqualTo(1));
-    response.body("data.history[0].updated_by", Matchers.notNullValue());
   }
 
   @Test

@@ -1,4 +1,4 @@
-package com.ascend.testlab.constants.enums;
+package com.ascend.testlab.constants.attributes;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;

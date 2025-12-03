@@ -173,7 +173,7 @@ public final class RelationalOperation {
    * @return true if no element in op1 is contained in op2, false otherwise
    */
   public static <T> boolean doesNotContain(Collection<T> op1, Collection<T> op2) {
-    return op2.stream().noneMatch(op1::contains);
+    return Boolean.FALSE.equals(op2.stream().anyMatch(op1::contains));
   }
 
   /**
@@ -184,7 +184,7 @@ public final class RelationalOperation {
    * @return true if op2 does not contain op1, false otherwise
    */
   public static boolean doesNotContain(String op1, String op2) {
-    return !op2.contains(op1);
+    return Boolean.FALSE.equals(op2.contains(op1));
   }
 
   /** Private constructor to prevent instantiation. */

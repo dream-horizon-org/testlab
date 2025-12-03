@@ -116,4 +116,17 @@ public final class CommonUtil {
   public static int calculateOffset(int page, int limit) {
     return (page - 1) * limit;
   }
+
+  /**
+   * Generates experiment key from experiment name by replacing spaces and hyphens with underscores.
+   *
+   * @param name experiment name
+   * @return experiment key with underscores
+   */
+  public static String generateExperimentKey(String name) {
+    if (name == null || name.isEmpty()) {
+      return Constants.EMPTY_STRING;
+    }
+    return name.replaceAll("[ -]", "_").toLowerCase();
+  }
 }

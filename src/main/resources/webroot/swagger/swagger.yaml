@@ -198,6 +198,34 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Failure'
+    patch:
+      summary: Update experiment partially with optional tag replace
+      operationId: update
+      parameters:
+      - name: x-project-key
+        in: header
+        schema:
+          type: string
+      - name: experiment_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateExperimentRequest'
+      responses:
+        "200":
+          description: Updated successfully
+          content:
+            application/json:
+              schema:
+                type: boolean
+        "400":
+          description: Invalid enum values or validation constraints
   /v1/experiments/key-availability:
     get:
       operationId: experimentKeyAvailabilityHandle
@@ -293,6 +321,28 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Failure'
+    post:
+      summary: Create a new experiment
+      operationId: create
+      parameters:
+      - name: x-project-key
+        in: header
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateExperimentRequest'
+      responses:
+        "200":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreateExperimentResponse'
+        "400":
+          description: Invalid enum values for status or type
   /v1/experiments/{experiment_id}/history:
     get:
       operationId: getExperimentHistoryHandle
@@ -429,6 +479,8 @@ components:
         data_type:
           type: string
     Variant:
+      required:
+      - display_name
       type: object
       properties:
         display_name:
@@ -511,6 +563,19 @@ components:
       properties:
         data:
           $ref: '#/components/schemas/ExperimentKeyAvailabilityResponse'
+    CreateExperimentResponse:
+      type: object
+      properties:
+        experiment_id:
+          type: string
+          format: uuid
+        status:
+          type: boolean
+    SuccessCreateExperimentResponse:
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/CreateExperimentResponse'
     CohortVariantWeights:
       type: object
       allOf:
@@ -538,6 +603,224 @@ components:
           type: string
         value:
           type: string
+    CreateExperimentRequest:
+      required:
+      - assignment_domain
+      - created_by
+      - distribution_strategy
+      - name
+      - status
+      - type
+      - variant_weights
+      - variants
+      type: object
+      properties:
+        name:
+          maxLength: 64
+          minLength: 1
+          type: string
+        description:
+          maxLength: 255
+          minLength: 0
+          type: string
+        hypothesis:
+          maxLength: 1000
+          minLength: 0
+          type: string
+        status:
+          type: string
+        type:
+          type: string
+        distribution_strategy:
+          type: string
+        assignment_domain:
+          type: string
+        experiment_key:
+          type: string
+        metrics:
+          $ref: '#/components/schemas/Metrics'
+        cohorts:
+          type: array
+          items:
+            type: string
+        owners:
+          type: array
+          items:
+            type: string
+        variant_weights:
+          $ref: '#/components/schemas/VariantWeights'
+        variants:
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/Variant'
+        rule_attributes:
+          type: array
+          items:
+            $ref: '#/components/schemas/RuleAttributes'
+        overrides:
+          $ref: '#/components/schemas/Overrides'
+        tags:
+          type: array
+          items:
+            type: string
+        exposure:
+          maximum: 100
+          minimum: 0
+          type: integer
+          format: int32
+        threshold:
+          minimum: 0
+          type: integer
+          format: int64
+        start_time:
+          minimum: 0
+          type: integer
+          format: int64
+        end_time:
+          type: integer
+          format: int64
+        created_by:
+          maxLength: 255
+          minLength: 0
+          type: string
+        created_at:
+          type: integer
+          format: int64
+        updated_at:
+          type: integer
+          format: int64
+    Metrics:
+      type: object
+      properties:
+        primary:
+          type: array
+          items:
+            type: string
+        secondary:
+          type: array
+          items:
+            type: string
+    Overrides:
+      type: object
+      properties:
+        override_ids:
+          type: object
+          additionalProperties:
+            type: array
+            items:
+              type: string
+    RuleAttributes:
+      required:
+      - name
+      type: object
+      properties:
+        name:
+          type: string
+        conditions:
+          type: array
+          items:
+            $ref: '#/components/schemas/Condition'
+    StratifiedVariantWeights:
+      type: object
+      allOf:
+      - $ref: '#/components/schemas/VariantWeights'
+      - type: object
+        properties:
+          weights:
+            type: object
+            additionalProperties:
+              type: array
+              items:
+                type: string
+    VariantWeights:
+      type: object
+      properties:
+        type:
+          type: string
+          enum:
+          - STRATIFIED
+          - COHORT
+      discriminator:
+        propertyName: type
+    UpdateExperimentRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        experiment_key:
+          type: string
+        metrics:
+          $ref: '#/components/schemas/Metrics'
+        tags:
+          type: array
+          items:
+            type: string
+        owners:
+          type: array
+          items:
+            type: string
+        description:
+          maxLength: 255
+          minLength: 0
+          type: string
+        hypothesis:
+          maxLength: 1000
+          minLength: 0
+          type: string
+        status:
+          type: string
+        type:
+          type: string
+        assignment_domain:
+          type: string
+        distribution_strategy:
+          type: string
+        guardrail_health_status:
+          type: string
+        cohorts:
+          type: array
+          items:
+            type: string
+        variant_weights:
+          $ref: '#/components/schemas/VariantWeights'
+        variants:
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/Variant'
+        rule_attributes:
+          type: array
+          items:
+            $ref: '#/components/schemas/RuleAttributes'
+        overrides:
+          $ref: '#/components/schemas/Overrides'
+        winning_variant:
+          $ref: '#/components/schemas/WinningVariant'
+        exposure:
+          maximum: 100
+          minimum: 1
+          type: integer
+          format: int32
+        threshold:
+          minimum: 0
+          type: integer
+          format: int64
+        start_time:
+          minimum: 0
+          type: integer
+          format: int64
+        end_time:
+          minimum: 0
+          type: integer
+          format: int64
+        updated_by:
+          maxLength: 255
+          minLength: 0
+          type: string
+    WinningVariant:
+      type: object
+      properties:
+        variant_name:
+          type: string
     Experiment:
       type: object
       properties:
@@ -548,7 +831,7 @@ components:
           type: string
         name:
           type: string
-        key:
+        experiment_key:
           type: string
         description:
           type: string
@@ -599,11 +882,13 @@ components:
           - STRATIFIED
           - COHORT
         overrides:
-          type: array
-          items:
-            type: string
+          type: object
+          additionalProperties:
+            type: array
+            items:
+              type: string
         winning_variant:
-          $ref: '#/components/schemas/JsonObject'
+          $ref: '#/components/schemas/WinningVariant'
         exposure:
           type: integer
           format: int32
@@ -617,6 +902,8 @@ components:
           type: integer
           format: int64
         created_by:
+          type: string
+        updated_by:
           type: string
         created_at:
           type: string
@@ -632,6 +919,8 @@ components:
           type: array
           items:
             type: string
+        metrics:
+          $ref: '#/components/schemas/Metrics'
         variant_counts:
           type: object
           additionalProperties:
@@ -646,15 +935,6 @@ components:
             $ref: '#/components/schemas/Experiment'
         pagination:
           $ref: '#/components/schemas/PaginationMeta'
-    JsonObject:
-      type: object
-      properties:
-        map:
-          type: object
-          additionalProperties:
-            type: object
-        empty:
-          type: boolean
     PaginationMeta:
       type: object
       properties:
@@ -669,44 +949,11 @@ components:
           format: int32
         has_next:
           type: boolean
-    RuleAttributes:
-      required:
-      - name
-      type: object
-      properties:
-        name:
-          type: string
-        conditions:
-          type: array
-          items:
-            $ref: '#/components/schemas/Condition'
-    StratifiedVariantWeights:
-      type: object
-      allOf:
-      - $ref: '#/components/schemas/VariantWeights'
-      - type: object
-        properties:
-          weights:
-            type: object
-            additionalProperties:
-              type: array
-              items:
-                type: string
     SuccessFilterExperimentsResponse:
       type: object
       properties:
         data:
           $ref: '#/components/schemas/FilterExperimentsResponse'
-    VariantWeights:
-      type: object
-      properties:
-        type:
-          type: string
-          enum:
-          - STRATIFIED
-          - COHORT
-      discriminator:
-        propertyName: type
     SuccessExperiment:
       type: object
       properties:
@@ -738,6 +985,15 @@ components:
             $ref: '#/components/schemas/ExperimentHistoryEntry'
         pagination:
           $ref: '#/components/schemas/PaginationMeta'
+    JsonObject:
+      type: object
+      properties:
+        map:
+          type: object
+          additionalProperties:
+            type: object
+        empty:
+          type: boolean
     SuccessExperimentHistoryResponse:
       type: object
       properties:

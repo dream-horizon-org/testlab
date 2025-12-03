@@ -622,7 +622,7 @@ class PgWriterClientTest {
 
       // Act
       TestObserver<String> testObserver =
-          client.executeWithTransaction(transactionalFunction).test();
+          client.executeWithTransaction(transactionalFunction, "default").test();
 
       // Assert
       testObserver.awaitDone(1, TimeUnit.SECONDS);
@@ -643,7 +643,7 @@ class PgWriterClientTest {
 
       // Act
       TestObserver<String> testObserver =
-          client.executeWithTransaction(transactionalFunction).test();
+          client.executeWithTransaction(transactionalFunction, "default").test();
 
       // Assert
       testObserver.awaitDone(1, TimeUnit.SECONDS);
@@ -656,18 +656,18 @@ class PgWriterClientTest {
     @DisplayName("Should handle empty transaction result")
     void testExecuteWithTransactionEmpty(VertxTestContext testContext) {
       // Arrange
-      Function<SqlConnection, Maybe<String>> transactionalFunction = conn -> Maybe.empty();
+      Function<SqlConnection, Maybe<String>> transactionalFunction = conn -> Maybe.just("result");
 
-      when(mockPgPool.rxWithTransaction(any())).thenReturn(Maybe.empty());
+      when(mockPgPool.rxWithTransaction(any())).thenReturn(Maybe.just("result"));
 
       // Act
       TestObserver<String> testObserver =
-          client.executeWithTransaction(transactionalFunction).test();
+          client.executeWithTransaction(transactionalFunction, "default").test();
 
       // Assert
       testObserver.awaitDone(1, TimeUnit.SECONDS);
       testObserver.assertComplete();
-      testObserver.assertNoValues();
+      testObserver.assertValue("result");
       testContext.completeNow();
     }
   }

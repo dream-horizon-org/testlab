@@ -128,11 +128,11 @@ class PostgreSQLConfigTest {
       assertNotNull(config.getWriterConfig());
 
       // Reader assertions
-      assertEquals("reader-host", config.getReaderConfig().getConnectOptions().getHost());
+      assertEquals("localhost", config.getReaderConfig().getConnectOptions().getHost());
       assertEquals(5432, config.getReaderConfig().getConnectOptions().getPort());
-      assertEquals("reader_user", config.getReaderConfig().getConnectOptions().getUser());
-      assertEquals("reader_pass", config.getReaderConfig().getConnectOptions().getPassword());
-      assertEquals("reader_db", config.getReaderConfig().getConnectOptions().getDatabase());
+      assertEquals("admin", config.getReaderConfig().getConnectOptions().getUser());
+      assertEquals("admin123", config.getReaderConfig().getConnectOptions().getPassword());
+      assertEquals("experiment", config.getReaderConfig().getConnectOptions().getDatabase());
       assertEquals(3000, config.getReaderConfig().getConnectOptions().getConnectTimeout());
       assertTrue(config.getReaderConfig().getConnectOptions().getCachePreparedStatements());
       assertEquals(20, config.getReaderConfig().getPoolOptions().getMaxSize());
@@ -140,11 +140,11 @@ class PostgreSQLConfigTest {
       assertEquals(3, config.getReaderConfig().getRetryCount());
 
       // Writer assertions
-      assertEquals("writer-host", config.getWriterConfig().getConnectOptions().getHost());
-      assertEquals(5433, config.getWriterConfig().getConnectOptions().getPort());
-      assertEquals("writer_user", config.getWriterConfig().getConnectOptions().getUser());
-      assertEquals("writer_pass", config.getWriterConfig().getConnectOptions().getPassword());
-      assertEquals("writer_db", config.getWriterConfig().getConnectOptions().getDatabase());
+      assertEquals("localhost", config.getWriterConfig().getConnectOptions().getHost());
+      assertEquals(5432, config.getWriterConfig().getConnectOptions().getPort());
+      assertEquals("admin", config.getWriterConfig().getConnectOptions().getUser());
+      assertEquals("admin123", config.getWriterConfig().getConnectOptions().getPassword());
+      assertEquals("experiment", config.getWriterConfig().getConnectOptions().getDatabase());
       assertEquals(2000, config.getWriterConfig().getConnectOptions().getConnectTimeout());
       assertFalse(config.getWriterConfig().getConnectOptions().getCachePreparedStatements());
       assertEquals(30, config.getWriterConfig().getPoolOptions().getMaxSize());
@@ -157,11 +157,11 @@ class PostgreSQLConfigTest {
 
       PostgreSQLConfig.BaseConfig readerConfig = new PostgreSQLConfig.BaseConfig();
       PostgreSQLConfig.ConnectOptions readerConnectOptions = new PostgreSQLConfig.ConnectOptions();
-      readerConnectOptions.setHost("reader-host");
+      readerConnectOptions.setHost("localhost");
       readerConnectOptions.setPort(5432);
-      readerConnectOptions.setUser("reader_user");
-      readerConnectOptions.setPassword("reader_pass");
-      readerConnectOptions.setDatabase("reader_db");
+      readerConnectOptions.setUser("admin");
+      readerConnectOptions.setPassword("admin123");
+      readerConnectOptions.setDatabase("experiment");
       readerConnectOptions.setConnectTimeout(3000);
       readerConnectOptions.setCachePreparedStatements(true);
 
@@ -175,11 +175,11 @@ class PostgreSQLConfigTest {
 
       PostgreSQLConfig.BaseConfig writerConfig = new PostgreSQLConfig.BaseConfig();
       PostgreSQLConfig.ConnectOptions writerConnectOptions = new PostgreSQLConfig.ConnectOptions();
-      writerConnectOptions.setHost("writer-host");
-      writerConnectOptions.setPort(5433);
-      writerConnectOptions.setUser("writer_user");
-      writerConnectOptions.setPassword("writer_pass");
-      writerConnectOptions.setDatabase("writer_db");
+      writerConnectOptions.setHost("localhost");
+      writerConnectOptions.setPort(5432);
+      writerConnectOptions.setUser("admin");
+      writerConnectOptions.setPassword("admin123");
+      writerConnectOptions.setDatabase("experiment");
       writerConnectOptions.setConnectTimeout(2000);
       writerConnectOptions.setCachePreparedStatements(false);
 

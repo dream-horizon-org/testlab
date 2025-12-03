@@ -2,7 +2,7 @@ package com.ascend.testlab.operation;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-import com.ascend.testlab.constants.enums.RelationalOperator;
+import com.ascend.testlab.constants.attributes.RelationalOperator;
 import java.util.Arrays;
 import java.util.List;
 import org.junit.jupiter.api.DisplayName;
@@ -411,26 +411,26 @@ class TypeComparisonTest {
     @Test
     @DisplayName("Should correctly compare integers")
     void testCompareComparable_Integers() {
-      assertTrue(TypeComparison.compareComparable(10, 5, RelationalOperator.GT));
-      assertTrue(TypeComparison.compareComparable(10, 10, RelationalOperator.GTE));
-      assertTrue(TypeComparison.compareComparable(5, 10, RelationalOperator.LT));
-      assertTrue(TypeComparison.compareComparable(10, 10, RelationalOperator.LTE));
-      assertTrue(TypeComparison.compareComparable(10, 10, RelationalOperator.EQ));
-      assertTrue(TypeComparison.compareComparable(10, 5, RelationalOperator.NEQ));
+      assertTrue(TypeComparison.compareComparable(10, 5, RelationalOperator.GT, "test"));
+      assertTrue(TypeComparison.compareComparable(10, 10, RelationalOperator.GTE, "test"));
+      assertTrue(TypeComparison.compareComparable(5, 10, RelationalOperator.LT, "test"));
+      assertTrue(TypeComparison.compareComparable(10, 10, RelationalOperator.LTE, "test"));
+      assertTrue(TypeComparison.compareComparable(10, 10, RelationalOperator.EQ, "test"));
+      assertTrue(TypeComparison.compareComparable(10, 5, RelationalOperator.NEQ, "test"));
     }
 
     @Test
     @DisplayName("Should correctly compare strings")
     void testCompareComparable_Strings() {
-      assertTrue(TypeComparison.compareComparable("b", "a", RelationalOperator.GT));
-      assertTrue(TypeComparison.compareComparable("a", "a", RelationalOperator.EQ));
-      assertTrue(TypeComparison.compareComparable("a", "b", RelationalOperator.LT));
+      assertTrue(TypeComparison.compareComparable("b", "a", RelationalOperator.GT, "test"));
+      assertTrue(TypeComparison.compareComparable("a", "a", RelationalOperator.EQ, "test"));
+      assertTrue(TypeComparison.compareComparable("a", "b", RelationalOperator.LT, "test"));
     }
 
     @Test
     @DisplayName("Should return false for unsupported operators")
     void testCompareComparable_UnsupportedOperator() {
-      assertFalse(TypeComparison.compareComparable(10, 5, RelationalOperator.CONTAINS));
+      assertFalse(TypeComparison.compareComparable(10, 5, RelationalOperator.CONTAINS, "test"));
     }
   }
 

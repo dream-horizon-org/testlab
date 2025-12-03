@@ -1,46 +1,251 @@
-# testlab
+<div align="center">
 
-## API Specs
+  <h1>TestLab</h1>
 
-- [Swagger File](./src/main/resources/webroot/swagger/swagger.yaml)
+  <p><strong>Enterprise-grade A/B Testing & Feature Experimentation Platform</strong></p>
 
+</div>
 
-## Database Schema
+## 🌟 Overview
 
-- [DB Schema](./src/main/resources/db/postgresql/schema.sql)
+TestLab is a robust, high-performance experimentation platform designed for modern applications. It provides comprehensive A/B testing capabilities with flexible targeting rules, real-time user allocation, and variant management - giving you complete control over your feature experiments.
 
-## Running Application
+## Why TestLab?
 
-### Requirements
+* 🧪 **Powerful Experimentation**: Full A/B testing with multi-variant support and statistical rigor
+* 🎯 **Flexible Targeting**: Rule-based targeting with cohorts, attributes, and custom conditions
+* 🏢 **Multi-Tenant Ready**: Supports multiple projects with logical isolation
+* 🚀 **Quick Implementation**: Get experiments running in minutes
+* ⚡ **High Performance**: Built on Vert.x for reactive, non-blocking I/O with Aerospike for lightning-fast allocations
+* 📊 **Real-time Allocation**: Instant user assignment with consistent bucketing
+* 🔄 **Lifecycle Management**: Full experiment lifecycle from DRAFT to CONCLUDED
 
-- java (version >= 17)
-- maven
+## 📋 Table of Contents
 
-#### Running jar
+* [Features](#-features)
+* [Architecture](#-architecture)
+* [Getting Started](#-getting-started)
+* [Configuration](#-configuration)
+* [API Reference](#-api-reference)
+* [Deployment](#-deployment)
+* [Contributing](#-contributing)
+* [License](#-license)
 
-- create jar using `mvn clean package`
-- navigate to the jar directory by `cd target/testlab`
-- Run the jar using command
-  ```shell
-  PG_USER=<pg-username> \
-  PG_PASSWORD=<pg-password> \
-  java -Dapp.environment=<env-type> -Dlogback.configurationFile=./resources/logback/logback.xml -jar testlab-<artifact-version>-fat.jar
-  ```
+## ✨ Features
 
-#### IntelliJ Run Configuration
+### Experiment Management
 
-- Create Intellij Run Configuration of type `Application`
-- Pass following system properties (in `VM options`):
-  - `-Dapp.environment=<env-type>`
-  - `-Dlogback.configurationFile=logback/logback-local.xml`
-- Pass following program arguments: `run verticle.com.ascend.testlab.MainVerticle`
-- Pass following environment variables (in `Environment variables`):
-  ```shell
-  ENV=<env-type>
-  PG_USER=<pg-username> \
-  PG_PASSWORD=<pg-password> \
-  ```
+* **📝 Create Experiments**: Define A/B tests with multiple variants
+* **🔄 Lifecycle States**: DRAFT → LIVE → PAUSED → CONCLUDED/TERMINATED
+* **📊 Variant Weights**: Configure traffic distribution across variants
+* **🏷️ Tags & Owners**: Organize experiments with tags and assign ownership
+* **📈 Metrics Tracking**: Define primary and secondary metrics for analysis
 
-## Code Formatting
+### Targeting & Allocation
 
-- Run `mvn com.spotify.fmt:fmt-maven-plugin:format` to auto-format the code
+* **👥 Cohort-based Targeting**: Target specific user cohorts
+* **📋 Rule-based Targeting**: Define complex targeting rules with conditions
+  * Attribute-based conditions (operand, operator, value)
+  * Multiple data types: STRING, INTEGER, DOUBLE, BOOLEAN, LIST, SEMVER
+  * Rich operators: EQUALS, NOT_EQUALS, GREATER_THAN, LESS_THAN, CONTAINS, IN, etc.
+* **🎲 Distribution Strategies**: RANDOM allocation with configurable exposure
+* **⚡ Override Support**: Force specific users into specific variants
+* **🔒 Threshold Limits**: Control maximum experiment participation
+
+### Real-time Allocation
+
+* **🚀 Fast User Assignment**: Sub-millisecond allocation decisions
+* **🔄 Consistent Bucketing**: Users always see the same variant
+* **📱 Multi-experiment Support**: Allocate users to multiple experiments simultaneously
+* **🔀 Reallocation Support**: Move users between variants when needed
+
+### Administration
+
+* **📜 Experiment History**: Track all changes with audit logs
+* **🔍 Filter & Search**: Find experiments by status, type, name, tags, or owners
+* **✅ Key Availability**: Check experiment key uniqueness before creation
+
+## 🏗️ Architecture
+
+TestLab is built with a modern, scalable architecture:
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                      TestLab API                            │
+│                    (Vert.x REST API)                        │
+├─────────────────────────────────────────────────────────────┤
+│                                                             │
+│  ┌─────────────┐  ┌─────────────┐  ┌─────────────────────┐ │
+│  │  Experiment │  │  Allocation │  │   Admin Service     │ │
+│  │   Service   │  │   Service   │  │  (History, Tags)    │ │
+│  └─────────────┘  └─────────────┘  └─────────────────────┘ │
+│                                                             │
+├─────────────────────────────────────────────────────────────┤
+│                      Data Layer                             │
+│  ┌─────────────────────┐    ┌─────────────────────────────┐│
+│  │     PostgreSQL      │    │        Aerospike            ││
+│  │  (Experiment Data)  │    │  (User Allocations/Counts)  ││
+│  └─────────────────────┘    └─────────────────────────────┘│
+└─────────────────────────────────────────────────────────────┘
+```
+
+## 🚀 Getting Started
+
+### Prerequisites
+
+* **Docker** ≥ 20.10 ([Download Docker Desktop](https://www.docker.com/products/docker-desktop/))
+* **Docker Compose** ≥ 2.0 ([Install instructions](https://docs.docker.com/compose/install/))
+* **Maven** ≥ 3.6 ([Download Maven](https://maven.apache.org/download.cgi))
+* **Java 17** (JDK) ([Download Java 17](https://www.oracle.com/java/technologies/downloads/#java17))
+
+### Verify Installations
+
+```bash
+docker --version
+mvn --version
+java -version
+```
+
+**Important**: Ensure that Java 17 is the active version. Maven should also be configured to use Java 17 - verify with `mvn --version`.
+
+### Port Requirements
+
+Ensure the following ports are available:
+
+* `5432` – PostgreSQL database
+* `3000` – Aerospike
+* `8080` – TestLab application server
+
+### Quick Start
+
+1. **Clone the repository**:
+```bash
+git clone https://github.com/your-org/testlab.git
+cd testlab
+```
+
+2. **Start infrastructure services**:
+```bash
+docker-compose up -d
+```
+
+3. **Build and run TestLab**:
+```bash
+mvn clean package -DskipTests
+cd target/testlab
+PG_USER=postgres PG_PASSWORD=postgres java -Dapp.environment=local -Dlogback.configurationFile=./resources/logback/logback.xml -jar testlab-1.0-fat.jar
+```
+
+## ⚙️ Configuration
+
+### Environment Variables
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `PG_USER` | PostgreSQL username | - |
+| `PG_PASSWORD` | PostgreSQL password | - |
+| `app.environment` | Environment type (local, test, prod) | - |
+
+### Configuration Files
+
+Configuration files are located in `src/main/resources/config/`:
+
+* `application/default.conf` - Application settings
+* `postgresql/default.conf` - Database configuration
+* `aerospike/default.conf` - Aerospike cache settings
+* `http-server/default.conf` - HTTP server settings
+* `circuit-breaker/default.conf` - Resilience settings
+
+## 📚 API Reference
+
+### Swagger Specification
+The complete API specification is available at:
+* [Swagger File](./src/main/resources/webroot/swagger/swagger.yaml)
+
+### Database Schema
+* [DB Schema](./src/main/resources/db/postgresql/schema.sql)
+
+## 🚀 Deployment
+
+### Running with Docker
+
+```bash
+docker-compose up -d
+```
+
+### Running the JAR
+
+```bash
+mvn clean package
+cd target/testlab
+PG_USER=<pg-username> \
+PG_PASSWORD=<pg-password> \
+java -Dapp.environment=<env-type> \
+     -Dlogback.configurationFile=./resources/logback/logback.xml \
+     -jar testlab-1.0-fat.jar
+```
+
+### IntelliJ Run Configuration
+
+1. Create IntelliJ Run Configuration of type `Application`
+2. Add VM options:
+   * `-Dapp.environment=<env-type>`
+   * `-Dlogback.configurationFile=logback/logback-local.xml`
+3. Set program arguments: `run verticle.com.ascend.testlab.MainVerticle`
+4. Set environment variables:
+   ```
+   ENV=<env-type>
+   PG_USER=<pg-username>
+   PG_PASSWORD=<pg-password>
+   ```
+
+## 🛠️ Development
+
+### Code Formatting
+
+Auto-format code using Spotify's fmt plugin:
+```bash
+mvn com.spotify.fmt:fmt-maven-plugin:format
+```
+
+### Running Tests
+
+```bash
+# Unit tests
+mvn test
+
+# All tests including integration
+mvn verify
+```
+
+### Generate API Documentation
+
+```bash
+mvn javadoc:javadoc
+```
+
+Documentation will be generated in `docs/api-v1.0/`.
+
+## 🤝 Contributing
+
+We welcome contributions! Please:
+
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Run tests: `mvn verify`
+5. Submit a pull request
+
+### Coding Standards
+
+* Follow existing code style
+* Add tests for new functionality
+* Update documentation as needed
+
+## 📄 License
+
+TestLab is licensed under the [MIT License](./LICENSE).
+
+---
+
+Built with ❤️ by the TestLab team and contributors

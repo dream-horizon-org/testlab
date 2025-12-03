@@ -102,11 +102,12 @@ public interface PgWriterClient {
    * Execute a transactional function with a connection.
    *
    * @param transactionalFunction the function to execute with the connection
+   * @param defaultValue the default value to return if the transaction returns empty
    * @param <T> the type of the result
-   * @return a Maybe that emits the result of the transactional function
+   * @return a Single that emits the result of the transactional function
    */
-  // TODO: add support to begin/commit/rollback a transaction
-  <T> Maybe<T> executeWithTransaction(Function<SqlConnection, Maybe<T>> transactionalFunction);
+  <T> Single<T> executeWithTransaction(
+      Function<SqlConnection, Maybe<T>> transactionalFunction, T defaultValue);
 
   /**
    * Execute a prepared query with a tuple and fetch one row.

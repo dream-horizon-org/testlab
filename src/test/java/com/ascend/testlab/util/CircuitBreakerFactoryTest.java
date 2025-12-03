@@ -38,7 +38,14 @@ public class CircuitBreakerFactoryTest {
     config.setMinimumNumberOfCalls(10);
     config.setSlidingWindowSize(100);
 
-    CircuitBreakerFactory.circuitBreakerConfig = config;
+    try {
+      java.lang.reflect.Field field =
+          CircuitBreakerFactory.class.getDeclaredField("circuitBreakerConfig");
+      field.setAccessible(true);
+      field.set(null, config);
+    } catch (Exception e) {
+      throw new RuntimeException("Failed to set circuitBreakerConfig", e);
+    }
   }
 
   @Nested

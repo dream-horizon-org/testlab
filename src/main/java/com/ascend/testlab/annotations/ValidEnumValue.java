@@ -10,19 +10,32 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Annotation for validating enum values in fields, methods, parameters, or annotations. This
- * annotation validates that a given value matches one of the values in the specified enum class.
+ * Generic validation annotation for enum values.
  *
  * @author Anudeep Reddy
  * @version 1.0
  * @since 1.0
+ *     <p>This annotation can be used to validate that a field value matches one of the valid enum
+ *     values. It supports custom error messages and can invoke any method on the enum (like
+ *     getName(), getValue(), etc.) to compare against the field value.
+ *     <p>Example usage:
+ *     <pre>
+ * &#64;ValidEnumValue(
+ *     enumClass = ExperimentStatus.class,
+ *     method = "getName",
+ *     message = "Invalid experiment status"
+ * )
+ * private ExperimentStatus status;
+ * </pre>
  */
 @Constraint(validatedBy = EnumValueValidator.class)
 @Target({ElementType.FIELD, ElementType.METHOD, ElementType.PARAMETER, ElementType.ANNOTATION_TYPE})
 @Retention(RetentionPolicy.RUNTIME)
 public @interface ValidEnumValue {
+
   /**
-   * The error message to be used when validation fails.
+   * The error message to display when validation fails. Defaults to a generic invalid enum value
+   * message.
    *
    * @return the error message
    */
@@ -36,7 +49,7 @@ public @interface ValidEnumValue {
   Class<?>[] groups() default {};
 
   /**
-   * The payload that can be associated with this constraint.
+   * Payload for clients to assign custom payload objects to a constraint.
    *
    * @return the payload
    */
@@ -50,8 +63,17 @@ public @interface ValidEnumValue {
   Class<? extends Enum<?>> enumClass();
 
   /**
-   * The method name to be used for retrieving the enum value for comparison. Defaults to "name"
-   * which uses the enum constant name.
+   * The method name to invoke on the enum to get the value to compare. Defaults to "name" which
+   * returns the enum constant name.
+   *
+   * <p>Common methods:
+   *
+   * <ul>
+   *   <li>"name" - returns the enum constant name (default)
+   *   <li>"getName" - custom getter method
+   *   <li>"getValue" - custom getter method
+   *   <li>"getType" - custom getter method
+   * </ul>
    *
    * @return the method name
    */

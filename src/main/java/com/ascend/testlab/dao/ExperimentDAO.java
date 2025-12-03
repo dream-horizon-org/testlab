@@ -34,7 +34,34 @@ public interface ExperimentDAO {
    *
    * @param projectKey the project Key
    * @param experiment the experiment data
-   * @return a Single that emits true if deletion is successful, false otherwise
+   * @return a Single
    */
-  Single<Boolean> deleteExperiment(String projectKey, Experiment experiment);
+  Single<Boolean> deleteExperiment(
+      String projectKey, com.ascend.testlab.dto.entity.experiment.Experiment experiment);
+
+  /**
+   * Creates experiment with tags, owner, update log, and analysis in a transaction.
+   *
+   * <p>All necessary data (projectKey, experimentId, tags, owner) is extracted from the request
+   * object.
+   *
+   * @param projectKey project identifier for partitioning
+   * @param request experiment entity with all experiment details
+   * @return Single emitting true on success
+   */
+  Single<Boolean> createExperiment(String projectKey, Experiment request);
+
+  /**
+   * Updates an experiment with tags, owners, metrics, and update log in a transaction.
+   *
+   * <p>Performs a full update of the merged experiment data. Tags, owners, and metrics are replaced
+   * entirely. An update log entry is created with previous and current state.
+   *
+   * @param projectKey project identifier for partitioning
+   * @param previousExperiment the experiment state before update
+   * @param updatedExperiment the merged experiment with updates applied
+   * @return Single emitting true on success
+   */
+  Single<Boolean> updateExperiment(
+      String projectKey, Experiment previousExperiment, Experiment updatedExperiment);
 }

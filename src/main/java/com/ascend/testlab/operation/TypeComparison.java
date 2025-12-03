@@ -1,6 +1,6 @@
 package com.ascend.testlab.operation;
 
-import com.ascend.testlab.constants.enums.RelationalOperator;
+import com.ascend.testlab.constants.attributes.RelationalOperator;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import java.util.List;
@@ -55,7 +55,7 @@ public class TypeComparison {
     Double doubleOperand1 = Double.valueOf(operand1);
     Double doubleOperand2 = Double.valueOf(operand2);
 
-    return compareComparable(doubleOperand1, doubleOperand2, operator);
+    return compareComparable(doubleOperand1, doubleOperand2, operator, operandValue);
   }
 
   /**
@@ -112,7 +112,7 @@ public class TypeComparison {
     Long longOperand1 = Long.valueOf(operand1);
     Long longOperand2 = Long.valueOf(operand2);
 
-    return compareComparable(longOperand1, longOperand2, operator);
+    return compareComparable(longOperand1, longOperand2, operator, operandValue);
   }
 
   /**
@@ -151,8 +151,7 @@ public class TypeComparison {
     Semver semverOperand1 = Semver.coerce(operand1);
     Semver semverOperand2 = Semver.coerce(operand2);
     if (Objects.isNull(semverOperand1)) return false;
-
-    return compareComparable(semverOperand1, semverOperand2, operator);
+    return compareComparable(semverOperand1, semverOperand2, operator, operandValue);
   }
 
   /**
@@ -171,7 +170,7 @@ public class TypeComparison {
       case CONTAINS -> RelationalOperation.contains(operand1, operand2);
       case NOT_CONTAINS -> RelationalOperation.doesNotContain(operand1, operand2);
       case CONTAINS_REGEX -> RelationalOperation.containsRegex(operand1, operand2);
-      default -> compareComparable(operand1, operand2, operator);
+      default -> compareComparable(operand1, operand2, operator, operandValue);
     };
   }
 
@@ -181,11 +180,12 @@ public class TypeComparison {
    * @param operand1 the first operand
    * @param operand2 the second operand
    * @param operator the operator
+   * @param operandValue the string value of the operand for contains operations
    * @param <T> the type of the operands
    * @return the result of the comparison
    */
   public static <T> boolean compareComparable(
-      Comparable<T> operand1, T operand2, RelationalOperator operator) {
+      Comparable<T> operand1, T operand2, RelationalOperator operator, String operandValue) {
     return switch (operator) {
       case GT -> RelationalOperation.isGreaterThan(operand1, operand2);
       case GTE -> RelationalOperation.isGreaterThanOrEqual(operand1, operand2);

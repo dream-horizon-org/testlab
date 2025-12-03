@@ -83,9 +83,6 @@ public class AdminServiceImpl implements AdminService {
         .fetchExperimentHistory(request)
         .flatMap(
             response -> {
-              // if history is empty, it means one of these two things:
-              // 1. The experiment does not exist
-              // 2. The experiment has no history with the given offset and limit
               if (response.history().isEmpty()) {
                 return adminDAO
                     .getExperimentHistoryCount(request.getProjectKey(), request.getExperimentId())

@@ -461,8 +461,9 @@ class AllocationIT {
     allocateResponse.statusCode(HttpStatus.SC_OK);
     String originalVariant = allocateResponse.extract().path("data.experiment_map[0].variant_name");
 
-    // Determine new variant (if control, switch to treatment and vice versa)
-    String newVariant = "treatment".equals(originalVariant) ? "control" : "treatment";
+    // Determine new variant key (if control, switch to variant1 and vice versa)
+    // Note: variant keys are "control" and "variant1" based on seedExperiment
+    String newVariant = "control".equals(originalVariant) ? "variant1" : "control";
 
     // Now reallocate to different variant
     Map<String, Object> reallocateRequestBody = new HashMap<>();
@@ -514,7 +515,7 @@ class AllocationIT {
     String variant1 = getResponse1.extract().path("data.experiment_map[0].variant_name");
 
     // Reallocate to new variant
-    String newVariant = "treatment".equals(variant1) ? "control" : "treatment";
+    String newVariant = "treatment".equals(variant1) ? "control" : "variant1";
 
     Map<String, Object> reallocateRequestBody = new HashMap<>();
     reallocateRequestBody.put("experiment_id", experimentId);
@@ -582,7 +583,7 @@ class AllocationIT {
 
     Map<String, Object> reallocateRequestBody = new HashMap<>();
     reallocateRequestBody.put("experiment_id", experimentId);
-    reallocateRequestBody.put("variant_name", "treatment");
+    reallocateRequestBody.put("variant_name", "variant1");
     // Missing user_id
     reallocateRequestBody.put("reason", "Test");
 
@@ -602,7 +603,7 @@ class AllocationIT {
 
     Map<String, Object> reallocateRequestBody = new HashMap<>();
     reallocateRequestBody.put("experiment_id", nonExistentExperimentId);
-    reallocateRequestBody.put("variant_name", "treatment");
+    reallocateRequestBody.put("variant_name", "variant1");
     reallocateRequestBody.put("user_id", "user-123");
     reallocateRequestBody.put("reason", "User not previously allocated");
 
@@ -626,7 +627,7 @@ class AllocationIT {
 
     Map<String, Object> reallocateRequestBody = new HashMap<>();
     reallocateRequestBody.put("experiment_id", experimentId);
-    reallocateRequestBody.put("variant_name", "treatment");
+    reallocateRequestBody.put("variant_name", "variant1");
     reallocateRequestBody.put("user_id", "user-never-allocated");
     reallocateRequestBody.put("reason", "User not previously allocated");
 
@@ -697,7 +698,7 @@ class AllocationIT {
             allocateRequestBody, headers, null, spec -> spec.post(this.allocationRoute));
 
     String originalVariant = allocateResponse.extract().path("data.experiment_map[0].variant_name");
-    String newVariant = "treatment".equals(originalVariant) ? "control" : "treatment";
+    String newVariant = "variant1".equals(originalVariant) ? "control" : "variant1";
 
     // Reallocate with a reason for audit trail
     String auditReason = "User complained about poor experience";
@@ -739,7 +740,7 @@ class AllocationIT {
             allocateRequestBody, headers, null, spec -> spec.post(this.allocationRoute));
 
     String originalVariant = allocateResponse.extract().path("data.experiment_map[0].variant_name");
-    String newVariant = "treatment".equals(originalVariant) ? "control" : "treatment";
+    String newVariant = "variant1".equals(originalVariant) ? "control" : "variant1";
 
     // Reallocate without reason (reason is optional)
     Map<String, Object> reallocateRequestBody = new HashMap<>();
@@ -778,7 +779,7 @@ class AllocationIT {
             allocateRequestBody, allocateHeaders, null, spec -> spec.post(this.allocationRoute));
 
     String originalVariant = allocateResponse.extract().path("data.experiment_map[0].variant_name");
-    String newVariant = "treatment".equals(originalVariant) ? "control" : "treatment";
+    String newVariant = "variant1".equals(originalVariant) ? "control" : "variant1";
 
     // Reallocate with the same project key to ensure it's found
     Map<String, String> reallocateHeaders = Map.of(WebConstants.PROJECT_KEY_HEADER, PROJECT_KEY);
@@ -811,9 +812,9 @@ class AllocationIT {
       String projectKey, String experimentId, String experimentName, String experimentKey) {
     String variantsJson =
         "'{\"control\": {\"display_name\": \"Control\", \"variant_name\": \"control\", \"variables\": []}, "
-            + "\"treatment\": {\"display_name\": \"Treatment\", \"variant_name\": \"treatment\", \"variables\": []}}'";
+            + "\"variant1\": {\"display_name\": \"Treatment\", \"variant_name\": \"treatment\", \"variables\": []}}'";
 
-    String variantWeightsJson = "'{\"weights\":{\"control\": 50, \"treatment\": 50}}'";
+    String variantWeightsJson = "'{\"weights\":{\"control\": 50, \"variant1\": 50}}'";
 
     String insert =
         String.format(

@@ -2,6 +2,7 @@ package com.ascend.testlab.constants.enums;
 
 import com.ascend.testlab.exception.ErrorEnum;
 import com.dream11.rest.exception.RestException;
+import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonValue;
 
 /**
@@ -26,6 +27,15 @@ public enum ExperimentType {
   }
 
   /**
+   * Returns the string value of the experiment type.
+   *
+   * @return the experiment type value
+   */
+  public String getValue() {
+    return value;
+  }
+
+  /**
    * Returns the String representation of the experiment type.
    *
    * @return the string value of the experiment type
@@ -39,13 +49,19 @@ public enum ExperimentType {
   /**
    * Converts a string value to the corresponding ExperimentType enum.
    *
-   * @param value the string value to convert
+   * <p>This method is used by Jackson for JSON deserialization.
+   *
+   * @param value the string value to convert (e.g., "A/B" or "A_B")
    * @return the corresponding ExperimentType enum
    * @throws RestException if the value does not match any experiment type
    */
+  @JsonCreator
   public static ExperimentType fromValue(String value) {
     for (ExperimentType type : values()) {
-      if (type.value.equalsIgnoreCase(value)) {
+      // Accept both "A/B" and "A_B" formats, and also the enum name
+      if (type.value.equalsIgnoreCase(value)
+          || type.name().equalsIgnoreCase(value)
+          || type.name().replace("_", "/").equalsIgnoreCase(value)) {
         return type;
       }
     }

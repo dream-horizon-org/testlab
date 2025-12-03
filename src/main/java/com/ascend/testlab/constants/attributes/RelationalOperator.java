@@ -1,4 +1,4 @@
-package com.ascend.testlab.constants.enums;
+package com.ascend.testlab.constants.attributes;
 
 import com.ascend.testlab.exception.ErrorEnum;
 import com.dream11.rest.util.ExceptionUtil;

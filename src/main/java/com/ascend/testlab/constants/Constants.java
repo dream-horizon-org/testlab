@@ -26,6 +26,9 @@ public final class Constants {
   /** The admin role. */
   public static final String ADMIN = "ADMIN";
 
+  /** Default value for updatedBy field when not provided. */
+  public static final String SYSTEM = "SYSTEM";
+
   /** The maximum number of REST verticles. */
   public static final Integer MAX_NUM_REST_VERTICLES = 16;
 
@@ -34,11 +37,17 @@ public final class Constants {
   /** The delimiter for comma. */
   public static final String COMMA = ",";
 
+  /** The delimiter for empty string. */
+  public static final String EMPTY_STRING = "";
+
   /** The delimiter for colon. */
   public static final String COLON = ":";
 
   /** The delimiter for underscore. */
   public static final String UNDER_SCORE = "_";
+
+  /** The method name for getting enum name. */
+  public static final String NAME = "name";
 
   /** The delimiter for apostrophe. */
   public static final String APOSTROPHE = "'";

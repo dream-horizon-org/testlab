@@ -1,10 +1,15 @@
 package com.ascend.testlab.service;
 
 import com.ascend.testlab.dto.entity.experiment.Experiment;
+import com.ascend.testlab.dto.request.CreateExperimentRequest;
 import com.ascend.testlab.dto.request.FilterExperimentsRequest;
+import com.ascend.testlab.dto.request.UpdateExperimentRequest;
+import com.ascend.testlab.dto.response.CreateExperimentResponse;
 import com.ascend.testlab.dto.response.DeleteExperimentResponse;
 import com.ascend.testlab.dto.response.FilterExperimentsResponse;
+import com.ascend.testlab.dto.response.UpdateExperimentResponse;
 import io.reactivex.rxjava3.core.Single;
+import java.util.UUID;
 
 /**
  * Interface for experiment operations.
@@ -59,4 +64,26 @@ public interface ExperimentService {
    *     experiment ID is invalid, the experiment does not exist, or on failure
    */
   Single<DeleteExperimentResponse> deleteExperiment(String projectKey, String experimentId);
+
+  /**
+   * Creates a new experiment with validation and error handling. If the experiment is created in
+   * LIVE status and has overrides, assigns those users to the specified variant.
+   *
+   * @param projectKey project identifier from header
+   * @param request experiment creation request with all experiment details
+   * @return Single emitting CreateExperimentResponse with id, status, and message
+   */
+  Single<CreateExperimentResponse> createExperiment(
+      String projectKey, CreateExperimentRequest request);
+
+  /**
+   * Updates experiment fields partially with validation.
+   *
+   * @param projectKey project identifier from header
+   * @param experimentId experiment identifier
+   * @param request update experiment request DTO with validated fields
+   * @return Single emitting UpdateExperimentResponse with id, status, and message
+   */
+  Single<UpdateExperimentResponse> updateExperiment(
+      String projectKey, UUID experimentId, UpdateExperimentRequest request);
 }

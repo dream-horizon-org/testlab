@@ -94,7 +94,7 @@ class AllocationDAOTest {
       List<Experiment> expectedExperiments = List.of(createMockExperiment());
 
       when(pgReaderClient.fetchAll(
-              eq(ReadQuery.GET_EXPERIMENTS_FROM_KEY), any(Tuple.class), any(Function.class)))
+              eq(ReadQuery.FETCH_EXPERIMENTS_FROM_KEY), any(Tuple.class), any(Function.class)))
           .thenReturn(Single.just(expectedExperiments));
 
       // Act
@@ -106,7 +106,8 @@ class AllocationDAOTest {
       testObserver.assertNoErrors();
       testObserver.assertValue(experiments -> experiments.size() == 1);
       verify(pgReaderClient, times(1))
-          .fetchAll(eq(ReadQuery.GET_EXPERIMENTS_FROM_KEY), any(Tuple.class), any(Function.class));
+          .fetchAll(
+              eq(ReadQuery.FETCH_EXPERIMENTS_FROM_KEY), any(Tuple.class), any(Function.class));
       testContext.completeNow();
     }
 
@@ -117,7 +118,7 @@ class AllocationDAOTest {
       List<String> experimentKeys = List.of();
 
       when(pgReaderClient.fetchAll(
-              eq(ReadQuery.GET_EXPERIMENTS_FROM_KEY), any(Tuple.class), any(Function.class)))
+              eq(ReadQuery.FETCH_EXPERIMENTS_FROM_KEY), any(Tuple.class), any(Function.class)))
           .thenReturn(Single.just(List.of()));
 
       // Act
@@ -139,7 +140,7 @@ class AllocationDAOTest {
       RuntimeException expectedException = new RuntimeException("Database error");
 
       when(pgReaderClient.fetchAll(
-              eq(ReadQuery.GET_EXPERIMENTS_FROM_KEY), any(Tuple.class), any(Function.class)))
+              eq(ReadQuery.FETCH_EXPERIMENTS_FROM_KEY), any(Tuple.class), any(Function.class)))
           .thenReturn(Single.error(expectedException));
 
       // Act
@@ -163,7 +164,7 @@ class AllocationDAOTest {
       Experiment expectedExperiment = createMockExperiment();
 
       when(pgReaderClient.fetchOne(
-              eq(ReadQuery.GET_LIVE_EXPERIMENT), any(Tuple.class), any(Function.class)))
+              eq(ReadQuery.FETCH_LIVE_EXPERIMENT), any(Tuple.class), any(Function.class)))
           .thenReturn(Maybe.just(expectedExperiment));
 
       // Act
@@ -175,7 +176,7 @@ class AllocationDAOTest {
       testObserver.assertNoErrors();
       testObserver.assertValueCount(1);
       verify(pgReaderClient, times(1))
-          .fetchOne(eq(ReadQuery.GET_LIVE_EXPERIMENT), any(Tuple.class), any(Function.class));
+          .fetchOne(eq(ReadQuery.FETCH_LIVE_EXPERIMENT), any(Tuple.class), any(Function.class));
       testContext.completeNow();
     }
 
@@ -184,7 +185,7 @@ class AllocationDAOTest {
     void testFetchActiveExperimentNotFound(VertxTestContext testContext) {
       // Arrange
       when(pgReaderClient.fetchOne(
-              eq(ReadQuery.GET_LIVE_EXPERIMENT), any(Tuple.class), any(Function.class)))
+              eq(ReadQuery.FETCH_LIVE_EXPERIMENT), any(Tuple.class), any(Function.class)))
           .thenReturn(Maybe.empty());
 
       // Act
@@ -203,7 +204,7 @@ class AllocationDAOTest {
       RuntimeException expectedException = new RuntimeException("Database error");
 
       when(pgReaderClient.fetchOne(
-              eq(ReadQuery.GET_LIVE_EXPERIMENT), any(Tuple.class), any(Function.class)))
+              eq(ReadQuery.FETCH_LIVE_EXPERIMENT), any(Tuple.class), any(Function.class)))
           .thenReturn(Maybe.error(expectedException));
 
       // Act
@@ -227,7 +228,7 @@ class AllocationDAOTest {
       List<Experiment> expectedExperiments = List.of(createMockExperiment());
 
       when(pgReaderClient.fetchAll(
-              eq(ReadQuery.GET_CONCLUDED_EXPERIMENTS), any(Tuple.class), any(Function.class)))
+              eq(ReadQuery.FETCH_CONCLUDED_EXPERIMENTS), any(Tuple.class), any(Function.class)))
           .thenReturn(Single.just(expectedExperiments));
 
       // Act
@@ -246,7 +247,7 @@ class AllocationDAOTest {
     void testFetchConcludedExperimentsEmpty(VertxTestContext testContext) {
       // Arrange
       when(pgReaderClient.fetchAll(
-              eq(ReadQuery.GET_CONCLUDED_EXPERIMENTS), any(Tuple.class), any(Function.class)))
+              eq(ReadQuery.FETCH_CONCLUDED_EXPERIMENTS), any(Tuple.class), any(Function.class)))
           .thenReturn(Single.just(List.of()));
 
       // Act
@@ -267,7 +268,7 @@ class AllocationDAOTest {
       RuntimeException expectedException = new RuntimeException("Database error");
 
       when(pgReaderClient.fetchAll(
-              eq(ReadQuery.GET_CONCLUDED_EXPERIMENTS), any(Tuple.class), any(Function.class)))
+              eq(ReadQuery.FETCH_CONCLUDED_EXPERIMENTS), any(Tuple.class), any(Function.class)))
           .thenReturn(Single.error(expectedException));
 
       // Act
@@ -395,16 +396,15 @@ class AllocationDAOTest {
                       "treatment", Variant.builder().displayName("Treatment").build()))
               .build();
 
-      // Mock Aerospike to return records with counts
-      Record record1 = mock(Record.class);
-      Record record2 = mock(Record.class);
-      lenient().when(record1.getLong("count")).thenReturn(50L);
-      lenient().when(record2.getLong("count")).thenReturn(30L);
+      // Mock Aerospike to return record with map containing variant counts
+      Record record = mock(Record.class);
+      Map<String, Long> variantCounts = new HashMap<>();
+      variantCounts.put("control", 50L);
+      variantCounts.put("treatment", 30L);
+      doReturn(variantCounts).when(record).getMap(anyString());
 
-      List<Record> records = Arrays.asList(record1, record2);
-      lenient()
-          .when(aerospikeClient.get(any(BatchPolicy.class), anyList(), eq("count")))
-          .thenReturn(Single.just(records));
+      when(aerospikeClient.get(any(Policy.class), any(Key.class), anyString()))
+          .thenReturn(Single.just(record));
 
       // Act
       TestObserver<Boolean> testObserver =
@@ -434,15 +434,14 @@ class AllocationDAOTest {
               .build();
 
       // Mock Aerospike to return high counts
-      Record record1 = mock(Record.class);
-      Record record2 = mock(Record.class);
-      lenient().when(record1.getLong("count")).thenReturn(500L);
-      lenient().when(record2.getLong("count")).thenReturn(600L);
+      Record record = mock(Record.class);
+      Map<String, Long> variantCounts = new HashMap<>();
+      variantCounts.put("control", 500L);
+      variantCounts.put("treatment", 600L);
+      doReturn(variantCounts).when(record).getMap(anyString());
 
-      List<Record> records = Arrays.asList(record1, record2);
-      lenient()
-          .when(aerospikeClient.get(any(BatchPolicy.class), anyList(), eq("count")))
-          .thenReturn(Single.just(records));
+      when(aerospikeClient.get(any(Policy.class), any(Key.class), anyString()))
+          .thenReturn(Single.just(record));
 
       // Act
       TestObserver<Boolean> testObserver =
@@ -472,15 +471,14 @@ class AllocationDAOTest {
               .build();
 
       // Mock Aerospike to return counts that exceed threshold
-      Record record1 = mock(Record.class);
-      Record record2 = mock(Record.class);
-      lenient().when(record1.getLong("count")).thenReturn(60L);
-      lenient().when(record2.getLong("count")).thenReturn(50L);
+      Record record = mock(Record.class);
+      Map<String, Long> variantCounts = new HashMap<>();
+      variantCounts.put("control", 60L);
+      variantCounts.put("treatment", 50L);
+      doReturn(variantCounts).when(record).getMap(anyString());
 
-      List<Record> records = Arrays.asList(record1, record2);
-      lenient()
-          .when(aerospikeClient.get(any(BatchPolicy.class), anyList(), eq("count")))
-          .thenReturn(Single.just(records));
+      when(aerospikeClient.get(any(Policy.class), any(Key.class), anyString()))
+          .thenReturn(Single.just(record));
 
       // Act
       TestObserver<Boolean> testObserver =
@@ -506,16 +504,17 @@ class AllocationDAOTest {
               .variants(Map.of("control", Variant.builder().displayName("Control").build()))
               .build();
 
+      // When there's an error, getTotalVariantCount returns 0 via onErrorReturnItem
+      // So checkThreshold returns true (allowing allocation)
       RuntimeException expectedException = new RuntimeException("Aerospike error");
-      lenient()
-          .when(aerospikeClient.get(any(BatchPolicy.class), anyList(), eq("count")))
+      when(aerospikeClient.get(any(Policy.class), any(Key.class), anyString()))
           .thenReturn(Single.error(expectedException));
 
       // Act
       TestObserver<Boolean> testObserver =
           allocationDAO.checkThreshold(PROJECT_KEY, experiment).test();
 
-      // Assert
+      // Assert - error is swallowed and returns true (0 < threshold)
       testObserver.assertComplete();
       testObserver.assertNoErrors();
       testObserver.assertValue(true);
@@ -681,14 +680,15 @@ class AllocationDAOTest {
               .reason("Testing reallocation")
               .build();
 
-      // Mock variant count operations
+      // Mock all aerospike operate calls - use lenient to avoid strict stubbing errors
       Record variantRecord = mock(Record.class);
-      when(variantRecord.getLong(anyString())).thenReturn(10L);
-      when(aerospikeClient.operate(any(WritePolicy.class), any(Key.class), any(), any()))
+      lenient().when(variantRecord.getLong(anyString())).thenReturn(10L);
+      lenient()
+          .when(aerospikeClient.operate(any(WritePolicy.class), any(Key.class), any(), any()))
           .thenReturn(Single.just(variantRecord));
-
-      // Mock user assignment update
-      when(aerospikeClient.operate(any(WritePolicy.class), any(Key.class), any(Operation.class)))
+      lenient()
+          .when(
+              aerospikeClient.operate(any(WritePolicy.class), any(Key.class), any(Operation.class)))
           .thenReturn(Single.just(mock(Record.class)));
 
       // Act
@@ -728,14 +728,15 @@ class AllocationDAOTest {
               .reason("Testing reallocation")
               .build();
 
-      // Mock variant count operations success
+      // Mock variant count operations - use lenient to avoid strict stubbing errors
       Record variantRecord = mock(Record.class);
-      when(variantRecord.getLong(anyString())).thenReturn(10L);
-      when(aerospikeClient.operate(any(WritePolicy.class), any(Key.class), any(), any()))
+      lenient().when(variantRecord.getLong(anyString())).thenReturn(10L);
+      lenient()
+          .when(aerospikeClient.operate(any(WritePolicy.class), any(Key.class), any(), any()))
           .thenReturn(Single.just(variantRecord));
-
-      // Mock user assignment update failure
-      when(aerospikeClient.operate(any(WritePolicy.class), any(Key.class), any(Operation.class)))
+      lenient()
+          .when(
+              aerospikeClient.operate(any(WritePolicy.class), any(Key.class), any(Operation.class)))
           .thenReturn(Single.error(new RuntimeException("Aerospike error")));
 
       // Act
@@ -842,7 +843,7 @@ class AllocationDAOTest {
         .experimentId(EXPERIMENT_ID)
         .projectKey(PROJECT_KEY)
         .name("Test Experiment")
-        .key("test_experiment")
+        .experimentKey("test_experiment")
         .status(ExperimentStatus.LIVE)
         .build();
   }

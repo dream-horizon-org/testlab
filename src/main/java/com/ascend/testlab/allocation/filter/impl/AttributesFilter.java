@@ -1,8 +1,8 @@
 package com.ascend.testlab.allocation.filter.impl;
 
 import com.ascend.testlab.allocation.filter.AbstractExperimentFilter;
+import com.ascend.testlab.constants.attributes.RelationalOperator;
 import com.ascend.testlab.constants.enums.DataTypeEnum;
-import com.ascend.testlab.constants.enums.RelationalOperator;
 import com.ascend.testlab.dto.entity.allocation.Attributes;
 import com.ascend.testlab.dto.entity.experiment.Experiment;
 import com.ascend.testlab.dto.entity.experiment.RuleAttributes;
@@ -77,12 +77,12 @@ public class AttributesFilter extends AbstractExperimentFilter {
                   exp.getRuleAttributes().stream().anyMatch(this::evaluateRuleAttribute);
 
               if (!anyConditionMatches) {
-                log.trace(
+                log.info(
                     "Experiment {} filtered out - none of the {} rule attribute conditions matched",
                     exp.getExperimentId(),
                     exp.getRuleAttributes().size());
               } else {
-                log.debug(
+                log.info(
                     "Experiment {} passed filter - at least one rule attribute condition matched",
                     exp.getExperimentId());
               }

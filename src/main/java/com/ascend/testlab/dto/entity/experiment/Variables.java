@@ -19,7 +19,6 @@ import lombok.Data;
 @Data
 @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
 public class Variables {
-
   String value;
 
   String key;

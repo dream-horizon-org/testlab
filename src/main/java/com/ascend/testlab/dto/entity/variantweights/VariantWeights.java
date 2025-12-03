@@ -20,7 +20,7 @@ import com.fasterxml.jackson.databind.annotation.JsonNaming;
     property = "type",
     defaultImpl = CohortVariantWeights.class)
 @JsonSubTypes({
-  @JsonSubTypes.Type(value = StratifiedVariantWeights.class, name = "MANUAL"),
+  @JsonSubTypes.Type(value = StratifiedVariantWeights.class, name = "STRATIFIED"),
   @JsonSubTypes.Type(value = CohortVariantWeights.class, name = "COHORT"),
 })
 @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)

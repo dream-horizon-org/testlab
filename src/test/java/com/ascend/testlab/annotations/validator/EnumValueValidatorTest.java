@@ -22,11 +22,18 @@ class EnumValueValidatorTest {
 
   @Mock private ConstraintValidatorContext context;
 
+  @Mock private ConstraintValidatorContext.ConstraintViolationBuilder violationBuilder;
+
   @Mock private ValidEnumValue annotation;
 
   @BeforeEach
   void setUp() {
     validator = new EnumValueValidator();
+    // Setup mock chain for constraint violation building (lenient for tests that don't need it)
+    lenient()
+        .when(context.buildConstraintViolationWithTemplate(anyString()))
+        .thenReturn(violationBuilder);
+    lenient().when(violationBuilder.addConstraintViolation()).thenReturn(context);
   }
 
   @Nested

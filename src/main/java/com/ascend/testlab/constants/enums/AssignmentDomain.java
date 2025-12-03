@@ -9,7 +9,6 @@ package com.ascend.testlab.constants.enums;
  * @since 1.0
  */
 public enum AssignmentDomain {
-  // todo: change these names
   /** Manual variant allocation - specific users mapped to specific variants */
   STRATIFIED,
 

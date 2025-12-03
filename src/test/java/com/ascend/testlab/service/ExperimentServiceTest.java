@@ -6,6 +6,7 @@ import static org.mockito.Mockito.*;
 import com.ascend.testlab.constants.enums.ExperimentStatus;
 import com.ascend.testlab.constants.enums.ExperimentType;
 import com.ascend.testlab.dao.AdminDAO;
+import com.ascend.testlab.dao.AllocationDAO;
 import com.ascend.testlab.dao.ExperimentDAO;
 import com.ascend.testlab.dto.entity.experiment.Experiment;
 import com.ascend.testlab.dto.request.FilterExperimentsRequest;
@@ -45,13 +46,14 @@ public class ExperimentServiceTest {
 
   @Mock private ExperimentDAO experimentDAO;
   @Mock private AdminDAO adminDAO;
+  @Mock private AllocationDAO allocationDAO;
 
   private static final String PROJECT_KEY = "123e4567-e89b-12d3-a456-426614174000";
   private static final String EXPERIMENT_ID = "123e4567-e89b-12d3-a456-426614174000";
 
   @BeforeEach
   void setUp() {
-    experimentService = new ExperimentServiceImpl(experimentDAO, adminDAO);
+    experimentService = new ExperimentServiceImpl(experimentDAO, adminDAO, allocationDAO);
   }
 
   @Nested
@@ -62,7 +64,8 @@ public class ExperimentServiceTest {
     @DisplayName("Should create service with valid DAO")
     void testConstructorWithValidDAO() {
       // Act
-      ExperimentServiceImpl service = new ExperimentServiceImpl(experimentDAO, adminDAO);
+      ExperimentServiceImpl service =
+          new ExperimentServiceImpl(experimentDAO, adminDAO, allocationDAO);
 
       // Assert
       assertNotNull(service);
@@ -72,7 +75,7 @@ public class ExperimentServiceTest {
     @DisplayName("Should create service with null DAO")
     void testConstructorWithNullDAO() {
       // Act - Constructor doesn't validate null, but will fail at runtime
-      ExperimentServiceImpl service = new ExperimentServiceImpl(null, null);
+      ExperimentServiceImpl service = new ExperimentServiceImpl(null, null, null);
 
       // Assert
       assertNotNull(service);

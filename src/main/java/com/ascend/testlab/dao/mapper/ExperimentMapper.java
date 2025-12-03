@@ -9,9 +9,13 @@ import com.ascend.testlab.constants.postgresql.Columns;
 import com.ascend.testlab.dto.entity.experiment.Experiment;
 import com.ascend.testlab.dto.entity.experiment.RuleAttributes;
 import com.ascend.testlab.dto.entity.experiment.Variant;
+import com.ascend.testlab.dto.entity.experiment.WinningVariant;
 import com.ascend.testlab.dto.entity.variantweights.CohortVariantWeights;
 import com.ascend.testlab.dto.entity.variantweights.StratifiedVariantWeights;
 import com.ascend.testlab.dto.entity.variantweights.VariantWeights;
+import com.ascend.testlab.exception.ErrorEnum;
+import com.dream11.rest.exception.RestException;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
@@ -64,22 +68,16 @@ public class ExperimentMapper {
           row.getArrayOfStrings(Columns.COHORTS) != null
               ? List.of(row.getArrayOfStrings(Columns.COHORTS))
               : null;
-      List<String> overrides =
-          row.getArrayOfStrings(Columns.OVERRIDES) != null
-              ? List.of(row.getArrayOfStrings(Columns.OVERRIDES))
-              : null;
+      Map<String, List<String>> overrides =
+          deserializeOverrides(row.getJsonObject(Columns.OVERRIDES), mapper, experimentId);
       List<String> tags =
-          row.getColumnIndex(Columns.TAGS) < 0 || row.getArrayOfStrings(Columns.TAGS) == null
+          row.getColumnIndex(Columns.TAGS) < 0 || row.getString(Columns.TAGS) == null
               ? null
-              : Arrays.stream(row.getArrayOfStrings(Columns.TAGS))
-                  .filter(Objects::nonNull)
-                  .toList();
+              : Arrays.stream(row.getString(Columns.TAGS).split(",")).toList();
       List<String> owners =
-          row.getColumnIndex(Columns.OWNERS) < 0 || row.getArrayOfStrings(Columns.OWNERS) == null
+          row.getColumnIndex(Columns.OWNERS) < 0 || row.getString(Columns.OWNERS) == null
               ? null
-              : Arrays.stream(row.getArrayOfStrings(Columns.OWNERS))
-                  .filter(Objects::nonNull)
-                  .toList();
+              : Arrays.stream(row.getString(Columns.OWNERS).split(",")).toList();
 
       AssignmentDomain assignmentDomain =
           AssignmentDomain.valueOf(row.getString(Columns.ASSIGNMENT_DOMAIN));
@@ -91,12 +89,15 @@ public class ExperimentMapper {
       List<RuleAttributes> ruleAttributes =
           deserializeRuleAttributes(
               row.getJsonArray(Columns.RULE_ATTRIBUTES), mapper, experimentId);
+      WinningVariant winningVariant =
+          deserializeWinningVariant(
+              row.getJsonObject(Columns.WINNING_VARIANT), mapper, experimentId);
 
       return Experiment.builder()
           .projectKey(row.getString(Columns.PROJECT_KEY))
           .experimentId(experimentId)
           .name(row.getString(Columns.NAME))
-          .key(row.getString(Columns.EXPERIMENT_KEY))
+          .experimentKey(row.getString(Columns.EXPERIMENT_KEY))
           .description(row.getString(Columns.DESCRIPTION))
           .hypothesis(row.getString(Columns.HYPOTHESIS))
           .status(ExperimentStatus.valueOf(row.getString(Columns.STATUS)))
@@ -110,7 +111,7 @@ public class ExperimentMapper {
           .assignmentDomain(assignmentDomain)
           .overrides(overrides)
           .ruleAttributes(ruleAttributes)
-          .winningVariant(row.getJsonObject(Columns.WINNING_VARIANT))
+          .winningVariant(winningVariant)
           .exposure(row.getInteger(Columns.EXPOSURE))
           .threshold(row.getLong(Columns.THRESHOLD))
           .startTime(row.getLong(Columns.START_TIME))
@@ -123,7 +124,26 @@ public class ExperimentMapper {
           .build();
     } catch (Exception e) {
       log.error("Error mapping row to Experiment: {}", e.getMessage(), e);
-      throw new RuntimeException("Failed to map row to Experiment", e);
+      throw new RestException(ErrorEnum.ROW_MAPPING_FAILED, e);
+    }
+  }
+
+  private static WinningVariant deserializeWinningVariant(
+      JsonObject winningVariantJson, ObjectMapper mapper, UUID experimentId)
+      throws JsonProcessingException {
+    if (Objects.isNull(winningVariantJson)) {
+      log.warn("Null winning variant JSON for experiment {}", experimentId);
+      return null;
+    }
+    try {
+      String jsonString = winningVariantJson.toString();
+      WinningVariant winningVariant = mapper.readValue(jsonString, WinningVariant.class);
+
+      log.debug("Deserialized winning variant for experiment {}: {}", experimentId, winningVariant);
+      return winningVariant;
+    } catch (Exception e) {
+      log.error("Error deserializing winning variant for experiment {} ", experimentId, e);
+      throw e;
     }
   }
 
@@ -234,6 +254,45 @@ public class ExperimentMapper {
       return ruleAttributes;
     } catch (Exception e) {
       log.error("Error deserializing rule attributes for experiment {}", experimentId, e);
+      throw e;
+    }
+  }
+
+  /**
+   * Deserializes overrides JSON into a map of variant names to user ID lists.
+   *
+   * @param overridesJson the JSON object containing overrides
+   * @param objectMapper the ObjectMapper for JSON deserialization
+   * @param experimentId experiment ID for logging
+   * @return map of variant names to user IDs, or null if null
+   * @throws Exception if deserialization fails
+   */
+  private static Map<String, List<String>> deserializeOverrides(
+      JsonObject overridesJson, ObjectMapper objectMapper, UUID experimentId) throws Exception {
+
+    if (Objects.isNull(overridesJson)) {
+      log.debug("Null overrides JSON for experiment {}", experimentId);
+      return null;
+    }
+
+    try {
+      String jsonString = overridesJson.toString();
+      Map<String, List<String>> overrides =
+          objectMapper.readValue(
+              jsonString,
+              objectMapper
+                  .getTypeFactory()
+                  .constructMapType(
+                      Map.class,
+                      objectMapper.getTypeFactory().constructType(String.class),
+                      objectMapper
+                          .getTypeFactory()
+                          .constructCollectionType(List.class, String.class)));
+
+      log.debug("Deserialized Overrides for experiment {}: {}", experimentId, overrides);
+      return overrides;
+    } catch (Exception e) {
+      log.error("Error deserializing overrides for experiment {}", experimentId, e);
       throw e;
     }
   }

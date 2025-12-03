@@ -511,7 +511,7 @@ class AdminDAOTest {
       // Arrange
       int expectedCount = 42;
       when(pgReaderClient.fetchOne(
-              eq(ReadQuery.GET_EXPERIMENT_HISTORY_COUNT), any(Tuple.class), any()))
+              eq(ReadQuery.FETCH_EXPERIMENT_HISTORY_COUNT), any(Tuple.class), any()))
           .thenReturn(Maybe.just(expectedCount));
 
       // Act
@@ -524,7 +524,7 @@ class AdminDAOTest {
       testObserver.assertValueCount(1);
       testObserver.assertValue(expectedCount);
       verify(pgReaderClient, times(1))
-          .fetchOne(eq(ReadQuery.GET_EXPERIMENT_HISTORY_COUNT), any(Tuple.class), any());
+          .fetchOne(eq(ReadQuery.FETCH_EXPERIMENT_HISTORY_COUNT), any(Tuple.class), any());
     }
 
     @Test
@@ -532,7 +532,7 @@ class AdminDAOTest {
     void testGetExperimentHistoryCount_Empty() {
       // Arrange
       when(pgReaderClient.fetchOne(
-              eq(ReadQuery.GET_EXPERIMENT_HISTORY_COUNT), any(Tuple.class), any()))
+              eq(ReadQuery.FETCH_EXPERIMENT_HISTORY_COUNT), any(Tuple.class), any()))
           .thenReturn(Maybe.empty());
 
       // Act
@@ -544,7 +544,7 @@ class AdminDAOTest {
       testObserver.assertNoErrors();
       testObserver.assertValueCount(1);
       verify(pgReaderClient, times(1))
-          .fetchOne(eq(ReadQuery.GET_EXPERIMENT_HISTORY_COUNT), any(Tuple.class), any());
+          .fetchOne(eq(ReadQuery.FETCH_EXPERIMENT_HISTORY_COUNT), any(Tuple.class), any());
     }
 
     @Test
@@ -553,7 +553,7 @@ class AdminDAOTest {
       // Arrange
       RuntimeException dbException = new RuntimeException("DB error");
       when(pgReaderClient.fetchOne(
-              eq(ReadQuery.GET_EXPERIMENT_HISTORY_COUNT), any(Tuple.class), any()))
+              eq(ReadQuery.FETCH_EXPERIMENT_HISTORY_COUNT), any(Tuple.class), any()))
           .thenReturn(Maybe.error(dbException));
 
       // Act
@@ -563,7 +563,7 @@ class AdminDAOTest {
       // Assert
       testObserver.assertError(RuntimeException.class);
       verify(pgReaderClient, times(1))
-          .fetchOne(eq(ReadQuery.GET_EXPERIMENT_HISTORY_COUNT), any(Tuple.class), any());
+          .fetchOne(eq(ReadQuery.FETCH_EXPERIMENT_HISTORY_COUNT), any(Tuple.class), any());
     }
   }
 }
