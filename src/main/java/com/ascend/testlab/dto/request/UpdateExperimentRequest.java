@@ -86,7 +86,7 @@ public class UpdateExperimentRequest {
 
   @Valid private WinningVariant winningVariant;
 
-  @Min(value = 1, message = "Exposure must be at least 1    ")
+  @Min(value = 1, message = "Exposure must be at least 1")
   @Max(value = 100, message = "Exposure must not exceed 100")
   private Integer exposure;
 

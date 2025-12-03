@@ -90,7 +90,7 @@ public class CreateExperimentRequest {
 
   private List<@NotBlank(message = "Tag cannot be blank") String> tags;
 
-  @Min(value = 0, message = "Exposure must be at least 0")
+  @Min(value = 1, message = "Exposure must be at least 1")
   @Max(value = 100, message = "Exposure must not exceed 100")
   private int exposure = 100;
 
