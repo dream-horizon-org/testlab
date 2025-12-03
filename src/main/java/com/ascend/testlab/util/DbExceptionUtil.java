@@ -19,6 +19,12 @@ public class DbExceptionUtil {
   /** PostgreSQL error code for unique constraint violations. */
   private static final String UNIQUE_VIOLATION_CODE = "23505";
 
+  /** PostgreSQL error code for check constraint violations (includes partition errors). */
+  private static final String CHECK_VIOLATION_CODE = "23514";
+
+  /** Error message pattern for missing partition. */
+  private static final String NO_PARTITION_MESSAGE = "no partition of relation";
+
   /** Constraint name to user-friendly message mapping. */
   private static final Map<String, String> CONSTRAINT_MESSAGES =
       Map.of(
@@ -30,6 +36,9 @@ public class DbExceptionUtil {
 
   private static final String DEFAULT_DUPLICATE_MESSAGE = "Duplicate entry detected";
 
+  private static final String PARTITION_NOT_FOUND_MESSAGE =
+      "Project key partition does not exist. Please ensure the project is properly configured.";
+
   /**
    * Handles database errors and converts them to RestException.
    *
@@ -38,12 +47,40 @@ public class DbExceptionUtil {
    * @return RestException
    */
   public static RestException handleDbError(Throwable err, ErrorEnum defaultError) {
+    // Check for missing partition error
+    String partitionError = findPartitionNotFoundMessage(err);
+    if (partitionError != null) {
+      return new RestException(
+          "PARTITION_NOT_FOUND", partitionError, HttpStatus.SC_BAD_REQUEST, err);
+    }
+
+    // Check for unique constraint violation
     String duplicateMessage = findUniqueViolationMessage(err);
     if (duplicateMessage != null) {
       return new RestException(
           "DUPLICATE_EXPERIMENT", duplicateMessage, HttpStatus.SC_BAD_REQUEST, err);
     }
+
     return ErrorEnum.handleException(err, new RestException(defaultError, err));
+  }
+
+  /**
+   * Walks the exception cause chain to find a partition not found error. Returns user-friendly
+   * message if found, null otherwise.
+   */
+  private static String findPartitionNotFoundMessage(Throwable err) {
+    for (Throwable current = err; current != null; current = current.getCause()) {
+      String message = current.getMessage();
+      if (message == null) {
+        continue;
+      }
+
+      if (message.contains(NO_PARTITION_MESSAGE)
+          || (message.contains(CHECK_VIOLATION_CODE) && message.contains("partition"))) {
+        return PARTITION_NOT_FOUND_MESSAGE;
+      }
+    }
+    return null;
   }
 
   /**
