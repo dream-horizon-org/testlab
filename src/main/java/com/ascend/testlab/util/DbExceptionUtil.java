@@ -47,7 +47,6 @@ public class DbExceptionUtil {
    * @return RestException
    */
   public static RestException handleDbError(Throwable err, ErrorEnum defaultError) {
-    // Check for missing partition error
     String partitionError = findPartitionNotFoundMessage(err);
     if (partitionError != null) {
       return new RestException(

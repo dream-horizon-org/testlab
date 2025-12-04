@@ -105,8 +105,6 @@ public final class TestUtil {
     if (Objects.nonNull(headers)) specification.headers(headers);
     if (Objects.nonNull(queryParams)) specification.queryParams(queryParams);
 
-    // TODO: verify that the API response follows the swagger specification
-
     return requestMapper.apply(specification).then();
   }
 

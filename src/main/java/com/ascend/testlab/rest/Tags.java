@@ -68,10 +68,7 @@ public class Tags {
       content = @Content(schema = @Schema(implementation = ResponseEntity.Failure.class)))
   public CompletionStage<ResponseEntity.Success<TagsResponse>> getTagsHandle(
       @HeaderParam(WebConstants.PROJECT_KEY_HEADER)
-          @NotBlank(
-              message =
-                  ErrorMessages
-                      .PROJECT_KEY_MISSING) // TODO: use default here & in compose, remove check
+          @NotBlank(message = ErrorMessages.PROJECT_KEY_MISSING)
           String projectKey) {
 
     return adminService.getTags(projectKey).map(ResponseEntity.Success::new).toCompletionStage();

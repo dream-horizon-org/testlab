@@ -12,7 +12,6 @@ import com.fasterxml.jackson.annotation.JsonValue;
  * @version 1.0
  * @since 1.0
  */
-// TODO: enhance documentation to show allowed state transitions
 public enum ExperimentStatus {
   /** The experiment is live and actively running. */
   LIVE,

@@ -38,7 +38,6 @@ import org.apache.commons.lang3.StringUtils;
 @JsonIgnoreProperties(ignoreUnknown = true)
 @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
 public class FilterExperimentsRequest {
-  // TODO: use @ValidEnum annotation
   @QueryParam(WebConstants.EXPERIMENT_STATUS)
   private String status;
 

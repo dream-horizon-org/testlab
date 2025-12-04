@@ -56,7 +56,6 @@ public interface AerospikeClient {
    * @param binNames the names of the bins to get
    * @return a Single that emits the record
    */
-  // TODO: add support for get method without policy and key specification
   Single<Record> get(Policy policy, Key key, String... binNames);
 
   /**

@@ -31,7 +31,6 @@ public class RoundRobinVariantAssignment implements VariantAssignmentStrategy {
       log.warn("No variants available for round-robin assignment");
       return null;
     }
-    // todo -> change logic
     int hash = userId.hashCode();
     int index = Math.abs(hash % variants.size());
 
