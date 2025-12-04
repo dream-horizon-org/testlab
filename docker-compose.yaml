@@ -40,6 +40,8 @@ services:
       context: .
       dockerfile: Dockerfile
     container_name: backend
+    env_file:
+      - env.docker
     environment:
       <<: [*pg-env, *aerospike-env, *project-env]
       PG_READER_HOST: postgresql
