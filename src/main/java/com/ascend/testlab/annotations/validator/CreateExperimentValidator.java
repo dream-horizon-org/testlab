@@ -197,8 +197,7 @@ public class CreateExperimentValidator
     if (request.getVariants() == null) return true;
 
     boolean isValid = true;
-    for (Map.Entry<String, Variant> entry :
-        request.getVariants().entrySet()) {
+    for (Map.Entry<String, Variant> entry : request.getVariants().entrySet()) {
       Variant variant = entry.getValue();
       if (variant.getVariables() == null || variant.getVariables().isEmpty()) {
         addError(
@@ -235,8 +234,7 @@ public class CreateExperimentValidator
       CreateExperimentRequest request, ConstraintValidatorContext context) {
     if (request.getVariants() == null) return true;
 
-    for (Map.Entry<String, Variant> entry :
-        request.getVariants().entrySet()) {
+    for (Map.Entry<String, Variant> entry : request.getVariants().entrySet()) {
       Variant variant = entry.getValue();
       if (variant.getVariables() == null) continue;
 
@@ -309,8 +307,7 @@ public class CreateExperimentValidator
 
     Map<String, String> keyDataTypes = new HashMap<>();
 
-    for (Variant variant :
-        request.getVariants().values()) {
+    for (Variant variant : request.getVariants().values()) {
       if (variant.getVariables() == null) continue;
 
       for (Variables var : variant.getVariables()) {

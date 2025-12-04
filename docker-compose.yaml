@@ -19,7 +19,7 @@ services:
       PG_RANDOM_ROOT_PASSWORD: yes
     image: postgres:16
     ports:
-      - '5431:5432'
+      - '8142:5432'
     volumes:
       - pg_data:/var/lib/pgsql
       - ./src/main/resources/db/postgresql/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
@@ -31,7 +31,7 @@ services:
       <<: *aerospike-env
     image: aerospike/aerospike-server:8.1.0.1
     ports:
-      - '3030-3032:3000-3002'
+      - '8130-8132:3000-3002'
     volumes:
       - aerospike_data:/opt/aerospike/data
 
@@ -51,7 +51,7 @@ services:
       testlab-aerospike:
         condition: service_started
     ports:
-      - '8083:8080'
+      - '8100:8080'
 
 volumes:
   pg_data: {}
