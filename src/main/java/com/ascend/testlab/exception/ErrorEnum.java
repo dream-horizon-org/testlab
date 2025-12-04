@@ -22,7 +22,6 @@ public enum ErrorEnum implements RestError {
 
   /** The error code for the health check failed. */
   REST_HEALTH_CHECK_FAILED(
-      // TODO: Verify error code standards
       "testlab_REST_HEALTH_CHECK_FAILED",
       "HealthCheck Failed for testlab service",
       HttpStatus.SC_INTERNAL_SERVER_ERROR),
