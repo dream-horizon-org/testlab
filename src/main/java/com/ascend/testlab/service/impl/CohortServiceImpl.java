@@ -56,7 +56,7 @@ public class CohortServiceImpl implements CohortService {
 
     return Maybe.fromSingle(
         fetchCohortsFromService(userId, projectKey)
-            .map(GetCohortsResponse::getCohorts)
+            .map(GetCohortsResponse::getData)
             .doOnSuccess(
                 cohorts -> log.info("Fetched {} cohorts for user {}", cohorts.size(), userId))
             .doOnError(
@@ -69,8 +69,8 @@ public class CohortServiceImpl implements CohortService {
 
     Map<String, String> queryParams = new HashMap<>();
     MultiMap headers = MultiMap.caseInsensitiveMultiMap();
-    headers.add("X-Tenant-Id", projectKey);
-    headers.add("X-user-Id", userId);
+    headers.add("X-project-key", projectKey);
+    headers.add("userId", userId);
     headers.add("Content-Type", "application/json");
 
     return webClient.sendHTTPGETRequest(
