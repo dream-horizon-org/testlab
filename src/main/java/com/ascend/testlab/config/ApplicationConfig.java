@@ -2,6 +2,7 @@ package com.ascend.testlab.config;
 
 import com.ascend.testlab.config.provider.ConfigProvider;
 import com.typesafe.config.Optional;
+import io.vertx.core.http.HttpClientOptions;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
@@ -37,6 +38,8 @@ public class ApplicationConfig {
 
     /** The retry count for API calls to the service. */
     @Optional private Integer retryCount = 3;
+
+    @Optional private Integer port = HttpClientOptions.DEFAULT_DEFAULT_PORT;
   }
 
   /**

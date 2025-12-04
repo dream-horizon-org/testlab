@@ -77,9 +77,13 @@ public class WebClientImpl implements WebClient {
 
     String host = serviceConfig.getServiceURL();
     String endPoint = serviceConfig.getApiEndPoint();
+    int port = serviceConfig.getPort();
 
     HttpRequest<Buffer> request =
-        webClient.get(host, endPoint).putHeaders(headers).timeout(serviceConfig.getApiTimeoutMS());
+        webClient
+            .get(port, host, endPoint)
+            .putHeaders(headers)
+            .timeout(serviceConfig.getApiTimeoutMS());
     queryParams.forEach(request::addQueryParam);
 
     return request

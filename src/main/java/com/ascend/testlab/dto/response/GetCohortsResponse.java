@@ -17,5 +17,5 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class GetCohortsResponse {
 
-  private List<String> cohorts;
+  private List<String> data;
 }
