@@ -3,6 +3,8 @@ package com.ascend.testlab.annotations.validator;
 import com.ascend.testlab.annotations.ValidCreateExperiment;
 import com.ascend.testlab.constants.enums.AssignmentDomain;
 import com.ascend.testlab.constants.enums.ExperimentStatus;
+import com.ascend.testlab.dto.entity.experiment.Variables;
+import com.ascend.testlab.dto.entity.experiment.Variant;
 import com.ascend.testlab.dto.entity.variantweights.CohortVariantWeights;
 import com.ascend.testlab.dto.entity.variantweights.StratifiedVariantWeights;
 import com.ascend.testlab.dto.entity.variantweights.VariantWeights;
@@ -11,6 +13,7 @@ import com.ascend.testlab.exception.ErrorMessages;
 import jakarta.validation.ConstraintValidator;
 import jakarta.validation.ConstraintValidatorContext;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -181,7 +184,153 @@ public class CreateExperimentValidator
           context, "Variants must be named 'control', 'variant1', 'variant2', etc.", "variants");
       isValid = false;
     }
+
+    if (!validateVariantVariables(request, context)) {
+      isValid = false;
+    }
+
     return isValid;
+  }
+
+  private boolean validateVariantVariables(
+      CreateExperimentRequest request, ConstraintValidatorContext context) {
+    if (request.getVariants() == null) return true;
+
+    boolean isValid = true;
+    for (Map.Entry<String, Variant> entry :
+        request.getVariants().entrySet()) {
+      Variant variant = entry.getValue();
+      if (variant.getVariables() == null || variant.getVariables().isEmpty()) {
+        addError(
+            context,
+            String.format("Variant '%s' must have at least 1 variable", entry.getKey()),
+            "variants");
+        isValid = false;
+      }
+    }
+
+    if (!validateVariableDataTypeConsistency(request, context)) {
+      isValid = false;
+    }
+
+    if (!validateVariableKeysConsistency(request, context)) {
+      isValid = false;
+    }
+
+    if (!validateVariableValuesNotEmpty(request, context)) {
+      isValid = false;
+    }
+
+    return isValid;
+  }
+
+  /**
+   * Validates that no variable has an empty value.
+   *
+   * @param request the create experiment request
+   * @param context the constraint validator context
+   * @return true if valid, false otherwise
+   */
+  private boolean validateVariableValuesNotEmpty(
+      CreateExperimentRequest request, ConstraintValidatorContext context) {
+    if (request.getVariants() == null) return true;
+
+    for (Map.Entry<String, Variant> entry :
+        request.getVariants().entrySet()) {
+      Variant variant = entry.getValue();
+      if (variant.getVariables() == null) continue;
+
+      for (Variables var : variant.getVariables()) {
+        if (var.getValue() == null || var.getValue().isBlank()) {
+          addError(
+              context,
+              String.format(
+                  "Variable '%s' in variant '%s' cannot have an empty value",
+                  var.getKey(), entry.getKey()),
+              "variants");
+          return false;
+        }
+      }
+    }
+    return true;
+  }
+
+  /**
+   * Validates that all variants have the same variable keys.
+   *
+   * @param request the create experiment request
+   * @param context the constraint validator context
+   * @return true if valid, false otherwise
+   */
+  private boolean validateVariableKeysConsistency(
+      CreateExperimentRequest request, ConstraintValidatorContext context) {
+    if (request.getVariants() == null || request.getVariants().isEmpty()) return true;
+
+    // Collect all unique variable keys across all variants
+    Set<String> allKeys = new HashSet<>();
+    for (com.ascend.testlab.dto.entity.experiment.Variant variant :
+        request.getVariants().values()) {
+      if (variant.getVariables() != null) {
+        for (com.ascend.testlab.dto.entity.experiment.Variables var : variant.getVariables()) {
+          allKeys.add(var.getKey());
+        }
+      }
+    }
+
+    // Check that each variant has exactly the same keys
+    for (Map.Entry<String, com.ascend.testlab.dto.entity.experiment.Variant> entry :
+        request.getVariants().entrySet()) {
+      Set<String> variantKeys = new HashSet<>();
+      if (entry.getValue().getVariables() != null) {
+        for (com.ascend.testlab.dto.entity.experiment.Variables var :
+            entry.getValue().getVariables()) {
+          variantKeys.add(var.getKey());
+        }
+      }
+
+      if (!variantKeys.equals(allKeys)) {
+        addError(context, "All variants must have the same variable keys", "variants");
+        return false;
+      }
+    }
+    return true;
+  }
+
+  /**
+   * Validates that the same variable key has the same dataType across all variants.
+   *
+   * @param request the create experiment request
+   * @param context the constraint validator context
+   * @return true if valid, false otherwise
+   */
+  private boolean validateVariableDataTypeConsistency(
+      CreateExperimentRequest request, ConstraintValidatorContext context) {
+    if (request.getVariants() == null) return true;
+
+    Map<String, String> keyDataTypes = new HashMap<>();
+
+    for (Variant variant :
+        request.getVariants().values()) {
+      if (variant.getVariables() == null) continue;
+
+      for (Variables var : variant.getVariables()) {
+        String key = var.getKey();
+        String dataType = var.getDataType();
+
+        if (keyDataTypes.containsKey(key)) {
+          if (!Objects.equals(keyDataTypes.get(key), dataType)) {
+            addError(
+                context,
+                "Same variable key must have the same dataType across all variants",
+                "variants");
+            return false;
+          }
+        } else {
+          keyDataTypes.put(key, dataType);
+        }
+      }
+    }
+    return true;
   }
 
   private boolean checkVariantNamingSequence(Set<String> keys) {
