@@ -51,6 +51,7 @@ public final class AssignmentBuilder {
     return UserExperimentMap.builder()
         .experimentId(experiment.getExperimentId())
         .experimentName(experiment.getName())
+        .experimentKey(experiment.getExperimentKey())
         .variant(variant)
         .variantName(variantName)
         .status(AllocationStatus.ASSIGNED.name())

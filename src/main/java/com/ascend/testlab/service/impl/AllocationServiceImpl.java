@@ -624,6 +624,7 @@ public class AllocationServiceImpl implements AllocationService {
                     UserExperimentMap.builder()
                         .experimentId(ga.getExperimentId())
                         .experimentName(ga.getExperimentName())
+                        .experimentKey(ga.getExperimentKey())
                         .variant(ga.getVariant())
                         .status(AllocationStatus.ASSIGNED.name())
                         .variant(ga.getVariant())

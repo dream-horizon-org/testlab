@@ -26,6 +26,8 @@ public class UserExperimentMap {
 
   private String experimentName;
 
+  private String experimentKey;
+
   private String status;
   private Variant variant;
 
