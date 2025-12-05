@@ -162,8 +162,49 @@ public class CreateExperimentValidator
     boolean anyListEmpty = map.values().stream().anyMatch(list -> list == null || list.isEmpty());
     if (anyListEmpty) {
       addError(context, "Stratified lists cannot be empty", "variantWeights");
+      return null;
     }
+
+    // Validate that no cohort appears in multiple variants
+    if (!validateNoDuplicateCohortAcrossVariants(map, context)) {
+      return null;
+    }
+
     return map.keySet();
+  }
+
+  /**
+   * Validates that no cohort appears in more than one variant's list for stratified weights.
+   *
+   * @param variantCohortMap map of variant names to their cohort lists
+   * @param context the constraint validator context
+   * @return true if valid (no duplicates), false otherwise
+   */
+  private boolean validateNoDuplicateCohortAcrossVariants(
+      Map<String, List<String>> variantCohortMap, ConstraintValidatorContext context) {
+
+    Set<String> seenCohorts = new HashSet<>();
+    Set<String> duplicateCohorts = new HashSet<>();
+
+    for (List<String> cohorts : variantCohortMap.values()) {
+      if (cohorts == null) continue;
+      for (String cohort : cohorts) {
+        if (!seenCohorts.add(cohort)) {
+          duplicateCohorts.add(cohort);
+        }
+      }
+    }
+
+    if (!duplicateCohorts.isEmpty()) {
+      addError(
+          context,
+          String.format(
+              "Cohorts %s appear in multiple variants. Each cohort must be assigned to only one variant.",
+              duplicateCohorts),
+          "variantWeights");
+      return false;
+    }
+    return true;
   }
 
   private boolean validateVariants(

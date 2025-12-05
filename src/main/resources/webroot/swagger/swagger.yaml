@@ -665,7 +665,7 @@ components:
             type: string
         exposure:
           maximum: 100
-          minimum: 0
+          minimum: 1
           type: integer
           format: int32
         threshold:

@@ -3,7 +3,6 @@ package com.ascend.testlab.service.validator.rules;
 import com.ascend.testlab.constants.enums.AssignmentDomain;
 import com.ascend.testlab.constants.enums.ExperimentStatus;
 import com.ascend.testlab.dto.entity.experiment.Experiment;
-import com.ascend.testlab.dto.entity.variantweights.StratifiedVariantWeights;
 import com.ascend.testlab.dto.entity.variantweights.VariantWeights;
 import com.ascend.testlab.dto.request.UpdateExperimentRequest;
 import com.ascend.testlab.exception.ErrorEnum;
@@ -44,7 +43,6 @@ public class CohortValidationRule implements UpdateValidationRule {
     validateCohortsAndRulesNotEmpty(status, request);
     validateCohortTypeUnchanged(existing, request);
     validateCohortRemoval(status, existing.getCohorts(), request.getCohorts());
-    validateStratifiedCohorts(existing, request);
   }
 
   /** Validates that cohorts and rule_attributes are not empty - only in DRAFT mode. */
@@ -104,37 +102,6 @@ public class CohortValidationRule implements UpdateValidationRule {
     for (String cohort : existing) {
       if (!updated.contains(cohort)) {
         throw new RestException(ErrorEnum.COHORT_REMOVAL_NOT_ALLOWED);
-      }
-    }
-  }
-
-  /** Validates that cohorts used in stratified variant weights exist in the cohorts list. */
-  private void validateStratifiedCohorts(Experiment existing, UpdateExperimentRequest request) {
-    VariantWeights weights =
-        request.getVariantWeights() != null
-            ? request.getVariantWeights()
-            : existing.getVariantWeights();
-
-    if (!(weights instanceof StratifiedVariantWeights stratifiedWeights)) {
-      return;
-    }
-
-    List<String> effectiveCohorts =
-        request.getCohorts() != null ? request.getCohorts() : existing.getCohorts();
-
-    if (effectiveCohorts == null || stratifiedWeights.getWeights() == null) {
-      return;
-    }
-
-    Set<String> validCohorts = new HashSet<>(effectiveCohorts);
-
-    for (List<String> variantCohorts : stratifiedWeights.getWeights().values()) {
-      if (variantCohorts != null) {
-        for (String cohort : variantCohorts) {
-          if (!validCohorts.contains(cohort)) {
-            throw new RestException(ErrorEnum.STRATIFIED_COHORT_NOT_IN_COHORTS_LIST);
-          }
-        }
       }
     }
   }
