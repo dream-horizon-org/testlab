@@ -113,14 +113,14 @@ public class Setup
 
   private void configureRestAssured() {
     String host = System.getProperty(TestConstants.APPLICATION_HOST_KEY, "localhost");
-    String port = System.getProperty(TestConstants.APPLICATION_PORT_KEY, "8080");
+    String port = System.getProperty(TestConstants.APPLICATION_PORT_KEY, "8100");
     RestAssured.baseURI = String.format("http://%s:%s", host, port);
     log.info("RestAssured configured with base URI: {}", RestAssured.baseURI);
   }
 
   private void waitForApplicationReady() {
     String host = System.getProperty(TestConstants.APPLICATION_HOST_KEY, "localhost");
-    int port = Integer.parseInt(System.getProperty(TestConstants.APPLICATION_PORT_KEY, "8080"));
+    int port = Integer.parseInt(System.getProperty(TestConstants.APPLICATION_PORT_KEY, "8100"));
 
     log.info("Waiting for port {} to be ready...", port);
 

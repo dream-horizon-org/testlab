@@ -375,6 +375,18 @@ public enum ErrorEnum implements RestError {
   EXPERIMENT_KEY_ALREADY_EXISTS(
       "EXPERIMENT_KEY_ALREADY_EXISTS",
       "An experiment with this experiment_key already exists in the project",
+      HttpStatus.SC_BAD_REQUEST),
+
+  /** The error code when the same cohort appears in multiple variants for stratified weights. */
+  DUPLICATE_COHORT_ACROSS_VARIANTS(
+      "DUPLICATE_COHORT_ACROSS_VARIANTS",
+      "Each cohort must be assigned to only one variant. Duplicate cohorts found: %s",
+      HttpStatus.SC_BAD_REQUEST),
+
+  /** The error code when trying to remove cohorts from stratified weights in LIVE/PAUSED mode. */
+  STRATIFIED_COHORT_REMOVAL_NOT_ALLOWED(
+      "STRATIFIED_COHORT_REMOVAL_NOT_ALLOWED",
+      "Cohorts cannot be removed from stratified variant weights in LIVE or PAUSED mode. Removed cohorts: %s",
       HttpStatus.SC_BAD_REQUEST);
 
   /** The error code. */

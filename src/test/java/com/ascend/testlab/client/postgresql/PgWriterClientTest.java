@@ -98,7 +98,7 @@ class PgWriterClientTest {
     PostgreSQLConfig.BaseConfig writerConfig = new PostgreSQLConfig.BaseConfig();
     PostgreSQLConfig.ConnectOptions connectOptions = new PostgreSQLConfig.ConnectOptions();
     connectOptions.setHost("localhost");
-    connectOptions.setPort(5432);
+    connectOptions.setPort(8142);
     connectOptions.setUser("test_user");
     connectOptions.setPassword("test_password");
     connectOptions.setDatabase("test_db");
@@ -155,7 +155,7 @@ class PgWriterClientTest {
                 invocation -> {
                   PgConnectOptions options = invocation.getArgument(1);
                   assertEquals("localhost", options.getHost());
-                  assertEquals(5432, options.getPort());
+                  assertEquals(8142, options.getPort());
                   assertEquals("test_user", options.getUser());
                   assertEquals("test_password", options.getPassword());
                   assertEquals("test_db", options.getDatabase());
