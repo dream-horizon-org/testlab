@@ -1,0 +1,97 @@
+package com.ascend.testlab.constants.web;
+
+import lombok.experimental.UtilityClass;
+
+/**
+ * Utility class for web constants.
+ *
+ * @author Nikhil Tummidi
+ * @version 1.0
+ * @since 1.0
+ */
+@UtilityClass
+public final class WebConstants {
+
+  /** The key for the content type header. */
+  public static final String CONTENT_TYPE = "Content-Type";
+
+  /** The value for the application/json content type. */
+  public static final String APPLICATION_JSON = "application/json";
+
+  /** The header for user ID. */
+  public static final String USER_ID_HEADER = "x-user-Id";
+
+  /* Circuit Breaker Constants */
+
+  /** The name of the buffered calls count. */
+  public static final String BUFFERED_CALLS_COUNT = "bufferedCallsCount";
+
+  /** The name of the failed calls count. */
+  public static final String FAILED_CALLS_COUNT = "failedCallsCount";
+
+  /** The name of the failure rate. */
+  public static final String FAILURE_RATE = "failureRate";
+
+  /** The name of the not permitted calls count. */
+  public static final String NOT_PERMITTED_CALLS_COUNT = "notPermittedCallsCount";
+
+  /** The name of the slow calls count. */
+  public static final String SLOW_CALLS_COUNT = "slowCallsCount";
+
+  /** The name of the slow failed calls count. */
+  public static final String SLOW_FAILED_CALLS_COUNT = "slowFailedCallsCount";
+
+  /** The name of the slow successful calls count. */
+  public static final String SLOW_SUCCESSFUL_CALLS_COUNT = "slowSuccessfulCallsCount";
+
+  /** The name of the slow call rate. */
+  public static final String SLOW_CALL_RATE = "slowCallRate";
+
+  /** The name of the state. */
+  public static final String STATE = "state";
+
+  /** The name of the successful calls count. */
+  public static final String SUCCESSFUL_CALLS_COUNT = "successfulCallsCount";
+
+  /* Header Parameter Constants */
+
+  /** The name of the project key header. */
+  public static final String PROJECT_KEY_HEADER = "x-project-key";
+
+  /** The path parameter name for experiment ID. */
+  public static final String EXPERIMENT_ID = "experiment_id";
+
+  /* Query Parameter Constants */
+
+  /** The query parameter name for experiment status filter. */
+  public static final String EXPERIMENT_STATUS = "status";
+
+  /** The query parameter name for experiment type filter. */
+  public static final String EXPERIMENT_TYPE = "type";
+
+  /** The query parameter name for tag filter. */
+  public static final String TAG = "tag";
+
+  /** The query parameter name for owner filter. */
+  public static final String OWNER = "owner";
+
+  /** The query parameter name for name filter. */
+  public static final String NAME = "name";
+
+  /** The query parameter name for experiment key. */
+  public static final String EXPERIMENT_KEY = "experiment_key";
+
+  /* Pagination Parameter Constants */
+
+  /** The query parameter name for page number. */
+  public static final String PAGE = "page";
+
+  /** The query parameter name for limit (page size). */
+  public static final String LIMIT = "limit";
+
+  /** The default limit value for pagination. */
+  public static final String DEFAULT_LIMIT = "20";
+
+  /** The default page value for pagination. */
+  public static final String DEFAULT_PAGE = "1";
+}

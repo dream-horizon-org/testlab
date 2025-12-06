@@ -1,0 +1,60 @@
+name: testlab
+
+x-pg-config: &pg-env
+  POSTGRES_USER: test_user
+  POSTGRES_PASSWORD: test_password
+  POSTGRES_DATABASE: experiment
+
+x-aerospike-config: &aerospike-env
+  NAMESPACE: experiment
+
+x-project-config: &project-env
+  PROJECT_KEY: ${PROJECT_KEY:-550e8400-e29b-41d4-a716-446655440001}
+
+services:
+  testlab-postgresql:
+    container_name: postgresql
+    environment:
+      <<: [*pg-env,*project-env]
+      PG_RANDOM_ROOT_PASSWORD: yes
+    image: postgres:16
+    ports:
+      - '8142:5432'
+    volumes:
+      - pg_data:/var/lib/pgsql
+      - ./src/main/resources/db/postgresql/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
+      - ./src/main/resources/db/postgresql/seed.sh:/docker-entrypoint-initdb.d/02-seed.sh:ro
+
+  testlab-aerospike:
+    container_name: aerospike
+    environment:
+      <<: *aerospike-env
+    image: aerospike/aerospike-server:8.1.0.1
+    ports:
+      - '8130-8132:3000-3002'
+    volumes:
+      - aerospike_data:/opt/aerospike/data
+
+  testlab-backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: backend
+    env_file:
+      - env.docker
+    environment:
+      <<: [*pg-env, *aerospike-env, *project-env]
+      PG_READER_HOST: postgresql
+      PG_WRITER_HOST: postgresql
+      AEROSPIKE_HOST: aerospike
+    depends_on:
+      testlab-postgresql:
+        condition: service_started
+      testlab-aerospike:
+        condition: service_started
+    ports:
+      - '8100:8080'
+
+volumes:
+  pg_data: {}
+  aerospike_data: {}

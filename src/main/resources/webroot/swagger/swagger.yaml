@@ -1,0 +1,1013 @@
+openapi: 3.0.1
+info:
+  title: testlab
+  description: testlab Service
+  version: "1.0"
+paths:
+  /v1/allocations:
+    get:
+      operationId: getAllocationHandle
+      parameters:
+      - name: x-project-key
+        in: header
+        schema:
+          type: string
+      - name: x-user-Id
+        in: header
+        schema:
+          type: string
+      responses:
+        "200":
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessAllocationsResponse'
+        "304":
+          description: Successful Not Modified Response
+        "400":
+          description: Bad Request due to invalid/missing body params / header
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Failure'
+        "401":
+          description: Bad Request due to invalid project-key
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Failure'
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Failure'
+    put:
+      operationId: reAllocateExperimentHandle
+      parameters:
+      - name: x-project-key
+        in: header
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReallocateRequest'
+        required: true
+      responses:
+        "200":
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessUserExperimentMap'
+        "400":
+          description: Bad Request - invalid/missing body params or header
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Failure'
+        "404":
+          description: Not Found - Experiment or user assignment not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Failure'
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Failure'
+    post:
+      operationId: allocationHandle
+      parameters:
+      - name: x-project-key
+        in: header
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AllocationRequest'
+        required: true
+      responses:
+        "200":
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessAllocationsResponse'
+        "304":
+          description: Successful Not Modified Response
+        "400":
+          description: Bad Request due to invalid/missing body params / header
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Failure'
+        "401":
+          description: Bad Request due to invalid project-key
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Failure'
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Failure'
+  /v1/experiments/{experiment_id}:
+    get:
+      operationId: getExperimentHandle
+      parameters:
+      - name: x-project-key
+        in: header
+        required: true
+        schema:
+          type: string
+      - name: experiment_id
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessExperiment'
+        "400":
+          description: Experiment Id is not valid
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Failure'
+        "404":
+          description: Experiment not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Failure'
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Failure'
+    delete:
+      operationId: handle
+      parameters:
+      - name: x-project-key
+        in: header
+        required: true
+        schema:
+          type: string
+      - name: experiment_id
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessDeleteExperimentResponse'
+        "400":
+          description: Project id is missing or Experiment id is invalid
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Failure'
+        "404":
+          description: Experiment not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Failure'
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Failure'
+    patch:
+      summary: Update experiment partially with optional tag replace
+      operationId: update
+      parameters:
+      - name: x-project-key
+        in: header
+        schema:
+          type: string
+      - name: experiment_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateExperimentRequest'
+      responses:
+        "200":
+          description: Updated successfully
+          content:
+            application/json:
+              schema:
+                type: boolean
+        "400":
+          description: Invalid enum values or validation constraints
+  /v1/experiments/key-availability:
+    get:
+      operationId: experimentKeyAvailabilityHandle
+      parameters:
+      - name: x-project-key
+        in: header
+        required: true
+        schema:
+          type: string
+      - name: experiment_key
+        in: query
+        required: true
+        schema:
+          maxLength: 255
+          minLength: 0
+          type: string
+      responses:
+        "200":
+          description: Successfully validated experiment key
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessExperimentKeyAvailabilityResponse'
+        "400":
+          description: Invalid project key or experiment key
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Failure'
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Failure'
+  /v1/experiments:
+    get:
+      operationId: filterExperimentsHandle
+      parameters:
+      - name: x-project-key
+        in: header
+        required: true
+        schema:
+          type: string
+      - name: status
+        in: query
+        schema:
+          type: string
+      - name: owner
+        in: query
+        schema:
+          type: string
+      - name: name
+        in: query
+        schema:
+          type: string
+      - name: type
+        in: query
+        schema:
+          type: string
+      - name: tag
+        in: query
+        schema:
+          type: string
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          format: int32
+          default: 20
+      - name: page
+        in: query
+        schema:
+          type: integer
+          format: int32
+          default: 1
+      responses:
+        "200":
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessFilterExperimentsResponse'
+        "400":
+          description: Project Key is missing
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Failure'
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Failure'
+    post:
+      summary: Create a new experiment
+      operationId: create
+      parameters:
+      - name: x-project-key
+        in: header
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateExperimentRequest'
+      responses:
+        "200":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreateExperimentResponse'
+        "400":
+          description: Invalid enum values for status or type
+  /v1/experiments/{experiment_id}/history:
+    get:
+      operationId: getExperimentHistoryHandle
+      parameters:
+      - name: x-project-key
+        in: header
+        required: true
+        schema:
+          type: string
+      - name: experiment_id
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          format: int32
+          default: 20
+      - name: page
+        in: query
+        schema:
+          type: integer
+          format: int32
+          default: 1
+      responses:
+        "200":
+          description: Successfully fetched experiment history
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessExperimentHistoryResponse'
+        "400":
+          description: Invalid project key or experiment id
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Failure'
+        "404":
+          description: Experiment not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Failure'
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Failure'
+  /v1/experiments/tags:
+    get:
+      operationId: getTagsHandle
+      parameters:
+      - name: x-project-key
+        in: header
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          description: Successfully retrieved tags
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessTagsResponse'
+        "400":
+          description: Invalid project Key
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Failure'
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Failure'
+components:
+  schemas:
+    ErrorEntity:
+      type: object
+      properties:
+        code:
+          type: string
+        message:
+          type: string
+        cause:
+          type: string
+    Failure:
+      type: object
+      properties:
+        error:
+          $ref: '#/components/schemas/ErrorEntity'
+    AllocationsResponse:
+      type: object
+      properties:
+        experiment_map:
+          type: array
+          items:
+            $ref: '#/components/schemas/UserExperimentMap'
+    SuccessAllocationsResponse:
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/AllocationsResponse'
+    UserExperimentMap:
+      type: object
+      properties:
+        experiment_id:
+          type: string
+          format: uuid
+        experiment_name:
+          type: string
+        status:
+          type: string
+        variant:
+          $ref: '#/components/schemas/Variant'
+        variant_name:
+          type: string
+        assigned_at:
+          type: integer
+          format: int64
+    Variables:
+      required:
+      - data_type
+      type: object
+      properties:
+        value:
+          type: string
+        key:
+          type: string
+        data_type:
+          type: string
+    Variant:
+      required:
+      - display_name
+      type: object
+      properties:
+        display_name:
+          type: string
+        variables:
+          type: array
+          items:
+            $ref: '#/components/schemas/Variables'
+    AllocationRequest:
+      type: object
+      properties:
+        experiment_keys:
+          type: array
+          items:
+            type: string
+        attributes:
+          $ref: '#/components/schemas/Attributes'
+        stable_id:
+          type: string
+        user_id:
+          type: string
+    Attributes:
+      type: object
+      properties:
+        build_version:
+          type: string
+        model:
+          type: string
+        device:
+          type: string
+        app_name:
+          type: string
+        platform:
+          type: string
+        os_version:
+          type: string
+        app_version:
+          type: string
+        build_number:
+          type: string
+    SuccessUserExperimentMap:
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/UserExperimentMap'
+    ReallocateRequest:
+      required:
+      - experiment_id
+      - user_id
+      - variant_name
+      type: object
+      properties:
+        experiment_id:
+          type: string
+        variant_name:
+          type: string
+        reason:
+          type: string
+        user_id:
+          type: string
+    DeleteExperimentResponse:
+      type: object
+      properties:
+        experiment_id:
+          type: string
+        success:
+          type: boolean
+    SuccessDeleteExperimentResponse:
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/DeleteExperimentResponse'
+    ExperimentKeyAvailabilityResponse:
+      type: object
+      properties:
+        is_available:
+          type: boolean
+    SuccessExperimentKeyAvailabilityResponse:
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/ExperimentKeyAvailabilityResponse'
+    CreateExperimentResponse:
+      type: object
+      properties:
+        experiment_id:
+          type: string
+          format: uuid
+        status:
+          type: boolean
+    SuccessCreateExperimentResponse:
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/CreateExperimentResponse'
+    CohortVariantWeights:
+      type: object
+      allOf:
+      - $ref: '#/components/schemas/VariantWeights'
+      - type: object
+        properties:
+          weights:
+            type: object
+            additionalProperties:
+              type: number
+              format: double
+    Condition:
+      required:
+      - operand
+      - operandDataType
+      - operator
+      - value
+      type: object
+      properties:
+        operand:
+          type: string
+        operandDataType:
+          type: string
+        operator:
+          type: string
+        value:
+          type: string
+    CreateExperimentRequest:
+      required:
+      - assignment_domain
+      - created_by
+      - distribution_strategy
+      - name
+      - status
+      - type
+      - variant_weights
+      - variants
+      type: object
+      properties:
+        name:
+          maxLength: 64
+          minLength: 1
+          type: string
+        description:
+          maxLength: 255
+          minLength: 0
+          type: string
+        hypothesis:
+          maxLength: 1000
+          minLength: 0
+          type: string
+        status:
+          type: string
+        type:
+          type: string
+        distribution_strategy:
+          type: string
+        assignment_domain:
+          type: string
+        experiment_key:
+          type: string
+        metrics:
+          $ref: '#/components/schemas/Metrics'
+        cohorts:
+          type: array
+          items:
+            type: string
+        owners:
+          type: array
+          items:
+            type: string
+        variant_weights:
+          $ref: '#/components/schemas/VariantWeights'
+        variants:
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/Variant'
+        rule_attributes:
+          type: array
+          items:
+            $ref: '#/components/schemas/RuleAttributes'
+        overrides:
+          $ref: '#/components/schemas/Overrides'
+        tags:
+          type: array
+          items:
+            type: string
+        exposure:
+          maximum: 100
+          minimum: 1
+          type: integer
+          format: int32
+        threshold:
+          minimum: 0
+          type: integer
+          format: int64
+        start_time:
+          minimum: 0
+          type: integer
+          format: int64
+        end_time:
+          type: integer
+          format: int64
+        created_by:
+          maxLength: 255
+          minLength: 0
+          type: string
+        created_at:
+          type: integer
+          format: int64
+        updated_at:
+          type: integer
+          format: int64
+    Metrics:
+      type: object
+      properties:
+        primary:
+          type: array
+          items:
+            type: string
+        secondary:
+          type: array
+          items:
+            type: string
+    Overrides:
+      type: object
+      properties:
+        override_ids:
+          type: object
+          additionalProperties:
+            type: array
+            items:
+              type: string
+    RuleAttributes:
+      required:
+      - name
+      type: object
+      properties:
+        name:
+          type: string
+        conditions:
+          type: array
+          items:
+            $ref: '#/components/schemas/Condition'
+    StratifiedVariantWeights:
+      type: object
+      allOf:
+      - $ref: '#/components/schemas/VariantWeights'
+      - type: object
+        properties:
+          weights:
+            type: object
+            additionalProperties:
+              type: array
+              items:
+                type: string
+    VariantWeights:
+      type: object
+      properties:
+        type:
+          type: string
+          enum:
+          - STRATIFIED
+          - COHORT
+      discriminator:
+        propertyName: type
+    UpdateExperimentRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        experiment_key:
+          type: string
+        metrics:
+          $ref: '#/components/schemas/Metrics'
+        tags:
+          type: array
+          items:
+            type: string
+        owners:
+          type: array
+          items:
+            type: string
+        description:
+          maxLength: 255
+          minLength: 0
+          type: string
+        hypothesis:
+          maxLength: 1000
+          minLength: 0
+          type: string
+        status:
+          type: string
+        type:
+          type: string
+        assignment_domain:
+          type: string
+        distribution_strategy:
+          type: string
+        guardrail_health_status:
+          type: string
+        cohorts:
+          type: array
+          items:
+            type: string
+        variant_weights:
+          $ref: '#/components/schemas/VariantWeights'
+        variants:
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/Variant'
+        rule_attributes:
+          type: array
+          items:
+            $ref: '#/components/schemas/RuleAttributes'
+        overrides:
+          $ref: '#/components/schemas/Overrides'
+        winning_variant:
+          $ref: '#/components/schemas/WinningVariant'
+        exposure:
+          maximum: 100
+          minimum: 1
+          type: integer
+          format: int32
+        threshold:
+          minimum: 0
+          type: integer
+          format: int64
+        start_time:
+          minimum: 0
+          type: integer
+          format: int64
+        end_time:
+          minimum: 0
+          type: integer
+          format: int64
+        updated_by:
+          maxLength: 255
+          minLength: 0
+          type: string
+    WinningVariant:
+      type: object
+      properties:
+        variant_name:
+          type: string
+    Experiment:
+      type: object
+      properties:
+        experiment_id:
+          type: string
+          format: uuid
+        project_key:
+          type: string
+        name:
+          type: string
+        experiment_key:
+          type: string
+        description:
+          type: string
+        hypothesis:
+          type: string
+        status:
+          type: string
+          enum:
+          - LIVE
+          - PAUSED
+          - DRAFT
+          - CONCLUDED
+          - TERMINATED
+        type:
+          type: string
+          enum:
+          - A/A
+          - A/B
+        guardrail_health_status:
+          type: string
+          enum:
+          - WARNING
+          - PASSED
+          - NO_CHECKS_AVAILABLE
+          - FAILED
+        cohorts:
+          type: array
+          items:
+            type: string
+        variant_weights:
+          $ref: '#/components/schemas/VariantWeights'
+        variants:
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/Variant'
+        rule_attributes:
+          type: array
+          items:
+            $ref: '#/components/schemas/RuleAttributes'
+        distribution_strategy:
+          type: string
+          enum:
+          - ROUND_ROBIN
+          - RANDOM
+        assignment_domain:
+          type: string
+          enum:
+          - STRATIFIED
+          - COHORT
+        overrides:
+          type: object
+          additionalProperties:
+            type: array
+            items:
+              type: string
+        winning_variant:
+          $ref: '#/components/schemas/WinningVariant'
+        exposure:
+          type: integer
+          format: int32
+        threshold:
+          type: integer
+          format: int64
+        start_time:
+          type: integer
+          format: int64
+        end_time:
+          type: integer
+          format: int64
+        created_by:
+          type: string
+        updated_by:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+        tags:
+          type: array
+          items:
+            type: string
+        owners:
+          type: array
+          items:
+            type: string
+        metrics:
+          $ref: '#/components/schemas/Metrics'
+        variant_counts:
+          type: object
+          additionalProperties:
+            type: integer
+            format: int64
+    FilterExperimentsResponse:
+      type: object
+      properties:
+        experiments:
+          type: array
+          items:
+            $ref: '#/components/schemas/Experiment'
+        pagination:
+          $ref: '#/components/schemas/PaginationMeta'
+    PaginationMeta:
+      type: object
+      properties:
+        current_page:
+          type: integer
+          format: int32
+        page_size:
+          type: integer
+          format: int32
+        total_count:
+          type: integer
+          format: int32
+        has_next:
+          type: boolean
+    SuccessFilterExperimentsResponse:
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/FilterExperimentsResponse'
+    SuccessExperiment:
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/Experiment'
+    ExperimentHistoryEntry:
+      type: object
+      properties:
+        updated_by:
+          type: string
+        previous_data:
+          $ref: '#/components/schemas/JsonObject'
+        current_data:
+          $ref: '#/components/schemas/JsonObject'
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+    ExperimentHistoryResponse:
+      type: object
+      properties:
+        experiment_id:
+          type: string
+        history:
+          type: array
+          items:
+            $ref: '#/components/schemas/ExperimentHistoryEntry'
+        pagination:
+          $ref: '#/components/schemas/PaginationMeta'
+    JsonObject:
+      type: object
+      properties:
+        map:
+          type: object
+          additionalProperties:
+            type: object
+        empty:
+          type: boolean
+    SuccessExperimentHistoryResponse:
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/ExperimentHistoryResponse'
+    SuccessTagsResponse:
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/TagsResponse'
+    TagsResponse:
+      type: object
+      properties:
+        tags:
+          type: array
+          items:
+            type: string
