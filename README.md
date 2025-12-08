@@ -49,7 +49,6 @@ TestLab is a robust, high-performance experimentation platform designed for mode
   * Multiple data types: STRING, INTEGER, DOUBLE, BOOLEAN, LIST, SEMVER
   * Rich operators: EQUALS, NOT_EQUALS, GREATER_THAN, LESS_THAN, CONTAINS, IN, etc.
 * **🎲 Distribution Strategies**: RANDOM allocation with configurable exposure
-* **⚡ Override Support**: Force specific users into specific variants
 * **🔒 Threshold Limits**: Control maximum experiment participation
 
 ### Real-time Allocation
@@ -112,15 +111,15 @@ java -version
 
 Ensure the following ports are available:
 
-* `5432` – PostgreSQL database
-* `3000` – Aerospike
-* `8080` – TestLab application server
+* `8142` – PostgreSQL database
+* `8130` – Aerospike
+* `8100` – TestLab application server
 
 ### Quick Start
 
 1. **Clone the repository**:
 ```bash
-git clone https://github.com/your-org/testlab.git
+git clone https://github.com/dream-horizon-org/testlab.git
 cd testlab
 ```
 
@@ -169,7 +168,7 @@ TestLab uses PostgreSQL partitioning for multi-tenant isolation. Each project ha
 
 ```bash
 # Start with a specific project
-PROJECT_KEY=my-project-uuid docker-compose up -d
+PROJECT_KEY=my-project-key docker-compose up -d
 
 # Or set it in a .env file
 echo "PROJECT_KEY=my-project-uuid" > .env
@@ -178,8 +177,8 @@ docker-compose up -d
 
 When making API calls, include the project key in the header:
 ```bash
-curl -X GET http://localhost:8080/v1/experiments \
-  -H "x-project-key: my-project-uuid"
+curl -X GET http://localhost:8100/v1/experiments \
+  -H "x-project-key: my-project-key"
 ```
 
 > **Note**: If you try to access a project that doesn't have a partition, you'll receive a `PARTITION_NOT_FOUND` error. Ensure partitions are created before making API calls.
