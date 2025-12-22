@@ -1,5 +1,9 @@
 name: testlab
 
+networks:
+  observability-net:
+    external: true
+
 x-pg-config: &pg-env
   POSTGRES_USER: test_user
   POSTGRES_PASSWORD: test_password
@@ -54,6 +58,8 @@ services:
         condition: service_started
     ports:
       - '8100:8080'
+    networks:
+      - observability-net
 
 volumes:
   pg_data: {}
