@@ -31,41 +31,74 @@ psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DATABASE
             FOR VALUES IN ('${PROJECT_KEY}');
 
     -- Insert seed data using the PROJECT_KEY
-    INSERT INTO experiment.experiments (
-        project_key, experiment_id, name, description, hypothesis, status, type,
-        guardrail_health_status, cohorts, variant_weights, variants, distribution_strategy,
-        assignment_domain, overrides, rule_attributes, winning_variant, exposure, threshold,
-        start_time, end_time, created_by, created_at, updated_at, experiment_key
-    ) VALUES (
-        '${PROJECT_KEY}', 
-        '123e4567-e89b-12d3-a456-426614174003', 
-        'Button Color Test',
-        'Testing if changing button color improves click-through rate.',
-        'Changing the primary CTA button from blue to green will increase CTR by at least 5%.', 
-        'LIVE', 
-        'A/B',
-        'PASSED', 
-        '{}', 
-        '{"weights": {"control": 50, "variant1": 50}}', 
-        '{"control": {"variables": [{"key": "buttonColor", "value": "blue", "dataType": "STRING"}], "display_name": "Control"}, "variant1": {"variables": [{"key": "buttonColor", "value": "green", "dataType": "STRING"}], "display_name": "Variant 1"}}', 
-        'RANDOM', 
-        'COHORT', 
-        '{"control":["user-123"],"variant1":["user-456"]}', 
-        '[{"name": "rule1", "conditions": [{"value": "1.0.0", "operand": "app_version", "operator": ">=", "operandDataType": "SEMVER_STRING"}]}]', 
-        '{}', 
-        100, 
-        10000, 
-        EXTRACT(EPOCH FROM NOW()) * 1000, 
-        EXTRACT(EPOCH FROM NOW() + INTERVAL '30 days') * 1000, 
-        'seed@example.com', 
-        NOW(),
-        NOW(), 
-        'button-color-test'
-    ) ON CONFLICT DO NOTHING;
+    INSERT INTO experiment.experiments (project_key, experiment_id, name, experiment_key, description, hypothesis, status,
+                                        type, guardrail_health_status, cohorts, variant_weights, variants,
+                                        distribution_strategy, assignment_domain, overrides, rule_attributes,
+                                        winning_variant, exposure, threshold, start_time, end_time, created_by, created_at,
+                                        updated_at)
+    VALUES ('${PROJECT_KEY}', 'a0c89f3e-4e12-45bb-b10e-cd14266538fd', 'Test Experiment', 'test_experiment', 'Description',
+            'Click rate with be increased by 5%', 'LIVE', 'A/B', null, '{}', '{
+        "type": "COHORT",
+        "weights": {
+          "control": 34.0,
+          "variant1": 33.0,
+          "variant2": 33.0
+        }
+      }', '{
+        "control": {
+          "variables": [
+            {
+              "key": "color",
+              "value": "red",
+              "data_type": "STRING"
+            }
+          ],
+          "display_name": "Control Group"
+        },
+        "variant1": {
+          "variables": [
+            {
+              "key": "color",
+              "value": "green",
+              "data_type": "STRING"
+            }
+          ],
+          "display_name": "Variant 1"
+        },
+        "variant2": {
+          "variables": [
+            {
+              "key": "color",
+              "value": "blue",
+              "data_type": "STRING"
+            }
+          ],
+          "display_name": "Variant 2"
+        }
+      }', 'RANDOM', 'COHORT', null, '[
+        {
+          "name": "Targeting Rule",
+          "conditions": [
+            {
+              "value": "ios",
+              "operand": "platform",
+              "operator": "=",
+              "operandDataType": "STRING"
+            },
+            {
+              "value": "2.0.0",
+              "operand": "app_version",
+              "operator": "=",
+              "operandDataType": "SEMVER_STRING"
+            }
+          ]
+        }
+      ]', null, 100, 0, null, null, 'user@example.com', NOW(),
+            NOW()) ON CONFLICT DO NOTHING;
 
     INSERT INTO experiment.tags (experiment_id, project_key, tag, created_at, updated_at)
     VALUES (
-        '123e4567-e89b-12d3-a456-426614174003', 
+        'a0c89f3e-4e12-45bb-b10e-cd14266538fd',
         '${PROJECT_KEY}', 
         'feature-test',
         NOW(), 
@@ -74,7 +107,7 @@ psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DATABASE
 
     INSERT INTO experiment.owners (experiment_id, project_key, owner, created_at, updated_at)
     VALUES (
-        '123e4567-e89b-12d3-a456-426614174003', 
+        'a0c89f3e-4e12-45bb-b10e-cd14266538fd',
         '${PROJECT_KEY}', 
         'product_team@example.com',
         NOW(), 

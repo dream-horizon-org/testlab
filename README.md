@@ -112,9 +112,9 @@ java -version
 
 Ensure the following ports are available:
 
-* `5432` – PostgreSQL database
-* `3000` – Aerospike
-* `8080` – TestLab application server
+* `8142` – PostgreSQL database
+* `8130` – Aerospike
+* `8100` – TestLab application server
 
 ### Quick Start
 
