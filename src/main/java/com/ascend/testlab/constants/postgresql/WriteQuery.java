@@ -286,4 +286,36 @@ public final class WriteQuery {
    */
   public static final String DELETE_OWNER_FOR_EXPERIMENT =
       "DELETE FROM experiment.owners WHERE project_key = $1 AND experiment_id = $2;";
+
+  public static final String UPDATE_PARTITION_STATUS =
+      """
+      UPDATE experiment.partition_metadata
+      SET status = $1::experiment.partition_status,
+          updated_at = $2
+      WHERE project_key = $3
+      """;
+
+  public static final String UPSERT_PARTITION_METADATA_CREATING =
+      """
+    INSERT INTO experiment.partition_metadata (project_key, status, created_by, created_at, updated_at)
+    VALUES ($1, $2::experiment.partition_status, $3, $4, $5)
+    ON CONFLICT (project_key)
+    DO UPDATE SET
+      status = EXCLUDED.status,
+      updated_at = EXCLUDED.updated_at
+    """;
+
+  public static String buildCreateListPartitionQuery(
+      String schema, String parentTable, String projectKey) {
+
+    String suffix = projectKey.replace("-", "_");
+
+    return String.format(
+        """
+        CREATE TABLE IF NOT EXISTS %s.%s_%s
+        PARTITION OF %s.%s
+        FOR VALUES IN ('%s')
+        """,
+        schema, parentTable, suffix, schema, parentTable, projectKey);
+  }
 }

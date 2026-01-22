@@ -12,6 +12,7 @@ CREATE TYPE experiment.experiment_type AS ENUM ('A/A','A/B');
 CREATE TYPE experiment.experiment_health AS ENUM ('WARNING','PASSED','NO_CHECKS_AVAILABLE','FAILED');
 CREATE TYPE experiment.experiment_strategy AS ENUM ('RANDOM','ROUND_ROBIN');
 CREATE TYPE experiment.assignment_domain AS ENUM ('STRATIFIED', 'COHORT');
+CREATE TYPE experiment.partition_status AS ENUM('CREATING','SUCCESS','FAILED','DELETED');
 
 CREATE TABLE IF NOT EXISTS experiment.experiments (
     project_key         VARCHAR(255) NOT NULL,
@@ -88,3 +89,12 @@ CREATE TABLE IF NOT EXISTS experiment.experiment_analysis (
     updated_at        TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (project_key, experiment_id)
 ) PARTITION BY LIST (project_key);
+
+
+CREATE TABLE IF NOT EXISTS experiment.partition_metadata(
+    project_key VARCHAR(255) NOT NULL PRIMARY KEY,
+    status      experiment.partition_status NOT NULL,
+    created_by  VARCHAR(255) ,
+    created_at  TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at  TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
+)
