@@ -1,0 +1,37 @@
+name: Google Java Formatter
+
+on:
+  pull_request:
+    types:
+      - synchronize
+      - opened
+    paths:
+      - 'src/**'
+  push:
+    branches:
+      - main
+
+jobs:
+  formatting:
+    name: Google Java Formatter
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@c5195efecf7bdfc987ee8bae7a71cb8b11521c00 # v4.7.1
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: 'maven'
+          overwrite-settings: false
+
+      - name: Run fmt-plugin check goal
+        run: mvn com.spotify.fmt:fmt-maven-plugin:2.20:check
+
+      - name: Provide format fix instructions if check fails
+        if: failure()
+        run: |
+          echo "Formatting check failed. To fix formatting issues locally, run:"
+          echo "mvn com.spotify.fmt:fmt-maven-plugin:2.20:format"
