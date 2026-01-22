@@ -19,7 +19,9 @@ import io.vertx.rxjava3.sqlclient.SqlConnection;
 import io.vertx.rxjava3.sqlclient.Tuple;
 import java.time.OffsetDateTime;
 import java.util.List;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 public class PartitionDAOImpl implements PartitionDAO {
 
   private static final String SCHEMA = "experiment";
@@ -60,32 +62,9 @@ public class PartitionDAOImpl implements PartitionDAO {
                                 .idempotent(true)
                                 .build());
                       }
-                      return upsertPartitionMetadataCreating(connection, projectKey, createdBy, now)
-                          .andThen(createAllPartitions(connection, projectKey))
-                          .andThen(
-                              updatePartitionMetadataStatus(
-                                  connection, projectKey, PartitionStatus.SUCCESS, now))
-                          .andThen(
-                              Maybe.just(
-                                  PartitionResponse.builder()
-                                      .projectKey(projectKey)
-                                      .status(PartitionStatus.SUCCESS.name())
-                                      .idempotent(false)
-                                      .build()));
+                      return runPartitionCreationFlow(connection, projectKey, createdBy, now);
                     })
-                .switchIfEmpty(
-                    upsertPartitionMetadataCreating(connection, projectKey, createdBy, now)
-                        .andThen(createAllPartitions(connection, projectKey))
-                        .andThen(
-                            updatePartitionMetadataStatus(
-                                connection, projectKey, PartitionStatus.SUCCESS, now))
-                        .andThen(
-                            Maybe.just(
-                                PartitionResponse.builder()
-                                    .projectKey(projectKey)
-                                    .status(PartitionStatus.SUCCESS.name())
-                                    .idempotent(false)
-                                    .build()))),
+                .switchIfEmpty(runPartitionCreationFlow(connection, projectKey, createdBy, now)),
         PartitionResponse.builder()
             .projectKey(projectKey)
             .status(PartitionStatus.SUCCESS.name())
@@ -96,17 +75,29 @@ public class PartitionDAOImpl implements PartitionDAO {
   private Maybe<PartitionMetadata> fetchPartitionMetadata(
       SqlConnection connection, String projectKey) {
 
-    return connection
-        .preparedQuery(ReadQuery.GET_PARTITION_METADATA)
-        .rxExecute(Tuple.of(projectKey))
-        .flatMapMaybe(
-            rows -> {
-              if (rows.size() == 0) {
-                return Maybe.empty();
-              }
-              return Maybe.just(mapPartitionMetadata(rows.iterator().next()));
-            })
-        .onErrorComplete();
+    return pgReaderClient
+        .fetchOne(
+            ReadQuery.GET_PARTITION_METADATA, Tuple.of(projectKey), this::mapPartitionMetadata)
+        .onErrorResumeNext(
+            error -> {
+              log.error("Failed to fetch partition metadata for projectKey={}", projectKey, error);
+              return Maybe.error(error);
+            });
+  }
+
+  private Maybe<PartitionResponse> runPartitionCreationFlow(
+      SqlConnection connection, String projectKey, String createdBy, OffsetDateTime now) {
+    return upsertPartitionMetadataCreating(connection, projectKey, createdBy, now)
+        .andThen(createAllPartitions(connection, projectKey))
+        .andThen(
+            updatePartitionMetadataStatus(connection, projectKey, PartitionStatus.SUCCESS, now))
+        .andThen(
+            Maybe.just(
+                PartitionResponse.builder()
+                    .projectKey(projectKey)
+                    .status(PartitionStatus.SUCCESS.name())
+                    .idempotent(false)
+                    .build()));
   }
 
   private Completable upsertPartitionMetadataCreating(
@@ -115,7 +106,7 @@ public class PartitionDAOImpl implements PartitionDAO {
     return pgWriterClient
         .execute(
             connection,
-            WriteQuery.UPSERT_PARTITION_METADATA_CREATING,
+            WriteQuery.UPSERT_PARTITION_METADATA,
             Tuple.of(projectKey, PartitionStatus.CREATING.name(), createdBy, now, now))
         .ignoreElement();
   }

@@ -91,10 +91,10 @@ CREATE TABLE IF NOT EXISTS experiment.experiment_analysis (
 ) PARTITION BY LIST (project_key);
 
 
-CREATE TABLE IF NOT EXISTS experiment.partition_metadata(
+CREATE TABLE IF NOT EXISTS experiment.partition_metadata (
     project_key VARCHAR(255) NOT NULL PRIMARY KEY,
     status      experiment.partition_status NOT NULL,
-    created_by  VARCHAR(255) ,
+    created_by  VARCHAR(255),
     created_at  TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at  TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
 )

@@ -295,7 +295,7 @@ public final class WriteQuery {
       WHERE project_key = $3
       """;
 
-  public static final String UPSERT_PARTITION_METADATA_CREATING =
+  public static final String UPSERT_PARTITION_METADATA =
       """
     INSERT INTO experiment.partition_metadata (project_key, status, created_by, created_at, updated_at)
     VALUES ($1, $2::experiment.partition_status, $3, $4, $5)
