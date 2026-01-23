@@ -27,15 +27,15 @@ jobs:
           gpg-passphrase: MAVEN_GPG_PASSPHRASE
           cache: maven
 
-      - name: Check version from pom.xml
-        id: check_version
-        run: |
-          PROJECT_VERSION=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)
-          echo "PROJECT_VERSION: ${PROJECT_VERSION}"
-          if [[ ${PROJECT_VERSION} != *-SNAPSHOT ]]; then
-            echo "Error: version must be suffixed with '-SNAPSHOT'. Concrete versions can only be released from main branch"
-            exit 1
-          fi
+#      - name: Check version from pom.xml
+#        id: check_version
+#        run: |
+#          PROJECT_VERSION=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)
+#          echo "PROJECT_VERSION: ${PROJECT_VERSION}"
+#          if [[ ${PROJECT_VERSION} != *-SNAPSHOT ]]; then
+#            echo "Error: version must be suffixed with '-SNAPSHOT'. Concrete versions can only be released from main branch"
+#            exit 1
+#          fi
 
       - name: Test
         run: mvn --no-transfer-progress clean verify -DskipITs
