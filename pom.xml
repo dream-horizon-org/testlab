@@ -3,7 +3,7 @@
 
   <modelVersion>4.0.0</modelVersion>
 
-  <groupId>com.ascend</groupId>
+  <groupId>org.dreamhorizon</groupId>
   <artifactId>testlab</artifactId>
   <version>0.0.1</version>
   <packaging>jar</packaging>
