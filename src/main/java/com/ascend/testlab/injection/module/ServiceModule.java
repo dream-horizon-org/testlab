@@ -13,20 +13,24 @@ import com.ascend.testlab.dao.AdminDAO;
 import com.ascend.testlab.dao.AllocationDAO;
 import com.ascend.testlab.dao.ExperimentDAO;
 import com.ascend.testlab.dao.HealthCheckDAO;
+import com.ascend.testlab.dao.PartitionDAO;
 import com.ascend.testlab.dao.impl.AdminDAOImpl;
 import com.ascend.testlab.dao.impl.AllocationDAOImpl;
 import com.ascend.testlab.dao.impl.ExperimentDAOImpl;
 import com.ascend.testlab.dao.impl.HealthCheckDAOImpl;
+import com.ascend.testlab.dao.impl.PartitionDAOImpl;
 import com.ascend.testlab.service.AdminService;
 import com.ascend.testlab.service.AllocationService;
 import com.ascend.testlab.service.CohortService;
 import com.ascend.testlab.service.ExperimentService;
 import com.ascend.testlab.service.HealthCheckService;
+import com.ascend.testlab.service.PartitionService;
 import com.ascend.testlab.service.impl.AdminServiceImpl;
 import com.ascend.testlab.service.impl.AllocationServiceImpl;
 import com.ascend.testlab.service.impl.CohortServiceImpl;
 import com.ascend.testlab.service.impl.ExperimentServiceImpl;
 import com.ascend.testlab.service.impl.HealthCheckServiceImpl;
+import com.ascend.testlab.service.impl.PartitionServiceImpl;
 import com.ascend.testlab.util.CircuitBreakerFactory;
 import com.google.inject.Singleton;
 import io.vertx.rxjava3.core.Vertx;
@@ -95,6 +99,7 @@ public class ServiceModule extends DefaultModule {
     bind(AdminDAO.class).to(AdminDAOImpl.class);
     bind(ExperimentDAO.class).to(ExperimentDAOImpl.class);
     bind(AllocationDAO.class).to(AllocationDAOImpl.class);
+    bind(PartitionDAO.class).to(PartitionDAOImpl.class);
   }
 
   /** Bind the service interfaces to their implementations. */
@@ -104,5 +109,6 @@ public class ServiceModule extends DefaultModule {
     bind(ExperimentService.class).to(ExperimentServiceImpl.class);
     bind(AllocationService.class).to(AllocationServiceImpl.class);
     bind(CohortService.class).to(CohortServiceImpl.class);
+    bind(PartitionService.class).to(PartitionServiceImpl.class);
   }
 }

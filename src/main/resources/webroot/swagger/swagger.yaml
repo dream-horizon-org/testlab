@@ -394,6 +394,47 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Failure'
+  /v1/partitions:
+    post:
+      operationId: createProjectPartitions
+      parameters:
+      - name: x-project-key
+        in: header
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PartitionRequest'
+        required: true
+      responses:
+        "200":
+          description: Successfully created partitions for experiment tables
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessPartitionResponse'
+        "304":
+          description: Partitions already exist (idempotent)
+        "400":
+          description: Bad Request due to invalid/missing body params / header
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Failure'
+        "401":
+          description: Invalid project-key
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Failure'
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Failure'
   /v1/experiments/tags:
     get:
       operationId: getTagsHandle
@@ -457,6 +498,8 @@ components:
           type: string
           format: uuid
         experiment_name:
+          type: string
+        experiment_key:
           type: string
         status:
           type: string
@@ -999,6 +1042,27 @@ components:
       properties:
         data:
           $ref: '#/components/schemas/ExperimentHistoryResponse'
+    PartitionResponse:
+      type: object
+      properties:
+        project_key:
+          type: string
+        status:
+          type: string
+        idempotent:
+          type: boolean
+    SuccessPartitionResponse:
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/PartitionResponse'
+    PartitionRequest:
+      required:
+      - project_key
+      type: object
+      properties:
+        project_key:
+          type: string
     SuccessTagsResponse:
       type: object
       properties:
