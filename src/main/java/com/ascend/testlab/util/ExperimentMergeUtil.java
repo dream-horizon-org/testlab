@@ -197,7 +197,7 @@ public class ExperimentMergeUtil {
    */
   private static Map<String, List<String>> mergeOverrides(
       Map<String, List<String>> existing, Overrides requestOverrides) {
-    if (requestOverrides == null) {
+    if (requestOverrides == null || requestOverrides.isEmpty()) {
       return existing;
     }
     // When overrides are provided in request, replace entirely with new values

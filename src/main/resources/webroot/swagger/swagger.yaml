@@ -458,6 +458,8 @@ components:
           format: uuid
         experiment_name:
           type: string
+        experiment_key:
+          type: string
         status:
           type: string
         variant:
@@ -611,7 +613,6 @@ components:
       - name
       - status
       - type
-      - variant_weights
       - variants
       type: object
       properties:
@@ -709,6 +710,8 @@ components:
             type: array
             items:
               type: string
+        empty:
+          type: boolean
     RuleAttributes:
       required:
       - name
@@ -840,6 +843,7 @@ components:
         status:
           type: string
           enum:
+          - TEST
           - LIVE
           - PAUSED
           - DRAFT

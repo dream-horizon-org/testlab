@@ -49,7 +49,6 @@ TestLab is a robust, high-performance experimentation platform designed for mode
   * Multiple data types: STRING, INTEGER, DOUBLE, BOOLEAN, LIST, SEMVER
   * Rich operators: EQUALS, NOT_EQUALS, GREATER_THAN, LESS_THAN, CONTAINS, IN, etc.
 * **🎲 Distribution Strategies**: RANDOM allocation with configurable exposure
-* **⚡ Override Support**: Force specific users into specific variants
 * **🔒 Threshold Limits**: Control maximum experiment participation
 
 ### Real-time Allocation
@@ -58,6 +57,13 @@ TestLab is a robust, high-performance experimentation platform designed for mode
 * **🔄 Consistent Bucketing**: Users always see the same variant
 * **📱 Multi-experiment Support**: Allocate users to multiple experiments simultaneously
 * **🔀 Reallocation Support**: Move users between variants when needed
+
+### User Overrides
+
+* **🎯 Direct User Assignment**: Assign specific users to specific variants during experiment creation or update
+* **🔄 Automatic Handling**: Smart detection of existing allocations - reallocates if needed, skips if already in target variant
+* **📦 Bulk Operations**: Apply overrides for multiple users across multiple variants in a single request
+* **🛡️ Fault Tolerant**: Override failures don't block experiment creation/update - experiment succeeds even if some overrides fail
 
 ### Administration
 
@@ -192,6 +198,82 @@ The complete API specification is available at:
 
 ### Database Schema
 * [DB Schema](./src/main/resources/db/postgresql/schema.sql)
+
+### User Overrides
+
+Override specific users to specific variants during experiment creation or update. This is useful for:
+- QA testing with specific test accounts
+- VIP user assignments
+- Debugging and troubleshooting
+- Gradual rollouts to specific user groups
+
+#### Override Structure
+
+```json
+{
+  "overrides": {
+    "override_ids": {
+      "control": ["user1", "user2"],
+      "variant1": ["user3", "user4", "user5"]
+    }
+  }
+}
+```
+
+#### Create Experiment with Overrides
+
+```bash
+curl -X POST http://localhost:8100/v1/experiments \
+  -H "Content-Type: application/json" \
+  -H "x-project-key: your-project-key" \
+  -d '{
+    "name": "My Experiment",
+    "status": "LIVE",
+    "type": "A/B",
+    "distribution_strategy": "RANDOM",
+    "assignment_domain": "COHORT",
+    "variants": {
+      "control": { "display_name": "Control", "variables": [...] },
+      "variant1": { "display_name": "Treatment", "variables": [...] }
+    },
+    "variant_weights": { ... },
+    "overrides": {
+      "override_ids": {
+        "control": ["qa_user_1", "qa_user_2"],
+        "variant1": ["vip_user_1", "vip_user_2"]
+      }
+    },
+    "created_by": "admin"
+  }'
+```
+
+#### Update Experiment with Additional Overrides
+
+```bash
+curl -X PATCH http://localhost:8100/v1/experiments/{experiment_id} \
+  -H "Content-Type: application/json" \
+  -H "x-project-key: your-project-key" \
+  -d '{
+    "overrides": {
+      "override_ids": {
+        "control": ["new_user_1", "new_user_2"],
+        "variant1": ["existing_user_to_move"]
+      }
+    },
+    "updated_by": "admin"
+  }'
+```
+
+#### Override Behavior
+
+| Scenario | Behavior |
+|----------|----------|
+| New user (no existing allocation) | Creates new allocation to specified variant |
+| Existing user in different variant | Reallocates user to the new variant |
+| Existing user already in target variant | Skips (no operation needed) |
+| Invalid variant name | Skipped with warning log |
+| Null/blank user ID | Skipped with warning log |
+| Override operation fails | Experiment still succeeds, failure logged |
 
 ## 🚀 Deployment
 

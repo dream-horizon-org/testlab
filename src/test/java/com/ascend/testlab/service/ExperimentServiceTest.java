@@ -1,18 +1,29 @@
 package com.ascend.testlab.service;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
+import com.ascend.testlab.constants.enums.AssignmentDomain;
+import com.ascend.testlab.constants.enums.DistributionStrategy;
 import com.ascend.testlab.constants.enums.ExperimentStatus;
 import com.ascend.testlab.constants.enums.ExperimentType;
 import com.ascend.testlab.dao.AdminDAO;
 import com.ascend.testlab.dao.AllocationDAO;
 import com.ascend.testlab.dao.ExperimentDAO;
+import com.ascend.testlab.dto.entity.allocation.UserExperimentMap;
 import com.ascend.testlab.dto.entity.experiment.Experiment;
+import com.ascend.testlab.dto.entity.experiment.Overrides;
+import com.ascend.testlab.dto.entity.experiment.Variant;
+import com.ascend.testlab.dto.entity.variantweights.CohortVariantWeights;
+import com.ascend.testlab.dto.request.CreateExperimentRequest;
 import com.ascend.testlab.dto.request.FilterExperimentsRequest;
+import com.ascend.testlab.dto.request.UpdateExperimentRequest;
+import com.ascend.testlab.dto.response.CreateExperimentResponse;
 import com.ascend.testlab.dto.response.DeleteExperimentResponse;
 import com.ascend.testlab.dto.response.FilterExperimentsResponse;
 import com.ascend.testlab.dto.response.PaginationMeta;
+import com.ascend.testlab.dto.response.UpdateExperimentResponse;
 import com.ascend.testlab.exception.ErrorEnum;
 import com.ascend.testlab.service.impl.ExperimentServiceImpl;
 import com.dream11.rest.exception.RestException;
@@ -47,13 +58,15 @@ public class ExperimentServiceTest {
   @Mock private ExperimentDAO experimentDAO;
   @Mock private AdminDAO adminDAO;
   @Mock private AllocationDAO allocationDAO;
+  @Mock private AllocationService allocationService;
 
   private static final String PROJECT_KEY = "123e4567-e89b-12d3-a456-426614174000";
   private static final String EXPERIMENT_ID = "123e4567-e89b-12d3-a456-426614174000";
 
   @BeforeEach
   void setUp() {
-    experimentService = new ExperimentServiceImpl(experimentDAO, adminDAO, allocationDAO);
+    experimentService =
+        new ExperimentServiceImpl(experimentDAO, adminDAO, allocationDAO, allocationService);
   }
 
   @Nested
@@ -65,7 +78,7 @@ public class ExperimentServiceTest {
     void testConstructorWithValidDAO() {
       // Act
       ExperimentServiceImpl service =
-          new ExperimentServiceImpl(experimentDAO, adminDAO, allocationDAO);
+          new ExperimentServiceImpl(experimentDAO, adminDAO, allocationDAO, allocationService);
 
       // Assert
       assertNotNull(service);
@@ -75,7 +88,7 @@ public class ExperimentServiceTest {
     @DisplayName("Should create service with null DAO")
     void testConstructorWithNullDAO() {
       // Act - Constructor doesn't validate null, but will fail at runtime
-      ExperimentServiceImpl service = new ExperimentServiceImpl(null, null, null);
+      ExperimentServiceImpl service = new ExperimentServiceImpl(null, null, null, null);
 
       // Assert
       assertNotNull(service);
@@ -1014,6 +1027,417 @@ public class ExperimentServiceTest {
     }
   }
 
+  @Nested
+  @DisplayName("Create Experiment With Overrides Tests")
+  class CreateExperimentWithOverridesTests {
+
+    @Test
+    @DisplayName("Should create experiment and apply overrides successfully")
+    void testCreateExperimentWithOverridesSuccess() {
+      // Arrange
+      CreateExperimentRequest request = createMockCreateRequest();
+      Overrides overrides = createMockOverrides();
+      request.setOverrides(overrides);
+
+      List<UserExperimentMap> appliedOverrides =
+          List.of(
+              createMockUserExperimentMap("user1", "control"),
+              createMockUserExperimentMap("user2", "control"),
+              createMockUserExperimentMap("user3", "variant1"));
+
+      when(experimentDAO.createExperiment(eq(PROJECT_KEY), any(Experiment.class)))
+          .thenReturn(Single.just(true));
+      when(allocationService.applyOverrides(eq(PROJECT_KEY), any(Experiment.class), eq(overrides)))
+          .thenReturn(Single.just(appliedOverrides));
+
+      // Act
+      TestObserver<CreateExperimentResponse> testObserver =
+          experimentService.createExperiment(PROJECT_KEY, request).test();
+
+      // Assert
+      testObserver.assertComplete();
+      testObserver.assertNoErrors();
+      testObserver.assertValueCount(1);
+      testObserver.assertValue(response -> response.isStatus());
+      verify(experimentDAO, times(1)).createExperiment(eq(PROJECT_KEY), any(Experiment.class));
+      verify(allocationService, times(1))
+          .applyOverrides(eq(PROJECT_KEY), any(Experiment.class), eq(overrides));
+    }
+
+    @Test
+    @DisplayName("Should create experiment without overrides when not provided")
+    void testCreateExperimentWithoutOverrides() {
+      // Arrange
+      CreateExperimentRequest request = createMockCreateRequest();
+      request.setOverrides(null);
+
+      when(experimentDAO.createExperiment(eq(PROJECT_KEY), any(Experiment.class)))
+          .thenReturn(Single.just(true));
+
+      // Act
+      TestObserver<CreateExperimentResponse> testObserver =
+          experimentService.createExperiment(PROJECT_KEY, request).test();
+
+      // Assert
+      testObserver.assertComplete();
+      testObserver.assertNoErrors();
+      testObserver.assertValueCount(1);
+      testObserver.assertValue(response -> response.isStatus());
+      verify(experimentDAO, times(1)).createExperiment(eq(PROJECT_KEY), any(Experiment.class));
+      verify(allocationService, never())
+          .applyOverrides(anyString(), any(Experiment.class), any(Overrides.class));
+    }
+
+    @Test
+    @DisplayName("Should create experiment when overrides has empty override IDs")
+    void testCreateExperimentWithEmptyOverrideIds() {
+      // Arrange
+      CreateExperimentRequest request = createMockCreateRequest();
+      Overrides overrides = new Overrides();
+      overrides.setOverrideIds(new HashMap<>());
+      request.setOverrides(overrides);
+
+      when(experimentDAO.createExperiment(eq(PROJECT_KEY), any(Experiment.class)))
+          .thenReturn(Single.just(true));
+
+      // Act
+      TestObserver<CreateExperimentResponse> testObserver =
+          experimentService.createExperiment(PROJECT_KEY, request).test();
+
+      // Assert
+      testObserver.assertComplete();
+      testObserver.assertNoErrors();
+      testObserver.assertValueCount(1);
+      verify(allocationService, never())
+          .applyOverrides(anyString(), any(Experiment.class), any(Overrides.class));
+    }
+
+    @Test
+    @DisplayName("Should still succeed when override application fails")
+    void testCreateExperimentSucceedsWhenOverridesFail() {
+      // Arrange
+      CreateExperimentRequest request = createMockCreateRequest();
+      Overrides overrides = createMockOverrides();
+      request.setOverrides(overrides);
+
+      when(experimentDAO.createExperiment(eq(PROJECT_KEY), any(Experiment.class)))
+          .thenReturn(Single.just(true));
+      when(allocationService.applyOverrides(eq(PROJECT_KEY), any(Experiment.class), eq(overrides)))
+          .thenReturn(Single.error(new RuntimeException("Failed to apply overrides")));
+
+      // Act
+      TestObserver<CreateExperimentResponse> testObserver =
+          experimentService.createExperiment(PROJECT_KEY, request).test();
+
+      // Assert - Experiment should still be created successfully even if overrides fail
+      testObserver.assertComplete();
+      testObserver.assertNoErrors();
+      testObserver.assertValueCount(1);
+      testObserver.assertValue(response -> response.isStatus());
+      verify(experimentDAO, times(1)).createExperiment(eq(PROJECT_KEY), any(Experiment.class));
+      verify(allocationService, times(1))
+          .applyOverrides(eq(PROJECT_KEY), any(Experiment.class), eq(overrides));
+    }
+
+    @Test
+    @DisplayName("Should fail when experiment creation fails")
+    void testCreateExperimentFailsWhenDAOFails() {
+      // Arrange
+      CreateExperimentRequest request = createMockCreateRequest();
+      Overrides overrides = createMockOverrides();
+      request.setOverrides(overrides);
+
+      when(experimentDAO.createExperiment(eq(PROJECT_KEY), any(Experiment.class)))
+          .thenReturn(Single.error(new RuntimeException("Database error")));
+
+      // Act
+      TestObserver<CreateExperimentResponse> testObserver =
+          experimentService.createExperiment(PROJECT_KEY, request).test();
+
+      // Assert
+      testObserver.assertError(RestException.class);
+      testObserver.assertNotComplete();
+      verify(experimentDAO, times(1)).createExperiment(eq(PROJECT_KEY), any(Experiment.class));
+      verify(allocationService, never())
+          .applyOverrides(anyString(), any(Experiment.class), any(Overrides.class));
+    }
+
+    @Test
+    @DisplayName("Should apply multiple variant overrides")
+    void testCreateExperimentWithMultipleVariantOverrides() {
+      // Arrange
+      CreateExperimentRequest request = createMockCreateRequest();
+      Overrides overrides = new Overrides();
+      Map<String, List<String>> overrideIds = new HashMap<>();
+      overrideIds.put("control", List.of("user1", "user2", "user3"));
+      overrideIds.put("variant1", List.of("user4", "user5"));
+      overrideIds.put("variant2", List.of("user6", "user7", "user8", "user9"));
+      overrides.setOverrideIds(overrideIds);
+      request.setOverrides(overrides);
+
+      List<UserExperimentMap> appliedOverrides =
+          List.of(
+              createMockUserExperimentMap("user1", "control"),
+              createMockUserExperimentMap("user2", "control"),
+              createMockUserExperimentMap("user3", "control"),
+              createMockUserExperimentMap("user4", "variant1"),
+              createMockUserExperimentMap("user5", "variant1"),
+              createMockUserExperimentMap("user6", "variant2"),
+              createMockUserExperimentMap("user7", "variant2"),
+              createMockUserExperimentMap("user8", "variant2"),
+              createMockUserExperimentMap("user9", "variant2"));
+
+      when(experimentDAO.createExperiment(eq(PROJECT_KEY), any(Experiment.class)))
+          .thenReturn(Single.just(true));
+      when(allocationService.applyOverrides(eq(PROJECT_KEY), any(Experiment.class), eq(overrides)))
+          .thenReturn(Single.just(appliedOverrides));
+
+      // Act
+      TestObserver<CreateExperimentResponse> testObserver =
+          experimentService.createExperiment(PROJECT_KEY, request).test();
+
+      // Assert
+      testObserver.assertComplete();
+      testObserver.assertNoErrors();
+      verify(allocationService, times(1))
+          .applyOverrides(eq(PROJECT_KEY), any(Experiment.class), eq(overrides));
+    }
+  }
+
+  @Nested
+  @DisplayName("Update Experiment With Overrides Tests")
+  class UpdateExperimentWithOverridesTests {
+
+    @Test
+    @DisplayName("Should update experiment and apply overrides successfully")
+    void testUpdateExperimentWithOverridesSuccess() {
+      // Arrange
+      UUID experimentId = UUID.fromString(EXPERIMENT_ID);
+      UpdateExperimentRequest request = createMockUpdateRequest();
+      Overrides overrides = createMockOverrides();
+      request.setOverrides(overrides);
+
+      Experiment existingExperiment = createMockExperiment();
+
+      List<UserExperimentMap> appliedOverrides =
+          List.of(
+              createMockUserExperimentMap("user1", "control"),
+              createMockUserExperimentMap("user2", "variant1"));
+
+      when(experimentDAO.getExperiment(PROJECT_KEY, EXPERIMENT_ID))
+          .thenReturn(Maybe.just(existingExperiment));
+      when(experimentDAO.updateExperiment(
+              eq(PROJECT_KEY), eq(existingExperiment), any(Experiment.class)))
+          .thenReturn(Single.just(true));
+      when(allocationService.applyOverrides(eq(PROJECT_KEY), any(Experiment.class), eq(overrides)))
+          .thenReturn(Single.just(appliedOverrides));
+
+      // Act
+      TestObserver<UpdateExperimentResponse> testObserver =
+          experimentService.updateExperiment(PROJECT_KEY, experimentId, request).test();
+
+      // Assert
+      testObserver.assertComplete();
+      testObserver.assertNoErrors();
+      testObserver.assertValueCount(1);
+      testObserver.assertValue(response -> response.isStatus());
+      verify(experimentDAO, times(1)).getExperiment(PROJECT_KEY, EXPERIMENT_ID);
+      verify(experimentDAO, times(1))
+          .updateExperiment(eq(PROJECT_KEY), eq(existingExperiment), any(Experiment.class));
+      verify(allocationService, times(1))
+          .applyOverrides(eq(PROJECT_KEY), any(Experiment.class), eq(overrides));
+    }
+
+    @Test
+    @DisplayName("Should update experiment without overrides when not provided")
+    void testUpdateExperimentWithoutOverrides() {
+      // Arrange
+      UUID experimentId = UUID.fromString(EXPERIMENT_ID);
+      UpdateExperimentRequest request = createMockUpdateRequest();
+      request.setOverrides(null);
+
+      Experiment existingExperiment = createMockExperiment();
+
+      when(experimentDAO.getExperiment(PROJECT_KEY, EXPERIMENT_ID))
+          .thenReturn(Maybe.just(existingExperiment));
+      when(experimentDAO.updateExperiment(
+              eq(PROJECT_KEY), eq(existingExperiment), any(Experiment.class)))
+          .thenReturn(Single.just(true));
+
+      // Act
+      TestObserver<UpdateExperimentResponse> testObserver =
+          experimentService.updateExperiment(PROJECT_KEY, experimentId, request).test();
+
+      // Assert
+      testObserver.assertComplete();
+      testObserver.assertNoErrors();
+      testObserver.assertValueCount(1);
+      verify(allocationService, never())
+          .applyOverrides(anyString(), any(Experiment.class), any(Overrides.class));
+    }
+
+    @Test
+    @DisplayName("Should update experiment when overrides has empty override IDs")
+    void testUpdateExperimentWithEmptyOverrideIds() {
+      // Arrange
+      UUID experimentId = UUID.fromString(EXPERIMENT_ID);
+      UpdateExperimentRequest request = createMockUpdateRequest();
+      Overrides overrides = new Overrides();
+      overrides.setOverrideIds(new HashMap<>());
+      request.setOverrides(overrides);
+
+      Experiment existingExperiment = createMockExperiment();
+
+      when(experimentDAO.getExperiment(PROJECT_KEY, EXPERIMENT_ID))
+          .thenReturn(Maybe.just(existingExperiment));
+      when(experimentDAO.updateExperiment(
+              eq(PROJECT_KEY), eq(existingExperiment), any(Experiment.class)))
+          .thenReturn(Single.just(true));
+
+      // Act
+      TestObserver<UpdateExperimentResponse> testObserver =
+          experimentService.updateExperiment(PROJECT_KEY, experimentId, request).test();
+
+      // Assert
+      testObserver.assertComplete();
+      testObserver.assertNoErrors();
+      verify(allocationService, never())
+          .applyOverrides(anyString(), any(Experiment.class), any(Overrides.class));
+    }
+
+    @Test
+    @DisplayName("Should still succeed when override application fails during update")
+    void testUpdateExperimentSucceedsWhenOverridesFail() {
+      // Arrange
+      UUID experimentId = UUID.fromString(EXPERIMENT_ID);
+      UpdateExperimentRequest request = createMockUpdateRequest();
+      Overrides overrides = createMockOverrides();
+      request.setOverrides(overrides);
+
+      Experiment existingExperiment = createMockExperiment();
+
+      when(experimentDAO.getExperiment(PROJECT_KEY, EXPERIMENT_ID))
+          .thenReturn(Maybe.just(existingExperiment));
+      when(experimentDAO.updateExperiment(
+              eq(PROJECT_KEY), eq(existingExperiment), any(Experiment.class)))
+          .thenReturn(Single.just(true));
+      when(allocationService.applyOverrides(eq(PROJECT_KEY), any(Experiment.class), eq(overrides)))
+          .thenReturn(Single.error(new RuntimeException("Failed to apply overrides")));
+
+      // Act
+      TestObserver<UpdateExperimentResponse> testObserver =
+          experimentService.updateExperiment(PROJECT_KEY, experimentId, request).test();
+
+      // Assert - Experiment should still be updated successfully even if overrides fail
+      testObserver.assertComplete();
+      testObserver.assertNoErrors();
+      testObserver.assertValueCount(1);
+      testObserver.assertValue(response -> response.isStatus());
+      verify(experimentDAO, times(1))
+          .updateExperiment(eq(PROJECT_KEY), eq(existingExperiment), any(Experiment.class));
+      verify(allocationService, times(1))
+          .applyOverrides(eq(PROJECT_KEY), any(Experiment.class), eq(overrides));
+    }
+
+    @Test
+    @DisplayName("Should fail when experiment not found during update")
+    void testUpdateExperimentFailsWhenExperimentNotFound() {
+      // Arrange
+      UUID experimentId = UUID.fromString(EXPERIMENT_ID);
+      UpdateExperimentRequest request = createMockUpdateRequest();
+      Overrides overrides = createMockOverrides();
+      request.setOverrides(overrides);
+
+      when(experimentDAO.getExperiment(PROJECT_KEY, EXPERIMENT_ID)).thenReturn(Maybe.empty());
+
+      // Act
+      TestObserver<UpdateExperimentResponse> testObserver =
+          experimentService.updateExperiment(PROJECT_KEY, experimentId, request).test();
+
+      // Assert
+      testObserver.assertError(RestException.class);
+      testObserver.assertNotComplete();
+      testObserver.assertError(
+          error ->
+              error instanceof RestException
+                  && ((RestException) error)
+                      .getErrorCode()
+                      .equals(ErrorEnum.EXPERIMENT_NOT_FOUND.getErrorCode()));
+      verify(allocationService, never())
+          .applyOverrides(anyString(), any(Experiment.class), any(Overrides.class));
+    }
+
+    @Test
+    @DisplayName("Should fail when experiment update fails")
+    void testUpdateExperimentFailsWhenDAOFails() {
+      // Arrange
+      UUID experimentId = UUID.fromString(EXPERIMENT_ID);
+      UpdateExperimentRequest request = createMockUpdateRequest();
+      Overrides overrides = createMockOverrides();
+      request.setOverrides(overrides);
+
+      Experiment existingExperiment = createMockExperiment();
+
+      when(experimentDAO.getExperiment(PROJECT_KEY, EXPERIMENT_ID))
+          .thenReturn(Maybe.just(existingExperiment));
+      when(experimentDAO.updateExperiment(
+              eq(PROJECT_KEY), eq(existingExperiment), any(Experiment.class)))
+          .thenReturn(Single.error(new RuntimeException("Database error")));
+
+      // Act
+      TestObserver<UpdateExperimentResponse> testObserver =
+          experimentService.updateExperiment(PROJECT_KEY, experimentId, request).test();
+
+      // Assert
+      testObserver.assertError(RestException.class);
+      testObserver.assertNotComplete();
+      verify(allocationService, never())
+          .applyOverrides(anyString(), any(Experiment.class), any(Overrides.class));
+    }
+
+    @Test
+    @DisplayName("Should apply overrides for adding new users during update")
+    void testUpdateExperimentAddingNewUsersViaOverrides() {
+      // Arrange
+      UUID experimentId = UUID.fromString(EXPERIMENT_ID);
+      UpdateExperimentRequest request = createMockUpdateRequest();
+      Overrides overrides = new Overrides();
+      Map<String, List<String>> overrideIds = new HashMap<>();
+      overrideIds.put("control", List.of("new_user1", "new_user2"));
+      overrideIds.put("variant1", List.of("new_user3", "new_user4", "new_user5"));
+      overrides.setOverrideIds(overrideIds);
+      request.setOverrides(overrides);
+
+      Experiment existingExperiment = createMockExperiment();
+
+      List<UserExperimentMap> appliedOverrides =
+          List.of(
+              createMockUserExperimentMap("new_user1", "control"),
+              createMockUserExperimentMap("new_user2", "control"),
+              createMockUserExperimentMap("new_user3", "variant1"),
+              createMockUserExperimentMap("new_user4", "variant1"),
+              createMockUserExperimentMap("new_user5", "variant1"));
+
+      when(experimentDAO.getExperiment(PROJECT_KEY, EXPERIMENT_ID))
+          .thenReturn(Maybe.just(existingExperiment));
+      when(experimentDAO.updateExperiment(
+              eq(PROJECT_KEY), eq(existingExperiment), any(Experiment.class)))
+          .thenReturn(Single.just(true));
+      when(allocationService.applyOverrides(eq(PROJECT_KEY), any(Experiment.class), eq(overrides)))
+          .thenReturn(Single.just(appliedOverrides));
+
+      // Act
+      TestObserver<UpdateExperimentResponse> testObserver =
+          experimentService.updateExperiment(PROJECT_KEY, experimentId, request).test();
+
+      // Assert
+      testObserver.assertComplete();
+      testObserver.assertNoErrors();
+      verify(allocationService, times(1))
+          .applyOverrides(eq(PROJECT_KEY), any(Experiment.class), eq(overrides));
+    }
+  }
+
   /**
    * Helper method to create a mock Experiment object for testing.
    *
@@ -1048,5 +1472,82 @@ public class ExperimentServiceTest {
   private FilterExperimentsResponse createMockFilterResponse() {
     PaginationMeta paginationMeta = new PaginationMeta(1, 20, 1, false);
     return new FilterExperimentsResponse(List.of(createMockExperiment()), paginationMeta);
+  }
+
+  /**
+   * Helper method to create a mock CreateExperimentRequest for testing.
+   *
+   * @return a mock CreateExperimentRequest object
+   */
+  private CreateExperimentRequest createMockCreateRequest() {
+    CreateExperimentRequest request = new CreateExperimentRequest();
+    request.setName("Test Experiment");
+    request.setDescription("Test Description");
+    request.setHypothesis("Test Hypothesis");
+    request.setStatus(ExperimentStatus.DRAFT.name());
+    request.setType(ExperimentType.A_B.name());
+    request.setDistributionStrategy(DistributionStrategy.RANDOM.name());
+    request.setAssignmentDomain(AssignmentDomain.COHORT.name());
+    request.setExposure(100);
+    request.setThreshold(1000L);
+    request.setCreatedBy("test-user");
+    request.setTags(List.of("tag1", "tag2"));
+    request.setOwners(List.of("owner1"));
+
+    // Set up variants
+    Map<String, Variant> variants = new HashMap<>();
+    variants.put("control", Variant.builder().displayName("Control").build());
+    variants.put("variant1", Variant.builder().displayName("Variant 1").build());
+    request.setVariants(variants);
+
+    // Set up variant weights
+    CohortVariantWeights variantWeights =
+        CohortVariantWeights.builder().weights(Map.of("control", 50.0, "variant1", 50.0)).build();
+    request.setVariantWeights(variantWeights);
+
+    return request;
+  }
+
+  /**
+   * Helper method to create a mock UpdateExperimentRequest for testing.
+   *
+   * @return a mock UpdateExperimentRequest object
+   */
+  private UpdateExperimentRequest createMockUpdateRequest() {
+    UpdateExperimentRequest request = new UpdateExperimentRequest();
+    request.setName("Updated Experiment");
+    request.setDescription("Updated Description");
+    request.setUpdatedBy("test-user");
+    return request;
+  }
+
+  /**
+   * Helper method to create a mock Overrides object for testing.
+   *
+   * @return a mock Overrides object
+   */
+  private Overrides createMockOverrides() {
+    Overrides overrides = new Overrides();
+    Map<String, List<String>> overrideIds = new HashMap<>();
+    overrideIds.put("control", List.of("user1", "user2"));
+    overrideIds.put("variant1", List.of("user3", "user4"));
+    overrides.setOverrideIds(overrideIds);
+    return overrides;
+  }
+
+  /**
+   * Helper method to create a mock UserExperimentMap for testing.
+   *
+   * @param userId the user ID
+   * @param variantName the variant name
+   * @return a mock UserExperimentMap object
+   */
+  private UserExperimentMap createMockUserExperimentMap(String userId, String variantName) {
+    return UserExperimentMap.builder()
+        .experimentId(UUID.fromString(EXPERIMENT_ID))
+        .variantName(variantName)
+        .status("ASSIGNED")
+        .assignedAt(System.currentTimeMillis())
+        .build();
   }
 }

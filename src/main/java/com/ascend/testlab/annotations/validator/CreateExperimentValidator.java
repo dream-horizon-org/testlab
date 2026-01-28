@@ -384,10 +384,11 @@ public class CreateExperimentValidator
 
   private boolean statusCheck(ConstraintValidatorContext context, String experimentStatus) {
     if (experimentStatus.equals(ExperimentStatus.LIVE.name())
-        || experimentStatus.equals(ExperimentStatus.DRAFT.name())) {
+        || experimentStatus.equals(ExperimentStatus.DRAFT.name())
+        || experimentStatus.equals(ExperimentStatus.TEST.name())) {
       return true;
     }
-    addError(context, "Experiment status must be LIVE or DRAFT", "experimentStatus");
+    addError(context, "Experiment status must be LIVE, DRAFT, or TEST", "experimentStatus");
     return false;
   }
 
@@ -400,14 +401,11 @@ public class CreateExperimentValidator
    */
   private boolean validateOverrides(
       CreateExperimentRequest request, ConstraintValidatorContext context) {
-    if (request.getOverrides() == null || request.getOverrides().getOverrideIds() == null) {
+    if (request.getOverrides() == null || request.getOverrides().isEmpty()) {
       return true;
     }
 
-    Map<String, List<String>> overrideIds = request.getOverrides().getOverrideIds();
-    if (overrideIds.isEmpty()) {
-      return true;
-    }
+    Map<String, List<String>> variantUserMap = request.getOverrides().getOverrideIds();
 
     Map<String, ?> variants = request.getVariants();
     if (variants == null || variants.isEmpty()) {
@@ -416,7 +414,7 @@ public class CreateExperimentValidator
     }
 
     Set<String> invalidVariants = new HashSet<>();
-    for (String variantName : overrideIds.keySet()) {
+    for (String variantName : variantUserMap.keySet()) {
       if (!variants.containsKey(variantName)) {
         invalidVariants.add(variantName);
       }

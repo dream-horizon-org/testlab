@@ -12,6 +12,7 @@ import com.ascend.testlab.constants.enums.ExperimentStatus;
 import com.ascend.testlab.dao.AllocationDAO;
 import com.ascend.testlab.dto.entity.allocation.UserExperimentMap;
 import com.ascend.testlab.dto.entity.experiment.Experiment;
+import com.ascend.testlab.dto.entity.experiment.Overrides;
 import com.ascend.testlab.dto.entity.experiment.Variant;
 import com.ascend.testlab.dto.entity.experiment.WinningVariant;
 import com.ascend.testlab.dto.request.AllocationRequest;
@@ -93,6 +94,10 @@ public class AllocationServiceImpl implements AllocationService {
                   allExperiments.stream()
                       .filter(e -> e.getStatus() == ExperimentStatus.LIVE)
                       .toList();
+              List<Experiment> testExperiments =
+                  allExperiments.stream()
+                      .filter(e -> e.getStatus() == ExperimentStatus.TEST)
+                      .toList();
               List<Experiment> concludedExperiments =
                   allExperiments.stream()
                       .filter(e -> e.getStatus() == ExperimentStatus.CONCLUDED)
@@ -105,6 +110,11 @@ public class AllocationServiceImpl implements AllocationService {
               List<UserExperimentMap> activeAllocations =
                   filterActiveAllocations(currentAllocations, liveExperiments);
 
+              // Filter test allocations - these are users assigned via overrides to TEST
+              // experiments
+              List<UserExperimentMap> testAllocations =
+                  filterActiveAllocations(currentAllocations, testExperiments);
+
               List<UserExperimentMap> concludedAllocations =
                   applyConcludedExperiments(concludedExperiments, currentAllocations);
 
@@ -114,6 +124,7 @@ public class AllocationServiceImpl implements AllocationService {
               if (filteredExperiments.isEmpty()) {
                 log.debug("No experiments passed filters for identifier {}", effectiveId);
                 List<UserExperimentMap> allAllocations = new ArrayList<>(activeAllocations);
+                allAllocations.addAll(testAllocations);
                 allAllocations.addAll(concludedAllocations);
                 return buildResponse(allAllocations);
               }
@@ -131,6 +142,7 @@ public class AllocationServiceImpl implements AllocationService {
                       response -> {
                         List<UserExperimentMap> allAllocations =
                             new ArrayList<>(response.experimentMap());
+                        allAllocations.addAll(testAllocations);
                         allAllocations.addAll(concludedAllocations);
                         return new AllocationsResponse(allAllocations);
                       });
@@ -697,5 +709,229 @@ public class AllocationServiceImpl implements AllocationService {
    */
   private boolean shouldApplyGuestCarryover(String userId) {
     return Objects.nonNull(userId);
+  }
+
+  /** {@inheritDoc} */
+  @Override
+  public Single<List<UserExperimentMap>> applyOverrides(
+      String projectKey, Experiment experiment, Overrides overrides) {
+
+    if (Objects.isNull(overrides) || overrides.isEmpty()) {
+      log.debug("No overrides to apply for experiment {}", experiment.getExperimentId());
+      return Single.just(Collections.emptyList());
+    }
+
+    Map<String, List<String>> variantUserMap = overrides.getOverrideIds();
+
+    log.info(
+        "Applying overrides for experiment {}: {} variant mappings",
+        experiment.getExperimentId(),
+        variantUserMap.size());
+
+    // Collect all user IDs from overrides
+    List<String> allUserIds =
+        variantUserMap.values().stream().flatMap(List::stream).distinct().toList();
+
+    if (allUserIds.isEmpty()) {
+      log.debug("No user IDs in overrides for experiment {}", experiment.getExperimentId());
+      return Single.just(Collections.emptyList());
+    }
+
+    // Fetch existing allocations for all users
+    return allocationDAO
+        .getAllocations(allUserIds, projectKey)
+        .flatMap(
+            existingAllocations ->
+                processOverrides(projectKey, experiment, variantUserMap, existingAllocations))
+        .doOnSuccess(
+            results ->
+                log.info(
+                    "Successfully applied {} overrides for experiment {}",
+                    results.size(),
+                    experiment.getExperimentId()))
+        .doOnError(
+            error ->
+                log.error(
+                    "Error applying overrides for experiment {}",
+                    experiment.getExperimentId(),
+                    error));
+  }
+
+  /**
+   * Processes override mappings for an experiment. For each user-variant mapping, either creates a
+   * new allocation or reallocates existing allocation.
+   *
+   * @param projectKey project identifier
+   * @param experiment the experiment entity
+   * @param variantUserMap map of variant name to list of user IDs
+   * @param existingAllocations map of user ID to their existing allocations
+   * @return Single emitting list of applied UserExperimentMap
+   */
+  private Single<List<UserExperimentMap>> processOverrides(
+      String projectKey,
+      Experiment experiment,
+      Map<String, List<String>> variantUserMap,
+      Map<String, List<UserExperimentMap>> existingAllocations) {
+
+    UUID experimentId = experiment.getExperimentId();
+    List<Single<UserExperimentMap>> overrideOperations = new ArrayList<>();
+
+    for (Map.Entry<String, List<String>> entry : variantUserMap.entrySet()) {
+      String variantName = entry.getKey();
+      List<String> userIds = entry.getValue();
+
+      // Validate variant exists in experiment
+      if (!experiment.getVariants().containsKey(variantName)) {
+        log.warn(
+            "Variant {} not found in experiment {}, skipping override", variantName, experimentId);
+        continue;
+      }
+
+      for (String userId : userIds) {
+        if (Objects.isNull(userId) || userId.isBlank()) {
+          log.warn("Skipping null or blank userId in overrides for experiment {}", experimentId);
+          continue;
+        }
+
+        Single<UserExperimentMap> operation =
+            applyUserOverride(
+                projectKey, experiment, variantName, userId, existingAllocations.get(userId));
+        overrideOperations.add(operation);
+      }
+    }
+
+    if (overrideOperations.isEmpty()) {
+      return Single.just(Collections.emptyList());
+    }
+
+    return Single.merge(overrideOperations)
+        .filter(Objects::nonNull)
+        .toList()
+        .doOnSuccess(
+            results -> log.debug("Processed {} override operations", overrideOperations.size()));
+  }
+
+  /**
+   * Applies an override for a single user. If user has existing allocation for the experiment,
+   * reallocates to new variant. Otherwise creates a new allocation.
+   *
+   * @param projectKey project identifier
+   * @param experiment the experiment entity
+   * @param variantName target variant name
+   * @param userId user identifier
+   * @param userAllocations user's existing allocations (may be null)
+   * @return Single emitting the resulting UserExperimentMap
+   */
+  private Single<UserExperimentMap> applyUserOverride(
+      String projectKey,
+      Experiment experiment,
+      String variantName,
+      String userId,
+      List<UserExperimentMap> userAllocations) {
+
+    UUID experimentId = experiment.getExperimentId();
+
+    // Check if user already has allocation for this experiment
+    UserExperimentMap existingAllocation = null;
+    if (Objects.nonNull(userAllocations) && !userAllocations.isEmpty()) {
+      existingAllocation =
+          userAllocations.stream()
+              .filter(a -> a.getExperimentId().equals(experimentId))
+              .findFirst()
+              .orElse(null);
+    }
+
+    UserExperimentMap newAssignment = AssignmentBuilder.buildAssignment(experiment, variantName);
+
+    if (Objects.nonNull(existingAllocation)) {
+      // User has existing allocation - check if already on target variant
+      if (existingAllocation.getVariantName().equals(variantName)) {
+        log.debug(
+            "User {} already assigned to variant {} for experiment {}, skipping",
+            userId,
+            variantName,
+            experimentId);
+        return Single.just(existingAllocation);
+      }
+
+      // Reallocate user to new variant
+      log.debug(
+          "Reallocating user {} from variant {} to {} for experiment {}",
+          userId,
+          existingAllocation.getVariantName(),
+          variantName,
+          experimentId);
+
+      ReallocateRequest reallocateRequest =
+          ReallocateRequest.builder()
+              .userId(userId)
+              .experimentId(experimentId.toString())
+              .variantName(variantName)
+              .reason("Override applied during experiment creation/update")
+              .build();
+
+      return allocationDAO
+          .reallocateUserVariant(
+              projectKey, existingAllocation.getVariantName(), newAssignment, reallocateRequest)
+          .doOnSuccess(
+              result ->
+                  log.debug(
+                      "Successfully reallocated user {} to variant {} for experiment {}",
+                      userId,
+                      variantName,
+                      experimentId))
+          .onErrorResumeNext(
+              error -> {
+                log.error(
+                    "Failed to reallocate user {} to variant {} for experiment {}: {}",
+                    userId,
+                    variantName,
+                    experimentId,
+                    error.getMessage());
+                return Single.just(newAssignment);
+              });
+    } else {
+      // New allocation for user
+      log.debug(
+          "Creating new allocation for user {} to variant {} for experiment {}",
+          userId,
+          variantName,
+          experimentId);
+
+      List<UserExperimentMap> assignments = Collections.singletonList(newAssignment);
+      Map<String, String> variantCountMap = new HashMap<>();
+      String key = experimentId.toString() + Constants.COLON + variantName;
+      variantCountMap.put(key, variantName);
+
+      return allocationDAO
+          .insertAllocationsAndIncrementCounts(userId, projectKey, assignments, variantCountMap)
+          .map(
+              success -> {
+                if (success) {
+                  log.debug(
+                      "Successfully created override allocation for user {} to variant {} for experiment {}",
+                      userId,
+                      variantName,
+                      experimentId);
+                } else {
+                  log.warn(
+                      "Failed to create override allocation for user {} to variant {} for experiment {}",
+                      userId,
+                      variantName,
+                      experimentId);
+                }
+                return newAssignment;
+              })
+          .onErrorResumeNext(
+              error -> {
+                log.error(
+                    "Error creating override allocation for user {} to variant {} for experiment {}: {}",
+                    userId,
+                    variantName,
+                    experimentId,
+                    error.getMessage());
+                return Single.just(newAssignment);
+              });
+    }
   }
 }

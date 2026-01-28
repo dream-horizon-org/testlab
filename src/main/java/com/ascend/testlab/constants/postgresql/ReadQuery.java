@@ -107,7 +107,7 @@ public final class ReadQuery {
       SELECT * FROM experiment.experiments
       WHERE project_key = $1
         AND experiment_key = ANY($2::text[])
-        AND (status = 'LIVE' OR (status = 'CONCLUDED' AND winning_variant IS NOT NULL))
+        AND (status = 'LIVE' OR STATUS = 'TEST' OR (status = 'CONCLUDED' AND winning_variant IS NOT NULL))
       """;
 
   /** Query to fetch a single live experiment by project_key and experiment_id. */

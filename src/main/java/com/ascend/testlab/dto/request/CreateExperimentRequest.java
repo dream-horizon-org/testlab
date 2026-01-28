@@ -76,9 +76,7 @@ public class CreateExperimentRequest {
 
   private List<String> owners;
 
-  @NotNull(message = "Variant weights are required")
-  @Valid
-  private VariantWeights variantWeights;
+  @Valid private VariantWeights variantWeights;
 
   @Valid
   @NotNull(message = "Variant is required")

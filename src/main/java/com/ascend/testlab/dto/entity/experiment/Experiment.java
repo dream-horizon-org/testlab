@@ -68,7 +68,9 @@ public class Experiment {
    */
   public static Experiment fromRequest(CreateExperimentRequest request) {
     Map<String, List<String>> overridesMap =
-        request.getOverrides() != null ? request.getOverrides().getOverrideIds() : null;
+        request.getOverrides() != null && !request.getOverrides().isEmpty()
+            ? request.getOverrides().getOverrideIds()
+            : null;
 
     return Experiment.builder()
         .name(request.getName())
