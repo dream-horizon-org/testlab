@@ -27,6 +27,8 @@ public class StatusTransitionRule implements UpdateValidationRule {
   /** Map of allowed status transitions from each state. */
   private static final Map<ExperimentStatus, Set<ExperimentStatus>> ALLOWED_TRANSITIONS =
       Map.of(
+          ExperimentStatus.TEST,
+          Set.of(ExperimentStatus.LIVE, ExperimentStatus.PAUSED, ExperimentStatus.TERMINATED),
           ExperimentStatus.DRAFT,
           Set.of(ExperimentStatus.LIVE),
           ExperimentStatus.LIVE,

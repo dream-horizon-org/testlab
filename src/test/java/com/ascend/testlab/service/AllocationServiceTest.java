@@ -9,11 +9,15 @@ import com.ascend.testlab.constants.enums.ExperimentType;
 import com.ascend.testlab.dao.AllocationDAO;
 import com.ascend.testlab.dto.entity.allocation.UserExperimentMap;
 import com.ascend.testlab.dto.entity.experiment.Experiment;
+import com.ascend.testlab.dto.entity.experiment.Overrides;
 import com.ascend.testlab.dto.entity.experiment.Variant;
+import com.ascend.testlab.dto.entity.experiment.WinningVariant;
+import com.ascend.testlab.dto.request.AllocationRequest;
 import com.ascend.testlab.dto.request.ReallocateRequest;
 import com.ascend.testlab.dto.response.AllocationsResponse;
 import com.ascend.testlab.service.impl.AllocationServiceImpl;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.reactivex.rxjava3.core.Maybe;
 import io.reactivex.rxjava3.core.Single;
 import io.reactivex.rxjava3.observers.TestObserver;
 import io.vertx.junit5.VertxExtension;
@@ -1406,6 +1410,733 @@ class AllocationServiceTest {
 
       // Assert
       testObserver.assertError(Exception.class);
+    }
+  }
+
+  @Nested
+  @DisplayName("Apply Overrides Tests")
+  class ApplyOverridesTests {
+
+    @Test
+    @DisplayName("Should apply overrides for new users without existing allocations")
+    void testApplyOverridesNewUsers() {
+      // Arrange
+      Experiment experiment = createMockExperimentWithVariants();
+      Overrides overrides = createMockOverrides();
+
+      UserExperimentMap newAllocation =
+          UserExperimentMap.builder()
+              .experimentId(EXPERIMENT_ID)
+              .variantName(CONTROL_VARIANT)
+              .status("ASSIGNED")
+              .assignedAt(System.currentTimeMillis())
+              .build();
+
+      // No existing allocations
+      when(allocationDAO.getAllocations(anyList(), eq(PROJECT_KEY)))
+          .thenReturn(Single.just(new HashMap<>()));
+      when(allocationDAO.insertAllocationsAndIncrementCounts(
+              anyString(), eq(PROJECT_KEY), anyList(), anyMap()))
+          .thenReturn(Single.just(true));
+
+      // Act
+      TestObserver<List<UserExperimentMap>> testObserver =
+          allocationService.applyOverrides(PROJECT_KEY, experiment, overrides).test();
+
+      // Assert
+      testObserver.assertComplete();
+      testObserver.assertNoErrors();
+    }
+
+    @Test
+    @DisplayName("Should reallocate existing users to new variant")
+    void testApplyOverridesExistingUsersReallocation() {
+      // Arrange
+      Experiment experiment = createMockExperimentWithVariants();
+      Overrides overrides = new Overrides();
+      Map<String, List<String>> overrideIds = new HashMap<>();
+      overrideIds.put(TREATMENT_VARIANT, List.of(USER_ID)); // Move user to treatment
+      overrides.setOverrideIds(overrideIds);
+
+      // User currently in control
+      UserExperimentMap existingAllocation = createCurrentAssignment(CONTROL_VARIANT);
+      Map<String, List<UserExperimentMap>> existingAllocations = new HashMap<>();
+      existingAllocations.put(USER_ID, List.of(existingAllocation));
+
+      UserExperimentMap reallocatedAssignment =
+          UserExperimentMap.builder()
+              .experimentId(EXPERIMENT_ID)
+              .variantName(TREATMENT_VARIANT)
+              .status("REALLOCATED")
+              .assignedAt(System.currentTimeMillis())
+              .build();
+
+      when(allocationDAO.getAllocations(anyList(), eq(PROJECT_KEY)))
+          .thenReturn(Single.just(existingAllocations));
+      when(allocationDAO.reallocateUserVariant(
+              eq(PROJECT_KEY),
+              eq(CONTROL_VARIANT),
+              any(UserExperimentMap.class),
+              any(ReallocateRequest.class)))
+          .thenReturn(Single.just(reallocatedAssignment));
+
+      // Act
+      TestObserver<List<UserExperimentMap>> testObserver =
+          allocationService.applyOverrides(PROJECT_KEY, experiment, overrides).test();
+
+      // Assert
+      testObserver.assertComplete();
+      testObserver.assertNoErrors();
+      testObserver.assertValue(results -> !results.isEmpty());
+    }
+
+    @Test
+    @DisplayName("Should skip users already in target variant")
+    void testApplyOverridesSkipSameVariant() {
+      // Arrange
+      Experiment experiment = createMockExperimentWithVariants();
+      Overrides overrides = new Overrides();
+      Map<String, List<String>> overrideIds = new HashMap<>();
+      overrideIds.put(CONTROL_VARIANT, List.of(USER_ID)); // User already in control
+      overrides.setOverrideIds(overrideIds);
+
+      // User already in control
+      UserExperimentMap existingAllocation = createCurrentAssignment(CONTROL_VARIANT);
+      Map<String, List<UserExperimentMap>> existingAllocations = new HashMap<>();
+      existingAllocations.put(USER_ID, List.of(existingAllocation));
+
+      when(allocationDAO.getAllocations(anyList(), eq(PROJECT_KEY)))
+          .thenReturn(Single.just(existingAllocations));
+
+      // Act
+      TestObserver<List<UserExperimentMap>> testObserver =
+          allocationService.applyOverrides(PROJECT_KEY, experiment, overrides).test();
+
+      // Assert
+      testObserver.assertComplete();
+      testObserver.assertNoErrors();
+      // Should return existing allocation, not reallocate
+      testObserver.assertValue(results -> !results.isEmpty());
+      // No reallocation should be called
+      verify(allocationDAO, never())
+          .reallocateUserVariant(
+              anyString(), anyString(), any(UserExperimentMap.class), any(ReallocateRequest.class));
+      // No new allocation should be created
+      verify(allocationDAO, never())
+          .insertAllocationsAndIncrementCounts(anyString(), anyString(), anyList(), anyMap());
+    }
+
+    @Test
+    @DisplayName("Should return empty list when overrides is null")
+    void testApplyOverridesNullOverrides() {
+      // Arrange
+      Experiment experiment = createMockExperimentWithVariants();
+
+      // Act
+      TestObserver<List<UserExperimentMap>> testObserver =
+          allocationService.applyOverrides(PROJECT_KEY, experiment, null).test();
+
+      // Assert
+      testObserver.assertComplete();
+      testObserver.assertNoErrors();
+      testObserver.assertValue(results -> results.isEmpty());
+      verify(allocationDAO, never()).getAllocations(anyList(), anyString());
+    }
+
+    @Test
+    @DisplayName("Should return empty list when override IDs is null")
+    void testApplyOverridesNullOverrideIds() {
+      // Arrange
+      Experiment experiment = createMockExperimentWithVariants();
+      Overrides overrides = new Overrides();
+      overrides.setOverrideIds(null);
+
+      // Act
+      TestObserver<List<UserExperimentMap>> testObserver =
+          allocationService.applyOverrides(PROJECT_KEY, experiment, overrides).test();
+
+      // Assert
+      testObserver.assertComplete();
+      testObserver.assertNoErrors();
+      testObserver.assertValue(results -> results.isEmpty());
+      verify(allocationDAO, never()).getAllocations(anyList(), anyString());
+    }
+
+    @Test
+    @DisplayName("Should return empty list when override IDs is empty")
+    void testApplyOverridesEmptyOverrideIds() {
+      // Arrange
+      Experiment experiment = createMockExperimentWithVariants();
+      Overrides overrides = new Overrides();
+      overrides.setOverrideIds(new HashMap<>());
+
+      // Act
+      TestObserver<List<UserExperimentMap>> testObserver =
+          allocationService.applyOverrides(PROJECT_KEY, experiment, overrides).test();
+
+      // Assert
+      testObserver.assertComplete();
+      testObserver.assertNoErrors();
+      testObserver.assertValue(results -> results.isEmpty());
+      verify(allocationDAO, never()).getAllocations(anyList(), anyString());
+    }
+
+    @Test
+    @DisplayName("Should skip invalid variant names in overrides")
+    void testApplyOverridesInvalidVariant() {
+      // Arrange
+      Experiment experiment = createMockExperimentWithVariants();
+      Overrides overrides = new Overrides();
+      Map<String, List<String>> overrideIds = new HashMap<>();
+      overrideIds.put("non_existent_variant", List.of(USER_ID));
+      overrides.setOverrideIds(overrideIds);
+
+      when(allocationDAO.getAllocations(anyList(), eq(PROJECT_KEY)))
+          .thenReturn(Single.just(new HashMap<>()));
+
+      // Act
+      TestObserver<List<UserExperimentMap>> testObserver =
+          allocationService.applyOverrides(PROJECT_KEY, experiment, overrides).test();
+
+      // Assert
+      testObserver.assertComplete();
+      testObserver.assertNoErrors();
+      testObserver.assertValue(results -> results.isEmpty());
+      // No allocation operations should be performed for invalid variant
+      verify(allocationDAO, never())
+          .insertAllocationsAndIncrementCounts(anyString(), anyString(), anyList(), anyMap());
+    }
+
+    @Test
+    @DisplayName("Should skip null or blank user IDs in overrides")
+    void testApplyOverridesNullOrBlankUserIds() {
+      // Arrange
+      Experiment experiment = createMockExperimentWithVariants();
+      Overrides overrides = new Overrides();
+      Map<String, List<String>> overrideIds = new HashMap<>();
+      overrideIds.put(CONTROL_VARIANT, Arrays.asList(null, "", "  "));
+      overrides.setOverrideIds(overrideIds);
+
+      when(allocationDAO.getAllocations(anyList(), eq(PROJECT_KEY)))
+          .thenReturn(Single.just(new HashMap<>()));
+
+      // Act
+      TestObserver<List<UserExperimentMap>> testObserver =
+          allocationService.applyOverrides(PROJECT_KEY, experiment, overrides).test();
+
+      // Assert
+      testObserver.assertComplete();
+      testObserver.assertNoErrors();
+      testObserver.assertValue(results -> results.isEmpty());
+    }
+
+    @Test
+    @DisplayName("Should apply overrides for multiple variants")
+    void testApplyOverridesMultipleVariants() {
+      // Arrange
+      Experiment experiment = createMockExperimentWithVariants();
+      Overrides overrides = new Overrides();
+      Map<String, List<String>> overrideIds = new HashMap<>();
+      overrideIds.put(CONTROL_VARIANT, List.of("user1", "user2"));
+      overrideIds.put(TREATMENT_VARIANT, List.of("user3", "user4"));
+      overrides.setOverrideIds(overrideIds);
+
+      UserExperimentMap newAllocationControl =
+          UserExperimentMap.builder()
+              .experimentId(EXPERIMENT_ID)
+              .variantName(CONTROL_VARIANT)
+              .status("ASSIGNED")
+              .assignedAt(System.currentTimeMillis())
+              .build();
+
+      UserExperimentMap newAllocationTreatment =
+          UserExperimentMap.builder()
+              .experimentId(EXPERIMENT_ID)
+              .variantName(TREATMENT_VARIANT)
+              .status("ASSIGNED")
+              .assignedAt(System.currentTimeMillis())
+              .build();
+
+      when(allocationDAO.getAllocations(anyList(), eq(PROJECT_KEY)))
+          .thenReturn(Single.just(new HashMap<>()));
+      when(allocationDAO.insertAllocationsAndIncrementCounts(
+              anyString(), eq(PROJECT_KEY), anyList(), anyMap()))
+          .thenReturn(Single.just(true));
+
+      // Act
+      TestObserver<List<UserExperimentMap>> testObserver =
+          allocationService.applyOverrides(PROJECT_KEY, experiment, overrides).test();
+
+      // Assert
+      testObserver.assertComplete();
+      testObserver.assertNoErrors();
+      testObserver.assertValue(results -> results.size() == 4);
+    }
+
+    @Test
+    @DisplayName("Should handle mixed new and existing users")
+    void testApplyOverridesMixedUsers() {
+      // Arrange
+      Experiment experiment = createMockExperimentWithVariants();
+      Overrides overrides = new Overrides();
+      Map<String, List<String>> overrideIds = new HashMap<>();
+      overrideIds.put(TREATMENT_VARIANT, List.of("existing_user", "new_user"));
+      overrides.setOverrideIds(overrideIds);
+
+      // existing_user is currently in CONTROL
+      UserExperimentMap existingAllocation =
+          UserExperimentMap.builder()
+              .experimentId(EXPERIMENT_ID)
+              .variantName(CONTROL_VARIANT)
+              .status("ASSIGNED")
+              .assignedAt(System.currentTimeMillis())
+              .build();
+
+      Map<String, List<UserExperimentMap>> existingAllocations = new HashMap<>();
+      existingAllocations.put("existing_user", List.of(existingAllocation));
+      // new_user has no allocations
+
+      UserExperimentMap reallocatedAssignment =
+          UserExperimentMap.builder()
+              .experimentId(EXPERIMENT_ID)
+              .variantName(TREATMENT_VARIANT)
+              .status("REALLOCATED")
+              .assignedAt(System.currentTimeMillis())
+              .build();
+
+      UserExperimentMap newAssignment =
+          UserExperimentMap.builder()
+              .experimentId(EXPERIMENT_ID)
+              .variantName(TREATMENT_VARIANT)
+              .status("ASSIGNED")
+              .assignedAt(System.currentTimeMillis())
+              .build();
+
+      when(allocationDAO.getAllocations(anyList(), eq(PROJECT_KEY)))
+          .thenReturn(Single.just(existingAllocations));
+      when(allocationDAO.reallocateUserVariant(
+              eq(PROJECT_KEY),
+              eq(CONTROL_VARIANT),
+              any(UserExperimentMap.class),
+              any(ReallocateRequest.class)))
+          .thenReturn(Single.just(reallocatedAssignment));
+      when(allocationDAO.insertAllocationsAndIncrementCounts(
+              anyString(), eq(PROJECT_KEY), anyList(), anyMap()))
+          .thenReturn(Single.just(true));
+
+      // Act
+      TestObserver<List<UserExperimentMap>> testObserver =
+          allocationService.applyOverrides(PROJECT_KEY, experiment, overrides).test();
+
+      // Assert
+      testObserver.assertComplete();
+      testObserver.assertNoErrors();
+      testObserver.assertValue(results -> results.size() == 2);
+    }
+
+    private Experiment createMockExperimentWithVariants() {
+      return Experiment.builder()
+          .experimentId(EXPERIMENT_ID)
+          .projectKey(PROJECT_KEY)
+          .name("Test Experiment")
+          .experimentKey("test_experiment")
+          .status(ExperimentStatus.LIVE)
+          .type(ExperimentType.A_B)
+          .variants(
+              Map.of(
+                  CONTROL_VARIANT,
+                  Variant.builder().displayName(CONTROL_VARIANT).build(),
+                  TREATMENT_VARIANT,
+                  Variant.builder().displayName(TREATMENT_VARIANT).build()))
+          .build();
+    }
+
+    private Overrides createMockOverrides() {
+      Overrides overrides = new Overrides();
+      Map<String, List<String>> overrideIds = new HashMap<>();
+      overrideIds.put(CONTROL_VARIANT, List.of("user1", "user2"));
+      overrideIds.put(TREATMENT_VARIANT, List.of("user3"));
+      overrides.setOverrideIds(overrideIds);
+      return overrides;
+    }
+  }
+
+  @Nested
+  @DisplayName("AllotExperiments Test Allocations Tests")
+  class AllotExperimentsTestAllocationsTests {
+
+    private static final UUID TEST_EXPERIMENT_ID =
+        UUID.fromString("8e1b5ccb-c993-5193-c09d-312b7ab31f2c");
+    private static final UUID LIVE_EXPERIMENT_ID =
+        UUID.fromString("9f2c6ddc-d0a4-6204-d00e-423c8bc42a3d");
+    private static final UUID CONCLUDED_EXPERIMENT_ID =
+        UUID.fromString("0a3d7eed-e1b5-7315-e11f-534d9cd53a4e");
+
+    @Test
+    @DisplayName("Should return test allocations for user with test experiment allocations")
+    void testAllotExperimentsReturnsTestAllocations() {
+      // Arrange
+      AllocationRequest request =
+          AllocationRequest.builder()
+              .userId(USER_ID)
+              .experimentKeys(List.of("live_experiment", "test_experiment"))
+              .build();
+
+      Experiment liveExperiment =
+          createExperimentWithStatus(LIVE_EXPERIMENT_ID, "live_experiment", ExperimentStatus.LIVE);
+      Experiment testExperiment =
+          createExperimentWithStatus(TEST_EXPERIMENT_ID, "test_experiment", ExperimentStatus.TEST);
+
+      UserExperimentMap liveAllocation =
+          createAllocationForExperiment(LIVE_EXPERIMENT_ID, CONTROL_VARIANT);
+      UserExperimentMap testAllocation =
+          createAllocationForExperiment(TEST_EXPERIMENT_ID, TREATMENT_VARIANT);
+
+      Map<String, List<UserExperimentMap>> userAllocationsMap = new HashMap<>();
+      userAllocationsMap.put(USER_ID, List.of(liveAllocation, testAllocation));
+
+      when(cohortService.getUserCohorts(eq(USER_ID), eq(PROJECT_KEY)))
+          .thenReturn(Maybe.just(Collections.emptyList()));
+      when(allocationDAO.fetchActiveExperiments(eq(PROJECT_KEY), anyList()))
+          .thenReturn(Single.just(List.of(liveExperiment, testExperiment)));
+      when(allocationDAO.getAllocations(anyList(), eq(PROJECT_KEY)))
+          .thenReturn(Single.just(userAllocationsMap));
+
+      // Act
+      TestObserver<AllocationsResponse> testObserver =
+          allocationService.allotExperiments(PROJECT_KEY, request).test();
+
+      // Assert
+      testObserver.assertComplete();
+      testObserver.assertNoErrors();
+      testObserver.assertValue(
+          response -> {
+            List<UserExperimentMap> allocations = response.experimentMap();
+            // Should contain both live and test allocations
+            boolean hasLiveAllocation =
+                allocations.stream().anyMatch(a -> a.getExperimentId().equals(LIVE_EXPERIMENT_ID));
+            boolean hasTestAllocation =
+                allocations.stream().anyMatch(a -> a.getExperimentId().equals(TEST_EXPERIMENT_ID));
+            return hasLiveAllocation && hasTestAllocation;
+          });
+    }
+
+    @Test
+    @DisplayName("Should return test allocations when no live experiments pass filters")
+    void testAllotExperimentsReturnsTestAllocationsWhenNoLiveExperimentsPassFilters() {
+      // Arrange
+      AllocationRequest request =
+          AllocationRequest.builder()
+              .userId(USER_ID)
+              .experimentKeys(List.of("test_experiment"))
+              .build();
+
+      Experiment testExperiment =
+          createExperimentWithStatus(TEST_EXPERIMENT_ID, "test_experiment", ExperimentStatus.TEST);
+      UserExperimentMap testAllocation =
+          createAllocationForExperiment(TEST_EXPERIMENT_ID, TREATMENT_VARIANT);
+
+      Map<String, List<UserExperimentMap>> userAllocationsMap = new HashMap<>();
+      userAllocationsMap.put(USER_ID, List.of(testAllocation));
+
+      when(cohortService.getUserCohorts(eq(USER_ID), eq(PROJECT_KEY)))
+          .thenReturn(Maybe.just(Collections.emptyList()));
+      when(allocationDAO.fetchActiveExperiments(eq(PROJECT_KEY), anyList()))
+          .thenReturn(Single.just(List.of(testExperiment)));
+      when(allocationDAO.getAllocations(anyList(), eq(PROJECT_KEY)))
+          .thenReturn(Single.just(userAllocationsMap));
+
+      // Act
+      TestObserver<AllocationsResponse> testObserver =
+          allocationService.allotExperiments(PROJECT_KEY, request).test();
+
+      // Assert
+      testObserver.assertComplete();
+      testObserver.assertNoErrors();
+      testObserver.assertValue(
+          response -> {
+            List<UserExperimentMap> allocations = response.experimentMap();
+            // Should contain test allocation even though no live experiments
+            return allocations.size() == 1
+                && allocations.get(0).getExperimentId().equals(TEST_EXPERIMENT_ID);
+          });
+    }
+
+    @Test
+    @DisplayName("Should not create new allocations for test experiments")
+    void testAllotExperimentsDoesNotCreateNewAllocationsForTestExperiments() {
+      // Arrange
+      AllocationRequest request =
+          AllocationRequest.builder()
+              .userId(USER_ID)
+              .experimentKeys(List.of("test_experiment"))
+              .build();
+
+      // Test experiment exists but user has no allocation for it
+      Experiment testExperiment =
+          createExperimentWithStatus(TEST_EXPERIMENT_ID, "test_experiment", ExperimentStatus.TEST);
+
+      Map<String, List<UserExperimentMap>> userAllocationsMap = new HashMap<>();
+      userAllocationsMap.put(USER_ID, Collections.emptyList()); // No existing allocations
+
+      when(cohortService.getUserCohorts(eq(USER_ID), eq(PROJECT_KEY)))
+          .thenReturn(Maybe.just(Collections.emptyList()));
+      when(allocationDAO.fetchActiveExperiments(eq(PROJECT_KEY), anyList()))
+          .thenReturn(Single.just(List.of(testExperiment)));
+      when(allocationDAO.getAllocations(anyList(), eq(PROJECT_KEY)))
+          .thenReturn(Single.just(userAllocationsMap));
+
+      // Act
+      TestObserver<AllocationsResponse> testObserver =
+          allocationService.allotExperiments(PROJECT_KEY, request).test();
+
+      // Assert
+      testObserver.assertComplete();
+      testObserver.assertNoErrors();
+      testObserver.assertValue(
+          response -> {
+            // Should return empty - no new allocations created for TEST experiments
+            return response.experimentMap().isEmpty();
+          });
+
+      // Verify no new allocations were inserted
+      verify(allocationDAO, never())
+          .insertAllocationsAndIncrementCounts(anyString(), anyString(), anyList(), anyMap());
+    }
+
+    @Test
+    @DisplayName("Should return test, live, and concluded allocations together")
+    void testAllotExperimentsReturnsMixedAllocations() {
+      // Arrange
+      AllocationRequest request =
+          AllocationRequest.builder()
+              .userId(USER_ID)
+              .experimentKeys(List.of("live_experiment", "test_experiment", "concluded_experiment"))
+              .build();
+
+      Experiment liveExperiment =
+          createExperimentWithStatus(LIVE_EXPERIMENT_ID, "live_experiment", ExperimentStatus.LIVE);
+      Experiment testExperiment =
+          createExperimentWithStatus(TEST_EXPERIMENT_ID, "test_experiment", ExperimentStatus.TEST);
+      Experiment concludedExperiment =
+          createExperimentWithStatusAndWinner(
+              CONCLUDED_EXPERIMENT_ID,
+              "concluded_experiment",
+              ExperimentStatus.CONCLUDED,
+              CONTROL_VARIANT);
+
+      UserExperimentMap liveAllocation =
+          createAllocationForExperiment(LIVE_EXPERIMENT_ID, CONTROL_VARIANT);
+      UserExperimentMap testAllocation =
+          createAllocationForExperiment(TEST_EXPERIMENT_ID, TREATMENT_VARIANT);
+
+      Map<String, List<UserExperimentMap>> userAllocationsMap = new HashMap<>();
+      userAllocationsMap.put(USER_ID, List.of(liveAllocation, testAllocation));
+
+      when(cohortService.getUserCohorts(eq(USER_ID), eq(PROJECT_KEY)))
+          .thenReturn(Maybe.just(Collections.emptyList()));
+      when(allocationDAO.fetchActiveExperiments(eq(PROJECT_KEY), anyList()))
+          .thenReturn(Single.just(List.of(liveExperiment, testExperiment, concludedExperiment)));
+      when(allocationDAO.getAllocations(anyList(), eq(PROJECT_KEY)))
+          .thenReturn(Single.just(userAllocationsMap));
+
+      // Act
+      TestObserver<AllocationsResponse> testObserver =
+          allocationService.allotExperiments(PROJECT_KEY, request).test();
+
+      // Assert
+      testObserver.assertComplete();
+      testObserver.assertNoErrors();
+      testObserver.assertValue(
+          response -> {
+            List<UserExperimentMap> allocations = response.experimentMap();
+            // Should contain live, test, and concluded allocations
+            boolean hasLive =
+                allocations.stream().anyMatch(a -> a.getExperimentId().equals(LIVE_EXPERIMENT_ID));
+            boolean hasTest =
+                allocations.stream().anyMatch(a -> a.getExperimentId().equals(TEST_EXPERIMENT_ID));
+            boolean hasConcluded =
+                allocations.stream()
+                    .anyMatch(a -> a.getExperimentId().equals(CONCLUDED_EXPERIMENT_ID));
+            return hasLive && hasTest && hasConcluded;
+          });
+    }
+
+    @Test
+    @DisplayName("Should include test allocations alongside existing live allocations")
+    void testAllotExperimentsIncludesTestAllocationsWithExistingLiveAllocations() {
+      // Arrange - User already has both live and test allocations
+      AllocationRequest request =
+          AllocationRequest.builder()
+              .userId(USER_ID)
+              .experimentKeys(List.of("live_experiment", "test_experiment"))
+              .build();
+
+      Experiment liveExperiment =
+          createExperimentWithStatus(LIVE_EXPERIMENT_ID, "live_experiment", ExperimentStatus.LIVE);
+      Experiment testExperiment =
+          createExperimentWithStatus(TEST_EXPERIMENT_ID, "test_experiment", ExperimentStatus.TEST);
+
+      // User has both live and test allocations already
+      UserExperimentMap liveAllocation =
+          createAllocationForExperiment(LIVE_EXPERIMENT_ID, CONTROL_VARIANT);
+      UserExperimentMap testAllocation =
+          createAllocationForExperiment(TEST_EXPERIMENT_ID, TREATMENT_VARIANT);
+
+      Map<String, List<UserExperimentMap>> userAllocationsMap = new HashMap<>();
+      userAllocationsMap.put(USER_ID, List.of(liveAllocation, testAllocation));
+
+      when(cohortService.getUserCohorts(eq(USER_ID), eq(PROJECT_KEY)))
+          .thenReturn(Maybe.just(Collections.emptyList()));
+      when(allocationDAO.fetchActiveExperiments(eq(PROJECT_KEY), anyList()))
+          .thenReturn(Single.just(List.of(liveExperiment, testExperiment)));
+      when(allocationDAO.getAllocations(anyList(), eq(PROJECT_KEY)))
+          .thenReturn(Single.just(userAllocationsMap));
+
+      // Act
+      TestObserver<AllocationsResponse> testObserver =
+          allocationService.allotExperiments(PROJECT_KEY, request).test();
+
+      // Assert
+      testObserver.assertComplete();
+      testObserver.assertNoErrors();
+      testObserver.assertValue(
+          response -> {
+            List<UserExperimentMap> allocations = response.experimentMap();
+            // Should contain both existing live allocation and test allocation
+            boolean hasLive =
+                allocations.stream().anyMatch(a -> a.getExperimentId().equals(LIVE_EXPERIMENT_ID));
+            boolean hasTest =
+                allocations.stream().anyMatch(a -> a.getExperimentId().equals(TEST_EXPERIMENT_ID));
+            return hasLive && hasTest && allocations.size() == 2;
+          });
+    }
+
+    @Test
+    @DisplayName("Should return empty when no allocations exist and only test experiments")
+    void testAllotExperimentsEmptyWhenNoAllocationsAndOnlyTestExperiments() {
+      // Arrange
+      AllocationRequest request =
+          AllocationRequest.builder()
+              .userId(USER_ID)
+              .experimentKeys(List.of("test_experiment_1", "test_experiment_2"))
+              .build();
+
+      Experiment testExperiment1 =
+          createExperimentWithStatus(
+              TEST_EXPERIMENT_ID, "test_experiment_1", ExperimentStatus.TEST);
+      UUID testExperiment2Id = UUID.fromString("1b4e8ffc-f2c6-8426-0000-645e0de64a5f");
+      Experiment testExperiment2 =
+          createExperimentWithStatus(testExperiment2Id, "test_experiment_2", ExperimentStatus.TEST);
+
+      Map<String, List<UserExperimentMap>> userAllocationsMap = new HashMap<>();
+      userAllocationsMap.put(USER_ID, Collections.emptyList());
+
+      when(cohortService.getUserCohorts(eq(USER_ID), eq(PROJECT_KEY)))
+          .thenReturn(Maybe.just(Collections.emptyList()));
+      when(allocationDAO.fetchActiveExperiments(eq(PROJECT_KEY), anyList()))
+          .thenReturn(Single.just(List.of(testExperiment1, testExperiment2)));
+      when(allocationDAO.getAllocations(anyList(), eq(PROJECT_KEY)))
+          .thenReturn(Single.just(userAllocationsMap));
+
+      // Act
+      TestObserver<AllocationsResponse> testObserver =
+          allocationService.allotExperiments(PROJECT_KEY, request).test();
+
+      // Assert
+      testObserver.assertComplete();
+      testObserver.assertNoErrors();
+      testObserver.assertValue(response -> response.experimentMap().isEmpty());
+    }
+
+    @Test
+    @DisplayName("Should handle user with only test allocations correctly")
+    void testAllotExperimentsUserWithOnlyTestAllocations() {
+      // Arrange
+      AllocationRequest request =
+          AllocationRequest.builder()
+              .userId(USER_ID)
+              .experimentKeys(List.of("test_experiment"))
+              .build();
+
+      Experiment testExperiment =
+          createExperimentWithStatus(TEST_EXPERIMENT_ID, "test_experiment", ExperimentStatus.TEST);
+      UserExperimentMap testAllocation =
+          createAllocationForExperiment(TEST_EXPERIMENT_ID, CONTROL_VARIANT);
+
+      Map<String, List<UserExperimentMap>> userAllocationsMap = new HashMap<>();
+      userAllocationsMap.put(USER_ID, List.of(testAllocation));
+
+      when(cohortService.getUserCohorts(eq(USER_ID), eq(PROJECT_KEY)))
+          .thenReturn(Maybe.just(Collections.emptyList()));
+      when(allocationDAO.fetchActiveExperiments(eq(PROJECT_KEY), anyList()))
+          .thenReturn(Single.just(List.of(testExperiment)));
+      when(allocationDAO.getAllocations(anyList(), eq(PROJECT_KEY)))
+          .thenReturn(Single.just(userAllocationsMap));
+
+      // Act
+      TestObserver<AllocationsResponse> testObserver =
+          allocationService.allotExperiments(PROJECT_KEY, request).test();
+
+      // Assert
+      testObserver.assertComplete();
+      testObserver.assertNoErrors();
+      testObserver.assertValue(
+          response -> {
+            List<UserExperimentMap> allocations = response.experimentMap();
+            return allocations.size() == 1
+                && allocations.get(0).getExperimentId().equals(TEST_EXPERIMENT_ID)
+                && allocations.get(0).getVariantName().equals(CONTROL_VARIANT);
+          });
+    }
+
+    // Helper methods for test experiments tests
+    private Experiment createExperimentWithStatus(
+        UUID experimentId, String key, ExperimentStatus status) {
+      return Experiment.builder()
+          .experimentId(experimentId)
+          .projectKey(PROJECT_KEY)
+          .name("Experiment " + key)
+          .experimentKey(key)
+          .status(status)
+          .type(ExperimentType.A_B)
+          .variants(
+              Map.of(
+                  CONTROL_VARIANT,
+                  Variant.builder().displayName(CONTROL_VARIANT).build(),
+                  TREATMENT_VARIANT,
+                  Variant.builder().displayName(TREATMENT_VARIANT).build()))
+          .build();
+    }
+
+    private Experiment createExperimentWithStatusAndWinner(
+        UUID experimentId, String key, ExperimentStatus status, String winningVariantName) {
+      WinningVariant winningVariant = new WinningVariant();
+      winningVariant.setVariantName(winningVariantName);
+      return Experiment.builder()
+          .experimentId(experimentId)
+          .projectKey(PROJECT_KEY)
+          .name("Experiment " + key)
+          .experimentKey(key)
+          .status(status)
+          .type(ExperimentType.A_B)
+          .winningVariant(winningVariant)
+          .variants(
+              Map.of(
+                  CONTROL_VARIANT,
+                  Variant.builder().displayName(CONTROL_VARIANT).build(),
+                  TREATMENT_VARIANT,
+                  Variant.builder().displayName(TREATMENT_VARIANT).build()))
+          .build();
+    }
+
+    private UserExperimentMap createAllocationForExperiment(UUID experimentId, String variantName) {
+      return UserExperimentMap.builder()
+          .experimentId(experimentId)
+          .variantName(variantName)
+          .status("ASSIGNED")
+          .assignedAt(System.currentTimeMillis())
+          .build();
     }
   }
 

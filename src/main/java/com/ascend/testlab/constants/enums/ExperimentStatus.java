@@ -13,6 +13,10 @@ import com.fasterxml.jackson.annotation.JsonValue;
  * @since 1.0
  */
 public enum ExperimentStatus {
+
+  /** The experiment is test and actively running for test users. */
+  TEST,
+
   /** The experiment is live and actively running. */
   LIVE,
 
