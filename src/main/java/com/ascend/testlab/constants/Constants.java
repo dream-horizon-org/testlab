@@ -60,4 +60,7 @@ public final class Constants {
 
   /** The name of the getName method. */
   public static final String GET_NAME = "getName";
+
+  /** The name of the schema. */
+  public static final String SCHEMA = "experiment";
 }

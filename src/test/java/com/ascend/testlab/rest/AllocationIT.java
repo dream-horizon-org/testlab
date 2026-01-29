@@ -4,6 +4,7 @@ import com.ascend.testlab.Setup;
 import com.ascend.testlab.constants.web.WebConstants;
 import com.ascend.testlab.util.TestUtil;
 import io.restassured.response.ValidatableResponse;
+import java.sql.Connection;
 import java.util.*;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.http.HttpStatus;
@@ -833,8 +834,8 @@ class AllocationIT {
             variantWeightsJson,
             experimentKey);
 
-    try {
-      TestUtil.executeSQLStatement(TestUtil.getDatabaseConnection(), insert);
+    try (Connection connection = TestUtil.getDatabaseConnection()) {
+      TestUtil.executeSQLStatement(connection, insert);
       log.debug(
           "Seeded experiment {} with key {} for project {}",
           experimentId,

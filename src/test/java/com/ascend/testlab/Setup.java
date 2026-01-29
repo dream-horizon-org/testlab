@@ -67,6 +67,9 @@ public class Setup
   private void startApplication() {
     TestUtil.prepareDatabase();
 
+    // Set the port for the HTTP server to match what tests expect
+    System.setProperty("http.default.port", "8100");
+
     MainLauncher.initializeGuiceInjector(this.vertx);
 
     AsyncResultSingle.<String>toSingle(

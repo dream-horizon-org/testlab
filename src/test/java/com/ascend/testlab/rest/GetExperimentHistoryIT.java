@@ -294,7 +294,9 @@ class GetExperimentHistoryIT {
    */
   private static void seedExperimentHistory(String projectKey, String experimentId, int count)
       throws SQLException {
-    String partitionName = "experiment_update_log_p_" + projectKey;
+    // Match the naming convention used in WriteQuery.buildCreateListPartitionQuery
+    String suffix = projectKey.replace("-", "_");
+    String partitionName = "experiment_update_log_" + suffix;
     try (Connection connection = TestUtil.getDatabaseConnection()) {
       for (int i = 0; i < count; i++) {
         String insert =

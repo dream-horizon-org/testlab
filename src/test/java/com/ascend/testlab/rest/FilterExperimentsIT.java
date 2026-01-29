@@ -6,6 +6,7 @@ import com.ascend.testlab.exception.ErrorMessages;
 import com.ascend.testlab.util.CommonUtil;
 import com.ascend.testlab.util.TestUtil;
 import io.restassured.response.ValidatableResponse;
+import java.sql.Connection;
 import java.util.Map;
 import java.util.UUID;
 import lombok.extern.slf4j.Slf4j;
@@ -803,8 +804,8 @@ class FilterExperimentsIT {
         ) ON CONFLICT (project_key, experiment_id) DO NOTHING;
         """
             .formatted(projectKey, experimentId, name, experimentKey, status, type);
-    try {
-      TestUtil.executeSQLStatement(TestUtil.getDatabaseConnection(), insert);
+    try (Connection connection = TestUtil.getDatabaseConnection()) {
+      TestUtil.executeSQLStatement(connection, insert);
     } catch (Exception e) {
       // Log the error and rethrow - we need to know if data insertion fails
       log.error("Failed to seed experiment {}: {}", experimentId, e.getMessage(), e);
@@ -825,7 +826,7 @@ class FilterExperimentsIT {
     if (tags.length == 0) {
       return;
     }
-    try {
+    try (Connection connection = TestUtil.getDatabaseConnection()) {
       StringBuilder values = new StringBuilder();
       for (int i = 0; i < tags.length; i++) {
         if (i > 0) {
@@ -839,7 +840,7 @@ class FilterExperimentsIT {
               "INSERT INTO experiment.tags (experiment_id, project_key, tag, created_at, updated_at) VALUES %s;",
               values);
 
-      TestUtil.executeSQLStatement(TestUtil.getDatabaseConnection(), insert);
+      TestUtil.executeSQLStatement(connection, insert);
     } catch (Exception e) {
       log.error("Failed to seed tags for experiment {}: {}", experimentId, e.getMessage(), e);
       throw new RuntimeException(
@@ -858,7 +859,7 @@ class FilterExperimentsIT {
     if (owners.length == 0) {
       return;
     }
-    try {
+    try (Connection connection = TestUtil.getDatabaseConnection()) {
       StringBuilder values = new StringBuilder();
       for (int i = 0; i < owners.length; i++) {
         if (i > 0) {
@@ -871,7 +872,7 @@ class FilterExperimentsIT {
           String.format(
               "INSERT INTO experiment.owners (experiment_id, project_key, owner, created_at, updated_at) VALUES %s;",
               values);
-      TestUtil.executeSQLStatement(TestUtil.getDatabaseConnection(), insert);
+      TestUtil.executeSQLStatement(connection, insert);
     } catch (Exception e) {
       log.error("Failed to seed owners for experiment {}: {}", experimentId, e.getMessage(), e);
       throw new RuntimeException(

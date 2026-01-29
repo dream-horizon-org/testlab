@@ -139,7 +139,9 @@ class ExperimentKeyAvailabilityIT {
    */
   private static void seedExperiment(String projectKey, String experimentKey) throws SQLException {
     String experimentId = UUID.randomUUID().toString();
-    String partitionName = "experiments_p_" + projectKey;
+    // Match the naming convention used in WriteQuery.buildCreateListPartitionQuery
+    String suffix = projectKey.replace("-", "_");
+    String partitionName = "experiments_" + suffix;
     try (Connection connection = TestUtil.getDatabaseConnection()) {
       String insert =
           String.format(

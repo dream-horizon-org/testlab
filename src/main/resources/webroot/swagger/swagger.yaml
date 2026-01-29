@@ -400,14 +400,13 @@ paths:
       parameters:
       - name: x-project-key
         in: header
+        required: true
         schema:
           type: string
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/PartitionRequest'
-        required: true
+      - name: x-user-Id
+        in: header
+        schema:
+          type: string
       responses:
         "200":
           description: Successfully created partitions for experiment tables
@@ -415,10 +414,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/SuccessPartitionResponse'
-        "304":
-          description: Partitions already exist (idempotent)
         "400":
-          description: Bad Request due to invalid/missing body params / header
+          description: Bad Request due to invalid/missing header
           content:
             application/json:
               schema:
@@ -1049,20 +1046,13 @@ components:
           type: string
         status:
           type: string
-        idempotent:
-          type: boolean
+        message:
+          type: string
     SuccessPartitionResponse:
       type: object
       properties:
         data:
           $ref: '#/components/schemas/PartitionResponse'
-    PartitionRequest:
-      required:
-      - project_key
-      type: object
-      properties:
-        project_key:
-          type: string
     SuccessTagsResponse:
       type: object
       properties:

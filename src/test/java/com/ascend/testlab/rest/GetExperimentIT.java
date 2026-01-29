@@ -6,6 +6,7 @@ import com.ascend.testlab.exception.ErrorMessages;
 import com.ascend.testlab.util.CommonUtil;
 import com.ascend.testlab.util.TestUtil;
 import io.restassured.response.ValidatableResponse;
+import java.sql.Connection;
 import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.http.HttpStatus;
@@ -134,8 +135,8 @@ class GetExperimentIT {
             );
            """
             .formatted(PROJECT_KEY, EXPERIMENT_ID, experimentName, experimentKey);
-    try {
-      TestUtil.executeSQLStatement(TestUtil.getDatabaseConnection(), insert);
+    try (Connection connection = TestUtil.getDatabaseConnection()) {
+      TestUtil.executeSQLStatement(connection, insert);
     } catch (Exception e) {
       throw new RuntimeException("Failed seeding experiment for tests", e);
     }

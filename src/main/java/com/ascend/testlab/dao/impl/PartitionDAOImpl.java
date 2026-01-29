@@ -1,15 +1,12 @@
 package com.ascend.testlab.dao.impl;
 
-import com.ascend.testlab.client.postgresql.PgReaderClient;
 import com.ascend.testlab.client.postgresql.PgWriterClient;
+import com.ascend.testlab.constants.Constants;
 import com.ascend.testlab.constants.enums.PartitionStatus;
-import com.ascend.testlab.constants.postgresql.ReadQuery;
+import com.ascend.testlab.constants.postgresql.Columns;
 import com.ascend.testlab.constants.postgresql.WriteQuery;
 import com.ascend.testlab.dao.PartitionDAO;
-import com.ascend.testlab.dto.entity.experiment.PartitionMetadata;
-import com.ascend.testlab.dto.request.PartitionRequest;
 import com.ascend.testlab.dto.response.PartitionResponse;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.inject.Inject;
 import io.reactivex.rxjava3.core.Completable;
 import io.reactivex.rxjava3.core.Maybe;
@@ -17,100 +14,124 @@ import io.reactivex.rxjava3.core.Single;
 import io.vertx.rxjava3.sqlclient.Row;
 import io.vertx.rxjava3.sqlclient.SqlConnection;
 import io.vertx.rxjava3.sqlclient.Tuple;
-import java.time.OffsetDateTime;
+import java.time.Instant;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 
+/**
+ * Implementation of the PartitionDAO interface.
+ *
+ * @author Nithya Sree
+ * @version 1.0
+ * @since 1.0
+ * @see PartitionDAO
+ */
 @Slf4j
 public class PartitionDAOImpl implements PartitionDAO {
-
-  private static final String SCHEMA = "experiment";
 
   private static final List<String> PARTITIONED_TABLES =
       List.of("experiments", "owners", "tags", "experiment_update_log", "experiment_analysis");
 
-  private final PgReaderClient pgReaderClient;
+  /** The PostgreSQL writer client. */
   private final PgWriterClient pgWriterClient;
-  private final ObjectMapper objectMapper;
 
+  /**
+   * Constructor for the PartitionDAOImpl.
+   *
+   * @param pgWriterClient the PostgreSQL writer client
+   */
   @Inject
-  public PartitionDAOImpl(
-      PgReaderClient pgReaderClient, PgWriterClient pgWriterClient, ObjectMapper objectMapper) {
-
-    this.pgReaderClient = pgReaderClient;
+  public PartitionDAOImpl(PgWriterClient pgWriterClient) {
     this.pgWriterClient = pgWriterClient;
-    this.objectMapper = objectMapper;
   }
 
+  /** {@inheritDoc} */
   @Override
-  public Single<PartitionResponse> createProjectPartition(PartitionRequest request) {
+  public Single<PartitionResponse> createProjectPartition(String projectKey, String userId) {
 
-    String projectKey = request.getProjectKey();
-    OffsetDateTime now = OffsetDateTime.now();
-    String createdBy = "system";
+    Instant now = Instant.now();
+    long nowMillis = now.toEpochMilli();
+    String createdBy = (userId == null || userId.isBlank()) ? "system" : userId;
 
     return pgWriterClient.executeWithTransaction(
         connection ->
-            fetchPartitionMetadata(connection, projectKey)
+            upsertPartitionMetadataReturningStatus(connection, projectKey, createdBy, nowMillis)
                 .flatMap(
-                    metadata -> {
-                      if (metadata.getStatus() == PartitionStatus.SUCCESS) {
+                    status -> {
+                      if (status == PartitionStatus.SUCCESS) {
                         return Maybe.just(
                             PartitionResponse.builder()
                                 .projectKey(projectKey)
                                 .status(PartitionStatus.SUCCESS.name())
-                                .idempotent(true)
+                                .message("Partitions already exist")
                                 .build());
                       }
-                      return runPartitionCreationFlow(connection, projectKey, createdBy, now);
-                    })
-                .switchIfEmpty(runPartitionCreationFlow(connection, projectKey, createdBy, now)),
+                      return runPartitionCreationFlow(connection, projectKey, nowMillis);
+                    }),
         PartitionResponse.builder()
             .projectKey(projectKey)
             .status(PartitionStatus.SUCCESS.name())
-            .idempotent(true)
+            .message("Partitions already exist")
             .build());
   }
 
-  private Maybe<PartitionMetadata> fetchPartitionMetadata(
-      SqlConnection connection, String projectKey) {
-
-    return pgReaderClient
-        .fetchOne(
-            ReadQuery.GET_PARTITION_METADATA, Tuple.of(projectKey), this::mapPartitionMetadata)
-        .onErrorResumeNext(
-            error -> {
-              log.error("Failed to fetch partition metadata for projectKey={}", projectKey, error);
-              return Maybe.error(error);
-            });
+  /**
+   * Upserts the partition metadata and returns the resulting status.
+   *
+   * @param connection the SQL connection
+   * @param projectKey the project key
+   * @param createdBy the created by
+   * @param nowMillis the current time in epoch milliseconds
+   * @return a Maybe that emits the partition status
+   */
+  private Maybe<PartitionStatus> upsertPartitionMetadataReturningStatus(
+      SqlConnection connection, String projectKey, String createdBy, long nowMillis) {
+    return connection
+        .preparedQuery(WriteQuery.UPSERT_PARTITION_METADATA_RETURNING_STATUS)
+        .rxExecute(
+            Tuple.of(projectKey, PartitionStatus.CREATING.name(), createdBy, nowMillis, nowMillis))
+        .map(
+            rows -> {
+              if (rows.size() == 0) {
+                throw new IllegalStateException(
+                    "No partition metadata returned for projectKey=" + projectKey);
+              }
+              Row row = rows.iterator().next();
+              return PartitionStatus.valueOf(row.getString(Columns.STATUS));
+            })
+        .toMaybe();
   }
 
+  /**
+   * Runs the partition creation flow.
+   *
+   * @param connection the SQL connection
+   * @param projectKey the project key
+   * @param nowMillis the current time in epoch milliseconds
+   * @return a Maybe that emits the partition response
+   */
   private Maybe<PartitionResponse> runPartitionCreationFlow(
-      SqlConnection connection, String projectKey, String createdBy, OffsetDateTime now) {
-    return upsertPartitionMetadataCreating(connection, projectKey, createdBy, now)
-        .andThen(createAllPartitions(connection, projectKey))
+      SqlConnection connection, String projectKey, long nowMillis) {
+    return createAllPartitions(connection, projectKey)
         .andThen(
-            updatePartitionMetadataStatus(connection, projectKey, PartitionStatus.SUCCESS, now))
+            updatePartitionMetadataStatus(
+                connection, projectKey, PartitionStatus.SUCCESS, nowMillis))
         .andThen(
             Maybe.just(
                 PartitionResponse.builder()
                     .projectKey(projectKey)
                     .status(PartitionStatus.SUCCESS.name())
-                    .idempotent(false)
+                    .message("Partitions created successfully")
                     .build()));
   }
 
-  private Completable upsertPartitionMetadataCreating(
-      SqlConnection connection, String projectKey, String createdBy, OffsetDateTime now) {
-
-    return pgWriterClient
-        .execute(
-            connection,
-            WriteQuery.UPSERT_PARTITION_METADATA,
-            Tuple.of(projectKey, PartitionStatus.CREATING.name(), createdBy, now, now))
-        .ignoreElement();
-  }
-
+  /**
+   * Creates all partitions for a given project key.
+   *
+   * @param connection the SQL connection
+   * @param projectKey the project key
+   * @return a Completable that completes when the partitions are created
+   */
   private Completable createAllPartitions(SqlConnection connection, String projectKey) {
 
     return Completable.concat(
@@ -119,31 +140,40 @@ public class PartitionDAOImpl implements PartitionDAO {
             .toList());
   }
 
+  /**
+   * Creates a partition for a given parent table and project key.
+   *
+   * @param connection the SQL connection
+   * @param parentTable the parent table
+   * @param projectKey the project key
+   * @return a Completable that completes when the partition is created
+   */
   private Completable createPartition(
       SqlConnection connection, String parentTable, String projectKey) {
 
-    String ddl = WriteQuery.buildCreateListPartitionQuery(SCHEMA, parentTable, projectKey);
+    String ddl =
+        WriteQuery.buildCreateListPartitionQuery(Constants.SCHEMA, parentTable, projectKey);
 
     return pgWriterClient.execute(connection, ddl).ignoreElement();
   }
 
+  /**
+   * Updates the partition metadata status for a given project key.
+   *
+   * @param connection the SQL connection
+   * @param projectKey the project key
+   * @param status the status
+   * @param nowMillis the current time in epoch milliseconds
+   * @return a Completable that completes when the partition metadata status is updated
+   */
   private Completable updatePartitionMetadataStatus(
-      SqlConnection connection, String projectKey, PartitionStatus status, OffsetDateTime now) {
+      SqlConnection connection, String projectKey, PartitionStatus status, long nowMillis) {
 
     return pgWriterClient
         .execute(
             connection,
             WriteQuery.UPDATE_PARTITION_STATUS,
-            Tuple.of(status.name(), now, projectKey))
+            Tuple.of(status.name(), nowMillis, projectKey))
         .ignoreElement();
-  }
-
-  private PartitionMetadata mapPartitionMetadata(Row row) {
-    return new PartitionMetadata(
-        row.getString("project_key"),
-        PartitionStatus.valueOf(row.getString("status")),
-        row.getString("created_by"),
-        row.getOffsetDateTime("created_at"),
-        row.getOffsetDateTime("updated_at"));
   }
 }

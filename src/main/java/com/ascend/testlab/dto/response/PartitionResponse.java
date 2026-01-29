@@ -7,6 +7,13 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+/**
+ * Response object for creating a project partition.
+ *
+ * @author Nithya Sree
+ * @version 1.0
+ * @since 1.0
+ */
 @Data
 @Builder
 @NoArgsConstructor
@@ -15,5 +22,5 @@ import lombok.NoArgsConstructor;
 public class PartitionResponse {
   String projectKey;
   String status;
-  boolean idempotent;
+  String message;
 }

@@ -5,6 +5,7 @@ import com.ascend.testlab.constants.web.WebConstants;
 import com.ascend.testlab.exception.ErrorMessages;
 import com.ascend.testlab.util.TestUtil;
 import io.restassured.response.ValidatableResponse;
+import java.sql.Connection;
 import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -97,8 +98,8 @@ class TagsIT {
             .collect(Collectors.joining(","));
     String insert =
         "INSERT INTO experiment.tags (project_key, experiment_id, tag) VALUES " + values + ";";
-    try {
-      TestUtil.executeSQLStatement(TestUtil.getDatabaseConnection(), insert);
+    try (Connection connection = TestUtil.getDatabaseConnection()) {
+      TestUtil.executeSQLStatement(connection, insert);
     } catch (Exception e) {
       throw new RuntimeException("Failed seeding tags for tests", e);
     }

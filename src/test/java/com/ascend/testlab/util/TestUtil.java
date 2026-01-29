@@ -111,19 +111,25 @@ public final class TestUtil {
   /**
    * Create a partition for the given table and project key for test purposes.
    *
-   * <p><i>Requires projectKey to not contain any '-' </i>
+   * <p>Uses the same naming convention as the actual implementation: tableName_suffix where suffix
+   * = projectKey.replace("-", "_"). The project key can contain hyphens, which will be replaced
+   * with underscores in the partition name.
    *
    * @param tableName the name of the table to partition
-   * @param projectKey the project key
+   * @param projectKey the project key (hyphens will be replaced with underscores in the partition
+   *     name)
    */
   public static void createPartitionForProject(String tableName, String projectKey) {
+    // Match the naming convention used in WriteQuery.buildCreateListPartitionQuery
+    String suffix = projectKey.replace("-", "_");
+    String partitionName = tableName + "_" + suffix;
     String ddl =
         String.format(
-            "CREATE TABLE IF NOT EXISTS experiment.%s_p_%s "
+            "CREATE TABLE IF NOT EXISTS experiment.%s "
                 + "PARTITION OF experiment.%s FOR VALUES IN ('%s');",
-            tableName, projectKey, tableName, projectKey);
-    try {
-      TestUtil.executeSQLStatement(TestUtil.getDatabaseConnection(), ddl);
+            partitionName, tableName, projectKey);
+    try (Connection connection = TestUtil.getDatabaseConnection()) {
+      TestUtil.executeSQLStatement(connection, ddl);
     } catch (Exception e) {
       throw new RuntimeException(
           String.format("Failed creating partition for tests on table '%s'", tableName), e);
@@ -134,14 +140,35 @@ public final class TestUtil {
    * Drop the partition for the given table for test cleanup.
    *
    * @param tableName the name of the table whose test partition should be dropped
+   * @param projectKey the project key used to create the partition
    */
   public static void dropTestPartition(String tableName, String projectKey) {
-    String ddl = String.format("DROP TABLE IF EXISTS experiment.%s_p_%s;", tableName, projectKey);
-    try {
-      TestUtil.executeSQLStatement(TestUtil.getDatabaseConnection(), ddl);
+    // Partition naming: tableName_projectKey_suffix where suffix = projectKey.replace("-", "_")
+    String suffix = projectKey.replace("-", "_");
+    String partitionName = tableName + "_" + suffix;
+    String ddl = String.format("DROP TABLE IF EXISTS experiment.%s;", partitionName);
+    try (Connection connection = TestUtil.getDatabaseConnection()) {
+      TestUtil.executeSQLStatement(connection, ddl);
     } catch (Exception e) {
       // best-effort cleanup
       log.warn("Failed dropping test partition for table {}", tableName, e);
+    }
+  }
+
+  /**
+   * Delete partition metadata for the given project key for test cleanup.
+   *
+   * @param projectKey the project key
+   */
+  public static void deletePartitionMetadata(String projectKey) {
+    String ddl =
+        String.format(
+            "DELETE FROM experiment.partition_metadata WHERE project_key = '%s';", projectKey);
+    try (Connection connection = TestUtil.getDatabaseConnection()) {
+      TestUtil.executeSQLStatement(connection, ddl);
+    } catch (Exception e) {
+      // best-effort cleanup
+      log.warn("Failed deleting partition metadata for project key {}", projectKey, e);
     }
   }
 }

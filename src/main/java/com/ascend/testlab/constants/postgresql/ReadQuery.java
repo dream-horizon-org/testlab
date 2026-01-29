@@ -222,11 +222,4 @@ public final class ReadQuery {
       LEFT JOIN experiment.owners o ON e.project_key = o.project_key AND e.experiment_id = o.experiment_id
       WHERE e.project_key = $1
       """;
-
-  public static final String GET_PARTITION_METADATA =
-      """
-    SELECT project_key, status, created_by, created_at, updated_at
-    FROM experiment.partition_metadata
-    WHERE project_key = $1
-    """;
 }

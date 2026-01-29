@@ -525,6 +525,7 @@
         <version>${maven-surefire-plugin.version}</version>
         <configuration>
           <trimStackTrace>false</trimStackTrace>
+          <argLine>@{argLine} -Djdk.attach.allowAttachSelf=true</argLine>
         </configuration>
       </plugin>
 
@@ -578,7 +579,7 @@
                     <limit>
                       <counter>LINE</counter>
                       <value>COVEREDRATIO</value>
-                      <minimum>0.60</minimum>
+                      <minimum>0.6</minimum>
                     </limit>
                   </limits>
                 </rule>

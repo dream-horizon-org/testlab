@@ -287,24 +287,99 @@ public final class WriteQuery {
   public static final String DELETE_OWNER_FOR_EXPERIMENT =
       "DELETE FROM experiment.owners WHERE project_key = $1 AND experiment_id = $2;";
 
+  /**
+   * Query to update the partition status for a given project key.
+   *
+   * <p>Parameters:
+   *
+   * <ol>
+   *   <li>$1: status (experiment.partition_status)
+   *   <li>$2: updated_at (BIGINT - epoch milliseconds)
+   *   <li>$3: project_key (VARCHAR)
+   * </ol>
+   */
   public static final String UPDATE_PARTITION_STATUS =
       """
       UPDATE experiment.partition_metadata
       SET status = $1::experiment.partition_status,
-          updated_at = $2
+          updated_at = to_timestamp($2 / 1000.0)
       WHERE project_key = $3
       """;
 
+  /**
+   * Query to upsert the partition metadata for a given project key.
+   *
+   * <p>Parameters:
+   *
+   * <ol>
+   *   <li>$1: project_key (VARCHAR)
+   *   <li>$2: status (experiment.partition_status)
+   *   <li>$3: created_by (VARCHAR)
+   *   <li>$4: created_at (BIGINT - epoch milliseconds)
+   *   <li>$5: updated_at (BIGINT - epoch milliseconds)
+   * </ol>
+   */
   public static final String UPSERT_PARTITION_METADATA =
       """
     INSERT INTO experiment.partition_metadata (project_key, status, created_by, created_at, updated_at)
-    VALUES ($1, $2::experiment.partition_status, $3, $4, $5)
+    VALUES ($1, $2::experiment.partition_status, $3, to_timestamp($4 / 1000.0), to_timestamp($5 / 1000.0))
     ON CONFLICT (project_key)
     DO UPDATE SET
       status = EXCLUDED.status,
       updated_at = EXCLUDED.updated_at
     """;
 
+  /**
+   * Query to upsert the partition metadata for a given project key, returning the status.
+   *
+   * <p>Parameters:
+   *
+   * <ol>
+   *   <li>$1: project_key (VARCHAR)
+   *   <li>$2: status (experiment.partition_status) - initial status for insert
+   *   <li>$3: created_by (VARCHAR)
+   *   <li>$4: created_at (BIGINT - epoch milliseconds)
+   *   <li>$5: updated_at (BIGINT - epoch milliseconds)
+   * </ol>
+   *
+   * <p>Returns: status (experiment.partition_status)
+   */
+  public static final String UPSERT_PARTITION_METADATA_RETURNING_STATUS =
+      """
+    INSERT INTO experiment.partition_metadata (
+        project_key,
+        status,
+        created_by,
+        created_at,
+        updated_at
+    )
+    VALUES (
+        $1,
+        $2::experiment.partition_status,
+        $3,
+        to_timestamp($4 / 1000.0),
+        to_timestamp($5 / 1000.0)
+    )
+    ON CONFLICT (project_key)
+    DO UPDATE
+      SET status = experiment.partition_metadata.status,
+          updated_at = to_timestamp($5 / 1000.0)
+    RETURNING status
+    """;
+
+  /**
+   * Builds a CREATE TABLE query for a PostgreSQL list partition.
+   *
+   * <p>Creates a partition table for the specified parent table using the project key. The
+   * partition name is constructed by appending the project key (with hyphens replaced by
+   * underscores) to the parent table name.
+   *
+   * @param schema the database schema name (e.g., "experiment")
+   * @param parentTable the parent table name (e.g., "experiments")
+   * @param projectKey the project key to use for the partition (hyphens will be replaced with
+   *     underscores in the table name)
+   * @return a SQL DDL statement string for creating the partition
+   */
   public static String buildCreateListPartitionQuery(
       String schema, String parentTable, String projectKey) {
 
