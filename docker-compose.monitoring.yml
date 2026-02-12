@@ -1,0 +1,12 @@
+services:
+  testlab-backend:
+    volumes:
+      - ${ASCEND_DEFAULT_DIR}/monitoring/opentelemetry-javaagent.jar:/otel/opentelemetry-javaagent.jar
+
+    environment:
+      JAVA_TOOL_OPTIONS: -javaagent:/otel/opentelemetry-javaagent.jar
+      OTEL_SERVICE_NAME: experiment-service
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:9317
+      OTEL_TRACES_EXPORTER: otlp
+      OTEL_METRICS_EXPORTER: otlp
+      OTEL_LOGS_EXPORTER: none
